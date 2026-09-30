@@ -27,6 +27,7 @@ public record ArmorStylePiece(
 /// Each style lists the loot pieces the server tags with that ArmorStyle and that drop as part of that set.
 /// Pieces a set borrows from another style (Yoroi's leather gauntlets, Celdon's platemail gauntlets) are left out.
 /// Where a style has several pieces with the same coverage, the first listed is used.
+/// Helms, gauntlets and boots have no style: their looks don't match the body armor of their sets.
 /// </summary>
 public class ArmorStyleCatalogue
 {
@@ -41,11 +42,6 @@ public class ArmorStyleCatalogue
             ArmorWeightClass.Light,
             [
                 [
-                    WeenieClassName.capleather,
-                    WeenieClassName.cowlleather,
-                    WeenieClassName.basinetleather,
-                    WeenieClassName.gauntletsleather,
-                    WeenieClassName.bootsleather,
                     WeenieClassName.breastplateleather,
                     WeenieClassName.girthleather,
                     WeenieClassName.pauldronsleather,
@@ -59,11 +55,6 @@ public class ArmorStyleCatalogue
                     WeenieClassName.leggingsleather,
                 ],
                 [
-                    WeenieClassName.basinetleathernew,
-                    WeenieClassName.cowlleathernew,
-                    WeenieClassName.gauntletsleathernew,
-                    WeenieClassName.longgauntletsleathernew,
-                    WeenieClassName.bootsleathernew,
                     WeenieClassName.breastplateleathernew,
                     WeenieClassName.girthleathernew,
                     WeenieClassName.pauldronsleathernew,
@@ -85,10 +76,6 @@ public class ArmorStyleCatalogue
             ArmorWeightClass.Light,
             [
                 [
-                    WeenieClassName.basinetstuddedleather,
-                    WeenieClassName.cowlstuddedleather,
-                    WeenieClassName.gauntletsstuddedleather,
-                    WeenieClassName.bootsreinforcedleather,
                     WeenieClassName.breastplatestuddedleather,
                     WeenieClassName.girthstuddedleather,
                     WeenieClassName.pauldronsstuddedleather,
@@ -108,7 +95,6 @@ public class ArmorStyleCatalogue
             ArmorWeightClass.Light,
             [
                 [
-                    WeenieClassName.kabuton,
                     WeenieClassName.breastplateyoroi,
                     WeenieClassName.girthyoroi,
                     WeenieClassName.pauldronsyoroi,
@@ -132,14 +118,7 @@ public class ArmorStyleCatalogue
             ArmorStyle.Lorica,
             ArmorWeightClass.Light,
             [
-                [
-                    WeenieClassName.helmlorica,
-                    WeenieClassName.gauntletslorica,
-                    WeenieClassName.bootslorica,
-                    WeenieClassName.breastplatelorica,
-                    WeenieClassName.sleeveslorica,
-                    WeenieClassName.leggingslorica,
-                ],
+                [WeenieClassName.breastplatelorica, WeenieClassName.sleeveslorica, WeenieClassName.leggingslorica,],
             ]
         ),
         (
@@ -147,9 +126,6 @@ public class ArmorStyleCatalogue
             ArmorWeightClass.Light,
             [
                 [
-                    WeenieClassName.ace37198_olthoikoujiakabuton,
-                    WeenieClassName.ace37190_olthoikoujiagauntlets,
-                    WeenieClassName.ace37210_olthoikoujiasollerets,
                     WeenieClassName.ace37215_olthoikoujiabreastplate,
                     WeenieClassName.ace37206_olthoikoujiasleeves,
                     WeenieClassName.ace37203_olthoikoujialeggings,
@@ -161,10 +137,6 @@ public class ArmorStyleCatalogue
             ArmorWeightClass.Heavy,
             [
                 [
-                    WeenieClassName.basinetchainmail,
-                    WeenieClassName.mailcoif,
-                    WeenieClassName.capmetal,
-                    WeenieClassName.gauntletschainmail,
                     WeenieClassName.breastplatechainmail,
                     WeenieClassName.girthchainmail,
                     WeenieClassName.pauldronschainmail,
@@ -183,9 +155,6 @@ public class ArmorStyleCatalogue
             ArmorWeightClass.Heavy,
             [
                 [
-                    WeenieClassName.basinetscalemail,
-                    WeenieClassName.coifscale,
-                    WeenieClassName.gauntletsscalemail,
                     WeenieClassName.breastplatescalemail,
                     WeenieClassName.girthscalemail,
                     WeenieClassName.pauldronsscalemail,
@@ -205,11 +174,6 @@ public class ArmorStyleCatalogue
             ArmorWeightClass.Heavy,
             [
                 [
-                    WeenieClassName.heaume,
-                    WeenieClassName.heaumenew,
-                    WeenieClassName.armet,
-                    WeenieClassName.gauntletsplatemail,
-                    WeenieClassName.sollerets,
                     WeenieClassName.breastplateplatemail,
                     WeenieClassName.girthplatemail,
                     WeenieClassName.pauldronsplatemail,
@@ -240,9 +204,6 @@ public class ArmorStyleCatalogue
             ArmorWeightClass.Heavy,
             [
                 [
-                    WeenieClassName.helmcovenant,
-                    WeenieClassName.gauntletscovenant,
-                    WeenieClassName.bootscovenant,
                     WeenieClassName.breastplatecovenant,
                     WeenieClassName.girthcovenant,
                     WeenieClassName.pauldronscovenant,
@@ -257,9 +218,6 @@ public class ArmorStyleCatalogue
             ArmorWeightClass.Heavy,
             [
                 [
-                    WeenieClassName.helmnariyid,
-                    WeenieClassName.gauntletsnariyid,
-                    WeenieClassName.bootsnariyid,
                     WeenieClassName.breastplatenariyid,
                     WeenieClassName.girthnariyid,
                     WeenieClassName.sleevesnariyid,
@@ -272,9 +230,6 @@ public class ArmorStyleCatalogue
             ArmorWeightClass.Heavy,
             [
                 [
-                    WeenieClassName.ace37197_olthoiceldonhelm,
-                    WeenieClassName.ace37189_olthoiceldongauntlets,
-                    WeenieClassName.ace37209_olthoiceldonsollerets,
                     WeenieClassName.ace37214_olthoiceldonbreastplate,
                     WeenieClassName.ace37192_olthoiceldongirth,
                     WeenieClassName.ace37205_olthoiceldonsleeves,
@@ -287,9 +242,6 @@ public class ArmorStyleCatalogue
             ArmorWeightClass.Heavy,
             [
                 [
-                    WeenieClassName.ace37199_olthoihelm,
-                    WeenieClassName.ace37191_olthoigauntlets,
-                    WeenieClassName.ace37211_olthoisollerets,
                     WeenieClassName.ace37216_olthoibreastplate,
                     WeenieClassName.ace37193_olthoigirth,
                     WeenieClassName.ace37204_olthoipauldrons,
@@ -310,26 +262,14 @@ public class ArmorStyleCatalogue
             ArmorStyle.Chiran,
             ArmorWeightClass.Cloth,
             [
-                [
-                    WeenieClassName.helmchiran,
-                    WeenieClassName.gauntletschiran,
-                    WeenieClassName.sandalschiran,
-                    WeenieClassName.coatchiran,
-                    WeenieClassName.leggingschiran,
-                ],
+                [WeenieClassName.coatchiran, WeenieClassName.leggingschiran,],
             ]
         ),
         (
             ArmorStyle.OlthoiAmuli,
             ArmorWeightClass.Cloth,
             [
-                [
-                    WeenieClassName.ace37196_olthoiamulihelm,
-                    WeenieClassName.ace37188_olthoiamuligauntlets,
-                    WeenieClassName.ace37208_olthoiamulisollerets,
-                    WeenieClassName.ace37299_olthoiamulicoat,
-                    WeenieClassName.ace37201_olthoiamulileggings,
-                ],
+                [WeenieClassName.ace37299_olthoiamulicoat, WeenieClassName.ace37201_olthoiamulileggings,],
             ]
         ),
     ];
@@ -375,7 +315,11 @@ public class ArmorStyleCatalogue
                 foreach (var wcid in variants[variant])
                 {
                     var (clothingBase, clothingPriority) = lookup((uint)wcid);
-                    if (clothingBase == null || clothingPriority == null)
+                    if (
+                        clothingBase == null
+                        || clothingPriority == null
+                        || CoversExtremities((CoverageMask)clothingPriority.Value)
+                    )
                     {
                         continue;
                     }
@@ -487,9 +431,6 @@ public class ArmorStyleCatalogue
     private static readonly Dictionary<CoverageMask, string> TargetTypeNames =
         new()
         {
-            { CoverageMask.Head, "helms" },
-            { CoverageMask.Hands, "gauntlets" },
-            { CoverageMask.Feet, "boots" },
             { Chest, "breastplates" },
             { Abdomen, "girths" },
             { UpperArms, "pauldrons" },
@@ -504,8 +445,15 @@ public class ArmorStyleCatalogue
             { UpperLegs | LowerLegs, "leggings" },
             { Abdomen | UpperLegs | LowerLegs, "leggings with girths" },
             { Abdomen | UpperLegs, "shorts" },
-            { CoverageMask.Hands | LowerArms, "long gauntlets" },
         };
+
+    /// <summary>
+    /// True for helms, gauntlets and boots (and anything else covering the head, hands or feet), which can't be restyled.
+    /// </summary>
+    public static bool CoversExtremities(CoverageMask coverage)
+    {
+        return (coverage & (CoverageMask.Head | CoverageMask.Hands | CoverageMask.Feet)) != 0;
+    }
 
     /// <summary>
     /// Names the kind of armor with this coverage and what restyling it costs, e.g. "sleeves (upper arms + lower arms, 2 uses)".

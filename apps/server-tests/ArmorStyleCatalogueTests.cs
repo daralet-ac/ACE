@@ -21,22 +21,15 @@ public class ArmorStyleCatalogueTests
         {
             { 36, (0x1000000C, LowerArms) }, // Leather Bracers
             { 39, (0x10000055, Chest) }, // Leather Breastplate
-            { 45, (0x10000009, CoverageMask.Head) }, // Leather Cap
             { 102, (0x1000002E, Sleeves) }, // Leather Sleeves
-            { 458, (0x1000000A, CoverageMask.Head) }, // Leather Cowl
             { 25638, (0x100004EC, Chest) }, // Leather Vest
             { 25647, (0x100004ED, Pants) }, // Leather Pants
             { 25651, (0x100004E0, Sleeves) }, // Leather Sleeves (newer)
             { 38, (0x1000000F, LowerArms) }, // Studded Leather Bracers
             { 105, (0x1000002F, Sleeves) }, // Studded Leather Sleeves
-            { 554, (0x10000039, CoverageMask.Head) }, // Studded Leather Basinet
-            { 723, (0x1000000A, CoverageMask.Head) }, // Studded Leather Cowl
             { 6003, (0x1000018C, Chest) }, // Koujia Breastplate
             { 6004, (0x10000189, Pants) }, // Koujia Leggings
             { 6005, (0x1000018B, Sleeves) }, // Koujia Sleeves
-            { 37188, (0x10000716, CoverageMask.Hands) }, // Olthoi Amuli Gauntlets
-            { 37190, (0x10000716, CoverageMask.Hands) }, // Olthoi Koujia Gauntlets
-            { 37191, (0x10000716, CoverageMask.Hands) }, // Olthoi Gauntlets
         };
 
     private static ArmorStyleCatalogue Build()
@@ -86,12 +79,36 @@ public class ArmorStyleCatalogueTests
     }
 
     [TestMethod]
-    public void Find_UsesTheFirstPieceListedForACoverage()
+    public void Find_HasNoHelmsGauntletsOrBoots()
     {
         var catalogue = Build();
 
-        Assert.AreEqual(554u, catalogue.Find(catalogue.Get(105), CoverageMask.Head).Wcid);
-        Assert.AreEqual(45u, catalogue.Find(catalogue.Get(102), CoverageMask.Head).Wcid);
+        Assert.IsNull(catalogue.Find(catalogue.Get(102), CoverageMask.Head));
+        Assert.IsNull(catalogue.Find(catalogue.Get(102), CoverageMask.Hands));
+        Assert.IsNull(catalogue.Find(catalogue.Get(102), CoverageMask.Feet));
+    }
+
+    [TestMethod]
+    public void Build_LeavesOutPiecesCoveringHeadHandsOrFeet()
+    {
+        var catalogue = ArmorStyleCatalogue.Build(wcid =>
+            wcid == 102 ? (0x1000002E, (int)(Sleeves | CoverageMask.Hands)) : (null, null)
+        );
+
+        Assert.IsNull(catalogue.Get(102));
+    }
+
+    [TestMethod]
+    public void CoversExtremities_IsTrueForHelmsGauntletsAndBoots()
+    {
+        Assert.IsTrue(ArmorStyleCatalogue.CoversExtremities(CoverageMask.Head));
+        Assert.IsTrue(ArmorStyleCatalogue.CoversExtremities(CoverageMask.Hands));
+        Assert.IsTrue(ArmorStyleCatalogue.CoversExtremities(CoverageMask.Feet));
+        Assert.IsTrue(ArmorStyleCatalogue.CoversExtremities(CoverageMask.Hands | LowerArms)); // long gauntlets
+
+        Assert.IsFalse(ArmorStyleCatalogue.CoversExtremities(LowerArms));
+        Assert.IsFalse(ArmorStyleCatalogue.CoversExtremities(Sleeves));
+        Assert.IsFalse(ArmorStyleCatalogue.CoversExtremities(Pants));
     }
 
     [TestMethod]
@@ -116,8 +133,8 @@ public class ArmorStyleCatalogueTests
     {
         var catalogue = Build();
 
-        Assert.AreEqual(ArmorStyle.StuddedLeather, catalogue.Identify(723, 0x1000000A, ArmorWeightClass.Light).Style);
-        Assert.AreEqual(ArmorStyle.Leather, catalogue.Identify(458, 0x1000000A, ArmorWeightClass.Light).Style);
+        Assert.AreEqual(102u, catalogue.Identify(102, 0x1000002E, ArmorWeightClass.Light).Wcid);
+        Assert.AreEqual(ArmorStyle.Koujia, catalogue.Identify(6005, 0x1000018B, ArmorWeightClass.Light).Style);
     }
 
     [TestMethod]
@@ -127,16 +144,6 @@ public class ArmorStyleCatalogueTests
 
         // Leather Sleeves tailored to look like Studded Leather Sleeves
         Assert.AreEqual(105u, catalogue.Identify(102, 0x1000002F, ArmorWeightClass.Light).Wcid);
-    }
-
-    [TestMethod]
-    public void Identify_TellsSharedLooksApartByWeightClass()
-    {
-        var catalogue = Build();
-
-        Assert.AreEqual(ArmorStyle.OlthoiArmor, catalogue.Identify(1, 0x10000716, ArmorWeightClass.Heavy).Style);
-        Assert.AreEqual(ArmorStyle.OlthoiKoujia, catalogue.Identify(1, 0x10000716, ArmorWeightClass.Light).Style);
-        Assert.AreEqual(ArmorStyle.OlthoiAmuli, catalogue.Identify(1, 0x10000716, ArmorWeightClass.Cloth).Style);
     }
 
     [TestMethod]
@@ -200,18 +207,16 @@ public class ArmorStyleCatalogueTests
     }
 
     [TestMethod]
-    public void SlotCount_AFullSuitIsNineUses()
+    public void SlotCount_AllTheBodyArmorIsSixUses()
     {
         var suit = new[]
         {
-            CoverageMask.Head,
-            CoverageMask.Hands,
-            CoverageMask.Feet,
-            Chest | CoverageMask.OuterwearAbdomen | Sleeves,
-            Pants ^ CoverageMask.OuterwearAbdomen
+            Chest | CoverageMask.OuterwearAbdomen,
+            Sleeves,
+            CoverageMask.OuterwearUpperLegs | CoverageMask.OuterwearLowerLegs
         };
 
-        Assert.AreEqual(9, suit.Sum(ArmorStyleCatalogue.SlotCount));
+        Assert.AreEqual(6, suit.Sum(ArmorStyleCatalogue.SlotCount));
     }
 
     [TestMethod]

@@ -21,6 +21,7 @@ namespace ACE.Server.Entity;
 /// a template from Studded Leather Bracers makes Leather Sleeves look like Studded Leather Sleeves.
 /// Armor with the same coverage as the template's piece takes that piece's exact appearance, as a Tailoring Pattern would.
 /// Coverage the style has no piece for can't take it, so Koujia can't go on bracers.
+/// Helms, gauntlets and boots can't be copied or restyled.
 /// </summary>
 public static class ArmorStyleCopier
 {
@@ -70,6 +71,15 @@ public static class ArmorStyleCopier
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat("Only armor or clothing can be restyled.", ChatMessageType.Craft)
+            );
+            player.SendUseDoneEvent();
+            return;
+        }
+
+        if (ArmorStyleCatalogue.CoversExtremities(target.ClothingPriority.Value))
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat("Helms, gauntlets and boots can't be restyled.", ChatMessageType.Craft)
             );
             player.SendUseDoneEvent();
             return;
