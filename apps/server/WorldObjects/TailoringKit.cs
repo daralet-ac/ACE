@@ -39,6 +39,12 @@ public class TailoringKit : Stackable
 
     public static void UseObjectOnTarget(Player player, WorldObject source, WorldObject target, bool confirmed = false)
     {
+        if (ArmorStyleCopier.IsStyleItem(source.WeenieClassId))
+        {
+            ArmorStyleCopier.UseObjectOnTarget(player, source, target, confirmed);
+            return;
+        }
+
         if (player.IsBusy)
         {
             player.SendUseDoneEvent(WeenieError.YoureTooBusy);

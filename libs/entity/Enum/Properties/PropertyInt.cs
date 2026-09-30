@@ -891,6 +891,12 @@ public enum PropertyInt : ushort
     [ServerOnly]
     WeaponRelicApplyCount = 523,
 
+    /// <summary>
+    /// The wcid of the armor piece an Armor Style Template's style was copied from.
+    /// </summary>
+    [ServerOnly]
+    ArmorStyleTemplateWcid = 524,
+
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
 
