@@ -30,8 +30,8 @@ public enum BankCategory : long
 
     // Pyreals and trade notes, and everything no other category takes (scrolls, quest items, ...). Numbered after the
     // tiers only because they came later; they are ordinary categories.
-    Currency = 1L << 46,
-    Misc = 1L << 47,
+    Currency = 1L << 47,
+    Misc = 1L << 48,
 
     // The kinds below are never an item's own category, only narrower tags inside one, and a pack tagged for a kind
     // beats a pack tagged for its whole category ("swords" before "weapons", "imbue" before "salvage").
@@ -70,16 +70,17 @@ public enum BankCategory : long
     Rings = 1L << 37,
     Bracelets = 1L << 38,
 
-    // Loot tiers 2-8 by wield requirement: the attribute a loot weapon, caster or armor piece asks for
-    // (LootGenerationFactory.GetWieldDifficultyPerTier). Unlike every other tag, a tier narrows a pack instead of
-    // widening it: a pack tagged "swords 250" takes swords of tier 250 only, and one tagged "250" any gear of tier 250.
-    Tier125 = 1L << 39,
-    Tier175 = 1L << 40,
-    Tier200 = 1L << 41,
-    Tier215 = 1L << 42,
-    Tier230 = 1L << 43,
-    Tier250 = 1L << 44,
-    Tier270 = 1L << 45,
+    // The loot tier a piece of gear dropped at, shown to players as t0 to t7 for the server's tiers 1 to 8 (see TierOf).
+    // Unlike every other tag, a tier narrows a pack instead of widening it: a pack tagged "swords t6" takes swords of
+    // tier t6 only, and one tagged "t6" any gear of that tier.
+    Tier0 = 1L << 39,
+    Tier1 = 1L << 40,
+    Tier2 = 1L << 41,
+    Tier3 = 1L << 42,
+    Tier4 = 1L << 43,
+    Tier5 = 1L << 44,
+    Tier6 = 1L << 45,
+    Tier7 = 1L << 46,
 
     Gear = Weapons | Armor | Jewelry | Trinkets,
     SalvageKinds = Blacksmithing | Tailoring | Spellcrafting | Woodworking | Jewelcrafting | Imbue,
@@ -87,10 +88,10 @@ public enum BankCategory : long
     ArmorKinds = HeavyArmor | LightArmor | ClothArmor | Clothing,
     JewelryKinds = Necklaces | Rings | Bracelets,
     Kinds = SalvageKinds | WeaponKinds | ArmorKinds | JewelryKinds,
-    Tiers = Tier125 | Tier175 | Tier200 | Tier215 | Tier230 | Tier250 | Tier270,
+    Tiers = Tier0 | Tier1 | Tier2 | Tier3 | Tier4 | Tier5 | Tier6 | Tier7,
 
-    // What a tier can narrow: the gear that loot gives an attribute wield requirement.
-    Tiered = Weapons | Armor | WeaponKinds | ArmorKinds,
+    // What a tier can narrow: gear, the only items given one.
+    Tiered = Gear | WeaponKinds | ArmorKinds | JewelryKinds,
 }
 
 /// <summary>
@@ -152,13 +153,14 @@ public static class BankCategories
         BankCategory.Necklaces,
         BankCategory.Rings,
         BankCategory.Bracelets,
-        BankCategory.Tier125,
-        BankCategory.Tier175,
-        BankCategory.Tier200,
-        BankCategory.Tier215,
-        BankCategory.Tier230,
-        BankCategory.Tier250,
-        BankCategory.Tier270,
+        BankCategory.Tier0,
+        BankCategory.Tier1,
+        BankCategory.Tier2,
+        BankCategory.Tier3,
+        BankCategory.Tier4,
+        BankCategory.Tier5,
+        BankCategory.Tier6,
+        BankCategory.Tier7,
     ];
 
     public const string KeepTag = "keep";
@@ -278,31 +280,51 @@ public static class BankCategories
         { "rings", BankCategory.Rings },
         { "bracelet", BankCategory.Bracelets },
         { "bracelets", BankCategory.Bracelets },
-        { "125", BankCategory.Tier125 },
-        { "175", BankCategory.Tier175 },
-        { "200", BankCategory.Tier200 },
-        { "215", BankCategory.Tier215 },
-        { "230", BankCategory.Tier230 },
-        { "250", BankCategory.Tier250 },
-        { "270", BankCategory.Tier270 },
-        { "tier125", BankCategory.Tier125 },
-        { "tier175", BankCategory.Tier175 },
-        { "tier200", BankCategory.Tier200 },
-        { "tier215", BankCategory.Tier215 },
-        { "tier230", BankCategory.Tier230 },
-        { "tier250", BankCategory.Tier250 },
-        { "tier270", BankCategory.Tier270 },
+        { "t0", BankCategory.Tier0 },
+        { "tier0", BankCategory.Tier0 },
+        { "t1", BankCategory.Tier1 },
+        { "tier1", BankCategory.Tier1 },
+        { "t2", BankCategory.Tier2 },
+        { "tier2", BankCategory.Tier2 },
+        { "t3", BankCategory.Tier3 },
+        { "tier3", BankCategory.Tier3 },
+        { "t4", BankCategory.Tier4 },
+        { "tier4", BankCategory.Tier4 },
+        { "t5", BankCategory.Tier5 },
+        { "tier5", BankCategory.Tier5 },
+        { "t6", BankCategory.Tier6 },
+        { "tier6", BankCategory.Tier6 },
+        { "t7", BankCategory.Tier7 },
+        { "tier7", BankCategory.Tier7 },
     };
 
-    private static readonly Dictionary<int, BankCategory> TierByWieldDifficulty = new()
+    /// <summary>
+    /// The server's loot tier (1-8) for each attribute wield requirement loot gives weapons, casters and weight-class armor
+    /// (LootGenerationFactory.GetWieldDifficultyPerTier), and for each level requirement it gives jewelry and clothing
+    /// (GetArmorLevelReq), for gear that doesn't carry its Tier.
+    /// </summary>
+    private static readonly Dictionary<int, int> TierByAttributeRequirement = new()
     {
-        { 125, BankCategory.Tier125 },
-        { 175, BankCategory.Tier175 },
-        { 200, BankCategory.Tier200 },
-        { 215, BankCategory.Tier215 },
-        { 230, BankCategory.Tier230 },
-        { 250, BankCategory.Tier250 },
-        { 270, BankCategory.Tier270 },
+        { 50, 1 },
+        { 125, 2 },
+        { 175, 3 },
+        { 200, 4 },
+        { 215, 5 },
+        { 230, 6 },
+        { 250, 7 },
+        { 270, 8 },
+    };
+
+    private static readonly Dictionary<int, int> TierByLevelRequirement = new()
+    {
+        { 1, 1 },
+        { 10, 2 },
+        { 20, 3 },
+        { 30, 4 },
+        { 40, 5 },
+        { 50, 6 },
+        { 75, 7 },
+        { 100, 8 },
     };
 
     /// <summary>
@@ -322,13 +344,16 @@ public static class BankCategories
     /// <summary>
     /// Every category an item answers to: its own (Classify), plus its kinds: what uses a salvage bag
     /// (blacksmithing, imbue, ...), a weapon's type (swords, two-handed, casters, ...), an armor piece's weight class
-    /// and whether it is clothing, a piece of jewelry's slot. Plus its tier, if loot gave it one.
+    /// and whether it is clothing, a piece of jewelry's slot. Plus, for gear, its tier.
     /// Deposit and sort filters, searches and pack tags all go by these.
     /// </summary>
     public static BankCategory Tags(WorldObject item)
     {
         var category = Classify(item);
-        var tier = TierOf(item.WieldRequirements, item.WieldDifficulty, item.WieldRequirements2, item.WieldDifficulty2);
+
+        var tier = (category & BankCategory.Gear) != 0
+            ? TierOf(item.Tier, item.WieldRequirements, item.WieldDifficulty, item.WieldRequirements2, item.WieldDifficulty2)
+            : BankCategory.None;
 
         return tier | category switch
         {
@@ -342,21 +367,30 @@ public static class BankCategories
     }
 
     /// <summary>
-    /// The tier of a piece of loot gear: the attribute wield requirement loot gives each tier, from either of its two
-    /// wield requirements. None for anything else, tier 1 (50) included.
+    /// A piece of gear's tier tag, t0 to t7 for the server's loot tiers 1 to 8. Loot stores the tier on the item (Tier);
+    /// gear without it (from before it was stored) is placed by its wield requirement, attribute or level, from either
+    /// of its two requirements. None if neither says.
     /// </summary>
-    public static BankCategory TierOf(WieldRequirement requirement, int? difficulty, WieldRequirement requirement2, int? difficulty2)
+    public static BankCategory TierOf(int? tier, WieldRequirement requirement, int? difficulty, WieldRequirement requirement2, int? difficulty2)
     {
-        var tier = TierOf(requirement, difficulty);
+        var serverTier = tier ?? TierFromRequirement(requirement, difficulty) ?? TierFromRequirement(requirement2, difficulty2);
 
-        return tier != BankCategory.None ? tier : TierOf(requirement2, difficulty2);
+        return serverTier is >= 1 and <= 8 ? (BankCategory)((long)BankCategory.Tier0 << (serverTier.Value - 1)) : BankCategory.None;
     }
 
-    private static BankCategory TierOf(WieldRequirement requirement, int? difficulty)
+    private static int? TierFromRequirement(WieldRequirement requirement, int? difficulty)
     {
-        return requirement == WieldRequirement.RawAttrib && difficulty is { } value
-            ? TierByWieldDifficulty.GetValueOrDefault(value)
-            : BankCategory.None;
+        if (difficulty is not { } value)
+        {
+            return null;
+        }
+
+        return requirement switch
+        {
+            WieldRequirement.RawAttrib when TierByAttributeRequirement.TryGetValue(value, out var tier) => tier,
+            WieldRequirement.Level when TierByLevelRequirement.TryGetValue(value, out var tier) => tier,
+            _ => null,
+        };
     }
 
     /// <summary>
@@ -930,7 +964,7 @@ public static class BankCategories
             BankCategory.HeavyArmor => "heavy armor",
             BankCategory.LightArmor => "light armor",
             BankCategory.ClothArmor => "cloth armor",
-            _ when (single & BankCategory.Tiers) != 0 => $"tier {single.ToString()[4..]}",
+            _ when (single & BankCategory.Tiers) != 0 => $"t{single.ToString()[4..]}",
             _ => single.ToString().ToLowerInvariant(),
         };
     }
@@ -989,14 +1023,13 @@ public static class BankCategories
             }
         }
 
-        // "two handed" and "two hand" are one word, as "two-handed" is
+        // "two handed" and "two hand" are one word, as "two-handed" is, and so is "tier 3" (t3)
         for (var i = words.Count - 2; i >= 0; i--)
         {
-            if (
-                words[i].OnlySpaceAfter
-                && BankSearch.Normalize(words[i].Text) == "two"
-                && BankSearch.Normalize(words[i + 1].Text) is "hand" or "handed"
-            )
+            var first = BankSearch.Normalize(words[i].Text);
+            var second = BankSearch.Normalize(words[i + 1].Text);
+
+            if (words[i].OnlySpaceAfter && ((first == "two" && second is "hand" or "handed") || (first == "tier" && second.Length == 1 && char.IsDigit(second[0]))))
             {
                 words[i] = ($"{words[i].Text}-{words[i + 1].Text}", words[i + 1].OnlySpaceAfter);
                 words.RemoveAt(i + 1);

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity;
@@ -30,7 +31,7 @@ public class BankCommand
         + "Armor: heavy, light and cloth (by weight class), clothing.\n"
         + "Jewelry: necklaces, rings, bracelets.\n"
         + "Salvage: blacksmithing, tailoring, spellcrafting, woodworking, jewelcrafting, imbue.\n"
-        + "Tiers: 125, 175, 200, 215, 230, 250, 270 (the wield requirement of loot weapons, casters and armor).";
+        + "Tiers: t0 to t7, the loot tier a piece of gear dropped at, lowest to highest.";
 
     // /bank log reads the database too.
     private const int LogDefaultEntries = 20;
@@ -130,7 +131,7 @@ public class BankCommand
                 + TypeList
                 + "\n\n"
                 + "Tag a pack by inscribing it with any number of category and type words, like \"weapons\", \"gems, keys\" or \"heavy armor\", "
-                + "and tiers to take only those: \"swords 250\" is swords of tier 250, \"250\" alone any gear of tier 250. "
+                + "and tiers to take only those: \"swords t6\" is swords of tier t6, \"t6\" alone any gear of tier t6. "
                 + "To inscribe a pack, "
                 + "examine the pack and type in its inscription box, whether you carry it or it is in your open bank. "
                 + "A Salvage Crate, Quiver, Component Pouch or Trophy Pack is filled first with what its name says, then inscribed packs, "
@@ -159,7 +160,7 @@ public class BankCommand
             Send(
                 session,
                 $"Usage: /bank deposit <category, type or tier>, or /bank deposit packs. Categories: {CategoryList}. "
-                    + "Types like swords, heavy or rings and tiers like 250 work too, and together (\"swords 250\"); /bank lists them."
+                    + "Types like swords, heavy or rings and tiers like t6 work too, and together (\"swords t6\"); /bank lists them."
             );
             return;
         }
@@ -197,7 +198,7 @@ public class BankCommand
             Send(
                 session,
                 $"Usage: /bank sort [category, type or tier]. Categories: {CategoryList}. "
-                    + "Types like swords, heavy or rings and tiers like 250 work too; /bank lists them."
+                    + "Types like swords, heavy or rings and tiers like t6 work too; /bank lists them."
             );
             return;
         }
@@ -298,7 +299,7 @@ public class BankCommand
             Send(
                 session,
                 "Usage: /bank withdraw [how many] <name, category, type or tier>. For example: /bank withdraw healing kits, /bank withdraw 200 arrows, "
-                    + "/bank withdraw mace, /bank withdraw swords 250. A number first is how many, so a tier goes after what you name."
+                    + "/bank withdraw mace, /bank withdraw 2 swords t6."
             );
             return;
         }
@@ -695,9 +696,11 @@ public class BankCommand
     /// </summary>
     private static List<(WorldObject Item, Container Container)> FindInBank(Player player, Storage bank, string query)
     {
-        // Tier numbers (and the word "tier") narrow whatever else the query names: "swords 250", "iron jitte 270", or "250" alone.
+        // Tiers narrow whatever else the query names: "swords t6", "iron jitte tier 7", or "t6" alone.
         var tiers = BankCategory.None;
         var rest = new List<string>();
+
+        query = Regex.Replace(query, @"\btier\s+(\d)\b", "t$1", RegexOptions.IgnoreCase);
 
         foreach (var word in query.Split(' ', StringSplitOptions.RemoveEmptyEntries))
         {
@@ -766,7 +769,7 @@ public class BankCommand
 
     /// <summary>
     /// "all" is a null filter; anything else must name categories, types or tiers, as a pack inscription does:
-    /// "weapons", "two handed", "heavy armor", "swords 250".
+    /// "weapons", "two handed", "heavy armor", "swords t6".
     /// </summary>
     private static bool TryParseFilter(string text, out BankCategory? filter)
     {
