@@ -478,6 +478,15 @@ public class ArmorStyleCatalogue
     }
 
     /// <summary>
+    /// How many of the nine armor slots (head, chest, abdomen, upper and lower arms, hands, upper and lower legs, feet)
+    /// a coverage takes up, which is how many uses restyling it costs. At least 1.
+    /// </summary>
+    public static int SlotCount(CoverageMask coverage)
+    {
+        return Math.Max(1, PartNames.Count(p => coverage.HasFlag(p.Part)));
+    }
+
+    /// <summary>
     /// The style's name as players read it, e.g. "Studded Leather".
     /// </summary>
     public static string StyleName(ArmorStyle style)

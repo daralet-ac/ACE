@@ -673,7 +673,8 @@ public static class VendorBaseItems
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
     public static readonly List<(int, bool, int, uint, int, double, int)> TailorItems =
     [
-        (0, false, HeritageAny, 1054004, 0, 0.0, -1) // Upgrade Kit
+        (0, false, HeritageAny, 1054004, 0, 0.0, -1), // Upgrade Kit
+        (0, false, HeritageAny, 1054006, 0, 0.0, -1) // Armor Style Copier
     ];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>

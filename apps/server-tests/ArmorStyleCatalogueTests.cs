@@ -184,6 +184,37 @@ public class ArmorStyleCatalogueTests
     }
 
     [TestMethod]
+    public void SlotCount_CostsOneUsePerArmorSlot()
+    {
+        Assert.AreEqual(1, ArmorStyleCatalogue.SlotCount(CoverageMask.Head));
+        Assert.AreEqual(1, ArmorStyleCatalogue.SlotCount(LowerArms));
+        Assert.AreEqual(2, ArmorStyleCatalogue.SlotCount(Sleeves));
+        Assert.AreEqual(3, ArmorStyleCatalogue.SlotCount(Pants));
+        Assert.AreEqual(
+            4,
+            ArmorStyleCatalogue.SlotCount(
+                Chest | CoverageMask.OuterwearAbdomen | Sleeves // coat
+            )
+        );
+        Assert.AreEqual(2, ArmorStyleCatalogue.SlotCount(CoverageMask.Hands | LowerArms)); // long gauntlets
+    }
+
+    [TestMethod]
+    public void SlotCount_AFullSuitIsNineUses()
+    {
+        var suit = new[]
+        {
+            CoverageMask.Head,
+            CoverageMask.Hands,
+            CoverageMask.Feet,
+            Chest | CoverageMask.OuterwearAbdomen | Sleeves,
+            Pants ^ CoverageMask.OuterwearAbdomen
+        };
+
+        Assert.AreEqual(9, suit.Sum(ArmorStyleCatalogue.SlotCount));
+    }
+
+    [TestMethod]
     public void StyleName_ReadsLikeTheArmorsName()
     {
         Assert.AreEqual("Studded Leather", ArmorStyleCatalogue.StyleName(ArmorStyle.StuddedLeather));

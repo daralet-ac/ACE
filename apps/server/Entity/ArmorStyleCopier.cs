@@ -139,7 +139,7 @@ public static class ArmorStyleCopier
                 template.SetProperty(PropertyInt.ArmorStyleTemplateWcid, (int)piece.Wcid);
                 template.Name = $"{target.Name} Style Template";
                 template.LongDesc =
-                    $"This template carries the {styleName} style of the {target.Name}. It may be applied to any {WeightClassName(weightClass)} armor covering: {coverages}. Armor with the same coverage as the {target.Name} takes on its exact appearance.";
+                    $"This template carries the {styleName} style of the {target.Name}. It may be applied to any {WeightClassName(weightClass)} armor covering: {coverages}. Armor with the same coverage as the {target.Name} takes on its exact appearance. Each use restyles one armor slot, so multi-slot armor takes one use per slot it covers.";
 
                 player.TryConsumeFromInventoryWithNetworking(source, 1);
                 player.Session.Network.EnqueueSend(
@@ -211,12 +211,26 @@ public static class ArmorStyleCopier
 
         var newName = pieceWeenie.GetProperty(PropertyString.Name) ?? target.Name;
 
+        var usesLeft = source.Structure ?? 0;
+        var cost = ArmorStyleCatalogue.SlotCount(coverage);
+        if (usesLeft < cost)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Restyling the {target.Name} needs {Uses(cost)}, but the {source.Name} has only {Uses(usesLeft)} left.",
+                    ChatMessageType.Craft
+                )
+            );
+            player.SendUseDoneEvent();
+            return;
+        }
+
         if (!confirmed)
         {
             if (
                 !player.ConfirmationManager.EnqueueSend(
                     new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                    $"Restyle the {target.Name} as {newName}?"
+                    $"Restyle the {target.Name} as {newName}? This uses {Uses(cost)} of the {source.Name}'s {usesLeft}."
                 )
             )
             {
@@ -250,10 +264,24 @@ public static class ArmorStyleCopier
                 target.Name = newName;
 
                 player.EnqueueBroadcast(new GameMessageUpdateObject(target));
+
+                var remaining = usesLeft - cost;
+                var remainingMsg = remaining > 0 ? $" It has {Uses(remaining)} left." : " It is used up.";
                 player.Session.Network.EnqueueSend(
-                    new GameMessageSystemChat($"You restyle the {oldName} as {newName}.", ChatMessageType.Craft)
+                    new GameMessageSystemChat(
+                        $"You restyle the {oldName} as {newName}.{remainingMsg}",
+                        ChatMessageType.Craft
+                    )
                 );
-                player.TryConsumeFromInventoryWithNetworking(source);
+
+                if (remaining > 0)
+                {
+                    player.UpdateProperty(source, PropertyInt.Structure, remaining);
+                }
+                else
+                {
+                    player.TryConsumeFromInventoryWithNetworking(source);
+                }
             }
         );
     }
@@ -341,6 +369,11 @@ public static class ArmorStyleCopier
         actionChain.EnqueueChain();
 
         player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
+    }
+
+    private static string Uses(int count)
+    {
+        return count == 1 ? "1 use" : $"{count} uses";
     }
 
     private static string WeightClassName(ArmorWeightClass weightClass)
