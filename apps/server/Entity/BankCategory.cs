@@ -28,6 +28,11 @@ public enum BankCategory : long
     Trophies = 1L << 11,
     Animal = 1L << 12,
 
+    // Pyreals and trade notes, and everything no other category takes (scrolls, quest items, ...). Numbered after the
+    // tiers only because they came later; they are ordinary categories.
+    Currency = 1L << 46,
+    Misc = 1L << 47,
+
     // The kinds below are never an item's own category, only narrower tags inside one, and a pack tagged for a kind
     // beats a pack tagged for its whole category ("swords" before "weapons", "imbue" before "salvage").
 
@@ -65,12 +70,27 @@ public enum BankCategory : long
     Rings = 1L << 37,
     Bracelets = 1L << 38,
 
+    // Loot tiers 2-8 by wield requirement: the attribute a loot weapon, caster or armor piece asks for
+    // (LootGenerationFactory.GetWieldDifficultyPerTier). Unlike every other tag, a tier narrows a pack instead of
+    // widening it: a pack tagged "swords 250" takes swords of tier 250 only, and one tagged "250" any gear of tier 250.
+    Tier125 = 1L << 39,
+    Tier175 = 1L << 40,
+    Tier200 = 1L << 41,
+    Tier215 = 1L << 42,
+    Tier230 = 1L << 43,
+    Tier250 = 1L << 44,
+    Tier270 = 1L << 45,
+
     Gear = Weapons | Armor | Jewelry | Trinkets,
     SalvageKinds = Blacksmithing | Tailoring | Spellcrafting | Woodworking | Jewelcrafting | Imbue,
     WeaponKinds = Swords | Maces | Axes | Spears | Daggers | Staffs | Unarmed | TwoHanded | Bows | Crossbows | Atlatls | Thrown | Casters,
     ArmorKinds = HeavyArmor | LightArmor | ClothArmor | Clothing,
     JewelryKinds = Necklaces | Rings | Bracelets,
     Kinds = SalvageKinds | WeaponKinds | ArmorKinds | JewelryKinds,
+    Tiers = Tier125 | Tier175 | Tier200 | Tier215 | Tier230 | Tier250 | Tier270,
+
+    // What a tier can narrow: the gear that loot gives an attribute wield requirement.
+    Tiered = Weapons | Armor | WeaponKinds | ArmorKinds,
 }
 
 /// <summary>
@@ -104,6 +124,8 @@ public static class BankCategories
         BankCategory.Consumables,
         BankCategory.Keys,
         BankCategory.Trophies,
+        BankCategory.Currency,
+        BankCategory.Misc,
         BankCategory.Blacksmithing,
         BankCategory.Tailoring,
         BankCategory.Spellcrafting,
@@ -130,6 +152,13 @@ public static class BankCategories
         BankCategory.Necklaces,
         BankCategory.Rings,
         BankCategory.Bracelets,
+        BankCategory.Tier125,
+        BankCategory.Tier175,
+        BankCategory.Tier200,
+        BankCategory.Tier215,
+        BankCategory.Tier230,
+        BankCategory.Tier250,
+        BankCategory.Tier270,
     ];
 
     public const string KeepTag = "keep";
@@ -180,6 +209,10 @@ public static class BankCategories
         { "trophy", BankCategory.Trophies },
         { "trophies", BankCategory.Trophies },
         { "animal", BankCategory.Animal },
+        { "currency", BankCategory.Currency },
+        { "money", BankCategory.Currency },
+        { "misc", BankCategory.Misc },
+        { "miscellaneous", BankCategory.Misc },
         { "animals", BankCategory.Animal },
         { "blacksmithing", BankCategory.Blacksmithing },
         { "blacksmith", BankCategory.Blacksmithing },
@@ -245,6 +278,31 @@ public static class BankCategories
         { "rings", BankCategory.Rings },
         { "bracelet", BankCategory.Bracelets },
         { "bracelets", BankCategory.Bracelets },
+        { "125", BankCategory.Tier125 },
+        { "175", BankCategory.Tier175 },
+        { "200", BankCategory.Tier200 },
+        { "215", BankCategory.Tier215 },
+        { "230", BankCategory.Tier230 },
+        { "250", BankCategory.Tier250 },
+        { "270", BankCategory.Tier270 },
+        { "tier125", BankCategory.Tier125 },
+        { "tier175", BankCategory.Tier175 },
+        { "tier200", BankCategory.Tier200 },
+        { "tier215", BankCategory.Tier215 },
+        { "tier230", BankCategory.Tier230 },
+        { "tier250", BankCategory.Tier250 },
+        { "tier270", BankCategory.Tier270 },
+    };
+
+    private static readonly Dictionary<int, BankCategory> TierByWieldDifficulty = new()
+    {
+        { 125, BankCategory.Tier125 },
+        { 175, BankCategory.Tier175 },
+        { 200, BankCategory.Tier200 },
+        { 215, BankCategory.Tier215 },
+        { 230, BankCategory.Tier230 },
+        { 250, BankCategory.Tier250 },
+        { 270, BankCategory.Tier270 },
     };
 
     /// <summary>
@@ -264,13 +322,15 @@ public static class BankCategories
     /// <summary>
     /// Every category an item answers to: its own (Classify), plus its kinds: what uses a salvage bag
     /// (blacksmithing, imbue, ...), a weapon's type (swords, two-handed, casters, ...), an armor piece's weight class
-    /// and whether it is clothing, a piece of jewelry's slot. Deposit and sort filters, searches and pack tags all go by these.
+    /// and whether it is clothing, a piece of jewelry's slot. Plus its tier, if loot gave it one.
+    /// Deposit and sort filters, searches and pack tags all go by these.
     /// </summary>
     public static BankCategory Tags(WorldObject item)
     {
         var category = Classify(item);
+        var tier = TierOf(item.WieldRequirements, item.WieldDifficulty, item.WieldRequirements2, item.WieldDifficulty2);
 
-        return category switch
+        return tier | category switch
         {
             BankCategory.Salvage => category | SalvageKindOf(item.MaterialType),
             BankCategory.Weapons => category
@@ -279,6 +339,24 @@ public static class BankCategories
             BankCategory.Jewelry => category | JewelryKindsOf(item.ValidLocations ?? EquipMask.None),
             _ => category,
         };
+    }
+
+    /// <summary>
+    /// The tier of a piece of loot gear: the attribute wield requirement loot gives each tier, from either of its two
+    /// wield requirements. None for anything else, tier 1 (50) included.
+    /// </summary>
+    public static BankCategory TierOf(WieldRequirement requirement, int? difficulty, WieldRequirement requirement2, int? difficulty2)
+    {
+        var tier = TierOf(requirement, difficulty);
+
+        return tier != BankCategory.None ? tier : TierOf(requirement2, difficulty2);
+    }
+
+    private static BankCategory TierOf(WieldRequirement requirement, int? difficulty)
+    {
+        return requirement == WieldRequirement.RawAttrib && difficulty is { } value
+            ? TierByWieldDifficulty.GetValueOrDefault(value)
+            : BankCategory.None;
     }
 
     /// <summary>
@@ -421,7 +499,50 @@ public static class BankCategories
     /// </summary>
     public static bool Matches(WorldObject item, BankCategory? filter)
     {
-        return filter == null || (Tags(item) & filter.Value) != 0;
+        return filter == null || Matches(Tags(item), filter.Value);
+    }
+
+    /// <summary>
+    /// True if an item with these Tags answers to filter: one of the categories and types it names, if it names any,
+    /// and one of the tiers it names, if it names any. So "swords 250" is swords of tier 250, and "250" any gear of tier 250.
+    /// </summary>
+    public static bool Matches(BankCategory itemTags, BankCategory filter)
+    {
+        var categories = filter & ~BankCategory.Tiers;
+        var tiers = filter & BankCategory.Tiers;
+
+        return filter != BankCategory.None
+            && (categories == BankCategory.None || (itemTags & categories) != 0)
+            && (tiers == BankCategory.None || (itemTags & tiers) != 0);
+    }
+
+    /// <summary>
+    /// True if a pack that collects these (NamedPacks.Collects) can take any item filter names: for /bank sort,
+    /// which packs to put in order, and whether to hint that no pack collects what was sorted.
+    /// </summary>
+    public static bool CouldCollect(BankCategory collects, BankCategory filter)
+    {
+        var packTiers = collects & BankCategory.Tiers;
+        var filterTiers = filter & BankCategory.Tiers;
+
+        if (packTiers != BankCategory.None && filterTiers != BankCategory.None && (packTiers & filterTiers) == 0)
+        {
+            return false;
+        }
+
+        var packCategories = collects & ~BankCategory.Tiers;
+        var filterCategories = filter & ~BankCategory.Tiers;
+
+        if (filterCategories != BankCategory.None)
+        {
+            // a pack for a tier alone takes gear of any kind
+            return (packCategories & filterCategories) != 0
+                || (packCategories == BankCategory.None && packTiers != BankCategory.None);
+        }
+
+        return packTiers != BankCategory.None
+            ? (packTiers & filterTiers) != 0
+            : (packCategories & BankCategory.Tiered) != 0;
     }
 
     /// <summary>
@@ -484,7 +605,7 @@ public static class BankCategories
     }
 
     /// <summary>
-    /// The one category an item belongs to, or None for everything else (pyreals, scrolls, quest items, ...).
+    /// The one category an item belongs to, and Misc for anything no other category takes (scrolls, quest items, ...).
     /// Earlier checks win: a trophy is only ever a trophy, animal parts are never food, a trinket is never jewelry,
     /// and arrows (ItemType.MissileWeapon) are ammo, not weapons.
     /// </summary>
@@ -499,6 +620,12 @@ public static class BankCategories
         if (weenieType == WeenieType.Salvage)
         {
             return BankCategory.Salvage;
+        }
+
+        // pyreals and trade notes
+        if (weenieType == WeenieType.Coin || (itemType & (ItemType.Money | ItemType.PromissoryNote)) != 0)
+        {
+            return BankCategory.Currency;
         }
 
         if (isTrophy)
@@ -564,7 +691,7 @@ public static class BankCategories
             return BankCategory.Gems;
         }
 
-        return BankCategory.None;
+        return BankCategory.Misc;
     }
 
     /// <summary>
@@ -659,7 +786,7 @@ public static class BankCategories
             var tag = ReadTag(words[i].Text);
             var nextTag = words[i].OnlySpaceAfter && i + 1 < words.Count ? ReadTag(words[i + 1].Text) : BankCategory.None;
 
-            if (WeightClasses.Contains(tag) && nextTag != BankCategory.None && nextTag != BankCategory.Armor)
+            if (WeightClasses.Contains(tag) && (nextTag & ~BankCategory.Tiers) != BankCategory.None && nextTag != BankCategory.Armor)
             {
                 continue;
             }
@@ -706,13 +833,41 @@ public static class BankCategories
     }
 
     /// <summary>
-    /// How well a pack tagged with packCategories fits an item with these Tags. Higher is better, 0 is no fit.
+    /// The best PackFit there is: a pack tagged only for the item's types and for its tier.
+    /// </summary>
+    public const int MaxPackFit = 9;
+
+    /// <summary>
+    /// How well a pack tagged with packTags fits an item with these Tags. Higher is better, 0 is no fit.
     /// A tag for one of the item's kinds (swords, heavy armor, rings, imbue, ...) beats a tag for its whole category,
     /// and either way a pack tagged for just that beats a pack that also takes other things ("weapons" beats "gear").
-    /// 4: only kinds the item has (a two-handed sword fits "swords" and "two-handed" alike). 3: one of its kinds among
-    /// other tags. 2: exactly its category. 1: its category among others.
+    /// A pack with tiers only takes items of those tiers, and then beats the same pack without a tier.
+    /// By category (doubled, plus 1 for a tier): 4, only kinds the item has (a two-handed sword fits "swords" and
+    /// "two-handed" alike); 3, one of its kinds among other tags; 2, exactly its category; 1, its category among
+    /// others, or no category at all on a pack for its tier ("250").
     /// </summary>
-    public static int PackFit(BankCategory packCategories, BankCategory itemTags)
+    public static int PackFit(BankCategory packTags, BankCategory itemTags)
+    {
+        var packTiers = packTags & BankCategory.Tiers;
+        if (packTiers != BankCategory.None && (itemTags & packTiers) == 0)
+        {
+            return 0;
+        }
+
+        var packCategories = packTags & ~BankCategory.Tiers;
+        var fit = packCategories == BankCategory.None
+            ? packTiers != BankCategory.None ? 1 : 0
+            : CategoryFit(packCategories, itemTags & ~BankCategory.Tiers);
+
+        if (fit == 0)
+        {
+            return 0;
+        }
+
+        return fit * 2 + (packTiers != BankCategory.None ? 1 : 0);
+    }
+
+    private static int CategoryFit(BankCategory packCategories, BankCategory itemTags)
     {
         var kinds = itemTags & BankCategory.Kinds;
         if (kinds != BankCategory.None && (packCategories & kinds) != 0)
@@ -775,6 +930,7 @@ public static class BankCategories
             BankCategory.HeavyArmor => "heavy armor",
             BankCategory.LightArmor => "light armor",
             BankCategory.ClothArmor => "cloth armor",
+            _ when (single & BankCategory.Tiers) != 0 => $"tier {single.ToString()[4..]}",
             _ => single.ToString().ToLowerInvariant(),
         };
     }

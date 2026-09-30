@@ -1611,6 +1611,42 @@ LEFT JOIN biota_properties_int tq
         return count;
     }
 
+    /// <summary>
+    /// Adds an entry to an account's bank log (bank_activity_log), then drops all but the account's newest keepPerAccount.
+    /// Throws if the database can't be reached or the table is missing; the caller decides how loudly to report it.
+    /// </summary>
+    public virtual void AddBankActivity(BankActivity entry, int keepPerAccount)
+    {
+        using var context = new ShardDbContext();
+
+        context.BankActivities.Add(entry);
+        context.SaveChanges();
+
+        // the newest entry past the ones kept goes, and everything older; nothing does while there are fewer
+        context.Database.ExecuteSqlInterpolated(
+            $@"DELETE FROM bank_activity_log
+              WHERE account_id = {entry.AccountId}
+                AND id <= (SELECT id FROM (
+                    SELECT id FROM bank_activity_log WHERE account_id = {entry.AccountId} ORDER BY id DESC LIMIT 1 OFFSET {keepPerAccount}
+                ) AS oldest_dropped)"
+        );
+    }
+
+    /// <summary>
+    /// An account's newest bank log entries, newest first. Throws if they can't be read.
+    /// </summary>
+    public virtual List<BankActivity> GetBankActivity(uint accountId, int count)
+    {
+        using var context = new ShardDbContext();
+
+        return context.BankActivities
+            .AsNoTracking()
+            .Where(e => e.AccountId == accountId)
+            .OrderByDescending(e => e.Id)
+            .Take(count)
+            .ToList();
+    }
+
     public virtual void UpsertAccountWealthSnapshot(
         uint accountId,
         uint? characterId,

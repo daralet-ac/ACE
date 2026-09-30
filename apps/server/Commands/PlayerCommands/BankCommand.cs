@@ -22,14 +22,20 @@ public class BankCommand
     private const int WithdrawConfirmAbove = 20;
 
     private const string CategoryList =
-        "all, gear, weapons, armor, jewelry, trinkets, salvage, ammo, animal, components, consumables, gems, keys, manastones, trophies";
+        "all, gear, weapons, armor, jewelry, trinkets, salvage, ammo, animal, components, consumables, gems, keys, manastones, trophies, currency, misc";
 
     // The kinds inside a category (BankCategory.Kinds): a pack tagged for one beats a pack tagged for the whole category.
     private const string TypeList =
         "Weapons: swords, maces, axes, spears, daggers, staffs, unarmed (ua), two-handed (2h), bows, crossbows, atlatls, thrown, casters.\n"
         + "Armor: heavy, light and cloth (by weight class), clothing.\n"
         + "Jewelry: necklaces, rings, bracelets.\n"
-        + "Salvage: blacksmithing, tailoring, spellcrafting, woodworking, jewelcrafting, imbue.";
+        + "Salvage: blacksmithing, tailoring, spellcrafting, woodworking, jewelcrafting, imbue.\n"
+        + "Tiers: 125, 175, 200, 215, 230, 250, 270 (the wield requirement of loot weapons, casters and armor).";
+
+    // /bank log reads the database too.
+    private const int LogDefaultEntries = 20;
+    private static readonly TimeSpan LogCooldown = TimeSpan.FromSeconds(10);
+    private static readonly ConcurrentDictionary<uint, DateTime> LastLogCheck = new();
 
     // /bank balance reads every offline character's possessions from the database, so it can't be spammed.
     private static readonly TimeSpan BalanceCooldown = TimeSpan.FromSeconds(30);
@@ -40,8 +46,8 @@ public class BankCommand
         AccessLevel.Player,
         CommandHandlerFlag.RequiresWorld,
         0,
-        "Bank tools: deposit, withdraw, sort, search and combine salvage in your bank, check your balance, and see how your packs are tagged. Use /bank for help.",
-        "deposit|withdraw|sort|search|combine|balance|packs ..."
+        "Bank tools: deposit, withdraw, sort, search and combine salvage in your bank, check your balance and bank log, and see how your packs are tagged. Use /bank for help.",
+        "deposit|withdraw|sort|search|combine|balance|packs|autosort|log ..."
     )]
     public static void HandleBank(Session session, params string[] parameters)
     {
@@ -88,6 +94,13 @@ public class BankCommand
             case "info":
                 HandlePacks(session);
                 break;
+            case "autosort":
+                HandleAutoSort(session, rest);
+                break;
+            case "log":
+            case "history":
+                HandleLog(session, rest);
+                break;
             default:
                 ShowHelp(session);
                 break;
@@ -99,21 +112,26 @@ public class BankCommand
         Send(
             session,
             "Bank commands (stand at your open bank):\n"
-                + "  /bank deposit <category or type> - Moves those items from your packs into your bank.\n"
-                + "  /bank withdraw [how many] <name, category or type> - Takes those items out of your bank into your packs, "
+                + "  /bank deposit <category, type or tier> - Moves those items from your packs into your bank.\n"
+                + "  /bank deposit packs - Empties your packs inscribed \"deposit\" into your bank.\n"
+                + "  /bank withdraw [how many] <name, category, type or tier> - Takes those items out of your bank into your packs, "
                 + "filling named and inscribed packs first, then your main pack. With a number, takes that many (\"/bank withdraw 200 arrows\"). "
                 + "Stops at your burden limit, and never fills a pack inscribed \"deposit\".\n"
-                + "  /bank sort [category or type] - Files items into their inscribed packs, combines stacks and puts everything in order.\n"
-                + "  /bank search <name, category or type> - Lists matching items in your bank and where they are. "
+                + "  /bank sort [category, type or tier] - Files items into their inscribed packs, combines stacks and puts everything in order.\n"
+                + "  /bank autosort on|off - Sorts your bank after every deposit and withdrawal.\n"
+                + "  /bank search <name, category, type or tier> - Lists matching items in your bank and where they are. "
                 + "A weapon's own name works too, like longsword or jitte.\n"
                 + "  /bank combine - Combines salvage bags in your bank that have the same material and workmanship.\n"
                 + "  /bank balance - Shows the pyreals and trade notes in your bank and across your account. Works anywhere.\n"
-                + "  /bank packs - Shows your bank space and how each pack is tagged.\n\n"
+                + "  /bank packs - Shows your bank space and how each pack is tagged.\n"
+                + "  /bank log [how many] - Your account's recent bank deposits, withdrawals and salvage combines, by any of your characters. Works anywhere.\n\n"
                 + $"Categories: {CategoryList}.\n\n"
-                + "Types, each part of a category:\n"
+                + "Types, each part of a category, and tiers:\n"
                 + TypeList
                 + "\n\n"
-                + "Tag a pack by inscribing it with category and type words, like \"weapons\", \"gems, keys\" or \"heavy armor\": "
+                + "Tag a pack by inscribing it with any number of category and type words, like \"weapons\", \"gems, keys\" or \"heavy armor\", "
+                + "and tiers to take only those: \"swords 250\" is swords of tier 250, \"250\" alone any gear of tier 250. "
+                + "To inscribe a pack, "
                 + "examine the pack and type in its inscription box, whether you carry it or it is in your open bank. "
                 + "A Salvage Crate, Quiver, Component Pouch or Trophy Pack is filled first with what its name says, then inscribed packs, "
                 + "and a pack tagged for a type beats one tagged for its whole category (\"swords\" before \"weapons\"). "
@@ -121,7 +139,8 @@ public class BankCommand
                 + "Inscribe a pack you carry with \"keep\" and neither /bank deposit nor /sort takes anything out of it. "
                 + "Inscribe one with \"deposit\" and opening your bank offers to deposit everything in it.\n\n"
                 + "Gear is weapons (including casters), armor (including shields and clothing), jewelry and trinkets. "
-                + "Consumables are food, potions and healing kits; keys include lockpicks; gems include jewels; animal is hides, bones and meat. "
+                + "Consumables are food, potions and healing kits; keys include lockpicks; gems include jewels; animal is hides, bones and meat; "
+                + "currency is pyreals and trade notes; misc is everything no other category takes. "
                 + "The salvage types are the salvage each tinkering skill uses, and imbue is the imbue gems."
         );
     }
@@ -130,9 +149,18 @@ public class BankCommand
 
     private static void HandleDeposit(Session session, string[] parameters)
     {
-        if (parameters.Length == 0 || !TryParseFilter(parameters[0], out var filter))
+        var text = string.Join(" ", parameters).Trim();
+        var fromDepositPacks = text.Equals("packs", StringComparison.OrdinalIgnoreCase) || text.Equals("pack", StringComparison.OrdinalIgnoreCase);
+
+        BankCategory? filter = null;
+
+        if (!fromDepositPacks && (text.Length == 0 || !TryParseFilter(text, out filter)))
         {
-            Send(session, $"Usage: /bank deposit <category or type>. Categories: {CategoryList}. Types like swords, heavy or rings work too; /bank lists them.");
+            Send(
+                session,
+                $"Usage: /bank deposit <category, type or tier>, or /bank deposit packs. Categories: {CategoryList}. "
+                    + "Types like swords, heavy or rings and tiers like 250 work too, and together (\"swords 250\"); /bank lists them."
+            );
             return;
         }
 
@@ -143,10 +171,19 @@ public class BankCommand
             return;
         }
 
-        var report = player.DepositToBank(bank, filter);
-        var what = filter == null ? "items" : BankCategories.Describe(filter.Value);
+        if (fromDepositPacks && !player.HasDepositPacks)
+        {
+            Send(session, "You carry no pack inscribed \"deposit\". Inscribe one, and /bank deposit packs empties it into your bank.");
+            return;
+        }
 
-        Send(session, report.DescribeDeposit(what));
+        var report = player.DepositToBank(bank, filter, fromDepositPacks);
+
+        var what = fromDepositPacks ? "items in your \"deposit\" packs"
+            : filter == null ? "items"
+            : BankCategories.Describe(filter.Value);
+
+        SendWithAutoSort(session, bank, report.DescribeDeposit(what), report.Moved + report.StacksCombined > 0);
     }
 
     // --- /bank sort ---
@@ -155,9 +192,13 @@ public class BankCommand
     {
         BankCategory? filter = null;
 
-        if (parameters.Length > 0 && !TryParseFilter(parameters[0], out filter))
+        if (parameters.Length > 0 && !TryParseFilter(string.Join(" ", parameters), out filter))
         {
-            Send(session, $"Usage: /bank sort [category or type]. Categories: {CategoryList}. Types like swords, heavy or rings work too; /bank lists them.");
+            Send(
+                session,
+                $"Usage: /bank sort [category, type or tier]. Categories: {CategoryList}. "
+                    + "Types like swords, heavy or rings and tiers like 250 work too; /bank lists them."
+            );
             return;
         }
 
@@ -170,36 +211,11 @@ public class BankCommand
 
         var report = player.SortBank(bank, filter);
 
-        var lines = new List<string>();
-
-        if (report.Moved > 0)
-        {
-            lines.Add($"Moved {Items(report.Moved)} ({report.DescribeDestinations()}).");
-        }
-
-        if (report.StacksCombined > 0)
-        {
-            lines.Add($"Combined {Plural(report.StacksCombined, "stack")}.");
-        }
-
-        if (report.Reordered > 0)
-        {
-            lines.Add($"Put {Plural(report.Reordered, "container")} in order.");
-        }
-
-        if (report.NoRoom > 0)
-        {
-            lines.Add($"{Items(report.NoRoom)} belong in a pack that is full.");
-        }
-
-        if (report.Failed > 0)
-        {
-            lines.Add($"{Items(report.Failed)} couldn't be moved.");
-        }
+        var lines = report.DescribeSort();
 
         lines.Insert(0, lines.Count == 0 ? "Your bank is already sorted." : "Bank sorted.");
 
-        if (filter != null && !player.GetBankPacks(bank).Any(p => (NamedPacks.Collects(p) & filter.Value) != 0))
+        if (filter != null && !player.GetBankPacks(bank).Any(p => BankCategories.CouldCollect(NamedPacks.Collects(p), filter.Value)))
         {
             var what = BankCategories.Describe(filter.Value);
             lines.Add($"No pack in your bank collects {what}. Inscribe one with \"{what}\" to collect them.");
@@ -281,7 +297,8 @@ public class BankCommand
         {
             Send(
                 session,
-                "Usage: /bank withdraw [how many] <name, category or type>. For example: /bank withdraw healing kits, /bank withdraw 200 arrows, /bank withdraw mace"
+                "Usage: /bank withdraw [how many] <name, category, type or tier>. For example: /bank withdraw healing kits, /bank withdraw 200 arrows, "
+                    + "/bank withdraw mace, /bank withdraw swords 250. A number first is how many, so a tier goes after what you name."
             );
             return;
         }
@@ -391,7 +408,7 @@ public class BankCommand
             lines.Add($"{Items(report.Failed)} couldn't be moved.");
         }
 
-        Send(session, string.Join("\n", lines));
+        SendWithAutoSort(session, bank, string.Join("\n", lines), report.Units > 0);
     }
 
     /// <summary>
@@ -400,6 +417,94 @@ public class BankCommand
     private static bool TryParseCount(string word, out int count)
     {
         return int.TryParse(word.Replace(",", ""), NumberStyles.None, CultureInfo.InvariantCulture, out count);
+    }
+
+    // --- /bank autosort ---
+
+    private static void HandleAutoSort(Session session, string[] parameters)
+    {
+        var player = session.Player;
+        var setting = parameters.Length > 0 ? parameters[0].ToLowerInvariant() : "";
+
+        switch (setting)
+        {
+            case "on":
+                player.BankAutoSort = true;
+                Send(session, "Autosort is on: every /bank deposit and withdrawal is followed by a /bank sort.");
+                break;
+            case "off":
+                player.BankAutoSort = false;
+                Send(session, "Autosort is off.");
+                break;
+            default:
+                Send(session, $"Autosort is {(player.BankAutoSort ? "on" : "off")}. Use /bank autosort on or /bank autosort off.");
+                break;
+        }
+    }
+
+    // --- /bank log ---
+
+    private static void HandleLog(Session session, string[] parameters)
+    {
+        var count = LogDefaultEntries;
+
+        if (parameters.Length > 0 && (!TryParseCount(parameters[0], out count) || count <= 0))
+        {
+            Send(session, $"Usage: /bank log [how many], up to {BankActivityLog.KeepPerAccount}.");
+            return;
+        }
+
+        count = Math.Min(count, BankActivityLog.KeepPerAccount);
+
+        var player = session.Player;
+        var now = DateTime.UtcNow;
+
+        if (LastLogCheck.TryGetValue(player.Guid.Full, out var last) && now - last < LogCooldown)
+        {
+            var wait = (int)Math.Ceiling((LogCooldown - (now - last)).TotalSeconds);
+            Send(session, $"You read your bank log a moment ago. Try again in {Plural(wait, "second")}.");
+            return;
+        }
+
+        LastLogCheck[player.Guid.Full] = now;
+
+        BankActivityLog.Read(
+            player.Account.AccountId,
+            count,
+            entries =>
+                WorldManager.EnqueueAction(
+                    new ActionEventDelegate(() =>
+                    {
+                        // gone while we read
+                        if (session.Player != player)
+                        {
+                            return;
+                        }
+
+                        if (entries == null)
+                        {
+                            Send(session, "Your bank log couldn't be read right now. Try again later.");
+                            return;
+                        }
+
+                        if (entries.Count == 0)
+                        {
+                            Send(session, "Your bank log is empty. Deposits, withdrawals and salvage combines by any character on your account show up here.");
+                            return;
+                        }
+
+                        var readAt = DateTime.UtcNow;
+                        var lines = new List<string> { $"Your account's last {Plural(entries.Count, "bank move")}, newest first:" };
+
+                        foreach (var entry in entries)
+                        {
+                            lines.Add($"  {BankActivityLog.DescribeAge(readAt - entry.CreatedAtUtc)}: {entry.CharacterName} {entry.Action} {entry.Details}");
+                        }
+
+                        Send(session, string.Join("\n", lines));
+                    })
+                )
+        );
     }
 
     // --- /bank combine ---
@@ -590,6 +695,36 @@ public class BankCommand
     /// </summary>
     private static List<(WorldObject Item, Container Container)> FindInBank(Player player, Storage bank, string query)
     {
+        // Tier numbers (and the word "tier") narrow whatever else the query names: "swords 250", "iron jitte 270", or "250" alone.
+        var tiers = BankCategory.None;
+        var rest = new List<string>();
+
+        foreach (var word in query.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (BankCategories.TryParse(word, out var tag) && (tag & ~BankCategory.Tiers) == 0)
+            {
+                tiers |= tag;
+            }
+            else if (!word.Equals("tier", StringComparison.OrdinalIgnoreCase))
+            {
+                rest.Add(word);
+            }
+        }
+
+        var contents = player.GetBankContents(bank);
+
+        if (tiers != BankCategory.None)
+        {
+            contents = contents.Where(c => BankCategories.Matches(BankCategories.Tags(c.Item), tiers)).ToList();
+
+            if (rest.Count == 0)
+            {
+                return contents;
+            }
+
+            query = string.Join(" ", rest);
+        }
+
         var isCategory = BankCategories.TryParse(query, out var category);
         var isWeaponClass = BankSearch.TryParseWeaponClass(query, out var weaponClass);
         var isItemType = BankCategories.TryParseItemType(query, out var itemType);
@@ -600,7 +735,7 @@ public class BankCommand
             || (isItemType && (item.ItemType & itemType) != 0)
             || BankSearch.NameMatches(item.NameWithMaterial, query);
 
-        return player.GetBankContents(bank).Where(c => Matches(c.Item)).ToList();
+        return contents.Where(c => Matches(c.Item)).ToList();
     }
 
     private static Storage GetReadyBank(Session session)
@@ -630,24 +765,42 @@ public class BankCommand
     }
 
     /// <summary>
-    /// "all" is a null filter; anything else must be a category word.
+    /// "all" is a null filter; anything else must name categories, types or tiers, as a pack inscription does:
+    /// "weapons", "two handed", "heavy armor", "swords 250".
     /// </summary>
-    private static bool TryParseFilter(string word, out BankCategory? filter)
+    private static bool TryParseFilter(string text, out BankCategory? filter)
     {
         filter = null;
 
-        if (word.Equals("all", StringComparison.OrdinalIgnoreCase))
+        if (text.Trim().Equals("all", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        if (BankCategories.TryParse(word, out var category))
+        if (BankCategories.TryParse(text, out var category))
         {
             filter = category;
             return true;
         }
 
-        return false;
+        var tags = BankCategories.ParseInscription(text).Categories;
+        if (tags == BankCategory.None)
+        {
+            return false;
+        }
+
+        filter = tags;
+        return true;
+    }
+
+    /// <summary>
+    /// Sends the message for a deposit or withdrawal, followed by what autosort did, if it is on.
+    /// </summary>
+    private static void SendWithAutoSort(Session session, Storage bank, string text, bool anythingMoved)
+    {
+        var autoSort = BankReport.DescribeAutoSort(session.Player.AutoSortBank(bank, anythingMoved));
+
+        Send(session, autoSort == null ? text : $"{text}\n{autoSort}");
     }
 
     private static string Items(int count) => Plural(count, "item");
