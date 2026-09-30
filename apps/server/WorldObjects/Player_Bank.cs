@@ -231,6 +231,14 @@ public partial class Player
     public bool BankCommandsUsed => QuestManager.HasQuest(BankCommandsUsedQuest);
 
     /// <summary>
+    /// Stamped when the bank has shown its introduction popup (Storage.BankIntro), which it does once, the first time
+    /// the bank is opened. As an ACCOUNT_ flag, it is copied to characters made later on the account.
+    /// </summary>
+    public const string BankIntroSeenQuest = "ACCOUNT_BankIntroSeen";
+
+    public bool BankIntroSeen => QuestManager.HasQuest(BankIntroSeenQuest);
+
+    /// <summary>
     /// Stamped while /bank autosort is on for this character: every deposit and withdrawal is followed by a /bank sort.
     /// </summary>
     public const string BankAutoSortQuest = "BankAutoSort";

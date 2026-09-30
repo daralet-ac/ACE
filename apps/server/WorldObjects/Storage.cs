@@ -33,6 +33,28 @@ public class Storage : Container
         + "count your pyreals, and inscribe your packs to say what goes in them.";
 
     /// <summary>
+    /// The popup the bank shows the first time it is opened (and /bank intro): the basics, and "deposit" packs, which
+    /// work from the packs a player carries and which nothing else in game would tell them about.
+    /// </summary>
+    public const string BankIntro =
+        "Welcome to your bank\n\n"
+        + "Everything in it is shared by all the characters on your account. Drag items in and out as with any chest, "
+        + "or type /bank for commands that do the work: deposit, withdraw, sort, search, combine salvage and more. "
+        + "Most of them need your bank open.\n\n"
+        + "Packs in your bank\n"
+        + "Put packs in your bank and inscribe them with what they should hold, like \"weapons\", \"gems, keys\" or \"swords t6\". "
+        + "/bank deposit and /bank sort file items into the right pack. /bank packs numbers your packs, "
+        + "and /bank inscribe and /bank icon change them.\n\n"
+        + "\"Deposit\" packs\n"
+        + "Inscribe a pack you carry with the word \"deposit\" and use it as a drop box while you adventure. "
+        + "Whenever you open your bank, it asks whether to deposit everything in that pack; say yes and it is all banked at once "
+        + "(attuned items stay with you). Withdrawals never fill a deposit pack, "
+        + "and /bank deposit packs empties them any time you are at your bank.\n\n"
+        + "\"Keep\" packs\n"
+        + "Inscribe a pack you carry with \"keep\" and /bank deposit and /sort leave what is in it alone.\n\n"
+        + "Type /bank intro to see this again.";
+
+    /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
     public Storage(Weenie weenie, ObjectGuid guid)
@@ -105,6 +127,13 @@ public class Storage : Container
         if (!player.BankCommandsUsed)
         {
             player.Session.Network.EnqueueSend(new GameEventTell(this, BankCommandsHint, player, ChatMessageType.Tell));
+        }
+
+        // The first time, a popup explains the basics.
+        if (!player.BankIntroSeen)
+        {
+            player.QuestManager.Stamp(Player.BankIntroSeenQuest);
+            player.Session.Network.EnqueueSend(new GameEventPopupString(player.Session, BankIntro));
         }
 
         DatabaseManager.Shard.GetBankInventoryInParallel(

@@ -11,6 +11,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network;
+using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
 
@@ -50,7 +51,7 @@ public class BankCommand
         CommandHandlerFlag.RequiresWorld,
         0,
         "Bank tools: deposit, withdraw, sort, search and combine salvage in your bank, check your balance and bank log, see how your packs are tagged and change their icons. Use /bank for help.",
-        "deposit|withdraw|sort|search|combine|balance|packs|inscribe|icon|autosort|log ..."
+        "deposit|withdraw|sort|search|combine|balance|packs|inscribe|icon|autosort|log|intro ..."
     )]
     public static void HandleBank(Session session, params string[] parameters)
     {
@@ -111,6 +112,9 @@ public class BankCommand
             case "history":
                 HandleLog(session, rest);
                 break;
+            case "intro":
+                session.Network.EnqueueSend(new GameEventPopupString(session, Storage.BankIntro));
+                break;
             default:
                 ShowHelp(session);
                 break;
@@ -138,7 +142,8 @@ public class BankCommand
                 + "or the one you last examined (\"/bank inscribe 2 clear\" clears pack 2).\n"
                 + "  /bank icon [number] <pack, sack, pouch or small pouch> <color> - Changes a pack's icon, for a bank pack by its number in /bank packs "
                 + "or the pack you last examined, carried or banked (\"/bank icon 2 sack blue\", \"/bank icon 2 default\"). /bank icon lists the colors.\n"
-                + "  /bank log [how many] - Your account's recent bank deposits, withdrawals and salvage combines, by any of your characters. Works anywhere.\n\n"
+                + "  /bank log [how many] - Your account's recent bank deposits, withdrawals and salvage combines, by any of your characters. Works anywhere.\n"
+                + "  /bank intro - Shows the bank's introduction again. Works anywhere.\n\n"
                 + $"Categories: {CategoryList}.\n\n"
                 + "Types, each part of a category, and tiers:\n"
                 + TypeList
