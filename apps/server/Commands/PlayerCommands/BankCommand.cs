@@ -136,7 +136,7 @@ public class BankCommand
                 + "  /bank packs - Shows your bank space and how each pack is tagged.\n"
                 + "  /bank inscribe [number] <tags> - Inscribes a pack in your bank: the one with that number in /bank packs, "
                 + "or the one you last examined (\"/bank inscribe 2 clear\" clears pack 2).\n"
-                + "  /bank icon [number] <pack or sack> <color> - Changes a pack's icon, for a bank pack by its number in /bank packs "
+                + "  /bank icon [number] <pack, sack, pouch or small pouch> <color> - Changes a pack's icon, for a bank pack by its number in /bank packs "
                 + "or the pack you last examined, carried or banked (\"/bank icon 2 sack blue\", \"/bank icon 2 default\"). /bank icon lists the colors.\n"
                 + "  /bank log [how many] - Your account's recent bank deposits, withdrawals and salvage combines, by any of your characters. Works anywhere.\n\n"
                 + $"Categories: {CategoryList}.\n\n"
@@ -533,7 +533,7 @@ public class BankCommand
             return;
         }
 
-        var pack = FindPack(session, packNumber, carriedToo: true, "/bank icon <number> <pack or sack> <color>", out var which);
+        var pack = FindPack(session, packNumber, carriedToo: true, "/bank icon <number> <style> <color>", out var which);
         if (pack == null)
         {
             return;
@@ -585,21 +585,22 @@ public class BankCommand
 
     private static string IconUsage()
     {
-        return "Usage: /bank icon <number> <pack or sack> <color>, with the pack's number from /bank packs, "
-            + "or examine one of your packs and use /bank icon <pack or sack> <color>. "
-            + "For example: /bank icon 2 sack blue. Leave out pack/sack or the color to keep the one it has, "
+        return "Usage: /bank icon <number> <style> <color>, with the pack's number from /bank packs, "
+            + "or examine one of your packs and use /bank icon <style> <color>. The styles are pack, sack, pouch and small pouch. "
+            + "For example: /bank icon 2 sack blue. Leave out the style or the color to keep the one it has, "
             + "and use /bank icon <number> default for its own icon back.\n"
-            + $"{DescribeIconColors(PackIconStyle.Pack)}\n{DescribeIconColors(PackIconStyle.Sack)}";
+            + string.Join("\n", Enum.GetValues<PackIconStyle>().Select(DescribeIconColors));
     }
 
     private static string DescribeIconColors(PackIconStyle style)
     {
         var colors = PackIcons.AvailableColors(style);
+        var name = StyleName(style);
 
-        return $"{StyleName(style)} colors: {(colors.Count == 0 ? "none" : string.Join(", ", colors))}.";
+        return $"{char.ToUpperInvariant(name[0])}{name[1..]} colors: {(colors.Count == 0 ? "none" : string.Join(", ", colors))}.";
     }
 
-    private static string StyleName(PackIconStyle style) => style == PackIconStyle.Sack ? "sack" : "pack";
+    private static string StyleName(PackIconStyle style) => PackIcons.NameOf(style);
 
     // --- /bank log ---
 

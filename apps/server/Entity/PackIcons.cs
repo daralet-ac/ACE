@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using ACE.Database;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
@@ -14,7 +15,9 @@ namespace ACE.Server.Entity;
 public enum PackIconStyle
 {
     Pack,
-    Sack
+    Sack,
+    Pouch,
+    SmallPouch
 }
 
 /// <summary>
@@ -24,23 +27,19 @@ public enum PackIconStyle
 public readonly record struct PackIconRequest(PackIconStyle? Style, string Color, bool Default);
 
 /// <summary>
-/// The icons /bank icon gives a pack: a plain Pack's or Sack's icon in a color. Only the icon changes; the pack keeps
-/// its model, name, capacity and everything else.
+/// The icons /bank icon gives a pack: a plain Pack's, Sack's, Belt Pouch's or Small Belt Pouch's icon in a color. Only
+/// the icon changes; the pack keeps its model, name, capacity and everything else.
 ///
-/// A color is one of the palette templates shopkeepers sell the Pack and Sack in, and its icon comes from that style's
-/// clothing table in the portal.dat, as a bought colored pack's does (WorldObject.CalculateObjDesc).
+/// A color is one of the palette templates shopkeepers sell that style in, and its icon comes from the style's
+/// clothing table in the portal.dat, as a bought colored one's does (WorldObject.CalculateObjDesc).
 /// </summary>
 public static class PackIcons
 {
-    // the plain Pack and Sack, whose clothing tables hold the icons
-    public const uint PackWcid = 136;
-    public const uint SackWcid = 166;
-
     public const string DefaultColor = "brown";
 
-    // Each color's palette template: the ones shopkeepers sell the Pack and Sack in (VendorBaseItems.ShopkeeperItems).
+    // Each color's palette template: the ones shopkeepers sell each style in (VendorBaseItems.ShopkeeperItems).
     // A plain Pack and Sack are Gold, which draws their brown leather. There's no orange one.
-    private static readonly (string Name, PaletteTemplate Template)[] Colors =
+    private static readonly (string Name, PaletteTemplate Template)[] BagColors =
     {
         ("brown", PaletteTemplate.Gold),
         ("black", PaletteTemplate.Black),
@@ -54,6 +53,21 @@ public static class PackIcons
         ("purple", PaletteTemplate.Purple)
     };
 
+    // Belt pouches take the dye templates. Shopkeepers sell a "white" pouch in DyeWinterSilver too, the same as the
+    // gray one, so pouches have no white.
+    private static readonly (string Name, PaletteTemplate Template)[] PouchColors =
+    {
+        ("brown", PaletteTemplate.Brown),
+        ("black", PaletteTemplate.DyeSpringBlack),
+        ("gray", PaletteTemplate.DyeWinterSilver),
+        ("blue", PaletteTemplate.DyeSpringBlue),
+        ("teal", PaletteTemplate.DyeWinterBlue),
+        ("green", PaletteTemplate.DyeDarkGreen),
+        ("yellow", PaletteTemplate.DyeDarkYellow),
+        ("red", PaletteTemplate.DyeDarkRed),
+        ("purple", PaletteTemplate.DyeSpringPurple)
+    };
+
     private static readonly Dictionary<string, string> ColorAliases = new(StringComparer.OrdinalIgnoreCase)
     {
         { "grey", "gray" }
@@ -63,7 +77,9 @@ public static class PackIcons
     {
         { "pack", PackIconStyle.Pack },
         { "backpack", PackIconStyle.Pack },
-        { "sack", PackIconStyle.Sack }
+        { "sack", PackIconStyle.Sack },
+        { "pouch", PackIconStyle.Pouch },
+        { "smallpouch", PackIconStyle.SmallPouch }
     };
 
     private static readonly HashSet<string> DefaultWords = new(StringComparer.OrdinalIgnoreCase)
@@ -73,22 +89,48 @@ public static class PackIcons
         "original"
     };
 
-    public static IEnumerable<string> ColorNames => Colors.Select(c => c.Name);
+    /// <summary>
+    /// The weenie whose clothing table holds a style's icons: the plain Pack, Sack, Belt Pouch and Small Belt Pouch.
+    /// </summary>
+    public static uint WcidOf(PackIconStyle style) =>
+        style switch
+        {
+            PackIconStyle.Sack => 166,
+            PackIconStyle.Pouch => 138,
+            PackIconStyle.SmallPouch => 139,
+            _ => 136
+        };
+
+    public static string NameOf(PackIconStyle style) =>
+        style switch
+        {
+            PackIconStyle.Sack => "sack",
+            PackIconStyle.Pouch => "pouch",
+            PackIconStyle.SmallPouch => "small pouch",
+            _ => "pack"
+        };
+
+    private static (string Name, PaletteTemplate Template)[] ColorsOf(PackIconStyle style) =>
+        style is PackIconStyle.Pouch or PackIconStyle.SmallPouch ? PouchColors : BagColors;
 
     /// <summary>
-    /// Reads "sack blue", "blue sack", "blue", "sack" or "default". Every word must be a style, a color or "default",
-    /// with at most one of each, and "default" alone.
+    /// Reads "sack blue", "blue sack", "blue", "sack", "small pouch red" or "default". Every word must be a style, a
+    /// color or "default", with at most one of each, and "default" alone.
     /// </summary>
     public static bool TryParse(IEnumerable<string> words, out PackIconRequest request)
     {
         request = default;
+
+        var text = string.Join(" ", words);
+        text = Regex.Replace(text, @"\bsmall\s+(?:belt\s+)?pouch\b", "smallpouch", RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"\bbelt\s+pouch\b", "pouch", RegexOptions.IgnoreCase);
 
         PackIconStyle? style = null;
         string color = null;
         var isDefault = false;
         var count = 0;
 
-        foreach (var word in words.Select(w => w.Trim(',', '.')).Where(w => w.Length > 0))
+        foreach (var word in text.Split(' ').Select(w => w.Trim(',', '.')).Where(w => w.Length > 0))
         {
             count++;
 
@@ -124,15 +166,16 @@ public static class PackIcons
         color = ColorAliases.TryGetValue(word, out var alias) ? alias : word.ToLowerInvariant();
 
         var name = color;
-        return Colors.Any(c => c.Name == name);
+        return BagColors.Any(c => c.Name == name) || PouchColors.Any(c => c.Name == name);
     }
 
     /// <summary>
-    /// The icon for a color, from a clothing table's icons by palette template, or null if the table doesn't have that color.
+    /// The icon for a style's color, from its clothing table's icons by palette template, or null if the style doesn't
+    /// come in that color.
     /// </summary>
-    public static uint? PickIcon(string color, IReadOnlyDictionary<uint, uint> iconsByTemplate)
+    public static uint? PickIcon(PackIconStyle style, string color, IReadOnlyDictionary<uint, uint> iconsByTemplate)
     {
-        foreach (var (name, template) in Colors)
+        foreach (var (name, template) in ColorsOf(style))
         {
             if (name == color && iconsByTemplate.TryGetValue((uint)template, out var icon) && icon != 0)
             {
@@ -148,14 +191,14 @@ public static class PackIcons
     /// </summary>
     public static uint? IconFor(PackIconStyle style, string color)
     {
-        return PickIcon(color, IconsByTemplate(style));
+        return PickIcon(style, color, IconsByTemplate(style));
     }
 
     public static List<string> AvailableColors(PackIconStyle style)
     {
         var icons = IconsByTemplate(style);
 
-        return Colors.Where(c => PickIcon(c.Name, icons) != null).Select(c => c.Name).ToList();
+        return ColorsOf(style).Where(c => PickIcon(style, c.Name, icons) != null).Select(c => c.Name).ToList();
     }
 
     /// <summary>
@@ -167,9 +210,9 @@ public static class PackIcons
         {
             var icons = IconsByTemplate(style);
 
-            foreach (var (name, _) in Colors)
+            foreach (var (name, _) in ColorsOf(style))
             {
-                if (PickIcon(name, icons) == pack.IconId)
+                if (PickIcon(style, name, icons) == pack.IconId)
                 {
                     return (style, name);
                 }
@@ -207,7 +250,7 @@ public static class PackIcons
 
     private static Dictionary<uint, uint> IconsByTemplate(PackIconStyle style)
     {
-        var weenie = DatabaseManager.World.GetCachedWeenie(style == PackIconStyle.Sack ? SackWcid : PackWcid);
+        var weenie = DatabaseManager.World.GetCachedWeenie(WcidOf(style));
 
         if (weenie?.GetProperty(PropertyDataId.ClothingBase) is not { } clothingBase)
         {
