@@ -1,6 +1,8 @@
 ﻿using System.Linq;
 using ACE.Entity.Enum;
+using ACE.Server.Entity;
 using ACE.Server.Managers;
+using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Logging;
 
 namespace ACE.Server.WorldObjects;
@@ -56,6 +58,12 @@ public partial class Player
             if (item is Container itemAsContainer)
             {
                 itemAsContainer.IsBankSideContainer = true;
+
+                // plain packs and Trophy Packs hold more in the bank; the client learns the new size from the object
+                if (BankPackExpansion.ApplyInBank(itemAsContainer))
+                {
+                    Session.Network.EnqueueSend(new GameMessageUpdateObject(itemAsContainer));
+                }
             }
 
             item.BankAccountId = Account.AccountId;
@@ -134,6 +142,12 @@ public partial class Player
             if (item is Container itemContainer)
             {
                 itemContainer.IsBankSideContainer = false;
+
+                // back to its own size (HandleActionPutItemInContainer_Verify refused it if it held more)
+                if (BankPackExpansion.Revert(itemContainer))
+                {
+                    Session.Network.EnqueueSend(new GameMessageUpdateObject(itemContainer));
+                }
             }
 
             item.BankAccountId = 0;

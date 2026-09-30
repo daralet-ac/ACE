@@ -815,6 +815,7 @@ public static class DefaultPropertyManager
         ("debug_level_scaling_system", new Property<bool>(false, "enable this to see level scaling system console logging")),
         ("debug_stabilization", new Property<bool>(false, "enable this to see stabilization system console logging")),
         ("banking_system_logging", new Property<bool>(true, "enable this to see banking system console logging")),
+        ("bank_pack_expansion", new Property<bool>(true, "plain packs and Trophy Packs hold bank_pack_expansion_capacity items while they are in the bank, and go back to their own size when taken out (which is refused while they hold more than that). Turning this off shrinks them back, as far as their contents allow, the next time the bank is opened")),
         ("bypass_crafting_checks", new Property<bool>(false, "enable this to allow players to succeed at crafting recipes without needing the skill.")),
         ("create_corpse_on_player_death", new Property<bool>(true, "disable this to prevent players from creating a corpse on death.")),
         ("pop_show_current", new Property<bool>(true, "")),
@@ -824,6 +825,7 @@ public static class DefaultPropertyManager
 
 
     public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties = DictOf(
+        ("bank_pack_expansion_capacity", new Property<long>(100, "how many items a plain pack or Trophy Pack holds while it is in the bank, when bank_pack_expansion is on (at most 255; a pack's capacity is one byte)")),
         ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),
         ("chat_requires_account_time_seconds", new Property<long>(0,"the amount of time in seconds an account is required to have existed for for global chat privileges")),
         ("chat_requires_player_age", new Property<long>(0, "the amount of time in seconds a player is required to have played for global chat privileges")),
