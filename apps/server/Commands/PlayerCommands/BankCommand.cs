@@ -18,6 +18,7 @@ namespace ACE.Server.Commands.PlayerCommands;
 public class BankCommand
 {
     private const int MaxSearchResults = 60;
+    private const int MaxInscriptionLength = 100;
 
     // /bank withdraw asks first before taking more than this many items without a count
     private const int WithdrawConfirmAbove = 20;
@@ -48,7 +49,7 @@ public class BankCommand
         CommandHandlerFlag.RequiresWorld,
         0,
         "Bank tools: deposit, withdraw, sort, search and combine salvage in your bank, check your balance and bank log, and see how your packs are tagged. Use /bank for help.",
-        "deposit|withdraw|sort|search|combine|balance|packs|autosort|log ..."
+        "deposit|withdraw|sort|search|combine|balance|packs|inscribe|autosort|log ..."
     )]
     public static void HandleBank(Session session, params string[] parameters)
     {
@@ -95,6 +96,10 @@ public class BankCommand
             case "info":
                 HandlePacks(session);
                 break;
+            case "inscribe":
+            case "tag":
+                HandleInscribe(session, rest);
+                break;
             case "autosort":
                 HandleAutoSort(session, rest);
                 break;
@@ -125,6 +130,7 @@ public class BankCommand
                 + "  /bank combine - Combines salvage bags in your bank that have the same material and workmanship.\n"
                 + "  /bank balance - Shows the pyreals and trade notes in your bank and across your account. Works anywhere.\n"
                 + "  /bank packs - Shows your bank space and how each pack is tagged.\n"
+                + "  /bank inscribe <tags> - Inscribes the pack you last examined, even one in your bank (\"/bank inscribe clear\" to clear it).\n"
                 + "  /bank log [how many] - Your account's recent bank deposits, withdrawals and salvage combines, by any of your characters. Works anywhere.\n\n"
                 + $"Categories: {CategoryList}.\n\n"
                 + "Types, each part of a category, and tiers:\n"
@@ -132,8 +138,8 @@ public class BankCommand
                 + "\n\n"
                 + "Tag a pack by inscribing it with any number of category and type words, like \"weapons\", \"gems, keys\" or \"heavy armor\", "
                 + "and tiers to take only those: \"swords t6\" is swords of tier t6, \"t6\" alone any gear of tier t6. "
-                + "To inscribe a pack, "
-                + "examine the pack and type in its inscription box, whether you carry it or it is in your open bank. "
+                + "To inscribe a pack you carry, examine it and type in its inscription box; "
+                + "for a pack in your bank, examine it and use /bank inscribe. "
                 + "A Salvage Crate, Quiver, Component Pouch or Trophy Pack is filled first with what its name says, then inscribed packs, "
                 + "and a pack tagged for a type beats one tagged for its whole category (\"swords\" before \"weapons\"). "
                 + "That goes for bank deposits, withdrawals and sorts, and for /sort with the packs you carry. "
@@ -441,6 +447,70 @@ public class BankCommand
                 Send(session, $"Autosort is {(player.BankAutoSort ? "on" : "off")}. Use /bank autosort on or /bank autosort off.");
                 break;
         }
+    }
+
+    // --- /bank inscribe ---
+
+    // The client only lets a player type an inscription on something they carry (admins excepted), so a pack in the
+    // bank is inscribed with this. It works on carried packs too.
+    private static void HandleInscribe(Session session, string[] parameters)
+    {
+        var text = string.Join(" ", parameters).Trim();
+
+        if (text.Length == 0)
+        {
+            Send(session, "Usage: examine one of your packs, then /bank inscribe <tags>. For example: /bank inscribe weapons, armor. Use /bank inscribe clear to remove it.");
+            return;
+        }
+
+        if (text.Length > MaxInscriptionLength)
+        {
+            Send(session, $"That inscription is too long ({MaxInscriptionLength} characters at most).");
+            return;
+        }
+
+        var player = session.Player;
+        var targetGuid = player.RequestedAppraisalTarget;
+
+        var pack = targetGuid == null
+            ? null
+            : player.FindObject(targetGuid.Value, Player.SearchLocations.MyInventory, out _, out _, out _)
+                ?? player.FindItemInOpenBank(targetGuid.Value);
+
+        if (pack is not Container { WeenieType: WeenieType.Container })
+        {
+            Send(session, "Examine one of your packs first (in your inventory or your open bank), then use /bank inscribe.");
+            return;
+        }
+
+        var clear = text.Equals("clear", StringComparison.OrdinalIgnoreCase);
+
+        if (!player.TrySetInscription(pack, clear ? null : text))
+        {
+            Send(session, $"{pack.Name} was inscribed by {pack.ScribeName ?? "someone else"}. Only they can change it.");
+            return;
+        }
+
+        // A pack in the bank is saved with the bank, which only happens when the landblock saves; do it now.
+        if (pack.Container is Storage)
+        {
+            pack.SaveBiotaToDatabase();
+        }
+
+        if (clear)
+        {
+            Send(session, $"Cleared the inscription on {pack.Name}.");
+            return;
+        }
+
+        var tags = BankCategories.ParseInscription(text);
+
+        Send(
+            session,
+            tags.IsEmpty
+                ? $"Inscribed {pack.Name}. It has no bank tags; see /bank for the words (categories, types, tiers, keep, deposit)."
+                : $"Inscribed {pack.Name} [{BankCategories.Describe(tags)}]."
+        );
     }
 
     // --- /bank log ---
