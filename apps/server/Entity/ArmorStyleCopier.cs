@@ -21,7 +21,7 @@ namespace ACE.Server.Entity;
 /// a template from Studded Leather Bracers makes Leather Sleeves look like Studded Leather Sleeves.
 /// Armor with the same coverage as the template's piece takes that piece's exact appearance, as a Tailoring Pattern would.
 /// Coverage the style has no piece for can't take it, so Koujia can't go on bracers.
-/// Helms, gauntlets and boots can't be copied or restyled.
+/// Helms, gauntlets and boots have no style: their templates carry their exact look, for one other piece of the same kind.
 /// </summary>
 public static class ArmorStyleCopier
 {
@@ -29,6 +29,8 @@ public static class ArmorStyleCopier
 
     public const uint ArmorStyleCopierWcid = 1054006;
     public const uint ArmorStyleTemplateWcid = 1054007;
+
+    private const string TemplateSuffix = " Style Template";
 
     private static readonly Lazy<ArmorStyleCatalogue> catalogue =
         new(
@@ -76,15 +78,6 @@ public static class ArmorStyleCopier
             return;
         }
 
-        if (ArmorStyleCatalogue.CoversExtremities(target.ClothingPriority.Value))
-        {
-            player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat("Helms, gauntlets and boots can't be restyled.", ChatMessageType.Craft)
-            );
-            player.SendUseDoneEvent();
-            return;
-        }
-
         if (source.WeenieClassId == ArmorStyleCopierWcid)
         {
             CopyStyle(player, source, target, confirmed);
@@ -98,6 +91,13 @@ public static class ArmorStyleCopier
     private static void CopyStyle(Player player, WorldObject source, WorldObject target, bool confirmed)
     {
         var weightClass = (ArmorWeightClass)target.ArmorWeightClass.Value;
+
+        if (ArmorStyleCatalogue.CoversExtremities(target.ClothingPriority.Value))
+        {
+            CopyExtremityLook(player, source, target, confirmed, weightClass);
+            return;
+        }
+
         var piece = catalogue.Value.Identify(target.WeenieClassId, target.ClothingBase, weightClass);
 
         if (piece == null)
@@ -115,7 +115,7 @@ public static class ArmorStyleCopier
         var styleName = ArmorStyleCatalogue.StyleName(piece.Style);
         var coverages = string.Join(
             ", ",
-            catalogue.Value.Coverages(piece.Style).Select(ArmorStyleCatalogue.DescribeTargetType)
+            catalogue.Value.Coverages(piece.Style).Select(c => ArmorStyleCatalogue.DescribeTargetType(c))
         );
 
         if (!confirmed)
@@ -147,7 +147,7 @@ public static class ArmorStyleCopier
 
                 TailoringKit.RipArmorAppearance(player, source, target, template);
                 template.SetProperty(PropertyInt.ArmorStyleTemplateWcid, (int)piece.Wcid);
-                template.Name = $"{target.Name} Style Template";
+                template.Name = target.Name + TemplateSuffix;
                 template.LongDesc =
                     $"This template carries the {styleName} style of the {target.Name}. It has {template.Structure ?? 0} uses, one per armor slot a piece covers.\n\nIt may be applied to {WeightClassName(weightClass)} {coverages}.\n\nOther armor can't take the {styleName} style. Armor with the same coverage as the {target.Name} takes on its exact appearance.";
 
@@ -174,6 +174,74 @@ public static class ArmorStyleCopier
         );
     }
 
+    /// <summary>
+    /// Helms, gauntlets and boots have no style, so their templates carry only their exact look,
+    /// for one other piece of the same kind and weight class.
+    /// </summary>
+    private static void CopyExtremityLook(
+        Player player,
+        WorldObject source,
+        WorldObject target,
+        bool confirmed,
+        ArmorWeightClass weightClass
+    )
+    {
+        var kind = ArmorStyleCatalogue.DescribeTargetType(target.ClothingPriority.Value, withCost: false);
+
+        if (!confirmed)
+        {
+            if (
+                !player.ConfirmationManager.EnqueueSend(
+                    new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
+                    $"Copy the look of the {target.Name}, destroying it in the process? It may be applied to one {WeightClassName(weightClass)} {kind}."
+                )
+            )
+            {
+                player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
+            }
+            else
+            {
+                player.SendUseDoneEvent();
+            }
+
+            return;
+        }
+
+        PerformCraft(
+            player,
+            source,
+            target,
+            () =>
+            {
+                var template = WorldObjectFactory.CreateNewWorldObject(ArmorStyleTemplateWcid);
+
+                TailoringKit.RipArmorAppearance(player, source, target, template);
+                template.MaxStructure = 1;
+                template.Structure = 1;
+                template.Name = target.Name + TemplateSuffix;
+                template.LongDesc =
+                    $"This template carries the look of the {target.Name}. It has 1 use.\n\nIt may be applied to {WeightClassName(weightClass)} {kind}, giving it the exact appearance of the {target.Name}.";
+
+                player.TryConsumeFromInventoryWithNetworking(source, 1);
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"You create a template from the {target.Name}.", ChatMessageType.Craft)
+                );
+                player.TryConsumeFromInventoryWithNetworking(target);
+
+                if (!player.TryCreateInInventoryWithNetworking(template))
+                {
+                    _log.Error(
+                        "[ARMOR STYLE] {Player} couldn't receive {Template} after copying the look of {Target}",
+                        player.Name,
+                        template.Name,
+                        target.Name
+                    );
+                    template.Destroy();
+                }
+            }
+        );
+    }
+
     private static void ApplyStyle(Player player, WorldObject source, WorldObject target, bool confirmed)
     {
         if (target.ArmorWeightClass != source.ArmorWeightClass)
@@ -189,40 +257,80 @@ public static class ArmorStyleCopier
             return;
         }
 
-        var templatePiece = catalogue.Value.Get((uint)(source.GetProperty(PropertyInt.ArmorStyleTemplateWcid) ?? 0));
-        if (templatePiece == null)
-        {
-            player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
-            return;
-        }
-
         var coverage = target.ClothingPriority.Value;
         var sameCoverage = coverage == source.ClothingPriority;
-        var piece = sameCoverage ? templatePiece : catalogue.Value.Find(templatePiece, coverage);
+        Weenie pieceWeenie = null;
+        string newName;
+        int cost;
 
-        if (piece == null)
+        if (ArmorStyleCatalogue.CoversExtremities(source.ClothingPriority ?? 0))
         {
-            player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"The {ArmorStyleCatalogue.StyleName(templatePiece.Style)} style has no armor that covers the {ArmorStyleCatalogue.DescribeCoverage(coverage)}.",
-                    ChatMessageType.Craft
-                )
+            // helm, gauntlet and boot templates carry only their exact look
+            if (!sameCoverage)
+            {
+                var kind = ArmorStyleCatalogue.DescribeTargetType(source.ClothingPriority.Value, withCost: false);
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"The {source.Name} may only be applied to {kind}.",
+                        ChatMessageType.Craft
+                    )
+                );
+                player.SendUseDoneEvent();
+                return;
+            }
+
+            newName = LookName(source);
+            cost = 1;
+        }
+        else
+        {
+            if (ArmorStyleCatalogue.CoversExtremities(coverage))
+            {
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        "Helms, gauntlets and boots can only take the look of a template made from another of their kind.",
+                        ChatMessageType.Craft
+                    )
+                );
+                player.SendUseDoneEvent();
+                return;
+            }
+
+            var templatePiece = catalogue.Value.Get(
+                (uint)(source.GetProperty(PropertyInt.ArmorStyleTemplateWcid) ?? 0)
             );
-            player.SendUseDoneEvent();
-            return;
-        }
+            if (templatePiece == null)
+            {
+                player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+                return;
+            }
 
-        var pieceWeenie = DatabaseManager.World.GetCachedWeenie(piece.Wcid);
-        if (pieceWeenie == null)
-        {
-            player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
-            return;
-        }
+            var piece = sameCoverage ? templatePiece : catalogue.Value.Find(templatePiece, coverage);
 
-        var newName = pieceWeenie.GetProperty(PropertyString.Name) ?? target.Name;
+            if (piece == null)
+            {
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"The {ArmorStyleCatalogue.StyleName(templatePiece.Style)} style has no armor that covers the {ArmorStyleCatalogue.DescribeCoverage(coverage)}.",
+                        ChatMessageType.Craft
+                    )
+                );
+                player.SendUseDoneEvent();
+                return;
+            }
+
+            pieceWeenie = DatabaseManager.World.GetCachedWeenie(piece.Wcid);
+            if (pieceWeenie == null)
+            {
+                player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+                return;
+            }
+
+            newName = pieceWeenie.GetProperty(PropertyString.Name) ?? target.Name;
+            cost = ArmorStyleCatalogue.SlotCount(coverage);
+        }
 
         var usesLeft = source.Structure ?? 0;
-        var cost = ArmorStyleCatalogue.SlotCount(coverage);
         if (usesLeft < cost)
         {
             player.Session.Network.EnqueueSend(
@@ -379,6 +487,14 @@ public static class ArmorStyleCopier
         actionChain.EnqueueChain();
 
         player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
+    }
+
+    /// <summary>
+    /// The name of the armor a template was made from, which restyled armor takes when it gets that exact look.
+    /// </summary>
+    private static string LookName(WorldObject template)
+    {
+        return template.Name.EndsWith(TemplateSuffix) ? template.Name[..^TemplateSuffix.Length] : template.Name;
     }
 
     private static string Uses(int count)

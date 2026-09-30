@@ -28,6 +28,7 @@ public record ArmorStylePiece(
 /// Pieces a set borrows from another style (Yoroi's leather gauntlets, Celdon's platemail gauntlets) are left out.
 /// Where a style has several pieces with the same coverage, the first listed is used.
 /// Helms, gauntlets and boots have no style: their looks don't match the body armor of their sets.
+/// Their templates only copy their exact look onto another of the same kind.
 /// </summary>
 public class ArmorStyleCatalogue
 {
@@ -431,6 +432,10 @@ public class ArmorStyleCatalogue
     private static readonly Dictionary<CoverageMask, string> TargetTypeNames =
         new()
         {
+            { CoverageMask.Head, "helms" },
+            { CoverageMask.Hands, "gauntlets" },
+            { CoverageMask.Feet, "boots" },
+            { CoverageMask.Hands | LowerArms, "long gauntlets" },
             { Chest, "breastplates" },
             { Abdomen, "girths" },
             { UpperArms, "pauldrons" },
@@ -456,16 +461,23 @@ public class ArmorStyleCatalogue
     }
 
     /// <summary>
-    /// Names the kind of armor with this coverage and what restyling it costs, e.g. "sleeves (upper arms + lower arms, 2 uses)".
+    /// Names the kind of armor with this coverage, and unless withCost is false what restyling it costs,
+    /// e.g. "sleeves (upper arms + lower arms, 2 uses)".
     /// </summary>
-    public static string DescribeTargetType(CoverageMask coverage)
+    public static string DescribeTargetType(CoverageMask coverage, bool withCost = true)
     {
         var slots = SlotCount(coverage);
         var uses = slots == 1 ? "1 use" : $"{slots} uses";
 
         if (!TargetTypeNames.TryGetValue(coverage, out var name))
         {
-            return $"armor covering the {DescribeCoverage(coverage)} ({uses})";
+            var armor = $"armor covering the {DescribeCoverage(coverage)}";
+            return withCost ? $"{armor} ({uses})" : armor;
+        }
+
+        if (!withCost)
+        {
+            return name;
         }
 
         return slots == 1 ? $"{name} ({uses})" : $"{name} ({DescribeCoverage(coverage)}, {uses})";

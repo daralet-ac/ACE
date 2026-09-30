@@ -252,6 +252,19 @@ public class ArmorStyleCatalogueTests
     }
 
     [TestMethod]
+    public void DescribeTargetType_NamesHelmsGauntletsAndBootsWithoutCost()
+    {
+        Assert.AreEqual("helms", ArmorStyleCatalogue.DescribeTargetType(CoverageMask.Head, withCost: false));
+        Assert.AreEqual("gauntlets", ArmorStyleCatalogue.DescribeTargetType(CoverageMask.Hands, withCost: false));
+        Assert.AreEqual("boots", ArmorStyleCatalogue.DescribeTargetType(CoverageMask.Feet, withCost: false));
+        Assert.AreEqual(
+            "long gauntlets",
+            ArmorStyleCatalogue.DescribeTargetType(CoverageMask.Hands | LowerArms, withCost: false)
+        );
+        Assert.AreEqual("sleeves", ArmorStyleCatalogue.DescribeTargetType(Sleeves, withCost: false));
+    }
+
+    [TestMethod]
     public void StyleName_ReadsLikeTheArmorsName()
     {
         Assert.AreEqual("Studded Leather", ArmorStyleCatalogue.StyleName(ArmorStyle.StuddedLeather));
