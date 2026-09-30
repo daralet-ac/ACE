@@ -89,6 +89,52 @@ public sealed class BankReport
         return string.Join("\n", lines);
     }
 
+    /// <summary>
+    /// What a sort did, a line each: moves, combined stacks, containers put in order, and what couldn't move.
+    /// Empty if it changed nothing.
+    /// </summary>
+    public List<string> DescribeSort()
+    {
+        var lines = new List<string>();
+
+        if (Moved > 0)
+        {
+            lines.Add($"Moved {Plural(Moved, "item")} ({DescribeDestinations()}).");
+        }
+
+        if (StacksCombined > 0)
+        {
+            lines.Add($"Combined {Plural(StacksCombined, "stack")}.");
+        }
+
+        if (Reordered > 0)
+        {
+            lines.Add($"Put {Plural(Reordered, "container")} in order.");
+        }
+
+        if (NoRoom > 0)
+        {
+            lines.Add($"{Plural(NoRoom, "item")} belong in a pack that is full.");
+        }
+
+        if (Failed > 0)
+        {
+            lines.Add($"{Plural(Failed, "item")} couldn't be moved.");
+        }
+
+        return lines;
+    }
+
+    /// <summary>
+    /// The line after a deposit or withdrawal that autosort followed, or null if the sort changed nothing.
+    /// </summary>
+    public static string DescribeAutoSort(BankReport sort)
+    {
+        var lines = sort?.DescribeSort();
+
+        return lines is { Count: > 0 } ? $"Autosort: {string.Join(" ", lines)}" : null;
+    }
+
     public static string Plural(int count, string noun) => $"{count:N0} {noun}{(count == 1 ? "" : "s")}";
 
     public void CountMove(Container target, Storage bank)
@@ -170,10 +216,11 @@ public partial class Player
         public bool OnlyItsOwn { get; init; }
     }
 
-    // Lower is a better home for an item, see RankBankSpot.
+    // Lower is a better home for an item, see RankBankSpot. Inscribed packs rank from 1 to BankCategories.MaxPackFit - 1.
     private const int RankNamedPack = 0;
-    private const int RankNeutral = 6;
-    private const int RankMisfiled = 7;
+    private const int RankSpecialized = BankCategories.MaxPackFit;
+    private const int RankNeutral = RankSpecialized + 1;
+    private const int RankMisfiled = RankNeutral + 1;
 
     /// <summary>
     /// Stamped once the player has used a /bank command. Until then, opening a bank tells them about /bank.
@@ -182,6 +229,65 @@ public partial class Player
     public const string BankCommandsUsedQuest = "ACCOUNT_BankCommandsUsed";
 
     public bool BankCommandsUsed => QuestManager.HasQuest(BankCommandsUsedQuest);
+
+    /// <summary>
+    /// Stamped while /bank autosort is on for this character: every deposit and withdrawal is followed by a /bank sort.
+    /// </summary>
+    public const string BankAutoSortQuest = "BankAutoSort";
+
+    public bool BankAutoSort
+    {
+        get => QuestManager.HasQuest(BankAutoSortQuest);
+        set
+        {
+            if (value)
+            {
+                QuestManager.Stamp(BankAutoSortQuest);
+            }
+            else
+            {
+                QuestManager.Erase(BankAutoSortQuest);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sorts the whole bank if autosort is on and a deposit or withdrawal just moved something.
+    /// Returns what the sort did, or null if it did not run.
+    /// </summary>
+    public BankReport AutoSortBank(Storage bank, bool anythingMoved)
+    {
+        return BankAutoSort && anythingMoved ? SortBank(bank, null) : null;
+    }
+
+    // Set while a /bank command moves many items, so they go in the bank log as one entry instead of one each.
+    private bool _bankBulkOperation;
+
+    /// <summary>
+    /// Logs an item moved into or out of the bank by hand (a drag, split, merge, or equipping it straight from the bank).
+    /// amount: how many of a stack. sourceRoot and targetRoot: the bank or the player, where it came from and went.
+    /// Moves within the bank or within your packs aren't logged.
+    /// </summary>
+    private void LogBankMove(WorldObject item, int amount, Container sourceRoot, Container targetRoot)
+    {
+        if (_bankBulkOperation)
+        {
+            return;
+        }
+
+        var intoBank = targetRoot is Storage && sourceRoot is not Storage;
+        var outOfBank = sourceRoot is Storage && targetRoot is not Storage;
+
+        if (intoBank || outOfBank)
+        {
+            BankActivityLog.Record(this, intoBank ? BankActivityLog.Deposited : BankActivityLog.Withdrew, BankActivityLog.DescribeItem(item, amount));
+        }
+    }
+
+    /// <summary>
+    /// True if a pack you carry is inscribed "deposit".
+    /// </summary>
+    public bool HasDepositPacks => GetDepositSources(true).Count > 0;
 
     /// <summary>
     /// A safety net for BankPackExpansion: a pack the player carries should be at its own size, since leaving
@@ -274,6 +380,26 @@ public partial class Player
     /// </summary>
     public BankReport DepositToBank(Storage bank, BankCategory? filter, bool fromDepositPacksOnly = false)
     {
+        var deposited = new List<string>();
+        BankReport report;
+
+        _bankBulkOperation = true;
+        try
+        {
+            report = DepositToBank(bank, filter, fromDepositPacksOnly, deposited);
+        }
+        finally
+        {
+            _bankBulkOperation = false;
+        }
+
+        BankActivityLog.Record(this, BankActivityLog.Deposited, BankActivityLog.DescribeItems(deposited));
+
+        return report;
+    }
+
+    private BankReport DepositToBank(Storage bank, BankCategory? filter, bool fromDepositPacksOnly, List<string> deposited)
+    {
         var report = new BankReport();
         var touched = new HashSet<Container>();
 
@@ -285,6 +411,7 @@ public partial class Player
         foreach (var item in GetDepositCandidates(GetDepositSources(fromDepositPacksOnly), filter, report))
         {
             var category = BankCategories.Tags(item);
+            var amountBefore = item.StackSize ?? 1;
 
             var mergedAll = TopUpBankStacks(item, bankStacks, touched, out var mergedAny);
             anythingMoved |= mergedAny;
@@ -292,7 +419,14 @@ public partial class Player
             if (mergedAll)
             {
                 report.StacksCombined++;
+                deposited.Add(BankActivityLog.DescribeItem(item, amountBefore));
                 continue;
+            }
+
+            // what topped up bank stacks went in even if the rest stays out
+            if (mergedAny)
+            {
+                deposited.Add(BankActivityLog.DescribeItem(item, amountBefore - (item.StackSize ?? 1)));
             }
 
             var target = FindBankSpot(spots, item, category, null, out _);
@@ -306,6 +440,15 @@ public partial class Player
             {
                 report.Failed++;
                 continue;
+            }
+
+            if (!mergedAny)
+            {
+                deposited.Add(BankActivityLog.DescribeItem(item, item.StackSize ?? 1));
+            }
+            else
+            {
+                deposited[^1] = BankActivityLog.DescribeItem(item, amountBefore);
             }
 
             target.FreeSlots--;
@@ -363,8 +506,10 @@ public partial class Player
                 }
 
                 var report = DepositToBank(openBank, null, fromDepositPacksOnly: true);
+                var autoSort = BankReport.DescribeAutoSort(AutoSortBank(openBank, report.Moved + report.StacksCombined > 0));
 
-                Session.Network.EnqueueSend(new GameMessageSystemChat(report.DescribeDeposit("items"), ChatMessageType.System));
+                var text = autoSort == null ? report.DescribeDeposit("items") : $"{report.DescribeDeposit("items")}\n{autoSort}";
+                Session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.System));
             }
         );
 
@@ -382,6 +527,31 @@ public partial class Player
     /// Nothing is taken past your burden limit (100%, where you start to slow down); a stack is split to take what you can carry.
     /// </summary>
     public WithdrawReport WithdrawFromBank(Storage bank, List<WorldObject> items, int? limit)
+    {
+        WithdrawReport report;
+
+        _bankBulkOperation = true;
+        try
+        {
+            report = WithdrawItemsFromBank(bank, items, limit);
+        }
+        finally
+        {
+            _bankBulkOperation = false;
+        }
+
+        var withdrawn = new List<string>();
+        foreach (var (_, name, amount) in report.Taken)
+        {
+            withdrawn.Add(BankActivityLog.DescribeItem(name, amount));
+        }
+
+        BankActivityLog.Record(this, BankActivityLog.Withdrew, BankActivityLog.DescribeItems(withdrawn));
+
+        return report;
+    }
+
+    private WithdrawReport WithdrawItemsFromBank(Storage bank, List<WorldObject> items, int? limit)
     {
         var report = new WithdrawReport();
         var bankTouched = new HashSet<Container>();
@@ -676,6 +846,19 @@ public partial class Player
     /// </summary>
     public BankReport SortBank(Storage bank, BankCategory? filter)
     {
+        _bankBulkOperation = true;
+        try
+        {
+            return SortBankContents(bank, filter);
+        }
+        finally
+        {
+            _bankBulkOperation = false;
+        }
+    }
+
+    private BankReport SortBankContents(Storage bank, BankCategory? filter)
+    {
         var report = new BankReport();
         var touched = new HashSet<Container>();
 
@@ -730,7 +913,7 @@ public partial class Player
 
         foreach (var spot in spots)
         {
-            if (filter != null && !spot.IsMain && (NamedPacks.Collects(spot.Container) & filter.Value) == 0)
+            if (filter != null && !spot.IsMain && !BankCategories.CouldCollect(NamedPacks.Collects(spot.Container), filter.Value))
             {
                 continue;
             }
@@ -844,6 +1027,11 @@ public partial class Player
         }
 
         SaveBankContainers(bank, touched);
+
+        if (emptied > 0)
+        {
+            BankActivityLog.Record(this, BankActivityLog.Combined, $"salvage: {BankReport.Plural(emptied, "bag")} poured into others");
+        }
 
         if (emptied > 0 && PropertyManager.GetBool("banking_system_logging").Item)
         {
@@ -974,10 +1162,10 @@ public partial class Player
     /// <summary>
     /// How good a home spot is for item, lower is better, or null if the item must not go there.
     /// 0: a named pack meant for it (Salvage Crate, Quiver, Component Pouch, Trophy Pack), as /sort fills them first.
-    /// 1-4: a pack inscribed for it, 5 - PackFit: its salvage kind exactly (imbue), its salvage kind among others,
-    /// its category exactly (weapons), its category among others (gear).
-    /// 5: an untagged specialized pack that takes it.
-    /// 6 (neutral): the bank itself, or an untagged pack.
+    /// 1-8: a pack inscribed for it, the better its PackFit the lower (its types before its category, its tier before
+    /// no tier, a pack for just that before a pack that also takes other things).
+    /// 9: an untagged specialized pack that takes it.
+    /// 10 (neutral): the bank itself, or an untagged pack.
     /// null: a pack inscribed for other things, or a specialized pack that does not take this type,
     /// or a neutral place that takes only its own (BankSpot.OnlyItsOwn).
     /// For anything else a named pack is ranked by its inscription, or as any untagged pack.
@@ -1010,10 +1198,10 @@ public partial class Player
         if (spot.Tags.Categories != BankCategory.None)
         {
             var fit = BankCategories.PackFit(spot.Tags.Categories, tags);
-            return fit == 0 ? null : 5 - fit;
+            return fit == 0 ? null : RankSpecialized + 1 - fit;
         }
 
-        return (spot.Container.MerchandiseItemTypes ?? 0) != 0 ? 5 : RankNeutral;
+        return (spot.Container.MerchandiseItemTypes ?? 0) != 0 ? RankSpecialized : RankNeutral;
     }
 
     /// <summary>

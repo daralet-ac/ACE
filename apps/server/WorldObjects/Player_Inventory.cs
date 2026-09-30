@@ -5022,6 +5022,7 @@ partial class Player
         CheckForBankSplitAndMerge(
             sourceStack,
             targetStack,
+            amount,
             sourceContainer,
             targetContainer,
             sourceStackRootOwner,

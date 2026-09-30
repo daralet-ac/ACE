@@ -64,14 +64,14 @@ public class BankCategoryTests
     }
 
     [TestMethod]
-    public void Classify_LeavesMoneyAndMiscUncategorized()
+    public void Classify_PutsMoneyInCurrencyAndTheRestInMisc()
     {
-        Assert.AreEqual(BankCategory.None, BankCategories.Classify(WeenieType.Coin, ItemType.Money, EquipMask.None));
-        Assert.AreEqual(BankCategory.None, BankCategories.Classify(WeenieType.Stackable, ItemType.PromissoryNote, EquipMask.None));
-        Assert.AreEqual(BankCategory.None, BankCategories.Classify(WeenieType.Scroll, ItemType.Writable, EquipMask.None));
+        Assert.AreEqual(BankCategory.Currency, BankCategories.Classify(WeenieType.Coin, ItemType.Money, EquipMask.None));
+        Assert.AreEqual(BankCategory.Currency, BankCategories.Classify(WeenieType.Stackable, ItemType.PromissoryNote, EquipMask.None));
+        Assert.AreEqual(BankCategory.Misc, BankCategories.Classify(WeenieType.Scroll, ItemType.Writable, EquipMask.None));
 
         // An item that can go anywhere is not a trinket just because TrinketOne is one of its slots.
-        Assert.AreEqual(BankCategory.None, BankCategories.Classify(WeenieType.Generic, ItemType.Misc, EquipMask.All));
+        Assert.AreEqual(BankCategory.Misc, BankCategories.Classify(WeenieType.Generic, ItemType.Misc, EquipMask.All));
     }
 
     [TestMethod]
@@ -224,10 +224,10 @@ public class BankCategoryTests
     {
         var redGarnetBag = BankCategory.Salvage | BankCategory.Imbue;
 
-        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.Imbue, redGarnetBag));
-        Assert.AreEqual(3, BankCategories.PackFit(BankCategory.Imbue | BankCategory.Keys, redGarnetBag));
-        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Salvage, redGarnetBag));
-        Assert.AreEqual(1, BankCategories.PackFit(BankCategory.Salvage | BankCategory.Keys, redGarnetBag));
+        Assert.AreEqual(8, BankCategories.PackFit(BankCategory.Imbue, redGarnetBag));
+        Assert.AreEqual(6, BankCategories.PackFit(BankCategory.Imbue | BankCategory.Keys, redGarnetBag));
+        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.Salvage, redGarnetBag));
+        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Salvage | BankCategory.Keys, redGarnetBag));
 
         // a pack tagged for another kind of salvage doesn't take it
         Assert.AreEqual(0, BankCategories.PackFit(BankCategory.Blacksmithing, redGarnetBag));
@@ -269,9 +269,9 @@ public class BankCategoryTests
     [TestMethod]
     public void PackFit_PrefersTheExactPackOverAWiderOne()
     {
-        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Weapons, BankCategory.Weapons));
-        Assert.AreEqual(1, BankCategories.PackFit(BankCategory.Gear, BankCategory.Weapons));
-        Assert.AreEqual(1, BankCategories.PackFit(BankCategory.Weapons | BankCategory.Salvage, BankCategory.Salvage));
+        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.Weapons, BankCategory.Weapons));
+        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Gear, BankCategory.Weapons));
+        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Weapons | BankCategory.Salvage, BankCategory.Salvage));
         Assert.AreEqual(0, BankCategories.PackFit(BankCategory.Armor, BankCategory.Weapons));
         Assert.AreEqual(0, BankCategories.PackFit(BankCategory.None, BankCategory.Weapons));
 
@@ -387,18 +387,109 @@ public class BankCategoryTests
     {
         var twoHandedSword = BankCategory.Weapons | BankCategory.Swords | BankCategory.TwoHanded;
 
-        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.Swords, twoHandedSword));
-        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.TwoHanded, twoHandedSword));
-        Assert.AreEqual(3, BankCategories.PackFit(BankCategory.Swords | BankCategory.Maces, twoHandedSword));
-        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Weapons, twoHandedSword));
-        Assert.AreEqual(1, BankCategories.PackFit(BankCategory.Gear, twoHandedSword));
+        Assert.AreEqual(8, BankCategories.PackFit(BankCategory.Swords, twoHandedSword));
+        Assert.AreEqual(8, BankCategories.PackFit(BankCategory.TwoHanded, twoHandedSword));
+        Assert.AreEqual(6, BankCategories.PackFit(BankCategory.Swords | BankCategory.Maces, twoHandedSword));
+        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.Weapons, twoHandedSword));
+        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Gear, twoHandedSword));
         Assert.AreEqual(0, BankCategories.PackFit(BankCategory.Maces, twoHandedSword));
 
         var plate = BankCategory.Armor | BankCategory.HeavyArmor;
 
-        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.HeavyArmor, plate));
-        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Armor, plate));
+        Assert.AreEqual(8, BankCategories.PackFit(BankCategory.HeavyArmor, plate));
+        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.Armor, plate));
         Assert.AreEqual(0, BankCategories.PackFit(BankCategory.LightArmor, plate));
+    }
+
+    [TestMethod]
+    public void Tiers_AreTheLootTierShownFromT0()
+    {
+        // the tier loot stores on the item: server tier 1 is t0, 8 is t7
+        Assert.AreEqual(BankCategory.Tier0, BankCategories.TierOf(1, WieldRequirement.Invalid, null, WieldRequirement.Invalid, null));
+        Assert.AreEqual(BankCategory.Tier6, BankCategories.TierOf(7, WieldRequirement.Invalid, null, WieldRequirement.Invalid, null));
+        Assert.AreEqual(BankCategory.Tier7, BankCategories.TierOf(8, WieldRequirement.Level, 10, WieldRequirement.Invalid, null));
+
+        // without it, the attribute or level wield requirement loot gives each tier, from either requirement
+        Assert.AreEqual(BankCategory.Tier6, BankCategories.TierOf(null, WieldRequirement.RawAttrib, 250, WieldRequirement.Invalid, null));
+        Assert.AreEqual(BankCategory.Tier0, BankCategories.TierOf(null, WieldRequirement.RawAttrib, 50, WieldRequirement.Invalid, null));
+        Assert.AreEqual(BankCategory.Tier3, BankCategories.TierOf(null, WieldRequirement.Level, 30, WieldRequirement.Invalid, null));
+        Assert.AreEqual(BankCategory.Tier7, BankCategories.TierOf(null, WieldRequirement.RawSkill, 300, WieldRequirement.Level, 100));
+
+        // anything else is no tier
+        Assert.AreEqual(BankCategory.None, BankCategories.TierOf(null, WieldRequirement.RawAttrib, 260, WieldRequirement.Invalid, null));
+        Assert.AreEqual(BankCategory.None, BankCategories.TierOf(null, WieldRequirement.RawSkill, 250, WieldRequirement.Invalid, null));
+        Assert.AreEqual(BankCategory.None, BankCategories.TierOf(9, WieldRequirement.Invalid, null, WieldRequirement.Invalid, null));
+        Assert.AreEqual(BankCategory.None, BankCategories.TierOf(null, WieldRequirement.Invalid, null, WieldRequirement.Invalid, null));
+    }
+
+    [TestMethod]
+    public void ParseInscription_ReadsTiersAlongsideCategories()
+    {
+        Assert.AreEqual(BankCategory.Tier6, BankCategories.ParseInscription("t6").Categories);
+        Assert.AreEqual(BankCategory.Swords | BankCategory.Tier6 | BankCategory.Tier7, BankCategories.ParseInscription("swords t6, t7").Categories);
+        Assert.AreEqual(BankCategory.Tier5, BankCategories.ParseInscription("Tier 5").Categories);
+        Assert.AreEqual(BankCategory.Tier3, BankCategories.ParseInscription("tier3").Categories);
+
+        // a weight class before a tier is still armor
+        Assert.AreEqual(BankCategory.HeavyArmor | BankCategory.Tier6, BankCategories.ParseInscription("heavy t6").Categories);
+
+        // the old wield requirement numbers are no longer tags
+        Assert.IsTrue(BankCategories.ParseInscription("250").IsEmpty);
+
+        Assert.IsTrue(BankCategories.TryParse("t7", out var tier));
+        Assert.AreEqual(BankCategory.Tier7, tier);
+        Assert.IsTrue(BankCategories.TryParse("tier 0", out var tierZero));
+        Assert.AreEqual(BankCategory.Tier0, tierZero);
+        Assert.AreEqual("t7", BankCategories.Describe(BankCategory.Tier7));
+    }
+
+    [TestMethod]
+    public void PackFit_TiersNarrowAPackAndBeatTheSamePackWithout()
+    {
+        var swordT6 = BankCategory.Weapons | BankCategory.Swords | BankCategory.Tier6;
+        var swordT7 = BankCategory.Weapons | BankCategory.Swords | BankCategory.Tier7;
+
+        Assert.AreEqual(9, BankCategories.PackFit(BankCategory.Swords | BankCategory.Tier6, swordT6));
+        Assert.AreEqual(0, BankCategories.PackFit(BankCategory.Swords | BankCategory.Tier6, swordT7));
+        Assert.AreEqual(8, BankCategories.PackFit(BankCategory.Swords, swordT6));
+        Assert.AreEqual(5, BankCategories.PackFit(BankCategory.Weapons | BankCategory.Tier6, swordT6));
+        Assert.AreEqual(3, BankCategories.PackFit(BankCategory.Tier6, swordT6));
+        Assert.AreEqual(0, BankCategories.PackFit(BankCategory.Tier6, BankCategory.Gems));
+        Assert.AreEqual(BankCategories.MaxPackFit, BankCategories.PackFit(BankCategory.Swords | BankCategory.Tier6, swordT6));
+    }
+
+    [TestMethod]
+    public void Matches_NeedsACategoryAndATierWhenTheFilterNamesBoth()
+    {
+        var swordT6 = BankCategory.Weapons | BankCategory.Swords | BankCategory.Tier6;
+
+        Assert.IsTrue(BankCategories.Matches(swordT6, BankCategory.Swords | BankCategory.Tier6));
+        Assert.IsTrue(BankCategories.Matches(swordT6, BankCategory.Tier6 | BankCategory.Tier7));
+        Assert.IsTrue(BankCategories.Matches(swordT6, BankCategory.Swords | BankCategory.Maces));
+        Assert.IsFalse(BankCategories.Matches(swordT6, BankCategory.Swords | BankCategory.Tier7));
+        Assert.IsFalse(BankCategories.Matches(swordT6, BankCategory.Maces | BankCategory.Tier6));
+        Assert.IsFalse(BankCategories.Matches(swordT6, BankCategory.None));
+    }
+
+    [TestMethod]
+    public void CouldCollect_KnowsWhichPacksATieredSortTouches()
+    {
+        // a "weapons" pack takes weapons of any tier, a "250" pack gear of tier 250, a "gems" pack no tiered gear
+        Assert.IsTrue(BankCategories.CouldCollect(BankCategory.Weapons, BankCategory.Tier6));
+        Assert.IsTrue(BankCategories.CouldCollect(BankCategory.Tier6, BankCategory.Swords));
+        Assert.IsTrue(BankCategories.CouldCollect(BankCategory.Swords | BankCategory.Tier6, BankCategory.Swords | BankCategory.Tier6));
+        Assert.IsFalse(BankCategories.CouldCollect(BankCategory.Gems, BankCategory.Tier6));
+        Assert.IsFalse(BankCategories.CouldCollect(BankCategory.Tier7, BankCategory.Tier6));
+        Assert.IsFalse(BankCategories.CouldCollect(BankCategory.Maces, BankCategory.Swords));
+    }
+
+    [TestMethod]
+    public void CurrencyAndMisc_AreWordsAndPackTags()
+    {
+        Assert.IsTrue(BankCategories.TryParse("money", out var currency));
+        Assert.AreEqual(BankCategory.Currency, currency);
+        Assert.AreEqual(BankCategory.Misc | BankCategory.Currency, BankCategories.ParseInscription("misc, currency").Categories);
+        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.Misc, BankCategory.Misc));
     }
 
     [TestMethod]
