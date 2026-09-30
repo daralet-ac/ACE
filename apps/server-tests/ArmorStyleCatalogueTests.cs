@@ -215,6 +215,38 @@ public class ArmorStyleCatalogueTests
     }
 
     [TestMethod]
+    public void DescribeTargetType_NamesTheArmorAndItsCost()
+    {
+        Assert.AreEqual("bracers (1 use)", ArmorStyleCatalogue.DescribeTargetType(LowerArms));
+        Assert.AreEqual("sleeves (upper arms + lower arms, 2 uses)", ArmorStyleCatalogue.DescribeTargetType(Sleeves));
+        Assert.AreEqual(
+            "leggings with girths (abdomen + upper legs + lower legs, 3 uses)",
+            ArmorStyleCatalogue.DescribeTargetType(Pants)
+        );
+        Assert.AreEqual(
+            "armor covering the chest + lower legs (2 uses)",
+            ArmorStyleCatalogue.DescribeTargetType(Chest | CoverageMask.OuterwearLowerLegs)
+        );
+    }
+
+    [TestMethod]
+    public void DescribeTargetType_NamesEveryCoverageTheStylesUse()
+    {
+        var catalogue = Build();
+
+        foreach (var style in new[] { ArmorStyle.Leather, ArmorStyle.StuddedLeather, ArmorStyle.Koujia })
+        {
+            foreach (var coverage in catalogue.Coverages(style))
+            {
+                StringAssert.DoesNotMatch(
+                    ArmorStyleCatalogue.DescribeTargetType(coverage),
+                    new System.Text.RegularExpressions.Regex("^armor covering")
+                );
+            }
+        }
+    }
+
+    [TestMethod]
     public void StyleName_ReadsLikeTheArmorsName()
     {
         Assert.AreEqual("Studded Leather", ArmorStyleCatalogue.StyleName(ArmorStyle.StuddedLeather));

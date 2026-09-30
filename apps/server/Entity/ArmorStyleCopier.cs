@@ -105,7 +105,7 @@ public static class ArmorStyleCopier
         var styleName = ArmorStyleCatalogue.StyleName(piece.Style);
         var coverages = string.Join(
             ", ",
-            catalogue.Value.Coverages(piece.Style).Select(ArmorStyleCatalogue.DescribeCoverage)
+            catalogue.Value.Coverages(piece.Style).Select(ArmorStyleCatalogue.DescribeTargetType)
         );
 
         if (!confirmed)
@@ -113,7 +113,7 @@ public static class ArmorStyleCopier
             if (
                 !player.ConfirmationManager.EnqueueSend(
                     new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                    $"Copy the {styleName} style of the {target.Name}, destroying it in the process? It may be applied to {WeightClassName(weightClass)} armor covering: {coverages}."
+                    $"Copy the {styleName} style of the {target.Name}, destroying it in the process? It may be applied to {WeightClassName(weightClass)} {coverages}."
                 )
             )
             {
@@ -139,7 +139,7 @@ public static class ArmorStyleCopier
                 template.SetProperty(PropertyInt.ArmorStyleTemplateWcid, (int)piece.Wcid);
                 template.Name = $"{target.Name} Style Template";
                 template.LongDesc =
-                    $"This template carries the {styleName} style of the {target.Name}. It may be applied to any {WeightClassName(weightClass)} armor covering: {coverages}. Armor with the same coverage as the {target.Name} takes on its exact appearance. Each use restyles one armor slot, so multi-slot armor takes one use per slot it covers.";
+                    $"This template carries the {styleName} style of the {target.Name}. It has {template.Structure ?? 0} uses, one per armor slot a piece covers.\n\nIt may be applied to {WeightClassName(weightClass)} {coverages}.\n\nOther armor can't take the {styleName} style. Armor with the same coverage as the {target.Name} takes on its exact appearance.";
 
                 player.TryConsumeFromInventoryWithNetworking(source, 1);
                 player.Session.Network.EnqueueSend(

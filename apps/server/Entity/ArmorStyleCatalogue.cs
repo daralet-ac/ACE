@@ -477,6 +477,52 @@ public class ArmorStyleCatalogue
         return string.Join(" + ", PartNames.Where(p => coverage.HasFlag(p.Part)).Select(p => p.Name));
     }
 
+    private const CoverageMask Chest = CoverageMask.OuterwearChest;
+    private const CoverageMask Abdomen = CoverageMask.OuterwearAbdomen;
+    private const CoverageMask UpperArms = CoverageMask.OuterwearUpperArms;
+    private const CoverageMask LowerArms = CoverageMask.OuterwearLowerArms;
+    private const CoverageMask UpperLegs = CoverageMask.OuterwearUpperLegs;
+    private const CoverageMask LowerLegs = CoverageMask.OuterwearLowerLegs;
+
+    private static readonly Dictionary<CoverageMask, string> TargetTypeNames =
+        new()
+        {
+            { CoverageMask.Head, "helms" },
+            { CoverageMask.Hands, "gauntlets" },
+            { CoverageMask.Feet, "boots" },
+            { Chest, "breastplates" },
+            { Abdomen, "girths" },
+            { UpperArms, "pauldrons" },
+            { LowerArms, "bracers" },
+            { UpperLegs, "tassets" },
+            { LowerLegs, "greaves" },
+            { Chest | Abdomen, "cuirasses" },
+            { Chest | Abdomen | UpperArms, "shirts" },
+            { Chest | Abdomen | UpperArms | LowerArms, "coats and hauberks" },
+            { Chest | UpperArms | LowerArms, "coats without girths" },
+            { UpperArms | LowerArms, "sleeves" },
+            { UpperLegs | LowerLegs, "leggings" },
+            { Abdomen | UpperLegs | LowerLegs, "leggings with girths" },
+            { Abdomen | UpperLegs, "shorts" },
+            { CoverageMask.Hands | LowerArms, "long gauntlets" },
+        };
+
+    /// <summary>
+    /// Names the kind of armor with this coverage and what restyling it costs, e.g. "sleeves (upper arms + lower arms, 2 uses)".
+    /// </summary>
+    public static string DescribeTargetType(CoverageMask coverage)
+    {
+        var slots = SlotCount(coverage);
+        var uses = slots == 1 ? "1 use" : $"{slots} uses";
+
+        if (!TargetTypeNames.TryGetValue(coverage, out var name))
+        {
+            return $"armor covering the {DescribeCoverage(coverage)} ({uses})";
+        }
+
+        return slots == 1 ? $"{name} ({uses})" : $"{name} ({DescribeCoverage(coverage)}, {uses})";
+    }
+
     /// <summary>
     /// How many of the nine armor slots (head, chest, abdomen, upper and lower arms, hands, upper and lower legs, feet)
     /// a coverage takes up, which is how many uses restyling it costs. At least 1.
