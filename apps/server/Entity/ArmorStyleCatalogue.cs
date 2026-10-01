@@ -20,7 +20,7 @@ public record ArmorStylePiece(
 );
 
 /// <summary>
-/// The armor styles the Armor Style Copier knows. A style is the look of an armor set (Leather, Studded Leather, Koujia...)
+/// The armor styles the Armor Style Kit knows. A style is the look of an armor set (Leather, Studded Leather, Koujia...)
 /// apart from the slots a piece covers, so a template taken from any piece of a style can restyle armor of any coverage
 /// that some piece of that style has. Koujia has no bracers, so Koujia can't go on bracers.
 ///

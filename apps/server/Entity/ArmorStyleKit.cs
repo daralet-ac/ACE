@@ -16,18 +16,18 @@ using Serilog;
 namespace ACE.Server.Entity;
 
 /// <summary>
-/// The Armor Style Copier turns a piece of loot armor into an Armor Style Template, destroying the piece.
+/// The Armor Style Kit turns a piece of loot armor into an Armor Style Template, destroying the piece.
 /// The template restyles armor of the same weight class as the piece of its style with that armor's coverage:
 /// a template from Studded Leather Bracers makes Leather Sleeves look like Studded Leather Sleeves.
 /// Armor with the same coverage as the template's piece takes that piece's exact appearance, as a Tailoring Pattern would.
 /// Coverage the style has no piece for can't take it, so Koujia can't go on bracers.
 /// Helms, gauntlets and boots have no style: their templates carry their exact look, for one other piece of the same kind.
 /// </summary>
-public static class ArmorStyleCopier
+public static class ArmorStyleKit
 {
-    private static readonly ILogger _log = Log.ForContext(typeof(ArmorStyleCopier));
+    private static readonly ILogger _log = Log.ForContext(typeof(ArmorStyleKit));
 
-    public const uint ArmorStyleCopierWcid = 1054006;
+    public const uint ArmorStyleKitWcid = 1054006;
     public const uint ArmorStyleTemplateWcid = 1054007;
 
     private const string TemplateSuffix = " Style Template";
@@ -47,7 +47,7 @@ public static class ArmorStyleCopier
 
     public static bool IsStyleItem(uint wcid)
     {
-        return wcid == ArmorStyleCopierWcid || wcid == ArmorStyleTemplateWcid;
+        return wcid == ArmorStyleKitWcid || wcid == ArmorStyleTemplateWcid;
     }
 
     public static void UseObjectOnTarget(Player player, WorldObject source, WorldObject target, bool confirmed)
@@ -78,7 +78,7 @@ public static class ArmorStyleCopier
             return;
         }
 
-        if (source.WeenieClassId == ArmorStyleCopierWcid)
+        if (source.WeenieClassId == ArmorStyleKitWcid)
         {
             CopyStyle(player, source, target, confirmed);
         }
