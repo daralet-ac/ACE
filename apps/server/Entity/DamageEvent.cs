@@ -210,6 +210,11 @@ public class DamageEvent
 
         PostDamageMitigationEffects(attacker, defender, damageSource);
 
+        if (defender.Invulnerable)
+        {
+            Damage = 0.0f;
+        }
+
         //DpsLogging();
 
         return Damage;

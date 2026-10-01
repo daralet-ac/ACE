@@ -1957,6 +1957,11 @@ public class EnchantmentManager
 
             tickAmount *= resistanceMod * wardMod * damageResistRatingMod * dotResistRatingMod * bleedResistance * levelScalingMod * overloadDamageMod * batteryDamageMod;
 
+            if (creature.Invulnerable)
+            {
+                tickAmount = 0.0f;
+            }
+
             // make sure the target's current health is not exceeded
             if (tickAmountTotal + tickAmount >= creature.Health.Current)
             {

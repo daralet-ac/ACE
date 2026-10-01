@@ -150,6 +150,25 @@ partial class Creature
     }
 
     /// <summary>
+    /// When true, this monster does not restore its vitals to max when it goes homesick.
+    /// </summary>
+    public bool NoHomesickHeal
+    {
+        get => GetProperty(PropertyBool.NoHomesickHeal) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.NoHomesickHeal);
+            }
+            else
+            {
+                SetProperty(PropertyBool.NoHomesickHeal, value);
+            }
+        }
+    }
+
+    /// <summary>
     /// Unix timestamp of when this monster first found itself with zero valid attack targets,
     /// during the current target-loss streak. Null when it currently has a target. Only
     /// meaningful when HomesickGracePeriod is set - see HandleNoTargetsFound().
