@@ -33,6 +33,21 @@ public class Storage : Container
         + "count your pyreals, and inscribe your packs to say what goes in them.";
 
     /// <summary>
+    /// The popup the bank shows the first time it is opened (and /bank intro): the basics, and "deposit" packs, which
+    /// work from the packs a player carries and which nothing else in game would tell them about.
+    /// The client's popup is a fixed size and doesn't scroll: about 18 lines of 58 characters show, the rest is cut off.
+    /// This is about 14; /bank has the rest.
+    /// </summary>
+    public const string BankIntro =
+        "Welcome to your bank\n\n"
+        + "It's shared by every character on your account. Type /bank for commands that deposit, withdraw, sort and search.\n\n"
+        + "\"Deposit\" packs\n"
+        + "Inscribe a pack you carry with \"deposit\" and use it as a drop box. "
+        + "Whenever you open your bank, it offers to bank everything in that pack at once.\n\n"
+        + "Inscribe packs with what they hold, like \"weapons\", and /bank files those items into them.\n\n"
+        + "/bank intro shows this again.";
+
+    /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
     public Storage(Weenie weenie, ObjectGuid guid)
@@ -105,6 +120,13 @@ public class Storage : Container
         if (!player.BankCommandsUsed)
         {
             player.Session.Network.EnqueueSend(new GameEventTell(this, BankCommandsHint, player, ChatMessageType.Tell));
+        }
+
+        // The first time, a popup explains the basics.
+        if (!player.BankIntroSeen)
+        {
+            player.QuestManager.Stamp(Player.BankIntroSeenQuest);
+            player.Session.Network.EnqueueSend(new GameEventPopupString(player.Session, BankIntro));
         }
 
         DatabaseManager.Shard.GetBankInventoryInParallel(
