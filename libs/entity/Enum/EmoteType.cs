@@ -231,5 +231,32 @@ public enum EmoteType
     /// silently kill this item's other, emote-driven Use functions. Requires peace mode - fails
     /// with WeenieError.YouMustBeInPeaceModeToTrade if the player is not in NonCombat mode.
     /// </summary>
-    TopOffEquippedItemsMana = 10025
+    TopOffEquippedItemsMana = 10025,
+
+    /// <summary>
+    /// Casts a spell on the neediest member of the caster's own Cohort - every other Creature in
+    /// the caster's landblock sharing the same Cohort value, excluding the caster itself. "Neediest"
+    /// means lowest current Health percentage among those candidates; the cast is skipped entirely
+    /// if even that lowest candidate is already at or above the action's max_Dbl threshold (nobody
+    /// needs it). No candidates, or the caster has no Cohort set, is also a silent no-op.
+    /// </summary>
+    CastSpellOnCohort = 10026,
+
+    /// <summary>
+    /// Casts a spell on every present member of a nearby player's Fellowship. Finds the closest
+    /// player within Math.Max(HomeRadius, 2 x the spell's own BaseRangeConstant) - searched across
+    /// the caster's landblock and its Adjacents - takes their Fellowship (or just that one player,
+    /// if unfellowshiped), re-filters the fellowship by that same radius (Fellowship membership
+    /// itself carries no proximity guarantee), and casts on every survivor. No skip-threshold -
+    /// unlike CastSpellOnCohort this isn't a beneficial "does anyone need this" cast. No nearby
+    /// player found is a silent no-op.
+    /// </summary>
+    CastSpellOnFellowship = 10027,
+
+    /// <summary>
+    /// Sets the emote's own WorldObject (must be a Creature) to an absolute percentage of one
+    /// vital's MaxValue - Stat holds the raw PropertyAttribute2nd value (Health/Stamina/Mana),
+    /// Percent is a fraction (0.0-1.0) of that vital's MaxValue. Self only, no target resolution.
+    /// </summary>
+    SetVitalPercent = 10028
 }
