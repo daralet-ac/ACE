@@ -1393,6 +1393,11 @@ public class SpellProjectile : WorldObject
             return;
         }
 
+        if (target.Invulnerable)
+        {
+            damage = 0.0f;
+        }
+
         var sourceCreature = ProjectileSource as Creature;
         var sourcePlayer = ProjectileSource as Player;
 
