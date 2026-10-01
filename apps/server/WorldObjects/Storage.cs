@@ -35,24 +35,17 @@ public class Storage : Container
     /// <summary>
     /// The popup the bank shows the first time it is opened (and /bank intro): the basics, and "deposit" packs, which
     /// work from the packs a player carries and which nothing else in game would tell them about.
+    /// The client's popup is a fixed size and doesn't scroll: about 18 lines of 58 characters show, the rest is cut off.
+    /// This is about 14; /bank has the rest.
     /// </summary>
     public const string BankIntro =
         "Welcome to your bank\n\n"
-        + "Everything in it is shared by all the characters on your account. Drag items in and out as with any chest, "
-        + "or type /bank for commands that do the work: deposit, withdraw, sort, search, combine salvage and more. "
-        + "Most of them need your bank open.\n\n"
-        + "Packs in your bank\n"
-        + "Put packs in your bank and inscribe them with what they should hold, like \"weapons\", \"gems, keys\" or \"swords t6\". "
-        + "/bank deposit and /bank sort file items into the right pack. /bank packs numbers your packs, "
-        + "and /bank inscribe and /bank icon change them.\n\n"
+        + "It's shared by every character on your account. Type /bank for commands that deposit, withdraw, sort and search.\n\n"
         + "\"Deposit\" packs\n"
-        + "Inscribe a pack you carry with the word \"deposit\" and use it as a drop box while you adventure. "
-        + "Whenever you open your bank, it asks whether to deposit everything in that pack; say yes and it is all banked at once "
-        + "(attuned items stay with you). Withdrawals never fill a deposit pack, "
-        + "and /bank deposit packs empties them any time you are at your bank.\n\n"
-        + "\"Keep\" packs\n"
-        + "Inscribe a pack you carry with \"keep\" and /bank deposit and /sort leave what is in it alone.\n\n"
-        + "Type /bank intro to see this again.";
+        + "Inscribe a pack you carry with \"deposit\" and use it as a drop box. "
+        + "Whenever you open your bank, it offers to bank everything in that pack at once.\n\n"
+        + "Inscribe packs with what they hold, like \"weapons\", and /bank files those items into them.\n\n"
+        + "/bank intro shows this again.";
 
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
