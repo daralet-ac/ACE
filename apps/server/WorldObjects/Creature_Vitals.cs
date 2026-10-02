@@ -92,6 +92,27 @@ partial class Creature
         }
     }
 
+    private double nextInvulnerableHitEffectTime;
+
+    /// <summary>
+    /// Called wherever Invulnerable turns a hit into 0: flashes the Mana Barrier effect on this creature,
+    /// at most twice a second so multi-strike attacks and damage-over-time ticks don't spam it. Like any
+    /// PlayScript it only shows if the creature's PhysicsEffectTable has it (the player table 0x34000004 does).
+    /// </summary>
+    public void OnInvulnerableHit()
+    {
+        var currentTime = Time.GetUnixTime();
+
+        if (currentTime < nextInvulnerableHitEffectTime)
+        {
+            return;
+        }
+
+        nextInvulnerableHitEffectTime = currentTime + 0.5;
+
+        PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid, 0.5f);
+    }
+
     /// <summary>
     /// Updates a vital relative to current value
     /// </summary>
@@ -101,6 +122,7 @@ partial class Creature
         if (delta < 0 && Invulnerable && vital == Health)
         {
             delta = 0;
+            OnInvulnerableHit();
         }
 
         var newVital = (int)vital.Current + delta;

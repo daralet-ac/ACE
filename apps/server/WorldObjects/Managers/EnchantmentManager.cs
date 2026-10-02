@@ -1960,6 +1960,7 @@ public class EnchantmentManager
             if (creature.Invulnerable)
             {
                 tickAmount = 0.0f;
+                creature.OnInvulnerableHit();
             }
 
             // make sure the target's current health is not exceeded

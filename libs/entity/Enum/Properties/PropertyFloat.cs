@@ -263,6 +263,13 @@ public enum PropertyFloat : ushort
     [ServerOnly]
     BonusHealthRegenPerTick = 207,
 
+    /// <summary>
+    /// Seconds to pause a monster's AI. Set it (e.g. with the SetMyFloatStat emote) and the monster stops
+    /// targeting, moving and attacking for that long - e.g. a boss winding up a big hit. Read once, then cleared.
+    /// </summary>
+    [ServerOnly]
+    AiPauseDuration = 208,
+
     [ServerOnly]
     PCAPRecordedWorkmanship = 8004,
 

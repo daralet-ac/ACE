@@ -1,4 +1,5 @@
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using System;
 
 namespace ACE.Server.WorldObjects;
@@ -12,6 +13,7 @@ partial class Creature
     public double NextMonsterThreatTickTime;
     public double NextMonsterTargetScanTime;
     private bool firstUpdate = true;
+    private double aiPausedUntil;
     /// <summary>
     /// Primary dispatch for monster think
     /// </summary>
@@ -66,6 +68,28 @@ partial class Creature
         {
             return;
         }
+
+        // AiPauseDuration: content (SetMyFloatStat) pauses this monster for that many seconds - no
+        // targeting, moving or attacking - e.g. a boss winding up a big hit. Read once, then cleared.
+        var pauseDuration = GetProperty(PropertyFloat.AiPauseDuration);
+        if (pauseDuration > 0)
+        {
+            RemoveProperty(PropertyFloat.AiPauseDuration);
+            aiPausedUntil = currentUnixTime + pauseDuration.Value;
+
+            PhysicsObj?.unstick_from_object();
+
+            if (IsMoving)
+            {
+                CancelMoveToForEmote();
+            }
+        }
+
+        if (currentUnixTime < aiPausedUntil)
+        {
+            return;
+        }
+
         // If we're busy running an emote or finishing an animation, do not advance patrol.
         // This gives a small "refocus" window and prevents moving while emoting.
         if (EmoteManager.IsBusy)
