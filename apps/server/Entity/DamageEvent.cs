@@ -213,6 +213,7 @@ public class DamageEvent
         if (defender.Invulnerable)
         {
             Damage = 0.0f;
+            defender.OnInvulnerableHit();
         }
 
         //DpsLogging();
