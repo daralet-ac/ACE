@@ -358,6 +358,17 @@ public class EnchantmentManager
             //Console.WriteLine($"enchantment_statModVal: {entry.StatModValue}");
         }
 
+        // Mends scale with the caster's restoration mod, like Heal / Drain / Infuse. Applied here rather than in
+        // CalculateDotEnchantment_StatModValue because Vigor/Clarity Mend aren't flagged as DoTs and never reach it.
+        if (
+            spell.Category is SpellCategory.VitalityMend or SpellCategory.VigorMend or SpellCategory.ClarityMend
+            && caster is Creature creatureCaster
+            && creatureCaster.GetEquippedWand() is { WeaponRestorationSpellsMod: > 1 } wand
+        )
+        {
+            entry.StatModValue *= (float)wand.WeaponRestorationSpellsMod.Value;
+        }
+
         // handle equipment sets
         if (caster != null && caster.HasItemSet && caster.ItemSetContains(spell.Id))
         {

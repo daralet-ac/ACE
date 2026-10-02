@@ -519,16 +519,26 @@ partial class WorldObject
         DamageType damageType
     )
     {
-        if (wielder == null || !(weapon is Caster) || weapon.W_DamageType != damageType)
+        if (wielder == null || !(weapon is Caster))
         {
             return 1.0f;
         }
 
-        var elementalDamageMod = weapon.ElementalDamageMod ?? 1.0f;
+        double elementalDamageMod;
 
-        if (damageType is DamageType.Health && weapon.WeaponRestorationSpellsMod is not null)
+        // Life projectiles (Martyr's Hecatomb) scale with the caster's restoration mod regardless of its element -
+        // loot life casters are Nether, so gating on W_DamageType first would never let a Health spell through.
+        if (damageType is DamageType.Health)
         {
-            elementalDamageMod = weapon.WeaponRestorationSpellsMod.Value;
+            elementalDamageMod = weapon.WeaponRestorationSpellsMod ?? 1.0f;
+        }
+        else if (weapon.W_DamageType != damageType)
+        {
+            return 1.0f;
+        }
+        else
+        {
+            elementalDamageMod = weapon.ElementalDamageMod ?? 1.0f;
         }
 
         // multiplicative to base multiplier
