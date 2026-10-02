@@ -785,7 +785,8 @@ public class SpellProjectile : WorldObject
         // life magic projectiles: ie., martyr's hecatomb
         if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
         {
-            baseDamage = (int)(LifeProjectileDamage * Spell.DamageRatio * overloadDamageMod * batteryDamageMod);
+            // overload/battery are applied once in damageBeforeMitigation below
+            baseDamage = (int)(LifeProjectileDamage * Spell.DamageRatio);
 
             if (criticalHit)
             {
