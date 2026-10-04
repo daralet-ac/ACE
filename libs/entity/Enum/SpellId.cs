@@ -6870,6 +6870,8 @@ public enum SpellId : uint
     UnarmedCombatAttackBonus,
     BowAttackBonus,
     ThrownWeaponAttackBonus,
+    Frostbite,
+    Warmth,
 
     NumSpells = 8192,
 

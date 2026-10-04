@@ -256,7 +256,9 @@ public class AddEnchantmentResult
         SpellId.OlthoiAcidVulnerability,
         SpellId.OlthoiHealthDebuff,
 
-        SpellId.OlthoiQueenAcidVulnerability
+        SpellId.OlthoiQueenAcidVulnerability,
+
+        SpellId.Frostbite
     };
 
     private bool IsStackableEnchantment(SpellId spellId)
