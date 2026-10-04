@@ -516,7 +516,34 @@ public class AppraiseInfo
             }
         }
 
+        SetCombatFocusStatsSheetText(wo, examiner);
+
         BuildFlags();
+    }
+
+    /// <summary>
+    /// Appends the examiner's character stats to the bottom of a Combat Focus they own
+    /// </summary>
+    private void SetCombatFocusStatsSheetText(WorldObject wo, Player examiner)
+    {
+        if (wo is not CombatFocus || examiner == null)
+        {
+            return;
+        }
+
+        var owned = examiner.FindObject(
+            wo.Guid.Full,
+            Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems
+        );
+
+        if (owned == null)
+        {
+            return;
+        }
+
+        PropertiesString.TryGetValue(PropertyString.LongDesc, out var longDesc);
+
+        PropertiesString[PropertyString.LongDesc] = (longDesc ?? "") + examiner.GetStatsSheetText();
     }
 
     private void RemoveJewelRatings(WorldObject wo)

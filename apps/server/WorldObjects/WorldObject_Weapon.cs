@@ -141,10 +141,10 @@ partial class WorldObject
     /// <summary>
     /// Returns the Melee Defense skill modifier for the current weapon
     /// </summary>
-    public static float GetWeaponPhysicalDefenseModifier(Creature wielder)
+    public static float GetWeaponPhysicalDefenseModifier(Creature wielder, bool ignoreCombatMode = false)
     {
         // creatures only receive defense bonus in combat mode
-        if (wielder == null || wielder.CombatMode == CombatMode.NonCombat)
+        if (wielder == null || (!ignoreCombatMode && wielder.CombatMode == CombatMode.NonCombat))
         {
             return DefaultModifier;
         }
@@ -201,11 +201,11 @@ partial class WorldObject
     /// <summary>
     /// Returns the Magic Defense skill modifier for the current weapon
     /// </summary>
-    public static float GetWeaponMagicDefenseModifier(Creature wielder)
+    public static float GetWeaponMagicDefenseModifier(Creature wielder, bool ignoreCombatMode = false)
     {
         var weapon = GetWeapon(wielder as Player);
 
-        if (weapon == null || wielder.CombatMode == CombatMode.NonCombat)
+        if (weapon == null || (!ignoreCombatMode && wielder.CombatMode == CombatMode.NonCombat))
         {
             return DefaultModifier;
         }
@@ -241,10 +241,10 @@ partial class WorldObject
     /// <summary>
     /// Returns the attack skill modifier for the current weapon
     /// </summary>
-    public static float GetWeaponOffenseModifier(Creature wielder)
+    public static float GetWeaponOffenseModifier(Creature wielder, bool ignoreCombatMode = false)
     {
         // creatures only receive offense bonus in combat mode
-        if (wielder == null || wielder.CombatMode == CombatMode.NonCombat)
+        if (wielder == null || (!ignoreCombatMode && wielder.CombatMode == CombatMode.NonCombat))
         {
             return DefaultModifier;
         }
