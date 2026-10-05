@@ -8834,6 +8834,26 @@ partial class WorldObject
         }
     }
 
+    /// <summary>
+    /// The Setup this item switches to with /setup. Switching swaps it with SetupTableId, so it always holds the look
+    /// the item isn't showing.
+    /// </summary>
+    public uint? AlternateSetup
+    {
+        get => GetProperty(PropertyDataId.AlternateSetup);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyDataId.AlternateSetup);
+            }
+            else
+            {
+                SetProperty(PropertyDataId.AlternateSetup, value.Value);
+            }
+        }
+    }
+
     public double? BaseArmorWarMagicMod
     {
         get => (double?)GetProperty(PropertyFloat.BaseArmorWarMagicMod);

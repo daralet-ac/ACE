@@ -207,6 +207,12 @@ public enum PropertyDataId : ushort
     [ServerOnly]
     Spell2 = 66,
 
+    /// <summary>
+    /// The second Setup (model) an item can switch to. Players swap it with the item's Setup using /setup.
+    /// </summary>
+    [ServerOnly]
+    AlternateSetup = 67,
+
     [ServerOnly]
     PCAPRecordedWeenieHeader = 8001,
 
