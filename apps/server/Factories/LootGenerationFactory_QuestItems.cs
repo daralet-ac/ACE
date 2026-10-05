@@ -655,13 +655,14 @@ public static partial class LootGenerationFactory
 
             var floor = rolled ? 0 : isWar ? wo.ElementalDamageMod ?? wo.WeaponRestorationSpellsMod.Value : wo.WeaponRestorationSpellsMod ?? wo.ElementalDamageMod.Value;
             var tinksElemental = QuestItemCasterTinksElementalDamageMod(wo);
-            var tinkBonus = tinks * (tinksElemental ? Salvage.GreenGarnetTinkElementalDamageMod : Salvage.LavenderJadeTinkRestorationMod);
+            var tinkPercent = tinksElemental ? Salvage.GreenGarnetTinkPercent : Salvage.LavenderJadeTinkPercent;
+            double Tinked(double value) => value + tinks * Salvage.GetModTinkBonus(value, tinkPercent);
             var rolledBase = isWar ? wo.BaseElementalDamageMod ?? wo.BaseWeaponRestorationSpellsMod : wo.BaseWeaponRestorationSpellsMod ?? wo.BaseElementalDamageMod;
 
             ranges.Add(new(
                 tinksElemental ? "Elemental Damage Bonus" : "Restoration Healing Bonus",
-                Percent(QuestItemMutation.RollMainStat(floor, minimum, maximum, 0) + tinkBonus),
-                Percent(QuestItemMutation.RollMainStat(floor, minimum, maximum, 1) + tinkBonus),
+                Percent(Tinked(QuestItemMutation.RollMainStat(floor, minimum, maximum, 0))),
+                Percent(Tinked(QuestItemMutation.RollMainStat(floor, minimum, maximum, 1))),
                 true,
                 Quality(rolled, rolledBase, minimum, maximum)
             ));
@@ -676,12 +677,12 @@ public static partial class LootGenerationFactory
             double minimum = LootTables.GetMissileCasterSubtypeMinimumDamage(subtype, tier);
             var maximum = minimum + LootTables.GetMissileCasterSubtypeDamageRange(subtype, tier);
             var floor = rolled ? 0 : wo.DamageMod.Value;
-            var tinkBonus = tinks * Salvage.MahoganyTinkDamageMod;
+            double Tinked(double value) => value + tinks * Salvage.GetModTinkBonus(value, Salvage.MahoganyTinkPercent);
 
             ranges.Add(new(
                 "Damage Modifier",
-                Percent(QuestItemMutation.RollMainStat(floor, minimum, maximum, 0) + tinkBonus),
-                Percent(QuestItemMutation.RollMainStat(floor, minimum, maximum, 1) + tinkBonus),
+                Percent(Tinked(QuestItemMutation.RollMainStat(floor, minimum, maximum, 0))),
+                Percent(Tinked(QuestItemMutation.RollMainStat(floor, minimum, maximum, 1))),
                 true,
                 Quality(rolled, wo.BaseDamageMod, minimum, maximum)
             ));
@@ -1078,16 +1079,16 @@ public static partial class LootGenerationFactory
             {
                 if (QuestItemCasterTinksElementalDamageMod(wo))
                 {
-                    wo.ElementalDamageMod += tinks * Salvage.GreenGarnetTinkElementalDamageMod;
+                    wo.ElementalDamageMod += tinks * Salvage.GetModTinkBonus(wo.BaseElementalDamageMod, Salvage.GreenGarnetTinkPercent);
                 }
                 else
                 {
-                    wo.WeaponRestorationSpellsMod += tinks * Salvage.LavenderJadeTinkRestorationMod;
+                    wo.WeaponRestorationSpellsMod += tinks * Salvage.GetModTinkBonus(wo.BaseWeaponRestorationSpellsMod, Salvage.LavenderJadeTinkPercent);
                 }
             }
             else if (wo.WeenieType == WeenieType.MissileLauncher)
             {
-                wo.DamageMod += tinks * Salvage.MahoganyTinkDamageMod;
+                wo.DamageMod += tinks * Salvage.GetModTinkBonus(wo.BaseDamageMod, Salvage.MahoganyTinkPercent);
             }
             else if (wo.BaseDamage != null)
             {
