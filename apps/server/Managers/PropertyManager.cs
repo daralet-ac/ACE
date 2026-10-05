@@ -907,6 +907,8 @@ public static class DefaultPropertyManager
         ("popup_welcome", new Property<string>("To begin your training, speak to the Society Greeter. Walk up to the Society Greeter using the 'W' key, then double-click on her to initiate a conversation.", "Welcome message popup in training halls")),
         ("popup_welcome_olthoi", new Property<string>("Welcome to the Olthoi hive! Be sure to talk to the Olthoi Queen to receive the Olthoi protections granted by the energies of the hive.", "Welcome message displayed on the first login for an Olthoi Player")),
         ("popup_motd", new Property<string>("", "Popup message of the day")),
-        ("server_motd", new Property<string>("", "Server message of the day"))
+        ("proxycheck_api_key", new Property<string>("", "optional proxycheck.io API key used when block_vpn_connections is enabled. Without a key, proxycheck.io allows a limited number of lookups per day")),
+        ("server_motd", new Property<string>("", "Server message of the day")),
+        ("vpn_account_whitelist", new Property<string>("", "comma separated list of account names that are allowed to connect from a VPN / proxy when block_vpn_connections is enabled"))
     );
 }

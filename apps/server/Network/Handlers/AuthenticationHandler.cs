@@ -226,6 +226,21 @@ public static class AuthenticationHandler
                 return;
             }
 
+            if (VpnDetection.ShouldBlock(account.AccountName, session.EndPointC2S?.Address))
+            {
+                _log.Information(
+                    "Blocked login for account {Account} from {Ip} because it was identified as a VPN / proxy",
+                    account.AccountName,
+                    session.EndPointC2S?.Address
+                );
+
+                session.Terminate(
+                    SessionTerminationReason.AccountBooted,
+                    new GameMessageBootAccount(" because connections from a VPN / proxy are not allowed on this server")
+                );
+                return;
+            }
+
             if (PropertyManager.GetBool("account_login_boots_in_use").Item)
             {
                 var previouslyConnectedAccount = NetworkManager.Find(account.AccountName);
