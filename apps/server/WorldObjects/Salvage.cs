@@ -18,6 +18,15 @@ namespace ACE.Server.WorldObjects;
 
 public class Salvage : WorldObject
 {
+    // Per-tink amounts. Quest item mutation bakes a full set of these into quest gear, which can't be
+    // tinkered, so changing one here changes quest gear too.
+    public const double IronTinkPercent = 0.075; // of the untinkered Damage or Armor Level
+    public const float MahoganyTinkDamageMod = 0.075f;
+    public const float GreenGarnetTinkElementalDamageMod = 0.075f;
+    public const double LavenderJadeTinkRestorationMod = 0.075;
+    public const int SilverTinkWardLevel = 3;
+    public const int WhiteJadeTinkWardLevel = 1;
+
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
@@ -759,7 +768,7 @@ public class Salvage : WorldObject
                 case ACE.Entity.Enum.MaterialType.Iron: // Iron
                     if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                     {
-                        var damageBonus = (int)(target.BaseDamage * 0.075) < 1 ? 1 : (int)(target.BaseDamage * 0.075);
+                        var damageBonus = (int)(target.BaseDamage * IronTinkPercent) < 1 ? 1 : (int)(target.BaseDamage * IronTinkPercent);
                         target.Damage += damageBonus;
                         target.WeaponTime += 5;
 
@@ -767,7 +776,7 @@ public class Salvage : WorldObject
                     }
                     if (target.ItemType == ItemType.Armor)
                     {
-                        var armorBonus = (int)(target.BaseArmor * 0.075) < 1 ? 1 : (int)(target.BaseArmor * 0.075);
+                        var armorBonus = (int)(target.BaseArmor * IronTinkPercent) < 1 ? 1 : (int)(target.BaseArmor * IronTinkPercent);
                         target.ArmorLevel += armorBonus;
 
                         target.ArmorResourcePenalty += (0.0025 * armorSlots);
@@ -822,11 +831,11 @@ public class Salvage : WorldObject
                     }
                     if (target.ItemType == ItemType.Armor)
                     {
-                        target.WardLevel += 3;
+                        target.WardLevel += SilverTinkWardLevel;
                         target.ArmorHealthRegenMod += (0.0025 * armorSlots);
 
                         successAmount =
-                            $"raising its Ward Level by 3 and its Health Regeneration modifier by {0.25 * armorSlots}%";
+                            $"raising its Ward Level by {SilverTinkWardLevel} and its Health Regeneration modifier by {0.25 * armorSlots}%";
                     }
                     break;
 
@@ -1087,7 +1096,7 @@ public class Salvage : WorldObject
                     break;
                 // 7.5% Damage
                 case ACE.Entity.Enum.MaterialType.Mahogany: // Mahogany
-                    target.DamageMod += 0.075f;
+                    target.DamageMod += MahoganyTinkDamageMod;
                     successAmount = $"raising its Damage modifier by 7.5%";
                     break;
                 //  1% Defense Mod
@@ -1242,7 +1251,7 @@ public class Salvage : WorldObject
 
                 // Pure Damage - 7.5%
                 case ACE.Entity.Enum.MaterialType.GreenGarnet:
-                    target.ElementalDamageMod = (target.ElementalDamageMod ?? 0.0f) + 0.075f;
+                    target.ElementalDamageMod = (target.ElementalDamageMod ?? 0.0f) + GreenGarnetTinkElementalDamageMod;
                     successAmount = $"raising its Elemental Damage modifier by 7.5%";
                     break;
 
@@ -1283,7 +1292,7 @@ public class Salvage : WorldObject
 
                 // 7.5% Restoration Mod
                 case ACE.Entity.Enum.MaterialType.LavenderJade:
-                    target.WeaponRestorationSpellsMod += 0.075;
+                    target.WeaponRestorationSpellsMod += LavenderJadeTinkRestorationMod;
                     successAmount = $"raising its Restoration modifier by 7.5%";
                     break;
 
@@ -1304,8 +1313,8 @@ public class Salvage : WorldObject
                     }
                     break;
                 case ACE.Entity.Enum.MaterialType.WhiteJade:
-                    target.WardLevel += 1;
-                    successAmount = $"raising its Ward Level by 1";
+                    target.WardLevel += WhiteJadeTinkWardLevel;
+                    successAmount = $"raising its Ward Level by {WhiteJadeTinkWardLevel}";
                     break;
 
                 /*   case ACE.Entity.Enum.MaterialType.Agate:

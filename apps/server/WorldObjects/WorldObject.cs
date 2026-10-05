@@ -1806,6 +1806,22 @@ public abstract partial class WorldObject : IActor
         }
     }
 
+    public int? QuestItemTinks
+    {
+        get => GetProperty(PropertyInt.QuestItemTinks);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.QuestItemTinks);
+            }
+            else
+            {
+                SetProperty(PropertyInt.QuestItemTinks, value.Value);
+            }
+        }
+    }
+
     public bool SpecialPropertiesRequireMana
     {
         get => GetProperty(PropertyBool.SpecialPropertiesRequireMana) ?? false;

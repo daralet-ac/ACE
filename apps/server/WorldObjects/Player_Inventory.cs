@@ -440,6 +440,13 @@ partial class Player
     /// </summary>
     public bool TryEquipObjectWithNetworking(WorldObject item, EquipMask wieldedLocation)
     {
+        // a quest item wielded straight off the ground never enters a pack, so it rolls here instead
+        if (item.MutableQuestItem)
+        {
+            LootGenerationFactory.MutateQuestItem(item);
+            EnqueueBroadcast(new GameMessageUpdateObject(item));
+        }
+
         if (!TryEquipObjectWithBroadcasting(item, wieldedLocation))
         {
             return false;

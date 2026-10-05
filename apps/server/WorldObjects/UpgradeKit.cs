@@ -169,46 +169,46 @@ public class UpgradeKit : Stackable
 
     public static bool UpgradeItem(Player player, WorldObject target, int forcedNewWieldDifficulty = 0)
     {
-        var usesRequiredLevelPath = UsesRequiredLevelTiering(target);
+        // a quest item that hasn't reached a player yet rolls at its own tier first, so the upgrade scales its rolls
+        if (target.MutableQuestItem)
+        {
+            LootGenerationFactory.MutateQuestItem(target);
+        }
+
+        var usesRequiredLevelPath = LootGenerationFactory.UsesRequiredLevelTiering(target);
         var currentRequirement = target.WieldDifficulty ?? (usesRequiredLevelPath ? 1 : 50);
         var newRequirement = forcedNewWieldDifficulty > 0 && target.ItemType != ItemType.Jewelry
             ? forcedNewWieldDifficulty
             : GetMaxRequirementForPlayer(player, target);
 
-        var currentTier = GetTierIndexFromRequirement(target, currentRequirement);
-        var newTier = GetTierIndexFromRequirement(target, newRequirement);
+        var currentTier = LootGenerationFactory.GetQuestItemTierIndex(target, currentRequirement);
+        var newTier = LootGenerationFactory.GetQuestItemTierIndex(target, newRequirement);
+
+        var hadQuestItemTinks = target.QuestItemTinks != null;
+        LootGenerationFactory.RemoveQuestItemTinks(target);
 
         if (!LootGenerationFactory.ApplyUpgradeKitTierUpgrades(target, currentTier, newTier))
         {
+            if (hadQuestItemTinks)
+            {
+                LootGenerationFactory.ApplyQuestItemTinksForTier(target, currentTier);
+            }
+
             return false;
         }
 
         target.SetProperty(PropertyInt.WieldDifficulty, newRequirement);
         LootGenerationFactory.ApplyUpgradeKitPostTierUpgrades(target, currentTier, newTier);
+        LootGenerationFactory.ApplyQuestItemTinksForTier(target, newTier);
 
         return true;
     }
 
-    private static bool UsesRequiredLevelTiering(WorldObject target)
-    {
-        return target.ItemType == ItemType.Jewelry
-            || (target.WeenieType == WeenieType.Clothing && target.WieldRequirements == WieldRequirement.Level);
-    }
-
     private static int GetMaxRequirementForPlayer(Player player, WorldObject target)
     {
-        return UsesRequiredLevelTiering(target)
+        return LootGenerationFactory.UsesRequiredLevelTiering(target)
             ? GetRequiredLevelFromPlayerTier(player)
             : GetHighestWieldDifficultyForPlayer(player, target);
-    }
-
-    private static int GetTierIndexFromRequirement(WorldObject target, int requirementValue)
-    {
-        var tier = UsesRequiredLevelTiering(target)
-            ? LootGenerationFactory.GetTierFromRequiredLevel(requirementValue)
-            : LootGenerationFactory.GetTierFromWieldDifficulty(requirementValue);
-
-        return Math.Clamp(tier - 1, 0, 7);
     }
 
     private static int GetHighestWieldDifficultyForPlayer(Player player, WorldObject target)

@@ -747,10 +747,11 @@ public partial class Container : WorldObject
                 : null;
         }
 
-        if (this is Player && worldObject.MutableQuestItem)
+        // side packs count too, or a quest item that lands in one would stay unrolled
+        if (worldObject.MutableQuestItem && (this as Player ?? Container as Player) is { } questItemOwner)
         {
             LootGenerationFactory.MutateQuestItem(worldObject);
-            EnqueueBroadcast(new GameMessageUpdateObject(worldObject));
+            questItemOwner.EnqueueBroadcast(new GameMessageUpdateObject(worldObject));
         }
 
         // CUSTOM - Automatic Ivorying

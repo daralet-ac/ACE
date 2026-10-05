@@ -167,7 +167,8 @@ public static partial class LootGenerationFactory
         var elementalDamageMod = target.ElementalDamageMod.Value;
         var restorationSpellMod = target.WeaponRestorationSpellsMod.Value;
 
-        var currentBaseStat = magicSkill == Skill.WarMagic ? elementalDamageMod : restorationSpellMod;
+        // a life caster keeps half of its war-scale roll, so double it back before comparing against the caster table
+        var currentBaseStat = magicSkill == Skill.WarMagic ? elementalDamageMod : 1 + (restorationSpellMod - 1) * 2;
         var currentTierMinimum = LootTables.GetMissileCasterSubtypeMinimumDamage(weaponSubtype, currentTier);
         var currentRange = LootTables.GetMissileCasterSubtypeDamageRange(weaponSubtype, currentTier);
         var currentRoll = currentBaseStat - currentTierMinimum;
@@ -317,34 +318,7 @@ public static partial class LootGenerationFactory
             return;
         }
 
-        var armorStyleBaseArmorLevel = 50;
-
-        if (target.ArmorStyle != null)
-        {
-            armorStyleBaseArmorLevel = (ArmorStyle)target.ArmorStyle switch
-            {
-                ArmorStyle.Amuli or ArmorStyle.Chiran
-                    or ArmorStyle.OlthoiAmuli or ArmorStyle.Leather
-                    or ArmorStyle.Yoroi or ArmorStyle.Lorica
-                    or ArmorStyle.Buckler or ArmorStyle.SmallShield
-                    => 75,
-                ArmorStyle.StuddedLeather or ArmorStyle.Koujia
-                    or ArmorStyle.OlthoiKoujia
-                    => 90,
-                ArmorStyle.Chainmail or ArmorStyle.Scalemail
-                    or ArmorStyle.Nariyid or ArmorStyle.StandardShield
-                    => 100,
-                ArmorStyle.LargeShield
-                    => 105,
-                ArmorStyle.Platemail or ArmorStyle.Celdon
-                    or ArmorStyle.OlthoiCeldon or ArmorStyle.TowerShield
-                    => 110,
-                ArmorStyle.Covenant or ArmorStyle.OlthoiArmor
-                    or ArmorStyle.CovenantShield
-                    => 125,
-                _ => armorStyleBaseArmorLevel
-            };
-        }
+        var armorStyleBaseArmorLevel = LootTables.GetArmorStyleBaseArmorLevel(target.ArmorStyle);
 
         var currentLevel = target.ArmorLevel.Value;
         var currentTierMinimum = armorStyleBaseArmorLevel * Math.Clamp(currentTier, 1, 7);
@@ -363,42 +337,18 @@ public static partial class LootGenerationFactory
             return;
         }
 
-        // Keep in sync with AssignArmorLevel in LootGenerationFactory_Clothing.cs:
-        // body armor keys off weight class, Amuli-family styles are overridden, and
-        // shields carry ward but no weight class so they stay style-based.
-        var armorStyleBaseWardLevel = target.ArmorWeightClass switch
-        {
-            (int)ArmorWeightClass.Cloth => 6,
-            (int)ArmorWeightClass.Heavy => 7,
-            _ => 5,
-        };
-
-        if (target.ArmorStyle != null)
-        {
-            armorStyleBaseWardLevel = (ArmorStyle)target.ArmorStyle switch
-            {
-                ArmorStyle.CovenantShield => 10,
-                ArmorStyle.TowerShield => 8,
-                ArmorStyle.LargeShield => 7,
-                ArmorStyle.StandardShield => 6,
-                ArmorStyle.Buckler or ArmorStyle.SmallShield => 5,
-                ArmorStyle.Amuli or ArmorStyle.Chiran or ArmorStyle.OlthoiAmuli => 6,
-                _ => armorStyleBaseWardLevel
-            };
-        }
+        var armorStyleBaseWardLevel = LootTables.GetArmorStyleBaseWardLevel(target.ArmorStyle, target.ArmorWeightClass);
 
         var necklaceMulti = target.ValidLocations is EquipMask.NeckWear ? 2 : 1;
         armorStyleBaseWardLevel *= necklaceMulti;
 
         var currentLevel = target.WardLevel.Value;
         var armorSlots = target.ArmorSlots ?? 1;
-        var wardPerSlot = currentLevel / armorSlots;
 
+        // each tier adds one base per slot; adding the difference keeps the roll's odd points that dividing by slots dropped
         var currentTierMinimum = armorStyleBaseWardLevel * Math.Clamp(currentTier, 1, 7);
-        var rolledAmount = wardPerSlot - currentTierMinimum;
-
         var newTierMinimum = armorStyleBaseWardLevel * Math.Clamp(newTier, 1, 7);
-        var final = (newTierMinimum + rolledAmount) * armorSlots;
+        var final = currentLevel + (newTierMinimum - currentTierMinimum) * armorSlots;
 
         target.SetProperty(PropertyInt.WardLevel, final);
     }

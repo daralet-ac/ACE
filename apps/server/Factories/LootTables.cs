@@ -507,6 +507,12 @@ public static class LootTables
         [120, 120, 240, 480, 960, 1920, 3840, 7200]
     ];
 
+    // Tinks baked into quest gear on pickup [tier]: the median workmanship of regular loot at that tier,
+    // so quest gear matches a fully tinkered loot item of the same tier. Loot weapons score their damage
+    // against the T8 maximum, so their workmanship runs lower than armor's.
+    public static readonly int[] QuestItemWeaponTinksPerTier = [1, 1, 2, 2, 3, 4, 5, 7];
+    public static readonly int[] QuestItemArmorTinksPerTier = [1, 2, 3, 4, 5, 6, 7, 8];
+
     // DARALET MUTATION VALUES
     //  0|125|175|200|215|230|250|270
 
@@ -3911,6 +3917,14 @@ public static class LootTables
                 return SwordSmallMinDamage[tier];
             case WeaponSubtype.Ua:
                 return UaMinDamage[tier];
+            case WeaponSubtype.TwohandAxe:
+                return TwohandAxeMinDamage[tier];
+            case WeaponSubtype.TwohandMace:
+                return TwohandMaceMinDamage[tier];
+            case WeaponSubtype.TwohandSpear:
+                return TwohandSpearMinDamage[tier];
+            case WeaponSubtype.TwohandSword:
+                return TwohandSwordMinDamage[tier];
             case WeaponSubtype.ThrownAxe:
                 return ThrownAxeMinDamage[tier];
             case WeaponSubtype.ThrownJavelin:
@@ -3993,5 +4007,66 @@ public static class LootTables
                 return 1;
             }
         }
+    }
+
+    public static bool IsMeleeOrThrownSubtype(WeaponSubtype weaponSubtype)
+    {
+        return weaponSubtype is >= WeaponSubtype.AxeLarge and <= WeaponSubtype.TwohandSword
+            or >= WeaponSubtype.ThrownAxe and <= WeaponSubtype.ThrownShuriken;
+    }
+
+    public static bool IsMissileLauncherSubtype(WeaponSubtype weaponSubtype)
+    {
+        return weaponSubtype is >= WeaponSubtype.AtlatlLarge and <= WeaponSubtype.CrossbowSmall;
+    }
+
+    /// <summary>
+    /// The Armor Level one loot tier adds for an armor style: loot armor at tier T rolls between this x (T - 1)
+    /// and this x T. Matches AssignArmorLevel, which keys shields by wcid rather than style.
+    /// </summary>
+    public static int GetArmorStyleBaseArmorLevel(int? armorStyle)
+    {
+        return (ArmorStyle?)armorStyle switch
+        {
+            ArmorStyle.Amuli or ArmorStyle.Chiran or ArmorStyle.OlthoiAmuli
+                or ArmorStyle.Leather or ArmorStyle.Yoroi or ArmorStyle.Lorica
+                or ArmorStyle.Buckler or ArmorStyle.SmallShield
+                => 80,
+            ArmorStyle.StuddedLeather or ArmorStyle.Koujia or ArmorStyle.OlthoiKoujia
+                or ArmorStyle.StandardShield
+                => 85,
+            ArmorStyle.Chainmail or ArmorStyle.Scalemail or ArmorStyle.Nariyid
+                or ArmorStyle.LargeShield
+                => 90,
+            ArmorStyle.Platemail or ArmorStyle.Celdon or ArmorStyle.OlthoiCeldon
+                or ArmorStyle.TowerShield
+                => 95,
+            ArmorStyle.Covenant or ArmorStyle.OlthoiArmor or ArmorStyle.CovenantShield
+                => 100,
+            _ => 75,
+        };
+    }
+
+    /// <summary>
+    /// The Ward Level one loot tier adds per armor slot. Matches AssignArmorLevel: body armor keys off
+    /// weight class, Amuli-family styles are overridden, and shields carry no weight class so they stay style-based.
+    /// </summary>
+    public static int GetArmorStyleBaseWardLevel(int? armorStyle, int? armorWeightClass)
+    {
+        return (ArmorStyle?)armorStyle switch
+        {
+            ArmorStyle.CovenantShield => 10,
+            ArmorStyle.TowerShield => 8,
+            ArmorStyle.LargeShield => 7,
+            ArmorStyle.StandardShield => 6,
+            ArmorStyle.Buckler or ArmorStyle.SmallShield => 5,
+            ArmorStyle.Amuli or ArmorStyle.Chiran or ArmorStyle.OlthoiAmuli => 6,
+            _ => armorWeightClass switch
+            {
+                (int)ArmorWeightClass.Cloth => 6,
+                (int)ArmorWeightClass.Heavy => 7,
+                _ => 5,
+            },
+        };
     }
 }

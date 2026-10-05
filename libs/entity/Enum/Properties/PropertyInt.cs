@@ -897,6 +897,13 @@ public enum PropertyInt : ushort
     [ServerOnly]
     ArmorStyleTemplateWcid = 524,
 
+    /// <summary>
+    /// How many tinks were baked into a quest item when it mutated on pickup. Upgrade Kits strip and
+    /// re-apply them when they retier the item.
+    /// </summary>
+    [ServerOnly]
+    QuestItemTinks = 525,
+
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
 
