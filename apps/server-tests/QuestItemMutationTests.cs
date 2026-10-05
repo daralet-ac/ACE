@@ -347,6 +347,61 @@ public class QuestItemMutationTests
         Assert.AreEqual(hauberk.BaseArmor + 7 * QuestItemMutation.GetPercentTinkBonus(hauberk.BaseArmor.Value, Salvage.IronTinkPercent), hauberk.ArmorLevel);
     }
 
+    [TestMethod]
+    public void RollRanges_ShowTheRollAndTheTinkedSpread()
+    {
+        // Obsidian Axe on a vendor: T6 AxeLarge, authored at its 55 floor
+        var axe = CreateMeleeWeapon(LootTables.WeaponSubtype.AxeLarge, 55, 230);
+
+        var (tinks, ranges) = LootGenerationFactory.GetQuestItemRollRanges(axe);
+
+        Assert.AreEqual(4, tinks);
+        Assert.AreEqual(1, ranges.Count);
+        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Damage", 55, 62, 55 + 4 * 4, 62 + 4 * 4, false), ranges[0]);
+    }
+
+    [TestMethod]
+    public void RollRanges_CoverWhatARolledItemActuallyRolled()
+    {
+        for (var i = 0; i < Rolls; i++)
+        {
+            var axe = CreateMeleeWeapon(LootTables.WeaponSubtype.AxeLarge, 55, 230);
+            LootGenerationFactory.MutateQuestItem(axe);
+
+            var range = LootGenerationFactory.GetQuestItemRollRanges(axe).Ranges.Single();
+
+            AssertBetween(range.MinRoll, range.MaxRoll, axe.BaseDamage.Value);
+            AssertBetween(range.MinWithTinks, range.MaxWithTinks, axe.Damage.Value);
+        }
+    }
+
+    [TestMethod]
+    public void RollRanges_ArmorScalesArmorLevelByProtectionAndWardBySlots()
+    {
+        // Platemail Hauberk of the Ogre: T2, 4 slots, authored at its 143 / 32 floors
+        var hauberk = CreateArmor(ArmorStyle.Platemail, ArmorWeightClass.Heavy, armorLevel: 143, wardLevel: 32, armorSlots: 4, wieldDifficulty: 125);
+
+        var (tinks, ranges) = LootGenerationFactory.GetQuestItemRollRanges(hauberk, 0.5, 0.55);
+
+        Assert.AreEqual(2, tinks);
+        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Armor Level", 71, 104, 71 + 2 * 5, 104 + 2 * 7, false), ranges[0]);
+        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Ward Level", 32, 35, 32 + 2 * 12, 35 + 2 * 12, false), ranges[1]);
+    }
+
+    [TestMethod]
+    public void RollRanges_LifeCasterShowsRestorationWithLavenderJadeTinks()
+    {
+        var staff = CreateCaster(Skill.LifeMagic, 230, 2.0625, 2.0625);
+
+        var range = LootGenerationFactory.GetQuestItemRollRanges(staff).Ranges.Single();
+
+        Assert.AreEqual("Restoration Healing Bonus", range.Stat);
+        Assert.AreEqual(2.0625, range.MinRoll, 1e-9);
+        Assert.AreEqual(2.375, range.MaxRoll, 1e-9);
+        Assert.AreEqual(2.0625 + 4 * Salvage.LavenderJadeTinkRestorationMod, range.MinWithTinks, 1e-9);
+        Assert.IsTrue(range.IsMultiplier);
+    }
+
     // ScaleUpDamage's arithmetic for AxeLarge, T6 (47-62) to T7 (69-92)
     private static int ScaleUpAxeLargeDamageToT7(int t6Damage)
     {

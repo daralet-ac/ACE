@@ -975,6 +975,8 @@ public class AppraiseInfo
 
             SetForgeStageUseText(wo);
 
+        SetQuestItemRollRangeUseText(wo);
+
         // -------- WEAPON ATTACK/DEFENSE MODS --------
         _extraPropertiesText += "\n";
 
@@ -1499,6 +1501,60 @@ public class AppraiseInfo
             _extraPropertiesText += finalText + "\n";
         }
 
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetQuestItemRollRangeUseText(WorldObject wo)
+    {
+        // quest items that roll on pickup, or rolled under the current rules (which baked in tinks)
+        if (!wo.MutableQuestItem && wo.QuestItemTinks == null)
+        {
+            return;
+        }
+
+        // NormalizeProtectionLevels folds armor's average protection, after each rolls up to +10%, into its Armor Level
+        var protectionScaleMin = 1.0;
+        var protectionScaleMax = 1.0;
+
+        if (wo.ItemType == ItemType.Armor)
+        {
+            var weenie = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId);
+            var protections = new[]
+                {
+                    PropertyFloat.ArmorModVsSlash, PropertyFloat.ArmorModVsPierce, PropertyFloat.ArmorModVsBludgeon,
+                    PropertyFloat.ArmorModVsAcid, PropertyFloat.ArmorModVsFire, PropertyFloat.ArmorModVsCold,
+                    PropertyFloat.ArmorModVsElectric,
+                }
+                .Select(protection => weenie?.GetProperty(protection))
+                .ToList();
+
+            if (protections.All(protection => protection != null))
+            {
+                protectionScaleMin = protections.Average(protection => protection.Value);
+                protectionScaleMax = protectionScaleMin * 1.1;
+            }
+        }
+
+        var (tinks, ranges) = LootGenerationFactory.GetQuestItemRollRanges(wo, protectionScaleMin, protectionScaleMax);
+
+        if (ranges.Count == 0)
+        {
+            return;
+        }
+
+        static string Format(double value, bool isMultiplier) =>
+            isMultiplier ? $"+{Math.Round((value - 1) * 100, 1)}%" : $"{value:0}";
+
+        _extraPropertiesText += $"Quest item roll ranges ({tinks} tinks built in):\n";
+
+        foreach (var range in ranges)
+        {
+            _extraPropertiesText +=
+                $"  {range.Stat}: {Format(range.MinRoll, range.IsMultiplier)} - {Format(range.MaxRoll, range.IsMultiplier)}, " +
+                $"{Format(range.MinWithTinks, range.IsMultiplier)} - {Format(range.MaxWithTinks, range.IsMultiplier)} with tinks\n";
+        }
+
+        _extraPropertiesText += "\n";
         _hasExtraPropertiesText = true;
     }
 
