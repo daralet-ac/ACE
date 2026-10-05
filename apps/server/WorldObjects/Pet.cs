@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Numerics;
 using ACE.Common;
@@ -78,7 +79,11 @@ public class Pet : Creature
         var playerRadius = player.PhysicsObj.GetPhysicsRadius();
         var petRadius = GetPetRadius();
 
-        var spawnDist = playerRadius + petRadius + MinDistance;
+        // immobile passive pets are placeable stations (campfire, scribing/alchemy tables) - spawn them
+        // close enough to use / stand in their hotspot without stepping forward first
+        var gap = IsPassivePet && AiImmobile ? StationSpawnGap : MinDistance;
+
+        var spawnDist = playerRadius + petRadius + gap;
 
         if (IsPassivePet)
         {
@@ -265,6 +270,8 @@ public class Pet : Creature
     private const float MinDistance = 2.0f;
     private const float MaxDistance = 192.0f;
 
+    private const float StationSpawnGap = 0.5f;
+
     private void StartFollow()
     {
         // similar to Monster_Navigation.StartTurn()
@@ -340,7 +347,7 @@ public class Pet : Creature
         IsMoving = false;
     }
 
-    public static Dictionary<uint, float> PetRadiusCache = new Dictionary<uint, float>();
+    public static readonly ConcurrentDictionary<uint, float> PetRadiusCache = new ConcurrentDictionary<uint, float>();
 
     private float GetPetRadius()
     {
@@ -353,6 +360,6 @@ public class Pet : Creature
 
         var scale = ObjScale ?? 1.0f;
 
-        return ProjectileRadiusCache[WeenieClassId] = setup.Spheres[0].Radius * scale;
+        return PetRadiusCache[WeenieClassId] = setup.Spheres[0].Radius * scale;
     }
 }
