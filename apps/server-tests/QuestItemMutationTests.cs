@@ -394,30 +394,29 @@ public class QuestItemMutationTests
     }
 
     [TestMethod]
-    public void RollRanges_ShowTheRollAndTheTinkedSpread()
+    public void RollRanges_ShowTheFinalSpreadOfAnUnrolledItem()
     {
-        // Obsidian Axe on a vendor: T6 AxeLarge, authored at its 55 floor
+        // Obsidian Axe on a vendor: T6 AxeLarge, authored at its 55 floor, 4 tinks of +4 at either end
         var axe = CreateMeleeWeapon(LootTables.WeaponSubtype.AxeLarge, 55, 230);
 
-        var (tinks, ranges) = LootGenerationFactory.GetQuestItemRollRanges(axe);
+        var ranges = LootGenerationFactory.GetQuestItemRollRanges(axe, null);
 
-        Assert.AreEqual(4, tinks);
         Assert.AreEqual(1, ranges.Count);
-        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Damage", 55, 62, 55 + 4 * 4, 62 + 4 * 4, false), ranges[0]);
+        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Damage", 55 + 4 * 4, 62 + 4 * 4, false, null), ranges[0]);
     }
 
     [TestMethod]
-    public void RollRanges_CoverWhatARolledItemActuallyRolled()
+    public void RollRanges_CoverWhatARolledItemRolledAndShowItsQuality()
     {
         for (var i = 0; i < Rolls; i++)
         {
             var axe = CreateMeleeWeapon(LootTables.WeaponSubtype.AxeLarge, 55, 230);
             LootGenerationFactory.MutateQuestItem(axe);
 
-            var range = LootGenerationFactory.GetQuestItemRollRanges(axe).Ranges.Single();
+            var range = LootGenerationFactory.GetQuestItemRollRanges(axe, axe.Weenie).Single();
 
-            AssertBetween(range.MinRoll, range.MaxRoll, axe.BaseDamage.Value);
-            AssertBetween(range.MinWithTinks, range.MaxWithTinks, axe.Damage.Value);
+            AssertBetween(range.Low, range.High, axe.Damage.Value);
+            Assert.AreEqual(axe.QuestItemRollQuality, range.Quality);
         }
     }
 
@@ -427,25 +426,71 @@ public class QuestItemMutationTests
         // Platemail Hauberk of the Ogre: T2, 4 slots, authored at its 143 / 32 floors
         var hauberk = CreateArmor(ArmorStyle.Platemail, ArmorWeightClass.Heavy, armorLevel: 143, wardLevel: 32, armorSlots: 4, wieldDifficulty: 125);
 
-        var (tinks, ranges) = LootGenerationFactory.GetQuestItemRollRanges(hauberk, 0.5, 0.55);
+        var ranges = LootGenerationFactory.GetQuestItemRollRanges(hauberk, null, 0.5, 0.55);
 
-        Assert.AreEqual(2, tinks);
-        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Armor Level", 71, 104, 71 + 2 * 5, 104 + 2 * 7, false), ranges[0]);
-        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Ward Level", 32, 35, 32 + 2 * 12, 35 + 2 * 12, false), ranges[1]);
+        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Armor Level", 71 + 2 * 5, 104 + 2 * 7, false, null), ranges[0]);
+        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Ward Level", 32 + 2 * 12, 35 + 2 * 12, false, null), ranges[1]);
     }
 
     [TestMethod]
-    public void RollRanges_LifeCasterShowsRestorationWithLavenderJadeTinks()
+    public void RollRanges_LifeCasterShowsRestorationAsAPercent()
     {
         var staff = CreateCaster(Skill.LifeMagic, 230, 2.0625, 2.0625);
 
-        var range = LootGenerationFactory.GetQuestItemRollRanges(staff).Ranges.Single();
+        var range = LootGenerationFactory.GetQuestItemRollRanges(staff, null).Single();
 
         Assert.AreEqual("Restoration Healing Bonus", range.Stat);
-        Assert.AreEqual(2.0625, range.MinRoll, 1e-9);
-        Assert.AreEqual(2.375, range.MaxRoll, 1e-9);
-        Assert.AreEqual(2.0625 + 4 * Salvage.LavenderJadeTinkRestorationMod, range.MinWithTinks, 1e-9);
-        Assert.IsTrue(range.IsMultiplier);
+        Assert.AreEqual((2.0625 + 4 * Salvage.LavenderJadeTinkRestorationMod - 1) * 100, range.Low, 1e-6);
+        Assert.AreEqual((2.375 + 4 * Salvage.LavenderJadeTinkRestorationMod - 1) * 100, range.High, 1e-6);
+        Assert.IsTrue(range.IsPercent);
+    }
+
+    [TestMethod]
+    public void RollRanges_ListEverySecondaryStatTheRollTouches()
+    {
+        for (var i = 0; i < Rolls; i++)
+        {
+            var spear = CreateMeleeWeapon(
+                LootTables.WeaponSubtype.SpearMedium,
+                10,
+                125,
+                new()
+                {
+                    [PropertyFloat.WeaponOffense] = 1.11,
+                    [PropertyFloat.CriticalFrequency] = 0.1,
+                    [PropertyFloat.IgnoreArmor] = 0.9,
+                }
+            );
+            LootGenerationFactory.MutateQuestItem(spear);
+
+            var ranges = LootGenerationFactory.GetQuestItemRollRanges(spear, spear.Weenie).ToDictionary(range => range.Stat);
+
+            AssertRange(ranges["Bonus to Attack Skill"], 11, 21, (spear.WeaponOffense.Value - 1) * 100);
+            AssertRange(ranges["Biting Strike"], 0, 5, (spear.CriticalFrequency.Value - 0.1) * 100);
+            AssertRange(ranges["Armor Cleaving"], 10, 20, (1 - spear.IgnoreArmor.Value) * 100);
+        }
+    }
+
+    [TestMethod]
+    public void RollRanges_FollowAnUpgradeKitsTierShift()
+    {
+        // an Upgrade Kit from T6 to T7 adds 2.5% to the attack mod (WeaponOffenseModBonusPerTier)
+        var axe = CreateMeleeWeapon(LootTables.WeaponSubtype.AxeLarge, 55, 230, new() { [PropertyFloat.WeaponOffense] = 1.15 });
+        LootGenerationFactory.MutateQuestItem(axe);
+        var t6Quality = LootGenerationFactory.GetQuestItemRollRanges(axe, axe.Weenie).Single(range => range.Stat == "Bonus to Attack Skill").Quality.Value;
+
+        Assert.IsTrue(UpgradeKit.UpgradeItem(null, axe, 250));
+
+        AssertRange(LootGenerationFactory.GetQuestItemRollRanges(axe, axe.Weenie).Single(range => range.Stat == "Bonus to Attack Skill"), 17.5, 27.5, (axe.WeaponOffense.Value - 1) * 100);
+        Assert.AreEqual(t6Quality, LootGenerationFactory.GetQuestItemRollRanges(axe, axe.Weenie).Single(range => range.Stat == "Bonus to Attack Skill").Quality.Value, 1e-6);
+    }
+
+    private static void AssertRange(LootGenerationFactory.QuestItemRollRange range, double low, double high, double current)
+    {
+        Assert.AreEqual(low, range.Low, 1e-6, range.Stat);
+        Assert.AreEqual(high, range.High, 1e-6, range.Stat);
+        AssertBetween(low, high, current);
+        Assert.AreEqual((current - low) / (high - low), range.Quality.Value, 1e-6, range.Stat);
     }
 
     // ScaleUpDamage's arithmetic for AxeLarge, T6 (47-62) to T7 (69-92)

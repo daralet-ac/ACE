@@ -1515,11 +1515,12 @@ public class AppraiseInfo
 
     private void SetQuestItemRollRangeLongText(WorldObject wo)
     {
-        // quest items that roll on pickup, or rolled under the current rules (which baked in tinks)
-        if (!wo.MutableQuestItem && wo.QuestItemTinks == null)
+        if (!ShowsQuestItemRollRanges(wo))
         {
             return;
         }
+
+        var weenie = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId);
 
         // NormalizeProtectionLevels folds armor's average protection, after each rolls up to +10%, into its Armor Level
         var protectionScaleMin = 1.0;
@@ -1527,7 +1528,6 @@ public class AppraiseInfo
 
         if (wo.ItemType == ItemType.Armor)
         {
-            var weenie = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId);
             var protections = new[]
                 {
                     PropertyFloat.ArmorModVsSlash, PropertyFloat.ArmorModVsPierce, PropertyFloat.ArmorModVsBludgeon,
@@ -1544,23 +1544,32 @@ public class AppraiseInfo
             }
         }
 
-        var (_, ranges) = LootGenerationFactory.GetQuestItemRollRanges(wo, protectionScaleMin, protectionScaleMax);
+        var ranges = LootGenerationFactory.GetQuestItemRollRanges(wo, weenie, protectionScaleMin, protectionScaleMax);
 
         if (ranges.Count == 0)
         {
             return;
         }
 
-        static string Format(double value, bool isMultiplier) =>
-            isMultiplier ? $"+{Math.Round((value - 1) * 100, 1)}%" : $"{value:0}";
+        static string Format(double value, bool isPercent) => isPercent ? $"{Math.Round(value, 1)}%" : $"{value:0}";
 
         _questItemRollRangeText = "Roll Ranges:\n";
 
         foreach (var range in ranges)
         {
+            var quality = range.Quality is { } roll ? $" ({Math.Round(roll * 100)}% roll)" : "";
+
             _questItemRollRangeText +=
-                $"~ {range.Stat}: {Format(range.MinWithTinks, range.IsMultiplier)} - {Format(range.MaxWithTinks, range.IsMultiplier)}\n";
+                $"~ {range.Stat}: {Format(range.Low, range.IsPercent)} - {Format(range.High, range.IsPercent)}{quality}\n";
         }
+    }
+
+    /// <summary>
+    /// Quest items that roll on pickup, or rolled under the current rules (which baked in their tinks).
+    /// </summary>
+    private static bool ShowsQuestItemRollRanges(WorldObject wo)
+    {
+        return wo.MutableQuestItem || wo.QuestItemTinks != null;
     }
 
     private void SetForgeStageUseText(WorldObject wo)
@@ -2082,7 +2091,7 @@ public class AppraiseInfo
             var baseCritFrequency = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId)
                 ?.GetProperty(PropertyFloat.CriticalFrequency);
 
-            if (baseCritFrequency != null)
+            if (baseCritFrequency != null && !ShowsQuestItemRollRanges(wo))
             {
                 var rangeMin = Math.Round((baseCritFrequency.Value - 0.1) * 100, 0);
                 var rangeMax = rangeMin + Math.Round(LootGenerationFactory.QuestCritFrequencyBonusRange * 100, 0);
@@ -2179,7 +2188,7 @@ public class AppraiseInfo
             var baseCritMultiplier = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId)
                 ?.GetProperty(PropertyFloat.CriticalMultiplier);
 
-            if (baseCritMultiplier != null)
+            if (baseCritMultiplier != null && !ShowsQuestItemRollRanges(wo))
             {
                 var rangeMin = Math.Round((baseCritMultiplier.Value - 1) * 100, 0);
                 var rangeMax = rangeMin + Math.Round(LootGenerationFactory.QuestCritMultiplierBonusRange * 100, 0);
@@ -2253,7 +2262,7 @@ public class AppraiseInfo
             var baseIgnoreArmor = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId)
                 ?.GetProperty(PropertyFloat.IgnoreArmor);
 
-            if (baseIgnoreArmor != null)
+            if (baseIgnoreArmor != null && !ShowsQuestItemRollRanges(wo))
             {
                 var rangeMin = 100 - Math.Round(baseIgnoreArmor.Value * 100, 0);
                 var rangeMax = rangeMin + Math.Round(LootGenerationFactory.QuestIgnoreArmorBonusRange * 100, 0);
@@ -2396,7 +2405,7 @@ public class AppraiseInfo
                 var baseIgnoreWard = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId)
                     ?.GetProperty(PropertyFloat.IgnoreWard);
 
-                if (baseIgnoreWard != null)
+                if (baseIgnoreWard != null && !ShowsQuestItemRollRanges(wo))
                 {
                     var rangeMin = 100 - Math.Round(baseIgnoreWard.Value * 100, 0);
                     var rangeMax = rangeMin + Math.Round(LootGenerationFactory.QuestIgnoreWardBonusRange * 100, 0);

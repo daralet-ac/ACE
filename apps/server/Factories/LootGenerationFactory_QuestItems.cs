@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Entity.Models;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Factories;
@@ -519,122 +520,248 @@ public static partial class LootGenerationFactory
     }
 
     /// <summary>
-    /// One main stat's spread for appraisal: what the roll gives at the item's tier, and where the baked-in tinks take it.
-    /// IsMultiplier marks damage/heal mods (1.25 = +25%) as opposed to whole-number stats.
+    /// One rolled stat's spread for appraisal, in the units the item shows it in (whole numbers, or percents when
+    /// IsPercent), with the baked-in tinks included. Quality is where this copy rolled, 0 to 1 - null until it has.
     /// </summary>
-    public readonly record struct QuestItemRollRange(string Stat, double MinRoll, double MaxRoll, double MinWithTinks, double MaxWithTinks, bool IsMultiplier);
+    public readonly record struct QuestItemRollRange(string Stat, double Low, double High, bool IsPercent, double? Quality);
+
+    private static readonly (PropertyFloat Property, string Label)[] QuestItemArmorMods =
+    [
+        (PropertyFloat.ArmorWarMagicMod, "Bonus to War Magic Skill"),
+        (PropertyFloat.ArmorLifeMagicMod, "Bonus to Life Magic Skill"),
+        (PropertyFloat.ArmorAttackMod, "Bonus to Attack Skill"),
+        (PropertyFloat.ArmorPhysicalDefMod, "Bonus to Physical Defense"),
+        (PropertyFloat.ArmorMagicDefMod, "Bonus to Magic Defense"),
+        (PropertyFloat.ArmorDualWieldMod, "Bonus to Dual Wield Skill"),
+        (PropertyFloat.ArmorTwohandedCombatMod, "Bonus to Two-handed Combat Skill"),
+        (PropertyFloat.ArmorRunMod, "Bonus to Run Skill"),
+        (PropertyFloat.ArmorThieveryMod, "Bonus to Thievery Skill"),
+        (PropertyFloat.ArmorShieldMod, "Bonus to Shield Skill"),
+        (PropertyFloat.ArmorPerceptionMod, "Bonus to Perception Skill"),
+        (PropertyFloat.ArmorDeceptionMod, "Bonus to Deception Skill"),
+        (PropertyFloat.ArmorHealthMod, "Bonus to Maximum Health"),
+        (PropertyFloat.ArmorHealthRegenMod, "Bonus to Health Regen"),
+        (PropertyFloat.ArmorStaminaMod, "Bonus to Maximum Stamina"),
+        (PropertyFloat.ArmorStaminaRegenMod, "Bonus to Stamina Regen"),
+        (PropertyFloat.ArmorManaMod, "Bonus to Maximum Mana"),
+        (PropertyFloat.ArmorManaRegenMod, "Bonus to Mana Regen"),
+    ];
 
     /// <summary>
-    /// The roll ranges a quest item's main stats have at its current tier, using the same rules as MutateQuestItem.
-    /// An unrolled item's current values are its floors; a rolled one is shown from the tier median. Armor Level is
-    /// scaled by the average protection that NormalizeProtectionLevels folds into it - for armor, pass the lowest and
-    /// highest that average can come out after protections roll.
+    /// The roll ranges of every stat MutateQuestItem rolls, at the item's current tier and with its baked-in tinks.
+    /// authored is the item's weenie: secondary stats roll up from their authored values, so without it only the main
+    /// stats are listed. An unrolled item's current main stats are their floors; a rolled one is shown from the tier
+    /// median. Armor Level is scaled by the average protection NormalizeProtectionLevels folds into it - for armor,
+    /// pass the lowest and highest that average can come out after protections roll.
     /// </summary>
-    public static (int Tinks, List<QuestItemRollRange> Ranges) GetQuestItemRollRanges(WorldObject wo, double protectionScaleMin = 1.0, double protectionScaleMax = 1.0)
+    public static List<QuestItemRollRange> GetQuestItemRollRanges(WorldObject wo, Weenie authored, double protectionScaleMin = 1.0, double protectionScaleMax = 1.0)
     {
         var ranges = new List<QuestItemRollRange>();
         var tier = GetQuestItemTierIndex(wo);
-        var unrolled = wo.MutableQuestItem;
+        var rolled = !wo.MutableQuestItem;
 
         if (IsQuestItemWeapon(wo))
         {
-            var tinks = LootTables.QuestItemWeaponTinksPerTier[tier];
-
-            if (wo.WeaponSubtype is not { } subtypeValue)
-            {
-                return (tinks, ranges);
-            }
-
-            var subtype = (LootTables.WeaponSubtype)subtypeValue;
-
-            if (wo.WeenieType == WeenieType.Caster)
-            {
-                if (subtype != LootTables.WeaponSubtype.Caster || (wo.ElementalDamageMod == null && wo.WeaponRestorationSpellsMod == null))
-                {
-                    return (tinks, ranges);
-                }
-
-                double minimum = LootTables.CasterMinDamageMod[tier];
-                double maximum = LootTables.CasterMaxDamageMod[tier];
-                var isWar = IsQuestItemWarCaster(wo);
-
-                if (!isWar)
-                {
-                    minimum = QuestItemMutation.ToLifeCasterScale(minimum);
-                    maximum = QuestItemMutation.ToLifeCasterScale(maximum);
-                }
-
-                var floor = unrolled ? (isWar ? wo.ElementalDamageMod ?? wo.WeaponRestorationSpellsMod.Value : wo.WeaponRestorationSpellsMod ?? wo.ElementalDamageMod.Value) : 0;
-                var tinksElemental = QuestItemCasterTinksElementalDamageMod(wo);
-                var tinkBonus = tinks * (tinksElemental ? Salvage.GreenGarnetTinkElementalDamageMod : Salvage.LavenderJadeTinkRestorationMod);
-                var low = QuestItemMutation.RollMainStat(floor, minimum, maximum, 0);
-                var high = QuestItemMutation.RollMainStat(floor, minimum, maximum, 1);
-
-                ranges.Add(new(tinksElemental ? "Elemental Damage Bonus" : "Restoration Healing Bonus", low, high, low + tinkBonus, high + tinkBonus, true));
-            }
-            else if (wo.WeenieType == WeenieType.MissileLauncher)
-            {
-                if (wo.DamageMod == null || !LootTables.IsMissileLauncherSubtype(subtype))
-                {
-                    return (tinks, ranges);
-                }
-
-                var minimum = LootTables.GetMissileCasterSubtypeMinimumDamage(subtype, tier);
-                var maximum = minimum + LootTables.GetMissileCasterSubtypeDamageRange(subtype, tier);
-                var floor = unrolled ? wo.DamageMod.Value : 0;
-                var low = QuestItemMutation.RollMainStat(floor, minimum, maximum, 0);
-                var high = QuestItemMutation.RollMainStat(floor, minimum, maximum, 1);
-                var tinkBonus = tinks * Salvage.MahoganyTinkDamageMod;
-
-                ranges.Add(new("Damage Modifier", low, high, low + tinkBonus, high + tinkBonus, true));
-            }
-            else if (wo.Damage != null && LootTables.IsMeleeOrThrownSubtype(subtype))
-            {
-                var minimum = LootTables.GetMeleeSubtypeMinimumDamage(subtype, tier);
-                var maximum = minimum + LootTables.GetMeleeSubtypeDamageRange(subtype, tier);
-                var floor = unrolled ? wo.Damage.Value : 0;
-
-                ranges.Add(WholeRange("Damage", QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 0), QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 1), tinks, value => QuestItemMutation.GetPercentTinkBonus(value, Salvage.IronTinkPercent)));
-            }
-
-            return (tinks, ranges);
+            AddQuestItemWeaponMainStatRange(wo, tier, rolled, ranges);
+            AddQuestItemWeaponModRanges(wo, authored, tier, rolled, ranges);
+            return ranges;
         }
 
         if (!IsQuestItemArmor(wo))
         {
-            return (0, ranges);
+            return ranges;
         }
 
-        var armorTinks = LootTables.QuestItemArmorTinksPerTier[tier];
+        var tinks = LootTables.QuestItemArmorTinksPerTier[tier];
 
         if (wo.ArmorLevel is > 0)
         {
-            var (minimum, maximum) = QuestItemMutation.GetArmorLevelRange(LootTables.GetArmorStyleBaseArmorLevel(wo.ArmorStyle), tier);
-            var floor = unrolled ? wo.ArmorLevel.Value : 0;
-
+            var (minimum, maximum) = GetQuestItemArmorLevelRange(wo, tier);
+            var floor = rolled ? 0 : wo.ArmorLevel.Value;
             var low = (int)(QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 0) * protectionScaleMin);
             var high = (int)(QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 1) * protectionScaleMax);
+            int Tinked(int value) => value + tinks * QuestItemMutation.GetPercentTinkBonus(value, Salvage.IronTinkPercent);
 
-            ranges.Add(WholeRange("Armor Level", low, high, armorTinks, value => QuestItemMutation.GetPercentTinkBonus(value, Salvage.IronTinkPercent)));
+            ranges.Add(new("Armor Level", Tinked(low), Tinked(high), false, rolled ? wo.QuestItemRollQuality : null));
         }
 
         if (wo.WardLevel is > 0)
         {
-            var (minimum, maximum) = wo.ItemType == ItemType.Jewelry
-                ? QuestItemMutation.GetJewelryWardLevelRange(tier, wo.ValidLocations is EquipMask.NeckWear)
-                : QuestItemMutation.GetWardLevelRange(LootTables.GetArmorStyleBaseWardLevel(wo.ArmorStyle, wo.ArmorWeightClass), tier, wo.ArmorSlots ?? 1);
-            var floor = unrolled ? wo.WardLevel.Value : 0;
-            var wardPerTink = wo.ItemType == ItemType.Jewelry ? Salvage.WhiteJadeTinkWardLevel : Salvage.SilverTinkWardLevel * (wo.ArmorSlots ?? 1);
+            var (minimum, maximum) = GetQuestItemWardLevelRange(wo, tier);
+            var floor = rolled ? 0 : wo.WardLevel.Value;
+            var wardTinks = tinks * (wo.ItemType == ItemType.Jewelry ? Salvage.WhiteJadeTinkWardLevel : Salvage.SilverTinkWardLevel * (wo.ArmorSlots ?? 1));
 
-            ranges.Add(WholeRange("Ward Level", QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 0), QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 1), armorTinks, _ => wardPerTink));
+            ranges.Add(new(
+                "Ward Level",
+                QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 0) + wardTinks,
+                QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 1) + wardTinks,
+                false,
+                rolled ? wo.QuestItemWardRollQuality : null
+            ));
         }
 
-        return (armorTinks, ranges);
+        if (authored == null)
+        {
+            return ranges;
+        }
+
+        // Upgrade Kits shift every armor skill mod by the tier bonus difference (jewelry only its perception and deception)
+        var scaledByUpgrades = wo.WeenieType == WeenieType.Clothing || wo.ItemType == ItemType.Armor;
+        var tierShift = LootTables.ArmorSkillModBonusPerTier[tier] - LootTables.ArmorSkillModBonusPerTier[GetQuestItemAuthoredTier(wo, authored)];
+        var span = GetQuestItemArmorModBonusRange(wo, wo.ArmorSlots ?? 1);
+
+        foreach (var (property, label) in QuestItemArmorMods)
+        {
+            var shifted = scaledByUpgrades || property is PropertyFloat.ArmorPerceptionMod or PropertyFloat.ArmorDeceptionMod;
+            AddQuestItemFlatRange(ranges, label, wo.GetProperty(property), authored.GetProperty(property), shifted ? tierShift : 0, span, rolled, value => value * 100);
+        }
+
+        return ranges;
     }
 
-    private static QuestItemRollRange WholeRange(string stat, int low, int high, int tinks, Func<int, int> bonusPerTink)
+    private static void AddQuestItemWeaponMainStatRange(WorldObject wo, int tier, bool rolled, List<QuestItemRollRange> ranges)
     {
-        return new(stat, low, high, low + tinks * bonusPerTink(low), high + tinks * bonusPerTink(high), false);
+        if (wo.WeaponSubtype is not { } subtypeValue)
+        {
+            return;
+        }
+
+        var subtype = (LootTables.WeaponSubtype)subtypeValue;
+        var tinks = LootTables.QuestItemWeaponTinksPerTier[tier];
+
+        // a mod is shown as a bonus percent, e.g. 1.25 as 25%
+        static double Percent(double mod) => (mod - 1) * 100;
+
+        // a rolled float stat's quality is where it sits in the range (Upgrade Kits keep that place exactly)
+        static double? Quality(bool rolled, double? value, double minimum, double maximum) =>
+            rolled && value != null ? Math.Clamp((value.Value - (minimum + maximum) / 2) / ((maximum - minimum) / 2), 0, 1) : null;
+
+        if (wo.WeenieType == WeenieType.Caster)
+        {
+            if (subtype != LootTables.WeaponSubtype.Caster || (wo.ElementalDamageMod == null && wo.WeaponRestorationSpellsMod == null))
+            {
+                return;
+            }
+
+            double minimum = LootTables.CasterMinDamageMod[tier];
+            double maximum = LootTables.CasterMaxDamageMod[tier];
+            var isWar = IsQuestItemWarCaster(wo);
+
+            if (!isWar)
+            {
+                minimum = QuestItemMutation.ToLifeCasterScale(minimum);
+                maximum = QuestItemMutation.ToLifeCasterScale(maximum);
+            }
+
+            var floor = rolled ? 0 : isWar ? wo.ElementalDamageMod ?? wo.WeaponRestorationSpellsMod.Value : wo.WeaponRestorationSpellsMod ?? wo.ElementalDamageMod.Value;
+            var tinksElemental = QuestItemCasterTinksElementalDamageMod(wo);
+            var tinkBonus = tinks * (tinksElemental ? Salvage.GreenGarnetTinkElementalDamageMod : Salvage.LavenderJadeTinkRestorationMod);
+            var rolledBase = isWar ? wo.BaseElementalDamageMod ?? wo.BaseWeaponRestorationSpellsMod : wo.BaseWeaponRestorationSpellsMod ?? wo.BaseElementalDamageMod;
+
+            ranges.Add(new(
+                tinksElemental ? "Elemental Damage Bonus" : "Restoration Healing Bonus",
+                Percent(QuestItemMutation.RollMainStat(floor, minimum, maximum, 0) + tinkBonus),
+                Percent(QuestItemMutation.RollMainStat(floor, minimum, maximum, 1) + tinkBonus),
+                true,
+                Quality(rolled, rolledBase, minimum, maximum)
+            ));
+        }
+        else if (wo.WeenieType == WeenieType.MissileLauncher)
+        {
+            if (wo.DamageMod == null || !LootTables.IsMissileLauncherSubtype(subtype))
+            {
+                return;
+            }
+
+            double minimum = LootTables.GetMissileCasterSubtypeMinimumDamage(subtype, tier);
+            var maximum = minimum + LootTables.GetMissileCasterSubtypeDamageRange(subtype, tier);
+            var floor = rolled ? 0 : wo.DamageMod.Value;
+            var tinkBonus = tinks * Salvage.MahoganyTinkDamageMod;
+
+            ranges.Add(new(
+                "Damage Modifier",
+                Percent(QuestItemMutation.RollMainStat(floor, minimum, maximum, 0) + tinkBonus),
+                Percent(QuestItemMutation.RollMainStat(floor, minimum, maximum, 1) + tinkBonus),
+                true,
+                Quality(rolled, wo.BaseDamageMod, minimum, maximum)
+            ));
+        }
+        else if (IsQuestItemDamageWeapon(wo, out _))
+        {
+            var (minimum, maximum) = GetQuestItemDamageRange(subtype, tier);
+            var floor = rolled ? 0 : wo.Damage.Value;
+            int Tinked(int value) => value + tinks * QuestItemMutation.GetPercentTinkBonus(value, Salvage.IronTinkPercent);
+
+            ranges.Add(new(
+                "Damage",
+                Tinked(QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 0)),
+                Tinked(QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 1)),
+                false,
+                rolled ? wo.QuestItemRollQuality : null
+            ));
+        }
+    }
+
+    private static void AddQuestItemWeaponModRanges(WorldObject wo, Weenie authored, int tier, bool rolled, List<QuestItemRollRange> ranges)
+    {
+        if (authored == null)
+        {
+            return;
+        }
+
+        // Upgrade Kits shift the attack, defense and magic skill mods by the tier bonus difference
+        var authoredTier = GetQuestItemAuthoredTier(wo, authored);
+        double Shift(float[] bonusPerTier) => bonusPerTier[tier] - bonusPerTier[authoredTier];
+
+        static double Bonus(double mod) => (mod - 1) * 100;
+        static double Skill(double mod) => mod * 100;
+
+        AddQuestItemFlatRange(ranges, "Bonus to Attack Skill", wo.WeaponOffense, authored.GetProperty(PropertyFloat.WeaponOffense), Shift(LootTables.WeaponOffenseModBonusPerTier), WeaponModMaxBonus, rolled, Bonus);
+        AddQuestItemFlatRange(ranges, "Bonus to Physical Defense", wo.WeaponPhysicalDefense, authored.GetProperty(PropertyFloat.WeaponPhysicalDefense), Shift(LootTables.WeaponDefenseModBonusPerTier), WeaponModMaxBonus, rolled, Bonus);
+        AddQuestItemFlatRange(ranges, "Bonus to Magic Defense", wo.WeaponMagicalDefense, authored.GetProperty(PropertyFloat.WeaponMagicalDefense), Shift(LootTables.WeaponDefenseModBonusPerTier), WeaponModMaxBonus, rolled, Bonus);
+        AddQuestItemFlatRange(ranges, "Bonus to Life Magic Skill", wo.WeaponLifeMagicMod, authored.GetProperty(PropertyFloat.WeaponLifeMagicMod), Shift(LootTables.WeaponSkillModBonusPerTier), WeaponModMaxBonus, rolled, Skill);
+        AddQuestItemFlatRange(ranges, "Bonus to War Magic Skill", wo.WeaponWarMagicMod, authored.GetProperty(PropertyFloat.WeaponWarMagicMod), Shift(LootTables.WeaponSkillModBonusPerTier), WeaponModMaxBonus, rolled, Skill);
+
+        AddQuestItemFlatRange(ranges, "Biting Strike", wo.CriticalFrequency, authored.GetProperty(PropertyFloat.CriticalFrequency), 0, QuestCritFrequencyBonusRange, rolled, value => (value - 0.1) * 100);
+        AddQuestItemFlatRange(ranges, "Crushing Blow", wo.GetProperty(PropertyFloat.CriticalMultiplier), authored.GetProperty(PropertyFloat.CriticalMultiplier), 0, QuestCritMultiplierBonusRange, rolled, Bonus);
+
+        // cleaving rolls downward: less armor or ward left after the strike
+        AddQuestItemFlatRange(ranges, "Armor Cleaving", wo.IgnoreArmor, authored.GetProperty(PropertyFloat.IgnoreArmor), 0, -QuestIgnoreArmorBonusRange, rolled, value => (1 - value) * 100);
+        AddQuestItemFlatRange(ranges, "Ward Cleaving", wo.IgnoreWard, authored.GetProperty(PropertyFloat.IgnoreWard), 0, -QuestIgnoreWardBonusRange, rolled, value => (1 - value) * 100);
+    }
+
+    /// <summary>
+    /// A secondary stat rolls from its authored value (plus any Upgrade Kit shift) by up to span. Shown as percents.
+    /// </summary>
+    private static void AddQuestItemFlatRange(
+        List<QuestItemRollRange> ranges,
+        string stat,
+        double? current,
+        double? authoredValue,
+        double tierShift,
+        double span,
+        bool rolled,
+        Func<double, double> toPercent
+    )
+    {
+        if (current == null || authoredValue == null)
+        {
+            return;
+        }
+
+        var start = authoredValue.Value + tierShift;
+        var end = start + span;
+        double? quality = rolled ? Math.Clamp((current.Value - start) / span, 0, 1) : null;
+
+        ranges.Add(new(stat, Math.Min(toPercent(start), toPercent(end)), Math.Max(toPercent(start), toPercent(end)), true, quality));
+    }
+
+    /// <summary>
+    /// The tier the item was authored at, before any Upgrade Kit.
+    /// </summary>
+    private static int GetQuestItemAuthoredTier(WorldObject wo, Weenie authored)
+    {
+        return QuestItemMutation.GetTierIndex(UsesRequiredLevelTiering(wo), authored.GetProperty(PropertyInt.WieldDifficulty));
     }
 
     private static bool IsQuestItemWeapon(WorldObject wo)
