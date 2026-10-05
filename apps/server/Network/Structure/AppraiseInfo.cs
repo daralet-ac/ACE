@@ -66,6 +66,7 @@ public class AppraiseInfo
     private string _extraPropertiesText;
     private string _additionalPropertiesLongDescriptionsText = "";
     private bool _hasExtraPropertiesText = false;
+    private string _questItemRollRangeText = "";
 
     public AppraiseInfo()
     {
@@ -975,7 +976,7 @@ public class AppraiseInfo
 
             SetForgeStageUseText(wo);
 
-        SetQuestItemRollRangeUseText(wo);
+        SetQuestItemRollRangeLongText(wo);
 
         // -------- WEAPON ATTACK/DEFENSE MODS --------
         _extraPropertiesText += "\n";
@@ -1048,6 +1049,14 @@ public class AppraiseInfo
 
                 PropertiesString[PropertyString.LongDesc] = _additionalPropertiesLongDescriptionsText;
             }
+        }
+
+        // roll ranges go last, after the property descriptions
+        if (_questItemRollRangeText.Length > 0)
+        {
+            PropertiesString.TryGetValue(PropertyString.LongDesc, out var longDesc);
+            PropertiesString[PropertyString.LongDesc] =
+                string.IsNullOrEmpty(longDesc) ? _questItemRollRangeText : longDesc.TrimEnd() + "\n\n" + _questItemRollRangeText;
         }
     }
 
@@ -1504,7 +1513,7 @@ public class AppraiseInfo
         _hasExtraPropertiesText = true;
     }
 
-    private void SetQuestItemRollRangeUseText(WorldObject wo)
+    private void SetQuestItemRollRangeLongText(WorldObject wo)
     {
         // quest items that roll on pickup, or rolled under the current rules (which baked in tinks)
         if (!wo.MutableQuestItem && wo.QuestItemTinks == null)
@@ -1535,7 +1544,7 @@ public class AppraiseInfo
             }
         }
 
-        var (tinks, ranges) = LootGenerationFactory.GetQuestItemRollRanges(wo, protectionScaleMin, protectionScaleMax);
+        var (_, ranges) = LootGenerationFactory.GetQuestItemRollRanges(wo, protectionScaleMin, protectionScaleMax);
 
         if (ranges.Count == 0)
         {
@@ -1545,17 +1554,13 @@ public class AppraiseInfo
         static string Format(double value, bool isMultiplier) =>
             isMultiplier ? $"+{Math.Round((value - 1) * 100, 1)}%" : $"{value:0}";
 
-        _extraPropertiesText += $"Quest item roll ranges ({tinks} tinks built in):\n";
+        _questItemRollRangeText = "Roll Ranges:\n";
 
         foreach (var range in ranges)
         {
-            _extraPropertiesText +=
-                $"  {range.Stat}: {Format(range.MinRoll, range.IsMultiplier)} - {Format(range.MaxRoll, range.IsMultiplier)}, " +
-                $"{Format(range.MinWithTinks, range.IsMultiplier)} - {Format(range.MaxWithTinks, range.IsMultiplier)} with tinks\n";
+            _questItemRollRangeText +=
+                $"~ {range.Stat}: {Format(range.MinWithTinks, range.IsMultiplier)} - {Format(range.MaxWithTinks, range.IsMultiplier)}\n";
         }
-
-        _extraPropertiesText += "\n";
-        _hasExtraPropertiesText = true;
     }
 
     private void SetForgeStageUseText(WorldObject wo)
