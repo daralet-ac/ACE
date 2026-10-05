@@ -690,11 +690,19 @@ public static partial class LootGenerationFactory
             return false;
         }
 
-        var minimumDamage = LootTables.GetMeleeSubtypeMinimumDamage(weaponSubtype, tier);
-        var maximumDamage = minimumDamage + LootTables.GetMeleeSubtypeDamageRange(weaponSubtype, tier);
+        var (minimumDamage, maximumDamage) = GetQuestItemDamageRange(weaponSubtype, tier);
+        var roll = GetDiminishingRoll(null, lootQuality);
 
-        wo.Damage = QuestItemMutation.RollWholeMainStat(wo.Damage.Value, minimumDamage, maximumDamage, GetDiminishingRoll(null, lootQuality));
+        wo.Damage = QuestItemMutation.RollWholeMainStat(wo.Damage.Value, minimumDamage, maximumDamage, roll);
+        wo.QuestItemRollQuality = roll;
         return true;
+    }
+
+    private static (int Minimum, int Maximum) GetQuestItemDamageRange(LootTables.WeaponSubtype weaponSubtype, int tier)
+    {
+        var minimum = LootTables.GetMeleeSubtypeMinimumDamage(weaponSubtype, tier);
+
+        return (minimum, minimum + LootTables.GetMeleeSubtypeDamageRange(weaponSubtype, tier));
     }
 
     private static bool RollQuestItemCasterMainStat(WorldObject wo, LootTables.WeaponSubtype weaponSubtype, int tier, float lootQuality)
@@ -777,10 +785,17 @@ public static partial class LootGenerationFactory
             return false;
         }
 
-        var (minimum, maximum) = QuestItemMutation.GetArmorLevelRange(LootTables.GetArmorStyleBaseArmorLevel(wo.ArmorStyle), tier);
+        var (minimum, maximum) = GetQuestItemArmorLevelRange(wo, tier);
+        var roll = GetDiminishingRoll(null, lootQuality);
 
-        wo.ArmorLevel = QuestItemMutation.RollWholeMainStat(wo.ArmorLevel.Value, minimum, maximum, GetDiminishingRoll(null, lootQuality));
+        wo.ArmorLevel = QuestItemMutation.RollWholeMainStat(wo.ArmorLevel.Value, minimum, maximum, roll);
+        wo.QuestItemRollQuality = roll;
         return true;
+    }
+
+    private static (int Minimum, int Maximum) GetQuestItemArmorLevelRange(WorldObject wo, int tier)
+    {
+        return QuestItemMutation.GetArmorLevelRange(LootTables.GetArmorStyleBaseArmorLevel(wo.ArmorStyle), tier);
     }
 
     private static bool RollQuestItemWardLevel(WorldObject wo, int tier, float lootQuality)
@@ -790,16 +805,93 @@ public static partial class LootGenerationFactory
             return false;
         }
 
-        var (minimum, maximum) = wo.ItemType == ItemType.Jewelry
+        var (minimum, maximum) = GetQuestItemWardLevelRange(wo, tier);
+        var roll = GetDiminishingRoll(null, lootQuality);
+
+        wo.WardLevel = QuestItemMutation.RollWholeMainStat(wo.WardLevel.Value, minimum, maximum, roll);
+        wo.QuestItemWardRollQuality = roll;
+        return true;
+    }
+
+    private static (int Minimum, int Maximum) GetQuestItemWardLevelRange(WorldObject wo, int tier)
+    {
+        return wo.ItemType == ItemType.Jewelry
             ? QuestItemMutation.GetJewelryWardLevelRange(tier, wo.ValidLocations is EquipMask.NeckWear)
             : QuestItemMutation.GetWardLevelRange(
                 LootTables.GetArmorStyleBaseWardLevel(wo.ArmorStyle, wo.ArmorWeightClass),
                 tier,
                 wo.ArmorSlots ?? 1
             );
+    }
 
-        wo.WardLevel = QuestItemMutation.RollWholeMainStat(wo.WardLevel.Value, minimum, maximum, GetDiminishingRoll(null, lootQuality));
-        return true;
+    /// <summary>
+    /// How far each of a quest item's whole-number main stats sits from what its stored roll quality gives at its
+    /// tier - the rounding, plus any authored floor or protection normalization. Null where nothing was stored.
+    /// </summary>
+    internal readonly record struct QuestItemRollOffsets(double? Damage, double? ArmorLevel, double? WardLevel);
+
+    /// <summary>
+    /// Call on the untinkered stats before an Upgrade Kit rescales them; ApplyQuestItemRollOffsets then re-rolls each
+    /// stat at the new tier from its stored quality, which a rounded whole number can't carry on its own.
+    /// </summary>
+    internal static QuestItemRollOffsets CaptureQuestItemRollOffsets(WorldObject wo, int tier)
+    {
+        double? damage = null, armorLevel = null, wardLevel = null;
+
+        if (wo.QuestItemRollQuality is { } quality)
+        {
+            if (IsQuestItemDamageWeapon(wo, out var subtype))
+            {
+                var (minimum, maximum) = GetQuestItemDamageRange(subtype, tier);
+                damage = wo.Damage.Value - QuestItemMutation.GetRollValue(minimum, maximum, quality);
+            }
+            else if (IsQuestItemArmor(wo) && wo.ArmorLevel is > 0)
+            {
+                var (minimum, maximum) = GetQuestItemArmorLevelRange(wo, tier);
+                armorLevel = wo.ArmorLevel.Value - QuestItemMutation.GetRollValue(minimum, maximum, quality);
+            }
+        }
+
+        if (wo.QuestItemWardRollQuality is { } wardQuality && IsQuestItemArmor(wo) && wo.WardLevel is > 0)
+        {
+            var (minimum, maximum) = GetQuestItemWardLevelRange(wo, tier);
+            wardLevel = wo.WardLevel.Value - QuestItemMutation.GetRollValue(minimum, maximum, wardQuality);
+        }
+
+        return new(damage, armorLevel, wardLevel);
+    }
+
+    internal static void ApplyQuestItemRollOffsets(WorldObject wo, int tier, QuestItemRollOffsets offsets)
+    {
+        static int Round(double value) => (int)Math.Round(value, MidpointRounding.AwayFromZero);
+
+        if (offsets.Damage is { } damage && IsQuestItemDamageWeapon(wo, out var subtype))
+        {
+            var (minimum, maximum) = GetQuestItemDamageRange(subtype, tier);
+            wo.Damage = Round(QuestItemMutation.GetRollValue(minimum, maximum, wo.QuestItemRollQuality.Value) + damage);
+        }
+
+        if (offsets.ArmorLevel is { } armorLevel)
+        {
+            var (minimum, maximum) = GetQuestItemArmorLevelRange(wo, tier);
+            wo.ArmorLevel = Round(QuestItemMutation.GetRollValue(minimum, maximum, wo.QuestItemRollQuality.Value) + armorLevel);
+        }
+
+        if (offsets.WardLevel is { } wardLevel)
+        {
+            var (minimum, maximum) = GetQuestItemWardLevelRange(wo, tier);
+            wo.WardLevel = Round(QuestItemMutation.GetRollValue(minimum, maximum, wo.QuestItemWardRollQuality.Value) + wardLevel);
+        }
+    }
+
+    private static bool IsQuestItemDamageWeapon(WorldObject wo, out LootTables.WeaponSubtype subtype)
+    {
+        subtype = (LootTables.WeaponSubtype)(wo.WeaponSubtype ?? 0);
+
+        return IsQuestItemWeapon(wo)
+            && wo.WeenieType is not (WeenieType.Caster or WeenieType.MissileLauncher)
+            && wo.Damage != null
+            && LootTables.IsMeleeOrThrownSubtype(subtype);
     }
 
     /// <summary>

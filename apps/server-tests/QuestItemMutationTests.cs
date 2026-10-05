@@ -288,12 +288,58 @@ public class QuestItemMutationTests
 
             Assert.IsTrue(UpgradeKit.UpgradeItem(null, axe, 250));
 
-            // T7 AxeLarge is 69-92; the T6 roll keeps its place in the range
+            // T7 AxeLarge is 69-92; the stored roll quality lands in the same place there, plus the rounding it had
+            var quality = axe.QuestItemRollQuality.Value;
+            var expected = QuestItemMutation.GetRollValue(69, 92, quality) + (t6Roll - QuestItemMutation.GetRollValue(47, 62, quality));
+
             Assert.AreEqual(250, axe.WieldDifficulty);
             Assert.AreEqual(5, axe.QuestItemTinks);
-            Assert.AreEqual(ScaleUpAxeLargeDamageToT7(t6Roll), axe.BaseDamage);
+            Assert.AreEqual((int)Math.Round(expected, MidpointRounding.AwayFromZero), axe.BaseDamage);
             AssertBetween(80, 92, axe.BaseDamage.Value);
             Assert.AreEqual(axe.BaseDamage + 5 * (int)(axe.BaseDamage * 0.075), axe.Damage);
+        }
+    }
+
+    [TestMethod]
+    public void UpgradeItem_KeepsALowTierRollsQualityThatItsRoundedValueLost()
+    {
+        // T1 AxeLarge (5-7) only rolls 6 or 7, so the whole number alone can't say how good the roll was
+        for (var i = 0; i < Rolls; i++)
+        {
+            var axe = CreateMeleeWeapon(LootTables.WeaponSubtype.AxeLarge, 6, 50);
+            LootGenerationFactory.MutateQuestItem(axe);
+            var quality = axe.QuestItemRollQuality.Value;
+
+            Assert.IsTrue(UpgradeKit.UpgradeItem(null, axe, 250));
+
+            // within a point of where that quality lands at T7 (69-92), not snapped to its middle or top
+            AssertBetween(QuestItemMutation.GetRollValue(69, 92, quality) - 1, QuestItemMutation.GetRollValue(69, 92, quality) + 1, axe.BaseDamage.Value);
+        }
+    }
+
+    [TestMethod]
+    public void UpgradeItem_KeepsAJewelryWardRollsQuality()
+    {
+        for (var i = 0; i < Rolls; i++)
+        {
+            var ring = CreateItem(
+                WeenieType.Generic,
+                ItemType.Jewelry,
+                new()
+                {
+                    [PropertyInt.WardLevel] = 9,
+                    [PropertyInt.WieldRequirements] = (int)WieldRequirement.Level,
+                    [PropertyInt.WieldDifficulty] = 20,
+                    [PropertyInt.ValidLocations] = (int)EquipMask.FingerWear,
+                }
+            );
+            LootGenerationFactory.MutateQuestItem(ring);
+            var quality = ring.QuestItemWardRollQuality.Value;
+
+            // a ring's T6 ward is 18-25
+            Assert.IsTrue(UpgradeKit.UpgradeItemToRequirement(ring, 50));
+
+            AssertBetween(QuestItemMutation.GetRollValue(18, 25, quality) - 1, QuestItemMutation.GetRollValue(18, 25, quality) + 1, ring.BaseWard.Value);
         }
     }
 

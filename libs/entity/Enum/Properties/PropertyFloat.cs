@@ -362,6 +362,19 @@ public enum PropertyFloat : ushort
     BaseDamageMod = 20050,
     BaseElementalDamageMod = 20051,
     BaseManaConversionMod = 20052,
+
+    /// <summary>
+    /// Where a quest item's whole-number main stat (Damage or Armor Level) rolled within its tier's range, 0 to 1,
+    /// so Upgrade Kits can roll it the same at the new tier instead of reading it back from a rounded value.
+    /// </summary>
+    [ServerOnly]
+    QuestItemRollQuality = 20053,
+
+    /// <summary>
+    /// The same for a quest item's Ward Level, which rolls separately from its Armor Level.
+    /// </summary>
+    [ServerOnly]
+    QuestItemWardRollQuality = 20054,
 }
 
 public static class PropertyFloatExtensions

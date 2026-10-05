@@ -169,6 +169,18 @@ public class UpgradeKit : Stackable
 
     public static bool UpgradeItem(Player player, WorldObject target, int forcedNewWieldDifficulty = 0)
     {
+        var newRequirement = forcedNewWieldDifficulty > 0 && target.ItemType != ItemType.Jewelry
+            ? forcedNewWieldDifficulty
+            : GetMaxRequirementForPlayer(player, target);
+
+        return UpgradeItemToRequirement(target, newRequirement);
+    }
+
+    /// <summary>
+    /// Retiers an upgradeable quest item to a wield requirement (a required level for jewelry and level-gated clothing).
+    /// </summary>
+    internal static bool UpgradeItemToRequirement(WorldObject target, int newRequirement)
+    {
         // a quest item that hasn't reached a player yet rolls at its own tier first, so the upgrade scales its rolls
         if (target.MutableQuestItem)
         {
@@ -177,15 +189,13 @@ public class UpgradeKit : Stackable
 
         var usesRequiredLevelPath = LootGenerationFactory.UsesRequiredLevelTiering(target);
         var currentRequirement = target.WieldDifficulty ?? (usesRequiredLevelPath ? 1 : 50);
-        var newRequirement = forcedNewWieldDifficulty > 0 && target.ItemType != ItemType.Jewelry
-            ? forcedNewWieldDifficulty
-            : GetMaxRequirementForPlayer(player, target);
 
         var currentTier = LootGenerationFactory.GetQuestItemTierIndex(target, currentRequirement);
         var newTier = LootGenerationFactory.GetQuestItemTierIndex(target, newRequirement);
 
         var hadQuestItemTinks = target.QuestItemTinks != null;
         LootGenerationFactory.RemoveQuestItemTinks(target);
+        var rollOffsets = LootGenerationFactory.CaptureQuestItemRollOffsets(target, currentTier);
 
         if (!LootGenerationFactory.ApplyUpgradeKitTierUpgrades(target, currentTier, newTier))
         {
@@ -197,6 +207,7 @@ public class UpgradeKit : Stackable
             return false;
         }
 
+        LootGenerationFactory.ApplyQuestItemRollOffsets(target, newTier, rollOffsets);
         target.SetProperty(PropertyInt.WieldDifficulty, newRequirement);
         LootGenerationFactory.ApplyUpgradeKitPostTierUpgrades(target, currentTier, newTier);
         LootGenerationFactory.ApplyQuestItemTinksForTier(target, newTier);

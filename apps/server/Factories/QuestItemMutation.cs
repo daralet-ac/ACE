@@ -36,9 +36,17 @@ public static class QuestItemMutation
     /// </summary>
     public static double RollMainStat(double floor, double tierMin, double tierMax, double roll)
     {
+        return Math.Max(floor, GetRollValue(tierMin, tierMax, roll));
+    }
+
+    /// <summary>
+    /// Where a roll of 0 to 1 lands between the tier median and the tier max.
+    /// </summary>
+    public static double GetRollValue(double tierMin, double tierMax, double roll)
+    {
         var median = (tierMin + tierMax) / 2;
 
-        return Math.Max(floor, median + (tierMax - median) * roll);
+        return median + (tierMax - median) * roll;
     }
 
     /// <summary>

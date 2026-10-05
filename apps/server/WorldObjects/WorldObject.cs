@@ -1822,6 +1822,38 @@ public abstract partial class WorldObject : IActor
         }
     }
 
+    public double? QuestItemRollQuality
+    {
+        get => GetProperty(PropertyFloat.QuestItemRollQuality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyFloat.QuestItemRollQuality);
+            }
+            else
+            {
+                SetProperty(PropertyFloat.QuestItemRollQuality, value.Value);
+            }
+        }
+    }
+
+    public double? QuestItemWardRollQuality
+    {
+        get => GetProperty(PropertyFloat.QuestItemWardRollQuality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyFloat.QuestItemWardRollQuality);
+            }
+            else
+            {
+                SetProperty(PropertyFloat.QuestItemWardRollQuality, value.Value);
+            }
+        }
+    }
+
     public bool SpecialPropertiesRequireMana
     {
         get => GetProperty(PropertyBool.SpecialPropertiesRequireMana) ?? false;
