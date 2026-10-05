@@ -230,7 +230,7 @@ public class QuestItemMutationTests
             var rolled = staff.BaseWeaponRestorationSpellsMod.Value;
             AssertBetween(lifeMedian, lifeMax, rolled);
             Assert.AreEqual(rolled, staff.ElementalDamageMod.Value, 1e-6);
-            Assert.AreEqual(rolled + 4 * Salvage.LavenderJadeTinkRestorationMod, staff.WeaponRestorationSpellsMod.Value, 1e-6);
+            Assert.AreEqual(rolled * (1 + 4 * Salvage.LavenderJadeTinkPercent), staff.WeaponRestorationSpellsMod.Value, 1e-6);
         }
     }
 
@@ -243,8 +243,25 @@ public class QuestItemMutationTests
 
         var rolled = wand.BaseElementalDamageMod.Value;
         AssertBetween(3.125, 3.75, rolled);
-        Assert.AreEqual(rolled + 4 * Salvage.GreenGarnetTinkElementalDamageMod, wand.ElementalDamageMod.Value, 1e-6);
+        Assert.AreEqual(rolled * (1 + 4 * Salvage.GreenGarnetTinkPercent), wand.ElementalDamageMod.Value, 1e-6);
         Assert.AreEqual(QuestItemMutation.GetWarCasterRestorationMod(rolled), wand.WeaponRestorationSpellsMod.Value, 1e-6);
+    }
+
+    [TestMethod]
+    public void MutateQuestItem_MissileLauncher_BakesInMahoganyTinksSizedOffItsRoll()
+    {
+        // T6 large bow (3.02-4.02), authored at the tier minimum
+        for (var i = 0; i < Rolls; i++)
+        {
+            var bow = CreateMissileLauncher(LootTables.WeaponSubtype.BowLarge, 3.02, 230);
+
+            LootGenerationFactory.MutateQuestItem(bow);
+
+            var rolled = bow.BaseDamageMod.Value;
+            Assert.AreEqual(4, bow.QuestItemTinks);
+            AssertBetween(3.52, 4.02, rolled);
+            Assert.AreEqual(rolled * (1 + 4 * Salvage.MahoganyTinkPercent), bow.DamageMod.Value, 1e-6);
+        }
     }
 
     [TestMethod]
@@ -421,6 +438,24 @@ public class QuestItemMutationTests
     }
 
     [TestMethod]
+    public void UpgradeItem_MissileLauncher_RescalesTheUntinkeredRollAndResizesItsTinks()
+    {
+        for (var i = 0; i < Rolls; i++)
+        {
+            var bow = CreateMissileLauncher(LootTables.WeaponSubtype.BowLarge, 3.02, 230);
+            LootGenerationFactory.MutateQuestItem(bow);
+            var t6Roll = bow.BaseDamageMod.Value;
+
+            Assert.IsTrue(UpgradeKit.UpgradeItem(null, bow, 250));
+
+            // the T6 tinks come off before the rescale, so only the roll moves up to T7, and the new tinks size off it
+            Assert.AreEqual(5, bow.QuestItemTinks);
+            Assert.AreEqual(ScaleUpBowLargeDamageModToT7(t6Roll), bow.BaseDamageMod.Value, 1e-5);
+            Assert.AreEqual(bow.BaseDamageMod.Value * (1 + 5 * Salvage.MahoganyTinkPercent), bow.DamageMod.Value, 1e-6);
+        }
+    }
+
+    [TestMethod]
     public void RollRanges_ArmorScalesArmorLevelByProtectionAndWardBySlots()
     {
         // Platemail Hauberk of the Ogre: T2, 4 slots, authored at its 143 / 32 floors
@@ -440,8 +475,8 @@ public class QuestItemMutationTests
         var range = LootGenerationFactory.GetQuestItemRollRanges(staff, null).Single();
 
         Assert.AreEqual("Restoration Healing Bonus", range.Stat);
-        Assert.AreEqual((2.0625 + 4 * Salvage.LavenderJadeTinkRestorationMod - 1) * 100, range.Low, 1e-6);
-        Assert.AreEqual((2.375 + 4 * Salvage.LavenderJadeTinkRestorationMod - 1) * 100, range.High, 1e-6);
+        Assert.AreEqual((2.0625 * (1 + 4 * Salvage.LavenderJadeTinkPercent) - 1) * 100, range.Low, 1e-6);
+        Assert.AreEqual((2.375 * (1 + 4 * Salvage.LavenderJadeTinkPercent) - 1) * 100, range.High, 1e-6);
         Assert.IsTrue(range.IsPercent);
     }
 
@@ -472,6 +507,25 @@ public class QuestItemMutationTests
     }
 
     [TestMethod]
+    public void UpgradeItem_WarCaster_ResizesGreenGarnetTinksForTheNewRoll()
+    {
+        for (var i = 0; i < Rolls; i++)
+        {
+            var wand = CreateCaster(Skill.WarMagic, 230, 2.68, 1.42);
+            LootGenerationFactory.MutateQuestItem(wand);
+            var t6Roll = wand.BaseElementalDamageMod.Value;
+
+            Assert.IsTrue(UpgradeKit.UpgradeItem(null, wand, 250));
+
+            var t7Roll = wand.BaseElementalDamageMod.Value;
+            Assert.AreEqual(5, wand.QuestItemTinks);
+            Assert.AreEqual(ScaleUpCasterDamageModToT7(t6Roll), t7Roll, 1e-5);
+            Assert.AreEqual(t7Roll * (1 + 5 * Salvage.GreenGarnetTinkPercent), wand.ElementalDamageMod.Value, 1e-6);
+            Assert.AreEqual(QuestItemMutation.GetWarCasterRestorationMod(t7Roll), wand.WeaponRestorationSpellsMod.Value, 1e-6);
+        }
+    }
+
+    [TestMethod]
     public void RollRanges_FollowAnUpgradeKitsTierShift()
     {
         // an Upgrade Kit from T6 to T7 adds 2.5% to the attack mod (WeaponOffenseModBonusPerTier)
@@ -483,6 +537,27 @@ public class QuestItemMutationTests
 
         AssertRange(LootGenerationFactory.GetQuestItemRollRanges(axe, axe.Weenie).Single(range => range.Stat == "Bonus to Attack Skill"), 17.5, 27.5, (axe.WeaponOffense.Value - 1) * 100);
         Assert.AreEqual(t6Quality, LootGenerationFactory.GetQuestItemRollRanges(axe, axe.Weenie).Single(range => range.Stat == "Bonus to Attack Skill").Quality.Value, 1e-6);
+    }
+
+    [TestMethod]
+    public void UpgradeItem_LifeCaster_ResizesLavenderJadeTinksForTheNewRoll()
+    {
+        for (var i = 0; i < Rolls; i++)
+        {
+            var staff = CreateCaster(Skill.LifeMagic, 230, 1.84, 1.84);
+            LootGenerationFactory.MutateQuestItem(staff);
+            var t6Roll = staff.BaseWeaponRestorationSpellsMod.Value;
+
+            Assert.IsTrue(UpgradeKit.UpgradeItem(null, staff, 250));
+
+            // the life roll is rescaled on the war scale, so the restoration tinks must be off it first
+            var t7Roll = staff.BaseWeaponRestorationSpellsMod.Value;
+            var expectedT7Roll = QuestItemMutation.ToLifeCasterScale(ScaleUpCasterDamageModToT7(1 + (t6Roll - 1) * 2));
+            Assert.AreEqual(5, staff.QuestItemTinks);
+            Assert.AreEqual(expectedT7Roll, t7Roll, 1e-5);
+            Assert.AreEqual(t7Roll, staff.ElementalDamageMod.Value, 1e-6);
+            Assert.AreEqual(t7Roll * (1 + 5 * Salvage.LavenderJadeTinkPercent), staff.WeaponRestorationSpellsMod.Value, 1e-6);
+        }
     }
 
     private static void AssertRange(LootGenerationFactory.QuestItemRollRange range, double low, double high, double current)
@@ -498,6 +573,20 @@ public class QuestItemMutationTests
     {
         var rollPercentile = (float)(t6Damage - 47) / 15;
         return Convert.ToInt32(69 + 23 * rollPercentile);
+    }
+
+    // ScaleUpDamageMod's arithmetic for BowLarge, T6 (3.02-4.02) to T7 (4.01-5.34)
+    private static double ScaleUpBowLargeDamageModToT7(double t6DamageMod)
+    {
+        var rollPercentile = (float)(t6DamageMod - 3.02f) / (4.02f - 3.02f);
+        return 4.01f + (5.34f - 4.01f) * rollPercentile;
+    }
+
+    // ScaleUpElementalAndRestoMod's arithmetic for a war-scale caster mod, T6 (2.5-3.75) to T7 (3.5-4.75)
+    private static double ScaleUpCasterDamageModToT7(double t6WarScaleMod)
+    {
+        var rollPercentile = (float)(t6WarScaleMod - 2.5f) / (3.75f - 2.5f);
+        return 3.5f + (4.75f - 3.5f) * rollPercentile;
     }
 
     private static void AssertBetween(double minimum, double maximum, double value)
@@ -523,6 +612,21 @@ public class QuestItemMutationTests
                 [PropertyInt.WieldDifficulty] = wieldDifficulty,
             },
             floats
+        );
+    }
+
+    private static WorldObject CreateMissileLauncher(LootTables.WeaponSubtype subtype, double damageMod, int wieldDifficulty)
+    {
+        return CreateItem(
+            WeenieType.MissileLauncher,
+            ItemType.MissileWeapon,
+            new()
+            {
+                [PropertyInt.WeaponSubtype] = (int)subtype,
+                [PropertyInt.WieldRequirements] = (int)WieldRequirement.RawAttrib,
+                [PropertyInt.WieldDifficulty] = wieldDifficulty,
+            },
+            new() { [PropertyFloat.DamageMod] = damageMod }
         );
     }
 

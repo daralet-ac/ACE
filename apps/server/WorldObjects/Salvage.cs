@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using ACE.Common;
 using ACE.Entity;
@@ -21,11 +22,29 @@ public class Salvage : WorldObject
     // Per-tink amounts. Quest item mutation bakes a full set of these into quest gear, which can't be
     // tinkered, so changing one here changes quest gear too.
     public const double IronTinkPercent = 0.075; // of the untinkered Damage or Armor Level
-    public const float MahoganyTinkDamageMod = 0.075f;
-    public const float GreenGarnetTinkElementalDamageMod = 0.075f;
-    public const double LavenderJadeTinkRestorationMod = 0.075;
+    public const double MahoganyTinkPercent = 0.075; // of the untinkered Damage modifier (GetModTinkBonus)
+    public const double GreenGarnetTinkPercent = 0.075; // of the untinkered Elemental Damage modifier
+    public const double LavenderJadeTinkPercent = 0.075; // of the untinkered Restoration modifier
     public const int SilverTinkWardLevel = 3;
     public const int WhiteJadeTinkWardLevel = 1;
+
+    /// <summary>
+    /// What one percentage tink on a launcher or caster mod adds: a share of the untinkered mod, as Iron adds a share
+    /// of the untinkered Damage, so it keeps pace with the mod as it grows with tier. A mod under 1.0, or a missing
+    /// Base snapshot, counts as 1.0, so a tink never adds less than the flat amount it used to.
+    /// </summary>
+    public static double GetModTinkBonus(double? baseMod, double percent)
+    {
+        return percent * Math.Max(1.0, baseMod ?? 0.0);
+    }
+
+    /// <summary>
+    /// A mod tink's bonus in the percentage points the appraisal panel shows, e.g. 0.351 -> "35.1%".
+    /// </summary>
+    public static string FormatModTinkBonus(double bonus)
+    {
+        return $"{(bonus * 100).ToString("0.#", CultureInfo.InvariantCulture)}%";
+    }
 
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
@@ -1094,10 +1113,14 @@ public class Salvage : WorldObject
                     successAmount = $"raising its Magic Defense modifier by 1%";
 
                     break;
-                // 7.5% Damage
+                // 7.5% of the untinkered Damage modifier
                 case ACE.Entity.Enum.MaterialType.Mahogany: // Mahogany
-                    target.DamageMod += MahoganyTinkDamageMod;
-                    successAmount = $"raising its Damage modifier by 7.5%";
+                    {
+                        var damageModBonus = GetModTinkBonus(target.BaseDamageMod, MahoganyTinkPercent);
+                        target.DamageMod += damageModBonus;
+
+                        successAmount = $"raising its Damage modifier by {FormatModTinkBonus(damageModBonus)}";
+                    }
                     break;
                 //  1% Defense Mod
                 case ACE.Entity.Enum.MaterialType.Oak: // Oak
@@ -1249,17 +1272,26 @@ public class Salvage : WorldObject
 
                 // Wands ONLY
 
-                // Pure Damage - 7.5%
+                // Pure Damage - 7.5% of the untinkered Elemental Damage modifier
                 case ACE.Entity.Enum.MaterialType.GreenGarnet:
-                    target.ElementalDamageMod = (target.ElementalDamageMod ?? 0.0f) + GreenGarnetTinkElementalDamageMod;
-                    successAmount = $"raising its Elemental Damage modifier by 7.5%";
+                    {
+                        var elementalDamageModBonus = GetModTinkBonus(target.BaseElementalDamageMod, GreenGarnetTinkPercent);
+                        target.ElementalDamageMod = (target.ElementalDamageMod ?? 0.0f) + elementalDamageModBonus;
+
+                        successAmount = $"raising its Elemental Damage modifier by {FormatModTinkBonus(elementalDamageModBonus)}";
+                    }
                     break;
 
-                // 5% Damage and 5% Mana conversion
+                // 5% of the untinkered Elemental Damage modifier and 5% Mana conversion
                 case ACE.Entity.Enum.MaterialType.Opal:
-                    target.ElementalDamageMod = (target.ElementalDamageMod ?? 0.0f) + 0.05f;
-                    target.ManaConversionMod = (target.ManaConversionMod ?? 0.0f) + 0.05f;
-                    successAmount = $"raising its Elemental Damage and Mana Conversion modifiers by 5%";
+                    {
+                        var elementalDamageModBonus = GetModTinkBonus(target.BaseElementalDamageMod, 0.05);
+                        target.ElementalDamageMod = (target.ElementalDamageMod ?? 0.0f) + elementalDamageModBonus;
+                        target.ManaConversionMod = (target.ManaConversionMod ?? 0.0f) + 0.05f;
+
+                        successAmount =
+                            $"raising its Elemental Damage modifier by {FormatModTinkBonus(elementalDamageModBonus)} and its Mana Conversion modifier by 5%";
+                    }
                     break;
 
                 // 1% Physical Defense
@@ -1290,17 +1322,26 @@ public class Salvage : WorldObject
                     successAmount = $"raising its Magic Defense modifier by 1%";
                     break;
 
-                // 7.5% Restoration Mod
+                // 7.5% of the untinkered Restoration Mod
                 case ACE.Entity.Enum.MaterialType.LavenderJade:
-                    target.WeaponRestorationSpellsMod += LavenderJadeTinkRestorationMod;
-                    successAmount = $"raising its Restoration modifier by 7.5%";
+                    {
+                        var restorationModBonus = GetModTinkBonus(target.BaseWeaponRestorationSpellsMod, LavenderJadeTinkPercent);
+                        target.WeaponRestorationSpellsMod += restorationModBonus;
+
+                        successAmount = $"raising its Restoration modifier by {FormatModTinkBonus(restorationModBonus)}";
+                    }
                     break;
 
-                // 5% Restoration and 5% Mana Conversion
+                // 5% of the untinkered Restoration Mod and 5% Mana Conversion
                 case ACE.Entity.Enum.MaterialType.RoseQuartz:
-                    target.WeaponRestorationSpellsMod += 0.05;
-                    target.ManaConversionMod = (target.ManaConversionMod ?? 0.0f) + 0.05f;
-                    successAmount = $"raising its Restoration and Mana Conversion modifiers 5%";
+                    {
+                        var restorationModBonus = GetModTinkBonus(target.BaseWeaponRestorationSpellsMod, 0.05);
+                        target.WeaponRestorationSpellsMod += restorationModBonus;
+                        target.ManaConversionMod = (target.ManaConversionMod ?? 0.0f) + 0.05f;
+
+                        successAmount =
+                            $"raising its Restoration modifier by {FormatModTinkBonus(restorationModBonus)} and its Mana Conversion modifier by 5%";
+                    }
                     break;
 
                 // Jewelcrafting
