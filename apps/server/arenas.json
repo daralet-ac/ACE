@@ -1,0 +1,87 @@
+{
+  // The arena maps: where duels (/arena) are fought. Every duel gets an instance of its own of one of the enabled maps,
+  // picked at random, so any number of duels can use the same map at once. See docs/arena.md.
+  // This is read once, when the server starts. A mistake in one map is logged ([ARENA] ...) and only leaves that map out.
+  // An admin can look around a map without a duel with /instance open arena:<name>.
+  //
+  // A map is:
+  //   "name":        letters, digits, - and _. Its instance template is called arena:<name>.
+  //   "description": what players are told it is called.
+  //   "enabled":     false keeps it out of duels (it is still set up, so it can be looked at). Default true.
+  //   "landblocks":  the landblocks of the map, written as the first four digits of a cell: 0x00670117 is landblock 0067.
+  //   "bufferRing":  0 to 2 landblocks around them that are loaded as a margin players are turned back from. 0 for a dungeon,
+  //                  at least 1 outdoors (where there are no walls). Default 0.
+  //   "starts":      at least two places fighters are put at. Every fighter in a duel gets a different one, at random.
+  //                  A cell, x, y, z, and the rotation as qx, qy, qz, qw (qw 1 and the others 0 is no rotation). /myloc shows them.
+  //   "center", "radius": outdoors, the fighting area. A fighter who stays more than radius meters from the center
+  //                  for 5 seconds is disqualified. Every start has to be inside it. Not needed for a dungeon.
+  //
+  // An outdoor map, for the curated list (remove the // to use it, and put in real coordinates):
+  //
+  // {
+  //   "name": "example-field",
+  //   "description": "a field",
+  //   "landblocks": [ "A9B4" ],
+  //   "bufferRing": 1,
+  //   "center": { "cell": "0xA9B40021", "x": 96, "y": 96, "z": 20, "qw": 1 },
+  //   "radius": 40,
+  //   "starts": [
+  //     { "cell": "0xA9B40021", "x": 76, "y": 96, "z": 20, "qw": 1 },
+  //     { "cell": "0xA9B40021", "x": 116, "y": 96, "z": 20, "qw": 1 }
+  //   ]
+  // },
+
+  "arenas": [
+    {
+      // The PKL Arena dungeon. It has nothing in it, so a duel there is just the two fighters.
+      // The starts are where the five PKL Arena portals, and the PKL Arena recall, put players.
+      "name": "pkl-arena",
+      "description": "the PKL Arena",
+      "enabled": true,
+      "landblocks": [ "0067" ],
+      "starts": [
+        { "cell": "0x00670117", "x": 30, "y": -50, "z": 0, "qw": 1 },
+        { "cell": "0x00670106", "x": 10, "y": 0, "z": 0, "qz": -0.947071, "qw": 0.321023 },
+        { "cell": "0x00670103", "x": 0, "y": -30, "z": 0, "qz": -0.699713, "qw": 0.714424 },
+        { "cell": "0x0067011E", "x": 50, "y": 0, "z": 0, "qz": -0.961021, "qw": -0.276474 },
+        { "cell": "0x00670127", "x": 60, "y": -30, "z": 0, "qz": 0.681639, "qw": 0.731689 }
+      ]
+    },
+    {
+      // The Derethian Combat Arena. Not enabled yet: it is full of the arena's own content (the DCA Devices generators, and the
+      // Statues of Death and Illumination, which give rewards on a timer to anyone who uses them). Inside a duel, those rewards
+      // would be had without the 4 MMDs and level 150 the Arena Master asks for. Enable it once that content is dealt with.
+      // The starts are where the Derethian Combat Arena portal puts players.
+      "name": "derethian-combat-arena",
+      "description": "the Derethian Combat Arena",
+      "enabled": false,
+      "landblocks": [ "00AB" ],
+      "starts": [
+        { "cell": "0x00AB0118", "x": 30, "y": -20, "z": -23.995, "qz": -0.917804, "qw": 0.397033 },
+        { "cell": "0x00AB0163", "x": 0, "y": -70, "z": -11.995, "qz": -0.389418, "qw": 0.921061 },
+        { "cell": "0x00AB01F8", "x": 100, "y": 0, "z": -11.995, "qz": 0.92269, "qw": 0.385543 },
+        { "cell": "0x00AB0244", "x": 50, "y": -50, "z": -5.995, "qw": 1 },
+        { "cell": "0x00AB028E", "x": 60, "y": -50, "z": 0.005, "qz": 0.434966, "qw": 0.900447 }
+      ]
+    },
+    {
+      // The Derethian Combat Pit, the other half of the Derethian Combat Arena. Not enabled yet, for the same reason.
+      "name": "derethian-combat-pit",
+      "description": "the Derethian Combat Pit",
+      "enabled": false,
+      "landblocks": [ "00AC" ],
+      "starts": [
+        { "cell": "0x00AC017E", "x": 0, "y": -20, "z": 18.005, "qw": 1 },
+        { "cell": "0x00AC017F", "x": 0, "y": -50, "z": 18.005, "qw": 1 },
+        { "cell": "0x00AC0182", "x": 20, "y": 0.56048, "z": 18.005, "qw": 1 },
+        { "cell": "0x00AC0185", "x": 20, "y": -70, "z": 18.005, "qw": 1 },
+        { "cell": "0x00AC0186", "x": 40, "y": 0, "z": 18.005, "qw": 1 },
+        { "cell": "0x00AC0189", "x": 40, "y": -70, "z": 18.005, "qw": 1 },
+        { "cell": "0x00AC018A", "x": 60, "y": 0, "z": 18.005, "qw": 1 },
+        { "cell": "0x00AC018D", "x": 60, "y": -70, "z": 18.005, "qw": 1 },
+        { "cell": "0x00AC0190", "x": 80, "y": -20, "z": 18.005, "qw": 1 },
+        { "cell": "0x00AC0191", "x": 80, "y": -50, "z": 18.005, "qw": 1 }
+      ]
+    }
+  ]
+}

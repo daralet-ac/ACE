@@ -7,6 +7,7 @@ using ACE.DatLoader.FileTypes;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Arena;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
@@ -32,17 +33,26 @@ partial class Player
     /// <param name="damageType">The damage type for the death message</param>
     public override DeathMessage OnDeath(DamageHistoryInfo lastDamager, DamageType damageType, bool criticalHit = false)
     {
+        // A fighter in the arena is defeated, not killed: they are told how they fell, and so is everyone near,
+        // but nobody gets a kill out of it and nothing of a death happens to them (see Die)
+        var arenaDefeat = ArenaManager.IsDefeatNotDeath(this);
+
         var topDamager = DamageHistory.GetTopDamager(false);
         RemoveCombatModeRunPenalty();
         RemoveStealthRunPenalty();
 
-        HandlePKDeathBroadcast(lastDamager, topDamager);
+        if (!arenaDefeat)
+        {
+            HandlePKDeathBroadcast(lastDamager, topDamager);
+        }
 
-        var deathMessage = base.OnDeath(lastDamager, damageType, criticalHit);
+        var deathMessage = arenaDefeat
+            ? GetDeathMessage(lastDamager, damageType, criticalHit)
+            : base.OnDeath(lastDamager, damageType, criticalHit);
 
         var lastDamagerObj = lastDamager?.TryGetAttacker();
 
-        if (lastDamagerObj != null)
+        if (lastDamagerObj != null && !arenaDefeat)
         {
             lastDamagerObj.EmoteManager.OnKill(this);
         }
@@ -81,14 +91,15 @@ partial class Player
 
         excludePlayers.AddRange(nearbyPlayers);
 
-        if (Fellowship != null)
+        if (Fellowship != null && !arenaDefeat)
         {
             Fellowship.OnDeath(this);
         }
 
         // if the player's lifestone is in a different landblock, also broadcast their demise to that landblock
         if (
-            PropertyManager.GetBool("lifestone_broadcast_death").Item
+            !arenaDefeat
+            && PropertyManager.GetBool("lifestone_broadcast_death").Item
             && Sanctuary != null
             && Location.Landblock != Sanctuary.Landblock
         )
@@ -205,6 +216,12 @@ partial class Player
     /// </summary>
     protected override void Die(DamageHistoryInfo lastDamager, DamageHistoryInfo topDamager)
     {
+        if (ArenaManager.IsDefeatNotDeath(this))
+        {
+            DieInArena(topDamager);
+            return;
+        }
+
         IsInDeathProcess = true;
 
         if (topDamager?.Guid == Guid && IsPKType)
@@ -325,9 +342,11 @@ partial class Player
     /// <summary>
     /// Called when the player enters portal space after dying
     /// </summary>
-    public void ThreadSafeTeleportOnDeath()
+    /// <param name="destination">Where they revive. Leave it out for their lifestone (GetRespawnPosition); a duel sends them home.</param>
+    /// <param name="instanceId">The instance they revive in, as for Teleport()</param>
+    public void ThreadSafeTeleportOnDeath(Position destination = null, uint? instanceId = null)
     {
-        var newPosition = GetRespawnPosition();
+        var newPosition = destination ?? GetRespawnPosition();
 
         WorldManager.ThreadSafeTeleport(
             this,
@@ -387,7 +406,8 @@ partial class Player
                 );
 
                 teleportChain.EnqueueChain();
-            })
+            }),
+            instanceId: instanceId
         );
     }
 

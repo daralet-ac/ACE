@@ -698,6 +698,9 @@ public static class DefaultPropertyManager
         ("allow_summoning_killtask_multicredit", new Property<bool>(true, "enables retail behavior where a summoner can get multiple killtask credits from a monster")),
         ("anti_blink_debug", new Property<bool>(false, "(non-retail function) If enabled, logs every anti-blink door check, including the ones that pass. Very noisy - for tuning anti_blink_door_width and anti_blink_z_height_limit only")),
         ("anti_blink_door_detection", new Property<bool>(false, "(non-retail function) If enabled, rejects player movement whose path crosses a closed, non-ethereal door, rubber-bands the player back to their last valid position, and records the attempt on the audit channel. Counters client plugins that delete a door from the client's own world and walk through it. Cloaked players are exempt")),
+        ("arena_block_same_ip", new Property<bool>(true, "(non-retail function) If enabled, the arena queue never pairs two players who are connected from the same IP address, and a challenge between two such players doesn't change their arena ratings")),
+        ("arena_dueling_enabled", new Property<bool>(true, "(non-retail function) If enabled, players can duel each other in the arena with /arena, each duel in an instance of its own of a map from arenas.json. Turning it off turns off the whole arena at once: the queue is emptied, every duel going on is called off and its fighters are taken home, and nobody can queue or challenge until it is turned on again")),
+        ("arena_rated_challenges", new Property<bool>(true, "(non-retail function) If enabled, duels that come from /arena challenge change the fighters' arena ratings. Duels from the queue always do")),
         ("assess_creature_mod", new Property<bool>(false, "(non-retail function) If enabled, re-enables former skill formula, when assess creature skill is not trained or spec'ed")),
         ("attribute_augmentation_safety_cap", new Property<bool>(true, "if TRUE players are not able to use attribute augmentations if the innate value of the target attribute is >= 96. All normal restrictions to these augmentations still apply.")),
         ("chat_disable_general", new Property<bool>(false, "disable general global chat channel")),
@@ -825,6 +828,12 @@ public static class DefaultPropertyManager
 
 
     public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties = DictOf(
+        ("arena_accept_seconds", new Property<long>(20, "(non-retail function) how many seconds players have to say yes to a duel in the arena (at least 5)")),
+        ("arena_countdown_seconds", new Property<long>(10, "(non-retail function) how many seconds fighters have in the arena before a duel begins, in which nobody can be harmed (at least 3)")),
+        ("arena_dueling_minimum_level", new Property<long>(1, "(non-retail function) the lowest level a player can be to duel in the arena: to queue, to challenge, and to be challenged. 1 for any level")),
+        ("arena_elo_k", new Property<long>(50, "(non-retail function) the K-factor of arena ratings: the most points a rated duel can be worth")),
+        ("arena_queue_level_band", new Property<long>(0, "(non-retail function) how many levels apart the arena queue lets two players be, for players who don't ask for a band of their own with /arena queue <levels>. 0 for any level")),
+        ("arena_time_limit_minutes", new Property<long>(20, "(non-retail function) how many minutes a duel in the arena lasts at most. A duel that runs out of time is a draw")),
         ("bank_pack_expansion_capacity", new Property<long>(100, "how many items a plain pack or Trophy Pack holds while it is in the bank, when bank_pack_expansion is on (at most 255; a pack's capacity is one byte)")),
         ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),
         ("chat_requires_account_time_seconds", new Property<long>(0,"the amount of time in seconds an account is required to have existed for for global chat privileges")),

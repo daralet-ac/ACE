@@ -904,6 +904,21 @@ public enum PropertyInt : ushort
     [ServerOnly]
     QuestItemTinks = 525,
 
+    /// <summary>
+    /// The character's arena rating (an Elo rating). A character that has none has the starting rating.
+    /// </summary>
+    [ServerOnly]
+    ArenaRating = 526,
+
+    [ServerOnly]
+    ArenaWins = 527,
+
+    [ServerOnly]
+    ArenaLosses = 528,
+
+    [ServerOnly]
+    ArenaDraws = 529,
+
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
 

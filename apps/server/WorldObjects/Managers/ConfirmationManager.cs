@@ -64,7 +64,8 @@ public class ConfirmationManager
     /// This only needs to be sent in the rare event the server needs to force close
     /// a confirmation dialog that is still active on the client
     /// </summary>
-    public void EnqueueAbort(ConfirmationType confirmationType, uint contextId)
+    /// <param name="quiet">True to close a yes/no question without telling the player they waited too long: it was taken back for some other reason</param>
+    public void EnqueueAbort(ConfirmationType confirmationType, uint contextId, bool quiet = false)
     {
         if (confirmations.TryGetValue(confirmationType, out var confirm) && confirm.ContextId == contextId)
         {
@@ -83,7 +84,10 @@ public class ConfirmationManager
                 case ConfirmationType.CraftInteraction:
                 case ConfirmationType.Augmentation:
                 case ConfirmationType.Yes_No:
-                    Player.SendMessage("You waited too long to answer the question!");
+                    if (!quiet)
+                    {
+                        Player.SendMessage("You waited too long to answer the question!");
+                    }
                     // These events automatically trigger a response from client, others do not.
                     // do nothing further
                     break;
