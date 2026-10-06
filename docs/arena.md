@@ -152,7 +152,28 @@ Tests: `apps/server-tests/ArenaTests.cs` (ratings, the queue, maps and the `aren
 ### Phase 3
 
 - **Fellowship duels**, from a challenge or the queue, and **leaderboards** per size and kind: done (see Fellowship duels and Ratings). To test on a live server: a 2v2 and a 3v3 challenge and queue duel to the end (one side wiped out, a fighter giving up or logging out while their side fights on, the time limit), someone saying no on either side, a fellowship changing while it waits (someone leaves, joins, logs out), `/arena leave` by a member who is not the leader, heals and buffs between teammates and none on opponents (during the countdown too), a scaled 2v2 with mixed levels on each side, and `/arena stats` and `/arena top 2v2` afterwards.
-- Not done: fellowships of different sizes against each other, and putting together teams from players who queue on their own (Shoff's team queue). Both would need to say how a side's strength is weighed, which a same-size fellowship duel doesn't.
+- Not done: fellowships of different sizes against each other, and putting together teams from players who queue on their own (Shoff's team queue, planned as phase 4). Both would need to say how a side's strength is weighed, which a same-size fellowship duel doesn't.
+
+### Phase 4 (planned): teams for players who queue on their own
+
+To start once phase 3 has been tested on a live server: pickup teams fight exactly as fellowship teams do once they are in the arena, so a problem with team fights would show in both.
+
+A player who is not in a fellowship can queue for a team size, `/arena queue 3v3` (with `scaled`, `unrated` and a level band as for any duel). When there are enough players who want the same size and the same kind of duel (six, for 3v3), the queue splits them into two teams, and everyone is asked as for any duel.
+
+Already there from phase 3: sides, nobody harming their own side while teammates heal and buff each other, a start of their own for each side, team boards and team Elo, everyone being asked and who goes back in the queue when someone says no, and scaling between any two fighters by their two levels.
+
+To build:
+
+- **The team builder.** Today the queue pairs two entries; this waits for twice the team size in compatible players who asked for the same size and kind of duel, and then splits them. Players who wait longer go first, as now, and every pair of players is within each other's level band.
+- **A fair split.** The two teams are made as even as can be: by rating on the board the duel goes on, and for a raw duel by level too. Players connected from the same IP address go on the same side (or wait for another duel, while `arena_block_same_ip` is on), so nobody can throw a duel for someone they share a connection with. Every way of splitting the players can be tried (fewer than 25,000 even for 9v9), so this can be the best split rather than a greedy one.
+- **A fellowship for each team.** Without one, teammates don't see each other's vitals in the fellowship panel, which makes healing them hard, and have no fellowship chat. The server can make a fellowship (`Player.FellowshipCreate`), add players to it without asking them (`Fellowship.AddConfirmedMember`), and disband it when they leave the arena. A player can only be in one fellowship, so queueing on your own for a team means not being in one: a fellowship that wants to fight together uses `/arena queue fellowship`.
+- **Seeing the queue fill.** A 3v3 needs six players who want the same size and the same kind of duel (scaled or raw, rated or unrated) at the same time, which on a quiet server can take a while. Players should see how close it is ("4 of 6 waiting for 3v3"), and it may turn out that only some sizes are worth offering on their own.
+
+To decide before it is built (what we would do first):
+
+- **Do pickup teams meet fellowships?** Not at first: a fellowship that plays together has an edge over players who have just met.
+- **Their own boards?** Yes, "3v3 solo" next to "3v3": if the two never meet, one board would rank two pools of players that never fought each other.
+- **Fellowships with room left, filled up with players on their own** (a fellowship of two and one other player against three)? Not in phase 4. Most of the difficulty of Shoff's team queue is there, which is why his is greedy.
 
 ### Later (not designed yet)
 
