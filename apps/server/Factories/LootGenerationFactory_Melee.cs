@@ -1713,7 +1713,7 @@ public static partial class LootGenerationFactory
         var minimumBaseMaxDamage = maximumBaseMaxDamage * (1 - damageRangePerTier);
 
         // roll and assign weapon damage
-        var diminishedRoll = (averageBaseMaxDamage - minimumBaseMaxDamage) * GetDiminishingRoll(profile);
+        var diminishedRoll = (maximumBaseMaxDamage - minimumBaseMaxDamage) * GetDiminishingRoll(profile);
         var finalMaxDamage = minimumBaseMaxDamage + diminishedRoll;
         wo.Damage = (int)Math.Round(finalMaxDamage);
 
