@@ -90,13 +90,13 @@ public static class QuestItemMutation
     }
 
     /// <summary>
-    /// Loot armor carries base x t Ward Level per armor slot at tier index t, plus up to one more base (AssignArmorLevel).
+    /// Loot armor carries base x t Ward Level per armor slot at tier index t, plus up to one more base per slot (AssignArmorLevel).
     /// </summary>
     public static (int Min, int Max) GetWardLevelRange(int baseWardLevel, int tier, int armorSlots)
     {
         var min = baseWardLevel * tier * armorSlots;
 
-        return (min, min + baseWardLevel);
+        return (min, min + baseWardLevel * armorSlots);
     }
 
     /// <summary>
