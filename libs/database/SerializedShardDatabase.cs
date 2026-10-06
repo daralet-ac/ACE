@@ -369,4 +369,24 @@ public class SerializedShardDatabase
             callback?.Invoke(result);
         }));
     }
+
+    /// <summary>
+    /// Loads the account sessions logged after since and the characters that entered the world after sinceUnixTime, in one queued task.
+    /// </summary>
+    public void GetRecentLogins(DateTime since, double sinceUnixTime, Action<List<AccountSessionLog>, List<Character>> callback, Action<Exception> onFailure = null)
+    {
+        _queue.Add(new Task(() =>
+        {
+            try
+            {
+                var sessions = BaseDatabase.GetAccountSessionsSince(since);
+                var characters = BaseDatabase.GetCharactersLoggedInSince(sinceUnixTime);
+                callback?.Invoke(sessions, characters);
+            }
+            catch (Exception ex)
+            {
+                onFailure?.Invoke(ex);
+            }
+        }));
+    }
 }

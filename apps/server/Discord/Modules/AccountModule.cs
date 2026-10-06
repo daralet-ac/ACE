@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ACE.Common;
+using ACE.Database;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
+using Discord;
 using Discord.Interactions;
 
 namespace ACE.Server.Discord.Modules;
@@ -68,6 +72,56 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
 
         var message = GeneratePlayersOnlineWithTableMessage(totalsLine, sortedOnlinePlayers);
         await RespondAsync(message, ephemeral: ephemeral);
+    }
+
+    [SlashCommand("recent-logins", "List accounts that logged in during the last X hours")]
+    public async Task ListRecentLogins(double hours = RecentLogins.DefaultHours, bool showIps = false, bool ephemeral = true)
+    {
+        if (hours <= 0)
+        {
+            await RespondAsync("Hours must be greater than 0.", ephemeral: true);
+            return;
+        }
+
+        await DeferAsync(ephemeral);
+
+        List<RecentLogin> logins;
+        try
+        {
+            var (since, sinceUnixTime) = RecentLogins.GetCutoffs(TimeSpan.FromHours(hours));
+
+            var sessions = await Task.Run(() => DatabaseManager.Shard.BaseDatabase.GetAccountSessionsSince(since));
+            var characters = await Task.Run(() => DatabaseManager.Shard.BaseDatabase.GetCharactersLoggedInSince(sinceUnixTime));
+            var onlineAccountIds = PlayerManager.GetAllOnline().Select(p => p.Account.AccountId).ToHashSet();
+
+            logins = RecentLogins.Build(sessions, characters, onlineAccountIds);
+        }
+        catch (Exception ex)
+        {
+            await FollowupAsync($"Failed to load recent logins: {ex.Message}", ephemeral: ephemeral);
+            return;
+        }
+
+        var totalsLine = RecentLogins.GetTotalsLine(logins, hours);
+        if (logins.Count == 0)
+        {
+            await FollowupAsync(totalsLine, ephemeral: ephemeral);
+            return;
+        }
+
+        var table = RecentLogins.FormatTable(logins, DateTime.Now, showIps);
+        var message = $"{totalsLine}\n```{table}```";
+
+        if (message.Length <= DiscordConfig.MaxMessageSize)
+        {
+            await FollowupAsync(message, ephemeral: ephemeral);
+            return;
+        }
+
+        // too long for one message, so the table goes up as a file
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes($"{totalsLine}\n\n{table}"));
+        using var file = new FileAttachment(stream, $"recent-logins-{hours:0.##}h.txt");
+        await FollowupWithFileAsync(file, totalsLine, ephemeral: ephemeral);
     }
 
     private string GeneratePlayersOnlineWithTableMessage(
