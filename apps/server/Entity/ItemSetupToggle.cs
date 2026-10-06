@@ -3,7 +3,7 @@ using ACE.Server.WorldObjects;
 namespace ACE.Server.Entity;
 
 /// <summary>
-/// Items flagged with an AlternateSetup have two looks, and players switch between them with /setup.
+/// Items flagged with an AlternateSetup have two looks, and players switch between them with /style.
 /// Switching swaps the item's Setup with its AlternateSetup, so the look the item isn't showing is always the
 /// alternate one and switching again brings the first look back. Nothing else about the item changes.
 /// </summary>

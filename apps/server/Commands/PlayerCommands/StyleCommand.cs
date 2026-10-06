@@ -10,19 +10,19 @@ using ACE.Server.WorldObjects;
 namespace ACE.Server.Commands.PlayerCommands;
 
 /// <summary>
-/// /setup switches an item flagged with an AlternateSetup between its two looks. It works on the item you last
+/// /style switches an item flagged with an AlternateSetup between its two looks. It works on the item you last
 /// examined, carried or equipped, and switching it again brings the first look back.
 /// </summary>
-public class SetupCommand
+public class StyleCommand
 {
     [CommandHandler(
-        "setup",
+        "style",
         AccessLevel.Player,
         CommandHandlerFlag.RequiresWorld,
         "Switches the item you last examined between its two looks, if it has a second one.",
         "[list | help]"
     )]
-    public static void HandleSetup(Session session, params string[] parameters)
+    public static void HandleStyle(Session session, params string[] parameters)
     {
         var option = parameters.Length > 0 ? parameters[0].ToLowerInvariant() : null;
 
@@ -45,8 +45,8 @@ public class SetupCommand
         Send(
             session,
             "Some items have two looks. Examine one you carry or have equipped, then:\n"
-                + "  /setup - switches it to its other look; use it again to switch back.\n"
-                + "  /setup list - lists the items you carry or have equipped that have two looks."
+                + "  /style - switches it to its other look; use it again to switch back.\n"
+                + "  /style list - lists the items you carry or have equipped that have two looks."
         );
     }
 
@@ -59,7 +59,7 @@ public class SetupCommand
         {
             Send(
                 session,
-                "Examine the item you want to switch first. /setup list shows which of your items have two looks."
+                "Examine the item you want to switch first. /style list shows which of your items have two looks."
             );
             return;
         }
@@ -72,7 +72,7 @@ public class SetupCommand
         {
             Send(
                 session,
-                "You can only switch the look of an item you carry or have equipped. Examine it, then use /setup."
+                "You can only switch the look of an item you carry or have equipped. Examine it, then use /style."
             );
             return;
         }
@@ -93,7 +93,7 @@ public class SetupCommand
             session.Network.EnqueueSend(new GameMessageUpdateObject(item));
         }
 
-        Send(session, $"You switch the {item.Name} to its other look. Use /setup again to switch it back.");
+        Send(session, $"You switch the {item.Name} to its other look. Use /style again to switch it back.");
     }
 
     private static void ListItems(Session session)
@@ -111,7 +111,7 @@ public class SetupCommand
             return;
         }
 
-        Send(session, "Items with two looks (examine one, then use /setup):\n  " + string.Join("\n  ", items));
+        Send(session, "Items with two looks (examine one, then use /style):\n  " + string.Join("\n  ", items));
     }
 
     private static void Send(Session session, string message)

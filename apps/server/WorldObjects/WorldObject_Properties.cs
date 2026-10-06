@@ -8835,7 +8835,7 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// The Setup this item switches to with /setup. Switching swaps it with SetupTableId, so it always holds the look
+    /// The Setup this item switches to with /style. Switching swaps it with SetupTableId, so it always holds the look
     /// the item isn't showing.
     /// </summary>
     public uint? AlternateSetup

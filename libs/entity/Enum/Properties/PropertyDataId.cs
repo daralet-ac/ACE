@@ -208,7 +208,7 @@ public enum PropertyDataId : ushort
     Spell2 = 66,
 
     /// <summary>
-    /// The second Setup (model) an item can switch to. Players swap it with the item's Setup using /setup.
+    /// The second Setup (model) an item can switch to. Players swap it with the item's Setup using /style.
     /// </summary>
     [ServerOnly]
     AlternateSetup = 67,

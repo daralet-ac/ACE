@@ -2083,7 +2083,7 @@ public class AppraiseInfo
         _additionalPropertiesList.Add("Two Looks");
         _hasAdditionalProperties = true;
         _additionalPropertiesLongDescriptionsText +=
-            "~ Two Looks: Examine this item and type /setup to switch it to its other look, and again to switch back.\n";
+            "~ Two Looks: Examine this item and type /style to switch it to its other look, and again to switch back.\n";
     }
 
     private void SetBitingStrikeUseLongText(WorldObject wo)
