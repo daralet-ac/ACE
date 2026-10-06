@@ -914,6 +914,7 @@ public class AppraiseInfo
         SetCriticalDamageResistanceUseLongText(wo);
         SetAttuneOnEquipUseLongText(wo);
         SetAccountAttunedUseLongText(wo);
+        SetAlternateSetupUseLongText(wo);
         SetNoCompsRequiredSchoolUseLongText(wo);
 
         SetGearRatingText(wo, PropertyInt.GearStrength, "Mighty Thews", "Grants +10 to current Strength, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
@@ -2070,6 +2071,19 @@ public class AppraiseInfo
         _hasAdditionalProperties = true;
         _additionalPropertiesLongDescriptionsText +=
             "~ Account-attuned: This item may be equipped by another character on the same account.\n";
+    }
+
+    private void SetAlternateSetupUseLongText(WorldObject wo)
+    {
+        if (!ItemSetupToggle.HasAlternateSetup(wo))
+        {
+            return;
+        }
+
+        _additionalPropertiesList.Add("Two Looks");
+        _hasAdditionalProperties = true;
+        _additionalPropertiesLongDescriptionsText +=
+            "~ Two Looks: Examine this item and type /style to switch it to its other look, and again to switch back.\n";
     }
 
     private void SetBitingStrikeUseLongText(WorldObject wo)
