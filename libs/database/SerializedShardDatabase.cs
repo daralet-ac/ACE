@@ -313,6 +313,46 @@ public class SerializedShardDatabase
         );
     }
 
+    public void SaveAccountQuest(
+        uint accountId,
+        string questName,
+        uint lastTimeCompleted,
+        int numTimesCompleted,
+        Action<Exception> onFailure
+    )
+    {
+        _queue.Add(
+            new Task(() =>
+            {
+                try
+                {
+                    BaseDatabase.SaveAccountQuest(accountId, questName, lastTimeCompleted, numTimesCompleted);
+                }
+                catch (Exception ex)
+                {
+                    onFailure?.Invoke(ex);
+                }
+            })
+        );
+    }
+
+    public void RemoveAccountQuest(uint accountId, string questName, Action<Exception> onFailure)
+    {
+        _queue.Add(
+            new Task(() =>
+            {
+                try
+                {
+                    BaseDatabase.RemoveAccountQuest(accountId, questName);
+                }
+                catch (Exception ex)
+                {
+                    onFailure?.Invoke(ex);
+                }
+            })
+        );
+    }
+
     public void LogAccountSessionStart(uint accountId, string accountName, string sessionIp)
     {
         _queue.Add(new Task(() =>

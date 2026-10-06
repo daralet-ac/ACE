@@ -141,6 +141,9 @@ public static class WorldManager
                     (DateTime.UtcNow - start).TotalMilliseconds
                 );
 
+                // still on the shard database queue, so this reads back any account quest saves queued before it
+                AccountQuestManager.Load(character.AccountId);
+
                 ActionQueue.EnqueueAction(
                     new ActionEventDelegate(() => DoPlayerEnterWorld(session, character, offlinePlayer.Biota, biotas))
                 );

@@ -82,17 +82,30 @@ public class QuestManager
     /// <summary>
     /// This will return a clone of the quests collection. You should not mutate the results.
     /// This is mostly used for information/debugging
+    /// For a player, this includes the quests stamped on their account (ACCOUNT_ quests).
     /// </summary>
     /// <returns></returns>
-    public ICollection<CharacterPropertiesQuestRegistry> GetQuests()
+    public ICollection<IQuestRegistryEntry> GetQuests()
     {
         if (Creature is Player player)
         {
-            return player.Character.GetQuests(player.CharacterDatabaseLock);
+            var quests = new List<IQuestRegistryEntry>(player.Character.GetQuests(player.CharacterDatabaseLock));
+            quests.AddRange(player.AccountQuests.GetQuests());
+            return quests;
         }
 
         // Not a player
-        return runtimeQuests;
+        return runtimeQuests.ToList<IQuestRegistryEntry>();
+    }
+
+    /// <summary>
+    /// Returns TRUE if this quest is kept on the player's account rather than their character (an ACCOUNT_ quest).
+    /// Only players have account quests; anything else keeps ACCOUNT_ quests like any other.
+    /// </summary>
+    private bool IsAccountQuest(string questName, out Player player)
+    {
+        player = Creature as Player;
+        return player != null && AccountQuestManager.IsAccountQuest(questName);
     }
 
     /// <summary>
@@ -153,8 +166,13 @@ public class QuestManager
     /// <summary>
     /// Returns an active or completed quest for this player
     /// </summary>
-    public CharacterPropertiesQuestRegistry GetQuest(string questName)
+    public IQuestRegistryEntry GetQuest(string questName)
     {
+        if (IsAccountQuest(questName, out var accountPlayer))
+        {
+            return accountPlayer.AccountQuests.GetQuest(questName);
+        }
+
         if (Creature is Player player)
         {
             return player.Character.GetQuest(questName, player.CharacterDatabaseLock);
@@ -164,17 +182,29 @@ public class QuestManager
         return runtimeQuests.FirstOrDefault(q => q.QuestName.Equals(questName, StringComparison.OrdinalIgnoreCase));
     }
 
-    private CharacterPropertiesQuestRegistry GetOrCreateQuest(string questName, out bool questRegistryWasCreated)
+    private IQuestRegistryEntry GetOrCreateQuest(string questName, out bool questRegistryWasCreated)
     {
         questName = NormalizeQuestNameForStorage(questName);
 
+        if (IsAccountQuest(questName, out var accountPlayer))
+        {
+            return accountPlayer.AccountQuests.GetOrCreateQuest(questName, out questRegistryWasCreated);
+        }
+
         if (Creature is Player player)
         {
-            return player.Character.GetOrCreateQuest(
+            var quest = player.Character.GetOrCreateQuest(
                 questName,
                 player.CharacterDatabaseLock,
                 out questRegistryWasCreated
             );
+
+            if (questRegistryWasCreated)
+            {
+                quest.CharacterId = IDtoUseForQuestRegistry;
+            }
+
+            return quest;
         }
 
         // Not a player
@@ -184,7 +214,11 @@ public class QuestManager
 
         if (existing == null)
         {
-            existing = new CharacterPropertiesQuestRegistry { QuestName = questName, };
+            existing = new CharacterPropertiesQuestRegistry
+            {
+                QuestName = questName,
+                CharacterId = IDtoUseForQuestRegistry,
+            };
 
             runtimeQuests.Add(existing);
 
@@ -196,6 +230,22 @@ public class QuestManager
         }
 
         return existing;
+    }
+
+    /// <summary>
+    /// Saves a quest the player's registry just changed: an account quest is written for the account now, anything
+    /// else is saved with the character.
+    /// </summary>
+    private static void SaveQuest(Player player, IQuestRegistryEntry quest)
+    {
+        if (quest is AccountQuestRegistry accountQuest)
+        {
+            player.AccountQuests.Save(accountQuest);
+        }
+        else
+        {
+            player.CharacterChangesDetected = true;
+        }
     }
 
     /// <summary>
@@ -212,8 +262,6 @@ public class QuestManager
             quest.LastTimeCompleted = (uint)Time.GetUnixTime();
             quest.NumTimesCompleted = 1; // initial add / first solve
 
-            quest.CharacterId = IDtoUseForQuestRegistry;
-
             if (Debug)
             {
                 Console.WriteLine($"{Name}.QuestManager.Update({quest}): added quest");
@@ -221,7 +269,7 @@ public class QuestManager
 
             if (Creature is Player player)
             {
-                player.CharacterChangesDetected = true;
+                SaveQuest(player, quest);
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
                 
@@ -258,7 +306,7 @@ public class QuestManager
 
             if (Creature is Player player)
             {
-                player.CharacterChangesDetected = true;
+                SaveQuest(player, quest);
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
 
@@ -271,7 +319,7 @@ public class QuestManager
             }
         }
     }
-    private void PrimeTownMessage(Player player, CharacterPropertiesQuestRegistry quest)
+    private void PrimeTownMessage(Player player, IQuestRegistryEntry quest)
     {
         if (IsTownProgressQuest(quest.QuestName))
         {
@@ -304,7 +352,7 @@ public class QuestManager
 
         SendTownQuestProgressMessage(player, quest);
     }
-    private void SendTownQuestProgressMessage(Player player, CharacterPropertiesQuestRegistry quest)
+    private void SendTownQuestProgressMessage(Player player, IQuestRegistryEntry quest)
     {
         if (player is null || !IsTownProgressQuest(quest.QuestName))
         {
@@ -460,8 +508,6 @@ public class QuestManager
             quest.LastTimeCompleted = (uint)Time.GetUnixTime();
             quest.NumTimesCompleted = numTimesCompleted; // initialize the quest to the given completions
 
-            quest.CharacterId = IDtoUseForQuestRegistry;
-
             if (Debug)
             {
                 Console.WriteLine(
@@ -471,7 +517,7 @@ public class QuestManager
 
             if (Creature is Player player)
             {
-                player.CharacterChangesDetected = true;
+                SaveQuest(player, quest);
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
             }
@@ -491,7 +537,7 @@ public class QuestManager
 
             if (Creature is Player player)
             {
-                player.CharacterChangesDetected = true;
+                SaveQuest(player, quest);
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
             }
@@ -672,7 +718,7 @@ public class QuestManager
 
             if (Creature is Player player)
             {
-                player.CharacterChangesDetected = true;
+                SaveQuest(player, existing);
                 player.ContractManager.NotifyOfQuestUpdate(existing.QuestName);
             }
         }
@@ -690,7 +736,14 @@ public class QuestManager
 
         var questName = GetQuestName(questFormat);
 
-        if (Creature is Player player)
+        if (IsAccountQuest(questName, out var accountPlayer))
+        {
+            if (accountPlayer.AccountQuests.EraseQuest(questName))
+            {
+                accountPlayer.ContractManager.NotifyOfQuestUpdate(questName);
+            }
+        }
+        else if (Creature is Player player)
         {
             if (player.Character.EraseQuest(questName, player.CharacterDatabaseLock))
             {
@@ -714,6 +767,7 @@ public class QuestManager
 
     /// <summary>
     /// Removes an all quests from registry
+    /// A player's account quests are kept: they belong to every character on the account. Erase them one at a time.
     /// </summary>
     public void EraseAll()
     {
@@ -763,7 +817,11 @@ public class QuestManager
             Console.WriteLine("Quest Name: " + quest.QuestName);
             Console.WriteLine("Times Completed: " + quest.NumTimesCompleted);
             Console.WriteLine("Last Time Completed: " + quest.LastTimeCompleted);
-            Console.WriteLine("Player ID: " + quest.CharacterId.ToString("X8"));
+            Console.WriteLine(
+                quest is CharacterPropertiesQuestRegistry characterQuest
+                    ? "Player ID: " + characterQuest.CharacterId.ToString("X8")
+                    : "Account quest"
+            );
             Console.WriteLine("----");
         }
     }

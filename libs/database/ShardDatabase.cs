@@ -1647,6 +1647,46 @@ LEFT JOIN biota_properties_int tq
             .ToList();
     }
 
+    /// <summary>
+    /// Every quest stamped on an account (account_quest_registry). Throws if they can't be read.
+    /// </summary>
+    public virtual List<AccountQuestRegistry> GetAccountQuests(uint accountId)
+    {
+        using var context = new ShardDbContext();
+
+        return context.AccountQuestRegistry.AsNoTracking().Where(q => q.AccountId == accountId).ToList();
+    }
+
+    /// <summary>
+    /// Adds an account quest, or overwrites its completion time and count if the account already has it.
+    /// </summary>
+    public virtual void SaveAccountQuest(
+        uint accountId,
+        string questName,
+        uint lastTimeCompleted,
+        int numTimesCompleted
+    )
+    {
+        using var context = new ShardDbContext();
+
+        context.Database.ExecuteSqlInterpolated(
+            $@"INSERT INTO account_quest_registry (account_id, quest_name, last_time_completed, num_times_completed)
+              VALUES ({accountId}, {questName}, {lastTimeCompleted}, {numTimesCompleted})
+              ON DUPLICATE KEY UPDATE
+                last_time_completed = VALUES(last_time_completed),
+                num_times_completed = VALUES(num_times_completed)"
+        );
+    }
+
+    public virtual void RemoveAccountQuest(uint accountId, string questName)
+    {
+        using var context = new ShardDbContext();
+
+        context.Database.ExecuteSqlInterpolated(
+            $"DELETE FROM account_quest_registry WHERE account_id = {accountId} AND quest_name = {questName}"
+        );
+    }
+
     public virtual void UpsertAccountWealthSnapshot(
         uint accountId,
         uint? characterId,
