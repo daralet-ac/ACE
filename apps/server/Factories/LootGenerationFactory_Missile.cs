@@ -544,7 +544,7 @@ public static partial class LootGenerationFactory
 
         // roll and assign weapon damage
         var minimumBaseMaxDamageMod = maximumBaseMaxDamageMod * (1 - damageRangePerTier);
-        var diminishedRoll = (averageBaseDamageMod - minimumBaseMaxDamageMod) * GetDiminishingRoll(profile);
+        var diminishedRoll = (maximumBaseMaxDamageMod - minimumBaseMaxDamageMod) * GetDiminishingRoll(profile);
         var finalMaxDamageMod = minimumBaseMaxDamageMod + diminishedRoll;
         wo.DamageMod = finalMaxDamageMod;
 
