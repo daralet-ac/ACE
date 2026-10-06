@@ -2629,15 +2629,34 @@ public class AppraiseInfo
         var woSpellDID = wo.SpellDID; // prevent recursive lock
         var woProcSpell = wo.ProcSpell;
 
-        foreach (
-            var spellId in wo.Biota.GetKnownSpellsIdsWhere(
-                i => i != woSpellDID && i != woProcSpell,
-                wo.BiotaDatabaseLock
-            )
-        )
+        var knownSpellIds = wo.Biota.GetKnownSpellsIdsWhere(
+            i => i != woSpellDID && i != woProcSpell,
+            wo.BiotaDatabaseLock
+        );
+
+        foreach (var spellId in SortSpellIds(knownSpellIds))
         {
             SpellBook.Add((uint)spellId);
         }
+    }
+
+    /// <summary>
+    /// Sorts spells for display by spell level, then magic school, then name
+    /// </summary>
+    private static IEnumerable<int> SortSpellIds(List<int> spellIds)
+    {
+        if (spellIds.Count < 2)
+        {
+            return spellIds;
+        }
+
+        return spellIds
+            .Select(id => (Id: id, Spell: new Spell(id)))
+            .OrderBy(i => i.Spell.NotFound ? uint.MaxValue : i.Spell.Level)
+            .ThenBy(i => i.Spell.NotFound ? MagicSchool.None : i.Spell.School)
+            .ThenBy(i => i.Spell.NotFound ? string.Empty : i.Spell.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(i => i.Id)
+            .Select(i => i.Id);
     }
 
     private void AddEnchantments(WorldObject wo)
