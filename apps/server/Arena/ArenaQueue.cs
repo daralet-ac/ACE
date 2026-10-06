@@ -21,6 +21,16 @@ public sealed class ArenaQueueEntry
     public int LevelBand { get; init; }
 
     /// <summary>
+    /// A scaled duel: the higher-level fighter fights at their opponent's level (LevelScaling)
+    /// </summary>
+    public bool Scaled { get; init; }
+
+    /// <summary>
+    /// A rated duel changes ratings and records. Players who asked for an unrated duel are only paired with each other.
+    /// </summary>
+    public bool Rated { get; init; } = true;
+
+    /// <summary>
     /// The IP address the player is connected from, as text, or null if it is not known
     /// </summary>
     public string Address { get; init; }
@@ -94,12 +104,12 @@ public sealed class ArenaQueue
     }
 
     /// <summary>
-    /// Whether two players in the queue can be matched: each of them is within the level band the other asked for,
-    /// and they are not connected from the same address if that is not allowed
+    /// Whether two players in the queue can be matched: they asked for the same kind of duel (scaled or not, rated or not),
+    /// each of them is within the level band the other asked for, and they are not connected from the same address if that is not allowed
     /// </summary>
     public static bool CanMeet(ArenaQueueEntry a, ArenaQueueEntry b, bool blockSameAddress)
     {
-        if (a.Guid == b.Guid)
+        if (a.Guid == b.Guid || a.Scaled != b.Scaled || a.Rated != b.Rated)
         {
             return false;
         }

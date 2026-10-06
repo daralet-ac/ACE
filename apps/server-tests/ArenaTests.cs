@@ -182,6 +182,112 @@ public class ArenaTests
         Assert.AreEqual(20, queue.Entries[0].LevelBand);
     }
 
+    [TestMethod]
+    public void Queue_OnlyPairsPlayersWhoWantTheSameKindOfDuel()
+    {
+        var raw = Entry(1);
+        var scaled = new ArenaQueueEntry
+        {
+            Guid = 2,
+            Level = 100,
+            Scaled = true,
+            Address = "10.0.0.2",
+            JoinedAt = Start
+        };
+        var unrated = new ArenaQueueEntry
+        {
+            Guid = 3,
+            Level = 100,
+            Rated = false,
+            Address = "10.0.0.3",
+            JoinedAt = Start
+        };
+        var scaledToo = new ArenaQueueEntry
+        {
+            Guid = 4,
+            Level = 30,
+            Scaled = true,
+            Address = "10.0.0.4",
+            JoinedAt = Start
+        };
+
+        Assert.IsTrue(raw.Rated, "rated unless asked otherwise");
+        Assert.IsFalse(ArenaQueue.CanMeet(raw, scaled, true));
+        Assert.IsFalse(ArenaQueue.CanMeet(raw, unrated, true));
+        Assert.IsFalse(ArenaQueue.CanMeet(scaled, unrated, true));
+        Assert.IsTrue(ArenaQueue.CanMeet(scaled, scaledToo, true));
+
+        var queue = new ArenaQueue();
+        queue.Add(raw);
+        queue.Add(scaled);
+        queue.Add(unrated);
+        queue.Add(scaledToo);
+
+        Assert.IsTrue(queue.TryTakePair(true, out var first, out var second));
+        Assert.AreEqual(2u, first.Guid, "the raw and the unrated player have nobody to meet");
+        Assert.AreEqual(4u, second.Guid);
+        Assert.IsFalse(queue.TryTakePair(true, out _, out _));
+    }
+
+    #endregion
+
+    #region Commands
+
+    [TestMethod]
+    public void Commands_DuelOptionsAreTakenFromWhatWasTyped()
+    {
+        var name = ACE.Server.Commands.PlayerCommands.ArenaCommand.TakeDuelOptions(
+            new[] { "Bob", "the", "Brave", "unrated", "Scaled" },
+            onlyAtTheEnd: true,
+            out var scaled,
+            out var unrated
+        );
+
+        Assert.AreEqual("Bob the Brave", string.Join(" ", name));
+        Assert.IsTrue(scaled);
+        Assert.IsTrue(unrated);
+
+        // in a name only the words at the end count
+        name = ACE.Server.Commands.PlayerCommands.ArenaCommand.TakeDuelOptions(
+            new[] { "Unrated", "Bob" },
+            onlyAtTheEnd: true,
+            out scaled,
+            out unrated
+        );
+
+        Assert.AreEqual("Unrated Bob", string.Join(" ", name));
+        Assert.IsFalse(scaled);
+        Assert.IsFalse(unrated);
+
+        // for the queue they count anywhere
+        var rest = ACE.Server.Commands.PlayerCommands.ArenaCommand.TakeDuelOptions(
+            new[] { "scaled", "10", "unrated" },
+            onlyAtTheEnd: false,
+            out scaled,
+            out unrated
+        );
+
+        CollectionAssert.AreEqual(new[] { "10" }, rest);
+        Assert.IsTrue(scaled);
+        Assert.IsTrue(unrated);
+    }
+
+    #endregion
+
+    #region Scaling
+
+    [TestMethod]
+    public void Scaling_DamageInADuelFollowsTheFightersHealth()
+    {
+        var down = LevelScaling.GetDuelHealthRatio(attackerLevel: 100, defenderLevel: 30);
+        var up = LevelScaling.GetDuelHealthRatio(attackerLevel: 30, defenderLevel: 100);
+
+        Assert.IsTrue(down < 1.0f, "the higher fighter does less damage to the lower one");
+        Assert.IsTrue(up > 1.0f, "and the lower one does more to the higher one");
+        Assert.AreEqual(1.0f, down * up, 0.0001f);
+        Assert.AreEqual(1.0f, LevelScaling.GetDuelHealthRatio(50, 50), 0.0001f);
+    }
+
     #endregion
 
     #region Settings

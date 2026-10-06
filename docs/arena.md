@@ -9,11 +9,11 @@ This is phase 1: one against one, from a challenge or from the queue. Spectating
 | Command | Does |
 |---|---|
 | `/arena` | How to use it, and where you stand (in the queue, or in a duel). |
-| `/arena challenge <name>` | Asks a player to a duel. They get a yes/no question. Someone who says no can't be challenged by the same player again for a minute. A player who has squelched you can't be challenged by you. |
-| `/arena queue [levels]` | Waits for an opponent. The queue pairs players in the order they came. With a number, you are only matched with someone within that many levels of you (and you are only matched with someone whose own band you are within). Without one, the server's `arena_queue_level_band` (0, any level, by default). Using it again changes your band and keeps your place. |
+| `/arena challenge <name> [scaled] [unrated]` | Asks a player to a duel (raw and rated unless asked otherwise, see below). They get a yes/no question. Someone who says no can't be challenged by the same player again for a minute. A player who has squelched you can't be challenged by you. |
+| `/arena queue [levels] [scaled] [unrated]` | Waits for an opponent. The queue pairs players in the order they came, and only with someone who asked for the same kind of duel (scaled or raw, rated or unrated). With a number, you are only matched with someone within that many levels of you (and you are only matched with someone whose own band you are within). Without one, the server's `arena_queue_level_band` (0, any level, by default). Using it again changes your band and keeps your place. |
 | `/arena leave` | Leaves the queue, calls off a duel that has not begun, or gives up the one you are fighting. |
-| `/arena stats [name]` | Your arena rating and record, or someone else's. |
-| `/arena top` | The ten best arena ratings. |
+| `/arena stats [name]` | Your arena ratings and records, raw and scaled (scaled once there is something on it), or someone else's. |
+| `/arena top [scaled]` | The ten best raw arena ratings, or scaled ones. |
 | `/arena maps` | The arenas duels are fought in. |
 | `/arena list` | (Sentinel and up) The duels going on, and who is in the queue. |
 | `/arena cancel <duel>` | (Sentinel and up) Calls a duel off. Fighters who are in the arena are taken home. |
@@ -43,11 +43,28 @@ They still fall, and they and their opponent still see who defeated whom. Every 
 - **Leaving the arena any other way** (a portal in it, a recall, being moved by an admin) gives it up too, and gets them their own status back where they are.
 - If the server crashes in a duel, nothing needs mending: player killer lite status is never kept over a login (it is turned back to non-player killer), and the arena landblocks of `arenas.json` are ones where players log in at their lifestone.
 
+## Kinds of duel
+
+Every duel is **raw** or **scaled**, and **rated** or **unrated**. Without `scaled` or `unrated`, a duel is raw and rated. Whoever is challenged is told what kind of duel it is before they answer.
+
+### Scaled duels
+
+In a scaled duel the higher-level fighter fights at their opponent's level, the way a Shrouded player fights at a monster's: their attack skill, defense skill, armor, ward and resistances count as they would at the lower fighter's level, relative to the average at each level, so better-than-average gear for your level stays exactly as much better. It uses the same tables and code as shroud scaling (`LevelScaling`), with the opponent in the monster's place, whether or not anyone is Shrouded. A player is not a monster, so the monster tables are left out: instead of the lower fighter's armor and ward counting for more, damage both ways follows the fighters' average health at their levels (the higher fighter does damage as if to someone of the lower one's health, and the lower fighter's damage, harms and drains count against the higher one as if they were the same level). Nothing is scaled between fighters of the same level.
+
+Scaling doesn't go below level 10 (the tables don't), so scaled duels are for level 10 and up. A raw duel is never scaled, even if a fighter is Shrouded. The fighters are told who fights at whose level when the countdown starts.
+
+A level band still works for the scaled queue, but it is there for raw duels: with scaling, levels don't need to be close.
+
 ### Ratings
 
-Every character has an arena rating, starting at 1400 (`PropertyInt.ArenaRating`), and a record of wins, losses and draws (`ArenaWins`, `ArenaLosses`, `ArenaDraws`). They are server only properties.
+There is a board for each kind of rated duel, each with its own rating (starting at 1400) and record of wins, losses and draws: raw (`PropertyInt.ArenaRating`, `ArenaWins`, `ArenaLosses`, `ArenaDraws`) and scaled (`ArenaScaledRating`, `ArenaScaledWins`, `ArenaScaledLosses`, `ArenaScaledDraws`). They are server only properties.
 
-A rated duel changes both ratings by Elo, with a K of `arena_elo_k` (50): beating an even opponent is worth 25 points, an upset more, beating someone far below at least 1. Draws don't change ratings. Duels from the queue are rated. Challenges are rated if `arena_rated_challenges` is on. A duel between two players connected from the same IP address is never rated while `arena_block_same_ip` is on, and the queue never pairs them. Every duel counts in the record, rated or not.
+A rated duel changes both fighters' ratings on its board by Elo, with a K of `arena_elo_k` (50): beating an even opponent is worth 25 points, an upset more, beating someone far below at least 1. Draws don't change ratings, but count in the record. An unrated duel changes nothing: no rating, and no record.
+
+Who decides whether a duel is rated:
+
+- A player, by asking for `unrated`. The queue only pairs unrated players with each other.
+- The server: challenges are only rated while `arena_rated_challenges` is on (the challenger is told when their challenge can't be rated). A duel between two players connected from the same IP address is never rated while `arena_block_same_ip` is on, and the queue never pairs them.
 
 ## Turning it off, and the minimum level
 
@@ -99,6 +116,7 @@ Every map is registered as an instance template called `arena:<name>`, so an adm
 | `apps/server/Arena/ArenaElo.cs` | Ratings. |
 | `apps/server/Arena/ArenaMap.cs`, `ArenaMapConfig.cs`, `ArenaMaps.cs` | Maps, reading `arenas.json`, and the maps that are loaded. |
 | `apps/server/Arena/ArenaConfirmation.cs` | A yes/no question that also says when the answer is no. |
+| `apps/server/Entity/LevelScaling.cs` | Scaled duels: `CanScalePlayer` asks `ArenaManager.IsScaledDuel`, and `GetDuelDamageScalar` replaces the monster health and armor tables between two fighters. |
 | `apps/server/WorldObjects/Player_Arena.cs` | What a duel does to a player: getting ready, beginning, being defeated, going home. |
 | `apps/server/Commands/PlayerCommands/ArenaCommand.cs` | `/arena`. |
 
@@ -115,8 +133,7 @@ Tests: `apps/server-tests/ArenaTests.cs` (ratings, the queue, maps and the `aren
 
 ### Phase 2
 
-- **Unrated duels.** Today a player can't choose: queue duels are always rated, and challenges are rated or not for everybody by `arena_rated_challenges` (and same-IP duels never are). Add a player's choice: `/arena challenge <name> unrated` (the one challenged sees "unrated" in the question), and an unrated queue (`/arena queue unrated [levels]`) that only pairs players who asked for unrated with each other. `ArenaMatch.Rated` is already set per duel, so this is about the commands and the queue keeping rated and unrated entries apart.
-- **Level scaling**, like shroud scaling: a choice for the queue and for challenges (a scaled duel, or a level band). Fighters are made ready in `Player.PrepareForArenaDuel` and the fight begins in `Player.BeginArenaDuel`, which is where scaling would be put on, and `RestoreAfterArena` where it would be taken off.
+- **Unrated duels** and **scaled duels**: done (see Kinds of duel). To test on a live server: a scaled duel between levels far apart both ways (melee, missile, war and void magic, damage over time, harms and drains), a scaled duel between fighters of the same level, a raw duel with a Shrouded fighter (nothing must be scaled), and `/modifybool debug_level_scaling_system true` to see the scalars on the console.
 - **Fellowship against fellowship, and a team queue.** `ArenaFighter.Side` and the rules for who may harm whom already work by side, and a duel ends when a side has nobody standing. Only one against one is rated today.
 
 ### Leaderboards (once fellowship dueling is in)
@@ -126,7 +143,7 @@ One rating, and one board, per kind of duel, instead of the single `ArenaRating`
 - **By size**: 1v1, 2v2, 3v3, and so on.
 - **Scaled or raw**: duels fought with level scaling and duels fought at players' own levels are rated apart, since they are different contests.
 
-So a rating is kept per (size, scaled or raw): 1v1 raw, 1v1 scaled, 2v2 raw, 2v2 scaled... Each needs its own rating and record on the character. A handful of new `PropertyInt`s per board works for a few boards; if there get to be many, a small shard table (character, board, rating, wins, losses, draws) is cleaner and makes `/arena top` a query instead of a scan of every player. For teams, each fighter's rating moves by Elo against the average rating of the other side. `/arena top [board]` and `/arena stats [name] [board]` pick the board, with 1v1 raw as the default. Unrated duels count on no board.
+So a rating is kept per (size, scaled or raw): 1v1 raw, 1v1 scaled, 2v2 raw, 2v2 scaled... Each needs its own rating and record on the character. Raw and scaled are already apart (`ArenaBoard`); size is still to come. A handful of new `PropertyInt`s per board works for a few boards; if there get to be many, a small shard table (character, board, rating, wins, losses, draws) is cleaner and makes `/arena top` a query instead of a scan of every player. For teams, each fighter's rating moves by Elo against the average rating of the other side. `/arena top [board]` and `/arena stats [name] [board]` pick the board, with 1v1 raw as the default (`/arena top scaled` already picks the scaled board). Unrated duels count on no board.
 
 ### Later (not designed yet)
 

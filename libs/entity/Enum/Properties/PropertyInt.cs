@@ -919,6 +919,21 @@ public enum PropertyInt : ushort
     [ServerOnly]
     ArenaDraws = 529,
 
+    /// <summary>
+    /// The rating of the character's rated scaled duels, a board of its own (ArenaRating is for raw duels)
+    /// </summary>
+    [ServerOnly]
+    ArenaScaledRating = 530,
+
+    [ServerOnly]
+    ArenaScaledWins = 531,
+
+    [ServerOnly]
+    ArenaScaledLosses = 532,
+
+    [ServerOnly]
+    ArenaScaledDraws = 533,
+
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
 
