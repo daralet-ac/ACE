@@ -77,7 +77,7 @@ public class StyleCommand
             return;
         }
 
-        if (!ItemStyleToggle.Toggle(item))
+        if (!ItemSetupToggle.Toggle(item))
         {
             Send(session, $"The {item.Name} has only one look.");
             return;

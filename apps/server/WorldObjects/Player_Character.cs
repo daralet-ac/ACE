@@ -299,6 +299,13 @@ partial class Player
     // CharacterPropertiesQuestRegistry
     // =====================================
 
+    private AccountQuests _accountQuests;
+
+    /// <summary>
+    /// The quests stamped on this player's account (ACCOUNT_ quests), shared with its other characters.
+    /// QuestManager keeps ACCOUNT_ quests here instead of in the character's own registry.
+    /// </summary>
+    public AccountQuests AccountQuests => _accountQuests ??= AccountQuestManager.Get(Account.AccountId);
 
     // =====================================
     // CharacterPropertiesShortcutBar

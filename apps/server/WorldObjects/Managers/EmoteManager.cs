@@ -2202,52 +2202,6 @@ public class EmoteManager
                         );
                     }
 
-                    if (questName.StartsWith("ACCOUNT_") && questTarget is Player questPlayer)
-                    {
-                        var questNameTrimmed = QuestManager.GetQuestName(questName);
-                        var characters = DatabaseManager.Shard.BaseDatabase.GetCharacters(questPlayer.Account.AccountId, true);
-
-                        foreach (var character in characters)
-                        {
-                            if (character.IsDeleted)
-                            {
-                                continue;
-                            }
-
-                            var quest = character.GetOrCreateQuest(questNameTrimmed, questPlayer.CharacterDatabaseLock, out var questRegistryWasCreated);
-
-                            if (questRegistryWasCreated)
-                            {
-                                quest.LastTimeCompleted = (uint)Time.GetUnixTime();
-                                quest.NumTimesCompleted = 1; // initial add / first solve
-
-                                quest.CharacterId = character.Id;
-
-                                if (Debug)
-                                {
-                                    Console.WriteLine($"{character.Name}.QuestManager.Update({quest}): added quest");
-                                }
-
-                                questPlayer.CharacterChangesDetected = true;
-                                questPlayer.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
-                            }
-                            else
-                            {
-                                if (questPlayer.QuestManager.IsMaxSolves(questName))
-                                {
-                                    continue;
-                                }
-
-                                // update existing quest
-                                quest.LastTimeCompleted = (uint)Time.GetUnixTime();
-                                quest.NumTimesCompleted++;
-
-                                questPlayer.CharacterChangesDetected = true;
-                                questPlayer.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
-                            }
-                        }
-                    }
-
                     questTarget.QuestManager.Stamp(emote.Message);
 
                     if (QuestManager.CapstoneCompletionQuests.Contains(emote.Message))

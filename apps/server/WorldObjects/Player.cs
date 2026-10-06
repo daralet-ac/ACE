@@ -839,6 +839,11 @@ public partial class Player : Creature, IPlayer
         SavePlayerToDatabase();
         PlayerManager.SwitchPlayerFromOnlineToOffline(this);
 
+        if (!PlayerManager.GetAllOnline().Any(p => p.Account.AccountId == Account.AccountId))
+        {
+            AccountQuestManager.Unload(Account.AccountId);
+        }
+
         _log.Debug(
             "[LOGOUT] Account {Account} exited the world with character {Name} (0x{Guid}) at {Timestamp}.",
             Account.AccountName,
