@@ -190,7 +190,7 @@ public static partial class LootGenerationFactory
                     defenseModPercetile /= 2;
                     if (defenseModPercetile > highestModPercentile)
                     {
-                        highestModPercentile = modPercentile;
+                        highestModPercentile = defenseModPercetile;
                     }
 
                     break;
@@ -235,9 +235,7 @@ public static partial class LootGenerationFactory
         //    $" --FINAL: {finalPercentile}\n\n");
 
         // Workmanship Calculation
-        //Console.WriteLine($"{wo.NameWithMaterialAndElement} - {Math.Max((int)(finalPercentile * 10), 1)}");
-
-        return Math.Clamp((int)(finalPercentile * 10), 1, 10);
+        return WorkmanshipChance.FromPowerScore(finalPercentile);
     }
 
     private static float[] GetCasterMaxDamageMod()

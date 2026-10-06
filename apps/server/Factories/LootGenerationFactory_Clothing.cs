@@ -1292,7 +1292,7 @@ public static partial class LootGenerationFactory
         //    $" --FINAL: {finalPercentile}\n\n");
 
         // Workmanship Calculation
-        return (int)Math.Clamp(Math.Round(finalPercentile * 10, 0), 1, 10);
+        return WorkmanshipChance.FromPowerScore(finalPercentile);
     }
 
     private static int GetMaxArmorLevel(WorldObject wo)

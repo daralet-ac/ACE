@@ -2598,7 +2598,7 @@ public static partial class LootGenerationFactory
             return wcid;
         }
 
-        var trophyQuality = WorkmanshipChance.Roll(tier);
+        var trophyQuality = TrophyQualityChance.Roll(tier);
 
         // bonus trophy quality from monsters with frigid bonuses
         var frigidBonusRoll = ThreadSafeRandom.Next(0.0f, frigidBonus - 1.0f);

@@ -582,7 +582,7 @@ public static class WorldObjectFactory
     /// tier-appropriate quality by which specific WCID it targets, so this only needs to
     /// apply the frigid-zone bonus (a runtime, spawn-position-dependent nudge that can't be
     /// baked into content) on top. A legacy (pre-refactor) WCID doesn't encode a quality at
-    /// all, so it still rolls one fresh via WorkmanshipChance, matching the old behavior.
+    /// all, so it still rolls one fresh via TrophyQualityChance, matching the old behavior.
     /// Returns <paramref name="weenieClassId"/> unchanged for non-trophy items.
     /// </summary>
     private static uint ResolveTrophyWcid(uint weenieClassId, int tier, float frigidBonus)
@@ -594,7 +594,7 @@ public static class WorldObjectFactory
         }
 
         var quality = TrophyWcids.IsLegacyTrophyWcid(weenieClassId)
-            ? WorkmanshipChance.Roll(tier)
+            ? TrophyQualityChance.Roll(tier)
             : TrophyWcids.GetTrophyQuality(weenieClassId, trophyBaseWcid);
 
         if (frigidBonus > 1.0f)
