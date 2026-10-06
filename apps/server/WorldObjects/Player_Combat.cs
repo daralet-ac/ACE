@@ -5,6 +5,7 @@ using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Arena;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
@@ -2176,6 +2177,24 @@ partial class Player
 
         if (targetPlayer != null)
         {
+            // in the arena, who may fight whom is up to the duel: opponents, once the countdown is over, and nobody else
+            var harmful = spell == null || spell.IsHarmful;
+
+            switch (ArenaManager.CheckPlayerVsPlayer(this, targetPlayer, harmful))
+            {
+                case ArenaVerdict.Allowed:
+                    return null;
+
+                case ArenaVerdict.Refused:
+                    return new List<WeenieErrorWithString>()
+                    {
+                        harmful
+                            ? WeenieErrorWithString.YouFailToAffect_TheyCannotBeHarmed
+                            : WeenieErrorWithString.YouFailToAffect_WithBeneficialSpells,
+                        WeenieErrorWithString._FailsToAffectYou_YouCannotBeHarmed
+                    };
+            }
+
             if (spell == null || spell.IsHarmful)
             {
                 // Ensure that a non-PK cannot cast harmful spells on another player

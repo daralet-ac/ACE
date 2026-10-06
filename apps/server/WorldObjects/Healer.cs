@@ -4,6 +4,7 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
+using ACE.Server.Arena;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
@@ -68,6 +69,14 @@ public class Healer : WorldObject
         if (healer.IsJumping)
         {
             healer.SendUseDoneEvent(WeenieError.YouCantDoThatWhileInTheAir);
+            return;
+        }
+
+        // in the arena, fighters can only heal themselves and their own side, and nobody else can heal a fighter
+        if (ArenaManager.CheckPlayerVsPlayer(healer, targetPlayer, harmful: false) == ArenaVerdict.Refused)
+        {
+            healer.SendWeenieErrorWithString(WeenieErrorWithString.YouFailToAffect_WithBeneficialSpells, targetPlayer.Name);
+            healer.SendUseDoneEvent();
             return;
         }
 

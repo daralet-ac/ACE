@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using ACE.Common;
 using ACE.Database;
 using ACE.DatLoader;
+using ACE.Server.Arena;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Discord;
 using ACE.Server.Managers;
@@ -285,6 +286,9 @@ partial class Program
         _log.Information("Loading instance templates (instances.json)...");
         InstanceManager.LoadTemplates();
         InstanceManager.RegisterStarterAcademies();
+
+        _log.Information("Loading arena maps (arenas.json)...");
+        ArenaMaps.Load();
 
         // a value that is already in the database is used instead of the default, so this is what is really in force
         _log.Information(

@@ -139,6 +139,8 @@ InstanceManager.Leave(player);             // to where the template sends player
 
 `FindOrCreate` finds and makes in one step, so two players who arrive at the same moment get the same instance. `created` is true for the call that made it, which is when whatever the instance needs (the fellowship's modifiers, for a capstone) is set up. A template made in code can be given to `InstanceManager.RegisterTemplate` to get a name (and to make it instance only).
 
+The owner of an instance can also say where each player goes when they leave it (logging out inside it, `/instance leave`, the instance being closed), by implementing `IInstanceReturnPositions`. That comes before the template's return position. The arena uses it to send every fighter back to exactly where they were before their duel (see [arena.md](arena.md)).
+
 ## Capstone dungeons
 
 On for every capstone dungeon. The server property `capstone_instanced_dungeons` is `*`, or a comma separated list of dungeon names (as they are in the `AssignCapstoneDungeon` emote), and the dungeons it names open a private instance of the original landblock for each fellowship, instead of one of the numbered copies. `*` is the default, and it means all 18 now (the 15 capstone dungeons, the second parts of Lugian Mines (`Lugian Mines2`) and Mines of Despair (`Beyond the Mines`), which are instances of their own, and the Olthoi Queen's Lair raid) and any that is added later. To use the copies for some, list the ones that should be instances, or empty the property for all of them.
@@ -187,7 +189,7 @@ A personal template gives every player who logs in inside its landblocks an inst
 - Only `ActivationTarget` is translated. The world database was checked for weenies that name a static object by its guid (`SELECT object_Id, type, value FROM weenie_properties_i_i_d WHERE value BETWEEN 1879048192 AND 2147483647`): 38 weenies, all `ActivationTarget`, pointing at 35 statics in 18 landblocks (none of them in a capstone dungeon), and nothing else. A guid written down anywhere else (a new property, an emote) would not be translated. The links between statics (`landblock_instance_link`) are not affected, because they are made as references between the objects.
 - Admin `Create*` commands and the old `Game.cs` chess pieces don't copy the instance to what they make. The `[INSTANCE]` warning in the log says when something is spawned without one.
 - Spawns that would be placed right at the outer edge of a footprint fail, because the edge is solid (see the ring).
-- Islands are made from a file, and there is nothing in the game yet that sends a player into one. The training academies are the only thing that puts players in instances by itself.
+- Islands are made from a file, and there is nothing in the game yet that sends a player into one. The training academies and the arena (every duel is fought in an instance of its own, see [arena.md](arena.md)) are the only things that put players in instances by themselves.
 
 ## Testing
 

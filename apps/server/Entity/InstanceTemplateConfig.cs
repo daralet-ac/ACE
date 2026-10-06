@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ACE.Entity;
+using ACE.Server.Arena;
 
 namespace ACE.Server.Entity;
 
@@ -287,6 +288,10 @@ public static class InstanceTemplateConfig
         {
             Fail($"names that start with \"{ReservedPrefix}\" are for the capstone dungeons");
         }
+        else if (island.Name.StartsWith(ArenaMap.TemplatePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            Fail($"names that start with \"{ArenaMap.TemplatePrefix}\" are for the arena maps of arenas.json");
+        }
         else if (!names.Add(island.Name.Trim()))
         {
             Fail("another island has the same name");
@@ -477,7 +482,7 @@ public static class InstanceTemplateConfig
             && uint.TryParse(text, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out value);
     }
 
-    private static bool TryBuildPosition(PositionEntry entry, out Position position, out string problem)
+    internal static bool TryBuildPosition(PositionEntry entry, out Position position, out string problem)
     {
         position = null;
 

@@ -287,6 +287,10 @@
     <None Update="starterGear.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- the arena maps are curated here, with the server, so a build always brings the latest list -->
+    <None Update="arenas.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <!-- instances.json is the server's own configuration. The build puts the one that comes with the server next to it when there is none there yet,

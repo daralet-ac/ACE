@@ -12,6 +12,7 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
+using ACE.Server.Arena;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
@@ -832,7 +833,11 @@ public partial class Player : Creature, IPlayer
     {
         CurrentLandblock?.RemoveWorldObject(Guid, false);
 
+        // someone who logs out in a duel gives it up, and gets back the player killer status they had before it
+        ArenaManager.OnPlayerLoggingOut(this);
+
         // someone who logs out inside an instance is saved in the persistent world, where the instance sends players
+        // (where they were before the duel, for a fighter in the arena)
         InstanceManager.OnPlayerLoggingOut(this);
 
         SetPropertiesAtLogOut();

@@ -426,13 +426,19 @@ public static class InstanceManager
     }
 
     /// <summary>
-    /// Where a player who leaves their instance ends up: the template's own return position, or their sanctuary,
+    /// Where a player who leaves their instance ends up: where the instance's owner says (IInstanceReturnPositions),
+    /// or the template's own return position, or their sanctuary,
     /// or where they started, whichever of those is the first one that is still a place the persistent world
     /// will let them into. If none of them are, WorldManager's ultimate fallback always is.
     /// </summary>
     private static Position GetReturnPosition(Player player)
     {
-        return FirstEnterablePosition(Get(player.InstanceId)?.Template.ReturnPosition, player.Sanctuary, player.Instantiation);
+        var instance = Get(player.InstanceId);
+
+        // the owner of the instance goes first: a duel sends each fighter back to where they were before it
+        var ownersChoice = (instance?.Owner as IInstanceReturnPositions)?.GetReturnPosition(player);
+
+        return FirstEnterablePosition(ownersChoice, instance?.Template.ReturnPosition, player.Sanctuary, player.Instantiation);
     }
 
     /// <summary>
