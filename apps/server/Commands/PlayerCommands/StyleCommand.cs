@@ -5,7 +5,6 @@ using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity;
 using ACE.Server.Network;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Commands.PlayerCommands;
 
@@ -77,7 +76,7 @@ public class StyleCommand
             return;
         }
 
-        if (!ItemSetupToggle.Toggle(item))
+        if (!ItemStyleToggle.Toggle(item))
         {
             Send(session, $"The {item.Name} has only one look.");
             return;
