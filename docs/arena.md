@@ -1,6 +1,6 @@
 # The arena
 
-Players can duel each other. Every duel is fought in an **instance of its own** of an arena map (see [instanced-landblocks.md](instanced-landblocks.md)), so nobody else is ever in there with them, any number of duels can use the same map at once, and nothing is left behind when it is over. Nobody loses anything by being defeated, and everybody goes back to exactly where they were afterwards. Only non-player killers and player killer lites can duel.
+Players can duel each other. Every duel is fought in an **instance of its own** of an arena map (see [instanced-landblocks.md](instanced-landblocks.md)), so nobody else is ever in there with them, any number of duels can use the same map at once, and nothing is left behind when it is over. Nobody loses anything by being defeated, and everybody goes back to exactly where they were afterwards. Only non-player killers and player killer lites can duel, from the level the server asks for (`arena_dueling_minimum_level`). Admins can turn the whole thing off at once (`arena_dueling_enabled`).
 
 This is phase 1: one against one, from a challenge or from the queue. Spectating, fellowship against fellowship, a team queue and level scaling are for later (see the end).
 
@@ -49,6 +49,13 @@ Every character has an arena rating, starting at 1400 (`PropertyInt.ArenaRating`
 
 A rated duel changes both ratings by Elo, with a K of `arena_elo_k` (50): beating an even opponent is worth 25 points, an upset more, beating someone far below at least 1. Draws don't change ratings. Duels from the queue are rated. Challenges are rated if `arena_rated_challenges` is on. A duel between two players connected from the same IP address is never rated while `arena_block_same_ip` is on, and the queue never pairs them. Every duel counts in the record, rated or not.
 
+## Turning it off, and the minimum level
+
+Both are server properties, so they are changed in the game (by an admin) and take effect straight away, without a restart:
+
+- `/modifybool arena_dueling_enabled false` turns arena dueling off. At once (the arena checks four times a second), the queue is emptied, every duel that is going on is called off (fighters who are in the arena already are taken home, as when any duel is called off), and nobody can queue, challenge or be challenged. Records and ratings can still be looked at (`/arena stats`, `/arena top`). `/modifybool arena_dueling_enabled true` turns it on again.
+- `/modifylong arena_dueling_minimum_level 50` lets only characters of level 50 and up duel: to queue, to challenge, and to be challenged. 1 (the default) is any level. It is checked whenever someone queues or challenges, again when the queue pairs them, and again just before the fighters are sent to the arena, so someone who no longer qualifies is taken out of the queue (and told why) when their turn comes. A duel that has begun is not stopped by it.
+
 ## Arena maps: `arenas.json`
 
 The maps are in `apps/server/arenas.json`, which the build copies next to the server every time (the list is curated with the server, unlike `instances.json`). It is read once, when the server starts. A mistake in one map is logged (`[ARENA] ...`) and only leaves that map out. The file explains its own format, and allows comments and trailing commas.
@@ -72,7 +79,8 @@ Every map is registered as an instance template called `arena:<name>`, so an adm
 
 | Property | Default | |
 |---|---|---|
-| `arena_enabled` | true | Whether players can use `/arena` at all. |
+| `arena_dueling_enabled` | true | Whether arena dueling is on at all. Turning it off calls off everything that is going on (see above). |
+| `arena_dueling_minimum_level` | 1 | The lowest level that can duel. 1 is any level. |
 | `arena_accept_seconds` | 20 | How long players have to say yes (at least 5). |
 | `arena_countdown_seconds` | 10 | How long the countdown is (at least 3). |
 | `arena_time_limit_minutes` | 20 | How long a duel lasts at most. Then it is a draw. |
@@ -100,7 +108,7 @@ Tests: `apps/server-tests/ArenaTests.cs` (ratings, the queue, maps and the `aren
 
 ## Not done yet
 
-- **Testing on a live server.** Nothing here has been run against a real client yet. Things to try: a challenge and a queue duel to the end each way (defeat, giving up, logging out, a portal out, the time limit with `/modifylong arena_time_limit_minutes 1`), saying no and not answering, a player killer lite and a non-player killer fighting, `/die` in the countdown, a fighter whose lifestone is somewhere else, logging out while falling, and `/arena cancel`. Watch that statuses come back right (`/pk` as a developer shows yours) and that nobody is left in an instance (`/instance list`).
+- **Testing on a live server.** Nothing here has been run against a real client yet. Things to try: a challenge and a queue duel to the end each way (defeat, giving up, logging out, a portal out, the time limit with `/modifylong arena_time_limit_minutes 1`), saying no and not answering, turning `arena_dueling_enabled` off in the queue, while asked, in the countdown and in a fight, a challenge across `arena_dueling_minimum_level`, a player killer lite and a non-player killer fighting, `/die` in the countdown, a fighter whose lifestone is somewhere else, logging out while falling, and `/arena cancel`. Watch that statuses come back right (`/pk` as a developer shows yours) and that nobody is left in an instance (`/instance list`).
 - **Spectating.** The arena already refuses harm and help between fighters and anyone else in the instance, so spectators can be sent in with `InstanceManager.Enter` and taken home by the duel like fighters.
 - **Fellowship against fellowship, and a team queue.** `ArenaFighter.Side` and the rules for who may harm whom already work by side, and a duel ends when a side has nobody standing. Only one against one is rated.
 - **Level scaling**, like shroud scaling: a choice for the queue (a scaled duel, or a level band). Fighters are made ready in `Player.PrepareForArenaDuel` and the fight begins in `Player.BeginArenaDuel`, which is where scaling would be put on, and `RestoreAfterArena` where it would be taken off.

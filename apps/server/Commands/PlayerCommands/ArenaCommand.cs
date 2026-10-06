@@ -28,6 +28,10 @@ public class ArenaCommand
 
     private const string StaffUsage = "\nStaff: arena list | arena cancel <duel>";
 
+    private const string AdminUsage =
+        "\nAdmin: /modifybool arena_dueling_enabled false turns the whole arena off at once (true turns it back on). "
+        + "/modifylong arena_dueling_minimum_level <level> sets the lowest level that can duel. /showprops lists the other arena_ settings.";
+
     private const AccessLevel StaffLevel = AccessLevel.Sentinel;
 
     [CommandHandler(
@@ -44,6 +48,7 @@ public class ArenaCommand
         var subcommand = parameters.Length > 0 ? parameters[0].ToLowerInvariant() : "";
         var rest = string.Join(" ", parameters.Skip(1)).Trim();
         var staff = session.AccessLevel >= StaffLevel;
+        var admin = session.AccessLevel >= AccessLevel.Admin;
 
         switch (subcommand)
         {
@@ -97,7 +102,19 @@ public class ArenaCommand
                 break;
 
             default:
-                player.SendMessage($"Usage: {Usage}{(staff ? StaffUsage : "")}", ChatMessageType.System);
+                player.SendMessage(
+                    $"Usage: {Usage}{(staff ? StaffUsage : "")}{(admin ? AdminUsage : "")}",
+                    ChatMessageType.System
+                );
+
+                if (ArenaManager.MinimumLevel > 1)
+                {
+                    player.SendMessage(
+                        $"You have to be at least level {ArenaManager.MinimumLevel} to duel.",
+                        ChatMessageType.System
+                    );
+                }
+
                 player.SendMessage(ArenaManager.Status(player));
                 break;
         }

@@ -79,7 +79,16 @@ public static class ArenaManager
     /// <summary>How long a fighter can be outside the radius of an outdoor arena before they are disqualified</summary>
     private static readonly TimeSpan BoundaryGrace = TimeSpan.FromSeconds(5);
 
-    private static bool Enabled => PropertyManager.GetBool("arena_enabled").Item;
+    /// <summary>
+    /// Whether arena dueling is on at all (arena_dueling_enabled). Turning it off calls off everything that is going on (ShutDown).
+    /// </summary>
+    private static bool Enabled => PropertyManager.GetBool("arena_dueling_enabled").Item;
+
+    /// <summary>
+    /// The lowest level a player can be to duel (arena_dueling_minimum_level). 1 when there is no minimum.
+    /// </summary>
+    public static int MinimumLevel =>
+        (int)Math.Clamp(PropertyManager.GetLong("arena_dueling_minimum_level").Item, 1, int.MaxValue);
 
     private static TimeSpan AcceptTime =>
         TimeSpan.FromSeconds(Math.Max(5, PropertyManager.GetLong("arena_accept_seconds").Item));
@@ -124,7 +133,7 @@ public static class ArenaManager
 
         if (!Enabled)
         {
-            return "The arena is closed.";
+            return "Arena dueling is turned off.";
         }
 
         if (ArenaMaps.Enabled.Count == 0)
@@ -145,6 +154,16 @@ public static class ArenaManager
             return Say(
                 "Only non-player killers and player killer lites can duel in the arena.",
                 "is not a non-player killer or a player killer lite, and only they can duel in the arena."
+            );
+        }
+
+        var minimumLevel = MinimumLevel;
+
+        if ((player.Level ?? 1) < minimumLevel)
+        {
+            return Say(
+                $"You have to be at least level {minimumLevel} to duel in the arena.",
+                $"has to be at least level {minimumLevel} to duel in the arena."
             );
         }
 
@@ -363,6 +382,11 @@ public static class ArenaManager
     /// </summary>
     public static string Status(Player player)
     {
+        if (!Enabled)
+        {
+            return "Arena dueling is turned off right now.";
+        }
+
         var guid = player.Guid.Full;
 
         lock (sync)
@@ -608,6 +632,11 @@ public static class ArenaManager
             if (matches.Count == 0 && queue.Count == 0)
             {
                 return;
+            }
+
+            if (!Enabled)
+            {
+                ShutDown();
             }
 
             PairQueue(now);
@@ -1256,6 +1285,42 @@ public static class ArenaManager
     }
 
     /// <summary>
+    /// Arena dueling has been turned off (arena_dueling_enabled): every duel that is going on is called off, which takes the fighters
+    /// who are in the arena already home, and everyone waiting in the queue is taken out of it. Duels that have ended already
+    /// finish as usual: their instances are closed a little later.
+    /// </summary>
+    private static void ShutDown()
+    {
+        var calledOff = 0;
+
+        foreach (var match in matches.Where(m => m.State != ArenaMatchState.Ended).ToList())
+        {
+            CallOff(match, "arena dueling has been turned off.");
+            calledOff++;
+        }
+
+        var waiting = queue.Entries.ToList();
+
+        foreach (var entry in waiting)
+        {
+            queue.Remove(entry.Guid);
+
+            PlayerManager
+                .GetOnlinePlayer(entry.Guid)
+                ?.SendMessage("Arena dueling has been turned off, so you have been taken out of the arena queue.");
+        }
+
+        if (calledOff > 0 || waiting.Count > 0)
+        {
+            _log.Information(
+                "[ARENA] Arena dueling has been turned off: {Duels} duel(s) called off, {Waiting} taken out of the queue",
+                calledOff,
+                waiting.Count
+            );
+        }
+    }
+
+    /// <summary>
     /// Calls a duel off. Nothing is recorded. Fighters who were sent to the arena already are taken home, and if they had not been sent yet,
     /// those who were waiting in the queue are put back in it, in the place they had: all but whoever it was called off because of
     /// (saying no to a duel the queue found is leaving the queue, and so is calling a duel off with /arena leave).
@@ -1298,7 +1363,8 @@ public static class ArenaManager
 
             player.SendMessage(culprit ? "The duel is off." : $"The duel is off: {reason}");
 
-            if (beforeTheArena && fighter.QueueEntry != null && (!culprit || culpritsKeepTheirPlace))
+            // nobody is put back in the queue while arena dueling is turned off: it is being emptied
+            if (Enabled && beforeTheArena && fighter.QueueEntry != null && (!culprit || culpritsKeepTheirPlace))
             {
                 queue.Add(fighter.QueueEntry);
                 player.SendMessage("You are back in the arena queue, in the place you had.");

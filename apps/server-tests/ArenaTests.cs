@@ -5,6 +5,7 @@ using System.Linq;
 using ACE.Entity;
 using ACE.Server.Arena;
 using ACE.Server.Entity;
+using ACE.Server.Managers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ACE.Server.Tests;
@@ -179,6 +180,25 @@ public class ArenaTests
 
         Assert.AreEqual(1, queue.Count);
         Assert.AreEqual(20, queue.Entries[0].LevelBand);
+    }
+
+    #endregion
+
+    #region Settings
+
+    [TestMethod]
+    public void Settings_AdminsCanTurnDuelingOffAndSetTheMinimumLevel()
+    {
+        // /modifybool and /modifylong only change properties that have a default
+        Assert.IsTrue(
+            DefaultPropertyManager.DefaultBooleanProperties.TryGetValue("arena_dueling_enabled", out var enabled)
+        );
+        Assert.IsTrue(enabled.Item, "dueling is on until an admin turns it off");
+
+        Assert.IsTrue(
+            DefaultPropertyManager.DefaultLongProperties.TryGetValue("arena_dueling_minimum_level", out var minimum)
+        );
+        Assert.AreEqual(1L, minimum.Item, "any level, until an admin sets one");
     }
 
     #endregion
