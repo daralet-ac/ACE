@@ -10,7 +10,7 @@ using ACE.Server.WorldObjects;
 namespace ACE.Server.Commands.PlayerCommands;
 
 /// <summary>
-/// /style switches an item flagged with an AlternateSetup between its two looks. It works on the item you last
+/// /style switches an item flagged with an AlternateClothingBase between its two looks. It works on the item you last
 /// examined, carried or equipped, and switching it again brings the first look back.
 /// </summary>
 public class StyleCommand
@@ -77,20 +77,19 @@ public class StyleCommand
             return;
         }
 
-        if (!ItemSetupToggle.Toggle(item))
+        if (!ItemStyleToggle.Toggle(item))
         {
             Send(session, $"The {item.Name} has only one look.");
             return;
         }
 
-        // A held item is drawn for everyone nearby; anything else is only seen by its owner.
+        // The item's own look is only seen by its owner; a worn item is drawn as part of its wearer, whose
+        // appearance everyone nearby sees.
+        session.Network.EnqueueSend(new GameMessageUpdateObject(item));
+
         if (equipped != null)
         {
-            player.EnqueueBroadcast(new GameMessageUpdateObject(item));
-        }
-        else
-        {
-            session.Network.EnqueueSend(new GameMessageUpdateObject(item));
+            player.EnqueueBroadcast(new GameMessageObjDescEvent(player));
         }
 
         Send(session, $"You switch the {item.Name} to its other look. Use /style again to switch it back.");
@@ -100,7 +99,7 @@ public class StyleCommand
     {
         var items = session
             .Player.GetAllPossessions()
-            .Where(ItemSetupToggle.HasAlternateSetup)
+            .Where(ItemStyleToggle.HasAlternateStyle)
             .Select(i => i.Name)
             .OrderBy(n => n)
             .ToList();

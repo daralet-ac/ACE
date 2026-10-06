@@ -8835,21 +8835,21 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// The Setup this item switches to with /style. Switching swaps it with SetupTableId, so it always holds the look
-    /// the item isn't showing.
+    /// The ClothingBase this item switches to with /style. Switching swaps it with ClothingBase, so it always holds
+    /// the look the item isn't showing.
     /// </summary>
-    public uint? AlternateSetup
+    public uint? AlternateClothingBase
     {
-        get => GetProperty(PropertyDataId.AlternateSetup);
+        get => GetProperty(PropertyDataId.AlternateClothingBase);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyDataId.AlternateSetup);
+                RemoveProperty(PropertyDataId.AlternateClothingBase);
             }
             else
             {
-                SetProperty(PropertyDataId.AlternateSetup, value.Value);
+                SetProperty(PropertyDataId.AlternateClothingBase, value.Value);
             }
         }
     }
