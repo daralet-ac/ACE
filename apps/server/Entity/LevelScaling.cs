@@ -1,5 +1,6 @@
 using System;
 using ACE.Entity.Enum;
+using ACE.Server.Arena;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 using Serilog;
@@ -28,7 +29,17 @@ public static class LevelScaling
      * Player defense, armor/ward, and resistance are scaled so that however far above or below the average a
      * player's gear is at their own level, it's worth the same at every lower level too. See
      * GetPlayerArmorWardModScalar() and GetScaledPlayerDefenseSkill().
+     *
+     * A scaled arena duel scales the higher-level fighter down to their opponent's level the same way, with the opponent
+     * in the monster's place (ArenaManager.IsScaledDuel), whether or not anyone is Shrouded. A player is not a monster,
+     * so in a duel the monster tables are left out: damage both ways follows the fighters' average health at their
+     * levels (GetDuelDamageScalar) instead of the monster's health and armor. A raw duel is never scaled, Shrouded or not.
      */
+
+    /// <summary>
+    /// Scaling never goes below this level: the tables don't go lower. Nobody is scaled against a monster, or an opponent, below it.
+    /// </summary>
+    public const int MinimumScaledLevel = 10;
 
     private static readonly ILogger _log = Log.ForContext(typeof(LevelScaling));
 
@@ -51,6 +62,11 @@ public static class LevelScaling
 
     public static float GetMonsterDamageDealtHealthScalar(Creature player, Creature monster)
     {
+        if (IsScaledDuel(player, monster))
+        {
+            return GetDuelDamageScalar(monster, player);
+        }
+
         if (!CanScalePlayer(player, monster))
         {
             return 1.0f;
@@ -85,6 +101,11 @@ public static class LevelScaling
 
     public static float GetMonsterDamageTakenHealthScalar(Creature player, Creature monster)
     {
+        if (IsScaledDuel(player, monster))
+        {
+            return GetDuelDamageScalar(player, monster);
+        }
+
         if (!CanScalePlayer(player, monster))
         {
             return 1.0f;
@@ -161,6 +182,12 @@ public static class LevelScaling
     public static float GetMonsterArmorWardScalar(Creature player, Creature monster)
     {
         if (!CanScalePlayer(player, monster))
+        {
+            return 1.0f;
+        }
+
+        // an opponent in a duel is a player, whose armor is a player's: the higher fighter's damage is scaled instead (GetDuelDamageScalar)
+        if (IsScaledDuel(player, monster))
         {
             return 1.0f;
         }
@@ -434,6 +461,12 @@ public static class LevelScaling
 
     public static float GetPlayerBoostSpellScalar(Creature player, Creature monster)
     {
+        // in a scaled duel, the lower-level fighter's harms and drains reach the higher one as if they were the same level
+        if (IsScaledDuel(player, monster) && CanScalePlayer(monster, player))
+        {
+            return GetPlayerBoostAtLevel(monster.Level.Value) / GetPlayerBoostAtLevel(player.Level.Value);
+        }
+
         if (!CanScalePlayer(player, monster))
         {
             return 1.0f;
@@ -644,7 +677,16 @@ public static class LevelScaling
             return false;
         }
 
-        if (!player.EnchantmentManager.HasSpell((uint)SpellId.Shrouded))
+        // In an arena duel the duel decides, whatever anyone's Shrouding: a scaled duel scales the higher-level fighter down
+        // to the other one's level, and a raw duel is fought at the fighters' own levels
+        var duel = monster is Player ? ArenaManager.IsScaledDuel((Player)player, (Player)monster) : null;
+
+        if (duel == false)
+        {
+            return false;
+        }
+
+        if (duel != true && !player.EnchantmentManager.HasSpell((uint)SpellId.Shrouded))
         {
             return false;
         }
@@ -668,12 +710,57 @@ public static class LevelScaling
             return false;
         }
 
-        if (monster.Level.Value < 10)
+        if (monster.Level.Value < MinimumScaledLevel)
         {
             return false;
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// True if these two are fighting each other in a scaled arena duel
+    /// </summary>
+    public static bool IsScaledDuel(Creature a, Creature b)
+    {
+        return a is Player playerA && b is Player playerB && ArenaManager.IsScaledDuel(playerA, playerB) == true;
+    }
+
+    /// <summary>
+    /// Damage one fighter does another in a scaled duel. The higher-level fighter does damage as if to someone with their
+    /// opponent's average health, and takes it as if they had the average health of their opponent's level: each fighter's
+    /// damage is scaled by the average health at the defender's level over the average health at the attacker's.
+    /// Nothing changes if they are the same level, or the lower one is below MinimumScaledLevel.
+    /// </summary>
+    public static float GetDuelDamageScalar(Creature attacker, Creature defender)
+    {
+        var higher = attacker.Level >= defender.Level ? attacker : defender;
+        var lower = higher == attacker ? defender : attacker;
+
+        if (!CanScalePlayer(higher, lower))
+        {
+            return 1.0f;
+        }
+
+        var scalarMod = GetDuelHealthRatio(attacker.Level.Value, defender.Level.Value);
+
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        {
+            Console.WriteLine(
+                $"\nGetDuelDamageScalar(Attacker {attacker.Name} ({attacker.Level}), Defender {defender.Name} ({defender.Level}))"
+                    + $"\n  scalarMod: {scalarMod}"
+            );
+        }
+
+        return scalarMod;
+    }
+
+    /// <summary>
+    /// The average player health at the defender's level over the average at the attacker's
+    /// </summary>
+    internal static float GetDuelHealthRatio(int attackerLevel, int defenderLevel)
+    {
+        return (float)GetPlayerHealthAtLevel(defenderLevel) / GetPlayerHealthAtLevel(attackerLevel);
     }
 
     public static float GetPlayerBoostHealScalarShroudedUpward(Player caster, Player target)

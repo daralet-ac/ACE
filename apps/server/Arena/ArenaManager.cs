@@ -109,15 +109,58 @@ public static class ArenaManager
 
     #region Ratings
 
-    public static int RatingOf(IPlayer player) =>
-        player.GetProperty(PropertyInt.ArenaRating) ?? ArenaElo.StartingRating;
+    /// <summary>
+    /// The properties a board's rating and record are kept in
+    /// </summary>
+    private static (PropertyInt Rating, PropertyInt Wins, PropertyInt Losses, PropertyInt Draws) PropertiesOf(
+        ArenaBoard board
+    ) =>
+        board == ArenaBoard.Scaled
+            ? (
+                PropertyInt.ArenaScaledRating,
+                PropertyInt.ArenaScaledWins,
+                PropertyInt.ArenaScaledLosses,
+                PropertyInt.ArenaScaledDraws
+            )
+            : (PropertyInt.ArenaRating, PropertyInt.ArenaWins, PropertyInt.ArenaLosses, PropertyInt.ArenaDraws);
 
-    public static (int Wins, int Losses, int Draws) RecordOf(IPlayer player) =>
-        (
-            player.GetProperty(PropertyInt.ArenaWins) ?? 0,
-            player.GetProperty(PropertyInt.ArenaLosses) ?? 0,
-            player.GetProperty(PropertyInt.ArenaDraws) ?? 0
+    public static int RatingOf(IPlayer player, ArenaBoard board = ArenaBoard.Raw) =>
+        player.GetProperty(PropertiesOf(board).Rating) ?? ArenaElo.StartingRating;
+
+    public static (int Wins, int Losses, int Draws) RecordOf(IPlayer player, ArenaBoard board = ArenaBoard.Raw)
+    {
+        var properties = PropertiesOf(board);
+
+        return (
+            player.GetProperty(properties.Wins) ?? 0,
+            player.GetProperty(properties.Losses) ?? 0,
+            player.GetProperty(properties.Draws) ?? 0
         );
+    }
+
+    /// <summary>
+    /// Whether two players are fighting each other in a duel, and if they are, whether it is scaled. Null if they are not.
+    /// LevelScaling asks this for every hit, so it takes no lock: the fighters of a duel never change once it is made.
+    /// </summary>
+    public static bool? IsScaledDuel(Player a, Player b)
+    {
+        if (a.InstanceId == Landblock.PersistentInstance || a.InstanceId != b.InstanceId)
+        {
+            return null;
+        }
+
+        if (InstanceManager.Get(a.InstanceId)?.Owner is not ArenaMatch match)
+        {
+            return null;
+        }
+
+        if (match.Get(a.Guid.Full) == null || match.Get(b.Guid.Full) == null)
+        {
+            return null;
+        }
+
+        return match.Scaled;
+    }
 
     #endregion
 
@@ -202,12 +245,14 @@ public static class ArenaManager
     }
 
     /// <summary>
-    /// Puts a player in the queue, or changes the level band of someone who is in it already (they keep their place)
+    /// Puts a player in the queue, or changes what they are waiting for if they are in it already (they keep their place)
     /// </summary>
     /// <param name="levelBand">How many levels apart their opponent may be at most, 0 for any. Null for the server's default.</param>
-    public static void JoinQueue(Player player, int? levelBand)
+    /// <param name="scaled">To wait for a scaled duel, in which the higher-level fighter fights at their opponent's level</param>
+    /// <param name="rated">False to wait for an unrated duel. Players are only paired with someone who wants the same kind of duel.</param>
+    public static void JoinQueue(Player player, int? levelBand, bool scaled = false, bool rated = true)
     {
-        var why = WhyCantDuel(player);
+        var why = WhyCantDuel(player) ?? (scaled ? WhyCantScale(player) : null);
         if (why != null)
         {
             player.SendMessage(why);
@@ -234,18 +279,21 @@ public static class ArenaManager
                     Name = player.Name,
                     Level = player.Level ?? 1,
                     LevelBand = band,
+                    Scaled = scaled,
+                    Rated = rated,
                     Address = AddressOf(player),
                     JoinedAt = already?.JoinedAt ?? UtcNow()
                 }
             );
 
-            var bandText = band > 0 ? $" for an opponent within {band} level{(band == 1 ? "" : "s")} of you" : "";
-            var others = queue.Count - 1;
+            var bandText = band > 0 ? $", with an opponent within {band} level{(band == 1 ? "" : "s")} of you" : "";
+            var waitingFor = $" for {DescribeDuel(scaled, rated)}{bandText}";
+            var others = queue.Entries.Count(e => e.Guid != guid && e.Scaled == scaled && e.Rated == rated);
 
             player.SendMessage(
                 already != null
-                    ? $"You are still in the arena queue{bandText}, and kept your place."
-                    : $"You are in the arena queue{bandText}. {others} other{(others == 1 ? " is" : "s are")} waiting. /arena leave takes you out of it."
+                    ? $"You are still in the arena queue{waitingFor}, and kept your place."
+                    : $"You are in the arena queue{waitingFor}. {others} other{(others == 1 ? " is" : "s are")} waiting for the same. /arena leave takes you out of it."
             );
         }
     }
@@ -253,7 +301,9 @@ public static class ArenaManager
     /// <summary>
     /// Asks another player to a duel
     /// </summary>
-    public static void Challenge(Player challenger, string targetName)
+    /// <param name="scaled">A scaled duel: the higher-level fighter fights at their opponent's level</param>
+    /// <param name="rated">False for an unrated duel. A challenge is only rated if arena_rated_challenges is on, whatever is asked for.</param>
+    public static void Challenge(Player challenger, string targetName, bool scaled = false, bool rated = true)
     {
         var target = PlayerManager.GetOnlinePlayer(targetName);
 
@@ -269,7 +319,10 @@ public static class ArenaManager
             return;
         }
 
-        var why = WhyCantDuel(challenger) ?? WhyCantDuel(target, self: false);
+        var why =
+            WhyCantDuel(challenger)
+            ?? WhyCantDuel(target, self: false)
+            ?? (scaled ? WhyCantScale(challenger) ?? WhyCantScale(target, self: false) : null);
         if (why != null)
         {
             challenger.SendMessage(why);
@@ -310,7 +363,8 @@ public static class ArenaManager
 
             var match = NewMatch(
                 ArenaMatchKind.Challenge,
-                rated: RatedChallenges && !(BlockSameAddress && sameAddress),
+                rated: rated && RatedChallenges && !(BlockSameAddress && sameAddress),
+                scaled,
                 now,
                 NewFighter(challenger, side: 0, accepted: true),
                 NewFighter(target, side: 1, accepted: false)
@@ -321,7 +375,7 @@ public static class ArenaManager
                     match,
                     match.Fighters[1],
                     target,
-                    $"{Introduce(challenger)} challenges you to a duel in the arena. Nobody loses anything by being defeated. Will you fight?"
+                    $"{Introduce(challenger, scaled)} challenges you to {DescribeDuel(match.Scaled, match.Rated)} in the arena.{ExplainScaling(match.Scaled)} Nobody loses anything by being defeated. Will you fight?"
                 )
             )
             {
@@ -335,7 +389,7 @@ public static class ArenaManager
             }
 
             challenger.SendMessage(
-                $"You challenge {target.Name} to a duel{(match.Rated ? "" : " (it won't change your arena ratings)")}. They have {AcceptTime.TotalSeconds:N0} seconds to answer."
+                $"You challenge {target.Name} to {DescribeDuel(match.Scaled, match.Rated)}{(match.Rated || !rated ? "" : " (it can't be rated)")}. They have {AcceptTime.TotalSeconds:N0} seconds to answer."
             );
         }
     }
@@ -682,7 +736,13 @@ public static class ArenaManager
         };
     }
 
-    private static ArenaMatch NewMatch(ArenaMatchKind kind, bool rated, DateTime now, params ArenaFighter[] fighters)
+    private static ArenaMatch NewMatch(
+        ArenaMatchKind kind,
+        bool rated,
+        bool scaled,
+        DateTime now,
+        params ArenaFighter[] fighters
+    )
     {
         // whoever was waiting in the queue is taken out of it, and put back if this duel is called off before it begins
         foreach (var fighter in fighters)
@@ -695,6 +755,7 @@ public static class ArenaManager
             Id = ++lastMatchId,
             Kind = kind,
             Rated = rated,
+            Scaled = scaled,
             Fighters = fighters.ToList(),
             State = ArenaMatchState.Accepting,
             Deadline = now + AcceptTime
@@ -821,9 +882,11 @@ public static class ArenaManager
 
             var sameAddress = first.Address != null && first.Address == second.Address;
 
+            // the queue only pairs players who asked for the same kind of duel
             var match = NewMatch(
                 ArenaMatchKind.Queue,
-                rated: !sameAddress,
+                rated: first.Rated && !sameAddress,
+                first.Scaled,
                 now,
                 NewFighter(players[0], side: 0, accepted: false, first),
                 NewFighter(players[1], side: 1, accepted: false, second)
@@ -838,7 +901,7 @@ public static class ArenaManager
                         match,
                         match.Fighters[i],
                         players[i],
-                        $"An opponent has been found: {Introduce(opponent)}. Will you fight?"
+                        $"An opponent has been found for {DescribeDuel(match.Scaled, match.Rated)}: {Introduce(opponent, match.Scaled)}.{ExplainScaling(match.Scaled)} Will you fight?"
                     )
                 )
                 {
@@ -1031,6 +1094,11 @@ public static class ArenaManager
                 match,
                 $"The duel begins in {match.LastAnnounced} seconds. Nobody can be harmed until then. Your own enchantments stay with you."
             );
+
+            if (match.Scaled)
+            {
+                TellScaling(match);
+            }
         }
         else if (now >= match.Deadline)
         {
@@ -1221,63 +1289,71 @@ public static class ArenaManager
     {
         var results = new Dictionary<uint, string>();
 
-        var characters = match.Fighters.ToDictionary(f => f.Guid, f => PlayerManager.FindByGuid(f.Guid));
+        var winners = match.Fighters.Where(f => match.WinningSide != null && f.Side == match.WinningSide).ToList();
+        var losers = match.Fighters.Where(f => match.WinningSide != null && f.Side != match.WinningSide).ToList();
 
-        if (match.WinningSide == null)
+        foreach (var fighter in match.Fighters)
         {
-            foreach (var fighter in match.Fighters)
-            {
-                if (characters[fighter.Guid] is IPlayer character)
-                {
-                    character.SetProperty(PropertyInt.ArenaDraws, RecordOf(character).Draws + 1);
-                }
+            results[fighter.Guid] =
+                match.WinningSide == null
+                    ? "Nobody won."
+                    : winners.Contains(fighter)
+                        ? $"You have won the duel against {string.Join(", ", losers.Select(f => f.Name))}!"
+                        : $"You have lost the duel against {string.Join(", ", winners.Select(f => f.Name))}.";
+        }
 
-                results[fighter.Guid] = "Nobody won.";
-            }
-
+        // an unrated duel is not on any board: no rating, and no record
+        if (!match.Rated)
+        {
             return results;
         }
 
-        var winners = match.Fighters.Where(f => f.Side == match.WinningSide).ToList();
-        var losers = match.Fighters.Where(f => f.Side != match.WinningSide).ToList();
+        var board = match.Scaled ? ArenaBoard.Scaled : ArenaBoard.Raw;
+        var properties = PropertiesOf(board);
+        var boardName = match.Scaled ? "scaled arena rating" : "arena rating";
 
-        foreach (var fighter in winners)
+        var characters = match.Fighters.ToDictionary(f => f.Guid, f => PlayerManager.FindByGuid(f.Guid));
+
+        foreach (var fighter in match.Fighters)
         {
-            if (characters[fighter.Guid] is IPlayer character)
+            if (characters[fighter.Guid] is not IPlayer character)
             {
-                character.SetProperty(PropertyInt.ArenaWins, RecordOf(character).Wins + 1);
+                continue;
             }
 
-            results[fighter.Guid] = $"You have won the duel against {string.Join(", ", losers.Select(f => f.Name))}!";
-        }
+            var (wins, losses, draws) = RecordOf(character, board);
 
-        foreach (var fighter in losers)
-        {
-            if (characters[fighter.Guid] is IPlayer character)
+            if (match.WinningSide == null)
             {
-                character.SetProperty(PropertyInt.ArenaLosses, RecordOf(character).Losses + 1);
+                character.SetProperty(properties.Draws, draws + 1);
             }
-
-            results[fighter.Guid] = $"You have lost the duel against {string.Join(", ", winners.Select(f => f.Name))}.";
+            else if (winners.Contains(fighter))
+            {
+                character.SetProperty(properties.Wins, wins + 1);
+            }
+            else
+            {
+                character.SetProperty(properties.Losses, losses + 1);
+            }
         }
 
         // only one against one is rated
-        if (match.Rated && winners.Count == 1 && losers.Count == 1)
+        if (winners.Count == 1 && losers.Count == 1)
         {
             var winner = characters[winners[0].Guid];
             var loser = characters[losers[0].Guid];
 
             if (winner != null && loser != null)
             {
-                var before = (Winner: RatingOf(winner), Loser: RatingOf(loser));
+                var before = (Winner: RatingOf(winner, board), Loser: RatingOf(loser, board));
                 var after = ArenaElo.Rate(before.Winner, before.Loser, EloK);
 
-                winner.SetProperty(PropertyInt.ArenaRating, after.Winner);
-                loser.SetProperty(PropertyInt.ArenaRating, after.Loser);
+                winner.SetProperty(properties.Rating, after.Winner);
+                loser.SetProperty(properties.Rating, after.Loser);
 
                 results[winners[0].Guid] +=
-                    $" Your arena rating is now {after.Winner} (+{after.Winner - before.Winner}).";
-                results[losers[0].Guid] += $" Your arena rating is now {after.Loser} ({after.Loser - before.Loser}).";
+                    $" Your {boardName} is now {after.Winner} (+{after.Winner - before.Winner}).";
+                results[losers[0].Guid] += $" Your {boardName} is now {after.Loser} ({after.Loser - before.Loser}).";
             }
         }
 
@@ -1452,9 +1528,59 @@ public static class ArenaManager
         chain.EnqueueChain();
     }
 
-    private static string Introduce(Player player)
+    /// <param name="scaled">Whose rating to show: the scaled board's for a scaled duel</param>
+    private static string Introduce(Player player, bool scaled)
     {
-        return $"{player.Name} (level {player.Level ?? 1}, arena rating {RatingOf(player)})";
+        var board = scaled ? ArenaBoard.Scaled : ArenaBoard.Raw;
+
+        return $"{player.Name} (level {player.Level ?? 1}, {(scaled ? "scaled " : "")}arena rating {RatingOf(player, board)})";
+    }
+
+    /// <summary>
+    /// "a raw duel", "a scaled, unrated duel"
+    /// </summary>
+    public static string DescribeDuel(bool scaled, bool rated)
+    {
+        return $"a {(scaled ? "scaled" : "raw")}{(rated ? "" : ", unrated")} duel";
+    }
+
+    private static string ExplainScaling(bool scaled)
+    {
+        return scaled ? " In a scaled duel the higher-level fighter fights at the other one's level." : "";
+    }
+
+    /// <summary>
+    /// Why this player can't fight a scaled duel, or null if they can. Scaling only goes down to level 10 (LevelScaling),
+    /// so below that a scaled duel would be a raw one.
+    /// </summary>
+    private static string WhyCantScale(Player player, bool self = true)
+    {
+        if ((player.Level ?? 1) >= LevelScaling.MinimumScaledLevel)
+        {
+            return null;
+        }
+
+        return self
+            ? $"Scaled duels are for level {LevelScaling.MinimumScaledLevel} and up."
+            : $"{player.Name} is not level {LevelScaling.MinimumScaledLevel} yet, and scaled duels are for level {LevelScaling.MinimumScaledLevel} and up.";
+    }
+
+    /// <summary>
+    /// Tells the fighters of a scaled duel who fights at whose level
+    /// </summary>
+    private static void TellScaling(ArenaMatch match)
+    {
+        var lowest = match.Fighters.Min(f => f.Level);
+
+        foreach (var fighter in match.Fighters)
+        {
+            var message =
+                fighter.Level > lowest
+                    ? $"This duel is scaled: you fight as if you were level {lowest}."
+                    : "This duel is scaled: your opponent fights as if they were your level.";
+
+            PlayerManager.GetOnlinePlayer(fighter.Guid)?.SendMessage(message);
+        }
     }
 
     private static string AddressOf(Player player)

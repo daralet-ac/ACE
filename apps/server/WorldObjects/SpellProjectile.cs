@@ -1283,8 +1283,9 @@ public class SpellProjectile : WorldObject
 
         var wardMod = SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
 
-        // level scaling scales the mitigation, not the ward level -- see LevelScaling.GetPlayerArmorWardModScalar()
-        if (caster is not Player && target is Player)
+        // level scaling scales the mitigation, not the ward level -- see LevelScaling.GetPlayerArmorWardModScalar().
+        // A player caster only scales it in a scaled arena duel, where the higher fighter's ward counts as at the other's level
+        if (target is Player && (caster is not Player || LevelScaling.IsScaledDuel(target, caster)))
         {
             wardMod *= LevelScaling.GetPlayerArmorWardModScalar(target, caster);
         }

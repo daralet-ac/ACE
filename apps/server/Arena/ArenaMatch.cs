@@ -110,6 +110,11 @@ public sealed class ArenaMatch : IInstanceReturnPositions
     /// </summary>
     public bool Rated { get; init; }
 
+    /// <summary>
+    /// Whether the higher-level fighter fights at their opponent's level (LevelScaling). Rated scaled duels have a board of their own.
+    /// </summary>
+    public bool Scaled { get; init; }
+
     public List<ArenaFighter> Fighters { get; init; }
 
     public ArenaMatchState State { get; set; }
@@ -155,6 +160,18 @@ public sealed class ArenaMatch : IInstanceReturnPositions
             " vs ",
             Fighters.GroupBy(f => f.Side).Select(side => string.Join(", ", side.Select(f => f.Name)))
         );
-        return $"#{Id} {names} ({Kind}{(Rated ? ", rated" : "")}) - {State}{(Map != null ? $" in {Map.Name}" : "")}{(Instance != null ? $", instance {Instance.Id}" : "")}";
+        return $"#{Id} {names} ({Kind}{(Scaled ? ", scaled" : "")}{(Rated ? ", rated" : "")}) - {State}{(Map != null ? $" in {Map.Name}" : "")}{(Instance != null ? $", instance {Instance.Id}" : "")}";
     }
+}
+
+/// <summary>
+/// The kinds of rated duel that have a rating and a record of their own
+/// </summary>
+public enum ArenaBoard
+{
+    /// <summary>Fought at the fighters' own levels</summary>
+    Raw,
+
+    /// <summary>The higher-level fighter fought at their opponent's level</summary>
+    Scaled
 }
