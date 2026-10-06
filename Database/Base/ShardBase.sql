@@ -851,6 +851,22 @@ PRIMARY KEY (`id`)
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `account_quest_registry`
+--
+
+DROP TABLE IF EXISTS `account_quest_registry`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `account_quest_registry` (
+  `account_id` int unsigned NOT NULL COMMENT 'Id of the account this quest belongs to',
+  `quest_name` varchar(255) NOT NULL COMMENT 'Unique Name of Quest',
+  `last_time_completed` int unsigned NOT NULL DEFAULT '0' COMMENT 'Timestamp of last successful completion',
+  `num_times_completed` int NOT NULL DEFAULT '0' COMMENT 'Number of successful completions',
+  PRIMARY KEY (`account_id`,`quest_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Quests shared by every character on an account';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `player_market_listings`
 --
 

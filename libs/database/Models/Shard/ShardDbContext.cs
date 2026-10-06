@@ -95,6 +95,8 @@ public partial class ShardDbContext : DbContext
 
     public virtual DbSet<BankActivity> BankActivities { get; set; }
 
+    public virtual DbSet<AccountQuestRegistry> AccountQuestRegistry { get; set; }
+
     public DbSet<ResonanceZoneRow> ResonanceZoneEntries { get; set; }
 
     public virtual DbSet<PlayerMarketListing> PlayerMarketListings { get; set; } = null!;
@@ -1423,6 +1425,19 @@ public partial class ShardDbContext : DbContext
             entity.Property(e => e.Action).HasColumnName("action").HasMaxLength(20);
             entity.Property(e => e.Details).HasColumnName("details").HasMaxLength(500);
             entity.Property(e => e.CreatedAtUtc).HasColumnName("created_at_utc");
+        });
+
+        modelBuilder.Entity<AccountQuestRegistry>(entity =>
+        {
+            entity.ToTable(
+                "account_quest_registry",
+                tb => tb.HasComment("Quests shared by every character on an account")
+            );
+            entity.HasKey(e => new { e.AccountId, e.QuestName }).HasName("PRIMARY");
+            entity.Property(e => e.AccountId).HasColumnName("account_id");
+            entity.Property(e => e.QuestName).HasColumnName("quest_name").HasMaxLength(255);
+            entity.Property(e => e.LastTimeCompleted).HasColumnName("last_time_completed");
+            entity.Property(e => e.NumTimesCompleted).HasColumnName("num_times_completed");
         });
 
         // Market listing

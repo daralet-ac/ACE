@@ -224,7 +224,7 @@ public partial class Player
 
     /// <summary>
     /// Stamped once the player has used a /bank command. Until then, opening a bank tells them about /bank.
-    /// As an ACCOUNT_ flag, it is copied to characters made later on the account.
+    /// As an account quest (ACCOUNT_), every character on the account shares it.
     /// </summary>
     public const string BankCommandsUsedQuest = "ACCOUNT_BankCommandsUsed";
 
@@ -232,7 +232,7 @@ public partial class Player
 
     /// <summary>
     /// Stamped when the bank has shown its introduction popup (Storage.BankIntro), which it does once, the first time
-    /// the bank is opened. As an ACCOUNT_ flag, it is copied to characters made later on the account.
+    /// the bank is opened. As an account quest (ACCOUNT_), every character on the account shares it.
     /// </summary>
     public const string BankIntroSeenQuest = "ACCOUNT_BankIntroSeen";
 
