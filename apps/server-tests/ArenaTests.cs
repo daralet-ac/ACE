@@ -229,6 +229,129 @@ public class ArenaTests
         Assert.IsFalse(queue.TryTakePair(true, out _, out _));
     }
 
+    [TestMethod]
+    public void Queue_PairsFellowshipsOfTheSameSizeOnly()
+    {
+        ArenaQueueEntry Fellowship(uint leader, int size, int joined, string addressPrefix = "10.1")
+        {
+            var members = Enumerable
+                .Range(0, size)
+                .Select(i => new ArenaQueueMember
+                {
+                    Guid = leader + (uint)i,
+                    Name = $"Player{leader + i}",
+                    Level = 100,
+                    Address = $"{addressPrefix}.{leader}.{i}"
+                })
+                .ToList();
+
+            return new ArenaQueueEntry
+            {
+                Guid = leader,
+                Name = $"Player{leader}",
+                Level = 100,
+                Address = members[0].Address,
+                JoinedAt = Start.AddSeconds(joined),
+                Members = members
+            };
+        }
+
+        var three = Fellowship(100, 3, joined: 0);
+        var two = Fellowship(200, 2, joined: 1);
+        var alone = Entry(300, joinedSecondsAfterStart: 2);
+        var otherThree = Fellowship(400, 3, joined: 3);
+
+        Assert.AreEqual(1, alone.Size, "one player is an entry of one");
+        Assert.IsTrue(three.Includes(102));
+        Assert.AreEqual("Player100's fellowship of 3", three.Describe());
+
+        var queue = new ArenaQueue();
+        queue.Add(three);
+        queue.Add(two);
+        queue.Add(alone);
+        queue.Add(otherThree);
+
+        Assert.AreEqual(1, queue.PositionOf(101), "everyone in a fellowship waits in its place");
+        Assert.AreSame(three, queue.Find(102));
+
+        Assert.IsTrue(queue.TryTakePair(true, out var first, out var second));
+        Assert.AreSame(three, first);
+        Assert.AreSame(otherThree, second, "the fellowship of two and the lone player have nobody of their size");
+        Assert.IsFalse(queue.TryTakePair(true, out _, out _));
+
+        // one shared address between the sides is enough to keep them apart, when that is blocked
+        var sharing = Fellowship(500, 3, joined: 4);
+        var sharingToo = new ArenaQueueEntry
+        {
+            Guid = 600,
+            Name = "Player600",
+            Level = 100,
+            JoinedAt = Start.AddSeconds(5),
+            Members = new[]
+            {
+                new ArenaQueueMember
+                {
+                    Guid = 600,
+                    Name = "Player600",
+                    Level = 100,
+                    Address = "1.2.3.4"
+                },
+                new ArenaQueueMember
+                {
+                    Guid = 601,
+                    Name = "Player601",
+                    Level = 100,
+                    Address = sharing.Members[2].Address
+                },
+                new ArenaQueueMember
+                {
+                    Guid = 602,
+                    Name = "Player602",
+                    Level = 100,
+                    Address = "1.2.3.5"
+                }
+            }
+        };
+
+        Assert.IsFalse(ArenaQueue.CanMeet(sharing, sharingToo, blockSameAddress: true));
+        Assert.IsTrue(ArenaQueue.CanMeet(sharing, sharingToo, blockSameAddress: false));
+    }
+
+    [TestMethod]
+    public void Queue_TakingOneMemberTakesTheWholeFellowship()
+    {
+        var queue = new ArenaQueue();
+        var fellowship = new ArenaQueueEntry
+        {
+            Guid = 1,
+            Name = "Leader",
+            Level = 50,
+            JoinedAt = Start,
+            Members = new[]
+            {
+                new ArenaQueueMember
+                {
+                    Guid = 1,
+                    Name = "Leader",
+                    Level = 50
+                },
+                new ArenaQueueMember
+                {
+                    Guid = 2,
+                    Name = "Member",
+                    Level = 40
+                }
+            }
+        };
+
+        queue.Add(Entry(2, joinedSecondsAfterStart: 1));
+        queue.Add(fellowship);
+
+        Assert.AreEqual(1, queue.Count, "the member who waited alone now waits with the fellowship");
+        Assert.AreSame(fellowship, queue.Take(2));
+        Assert.AreEqual(0, queue.Count);
+    }
+
     #endregion
 
     #region Commands
@@ -237,39 +360,112 @@ public class ArenaTests
     public void Commands_DuelOptionsAreTakenFromWhatWasTyped()
     {
         var name = ACE.Server.Commands.PlayerCommands.ArenaCommand.TakeDuelOptions(
-            new[] { "Bob", "the", "Brave", "unrated", "Scaled" },
+            new[] { "Bob", "the", "Brave", "unrated", "Scaled", "fellowship" },
             onlyAtTheEnd: true,
-            out var scaled,
-            out var unrated
+            out var options
         );
 
         Assert.AreEqual("Bob the Brave", string.Join(" ", name));
-        Assert.IsTrue(scaled);
-        Assert.IsTrue(unrated);
+        Assert.IsTrue(options.Scaled);
+        Assert.IsTrue(options.Unrated);
+        Assert.IsTrue(options.Fellowship);
 
         // in a name only the words at the end count
         name = ACE.Server.Commands.PlayerCommands.ArenaCommand.TakeDuelOptions(
             new[] { "Unrated", "Bob" },
             onlyAtTheEnd: true,
-            out scaled,
-            out unrated
+            out options
         );
 
         Assert.AreEqual("Unrated Bob", string.Join(" ", name));
-        Assert.IsFalse(scaled);
-        Assert.IsFalse(unrated);
+        Assert.IsFalse(options.Scaled);
+        Assert.IsFalse(options.Unrated);
+        Assert.IsFalse(options.Fellowship);
 
         // for the queue they count anywhere
         var rest = ACE.Server.Commands.PlayerCommands.ArenaCommand.TakeDuelOptions(
-            new[] { "scaled", "10", "unrated" },
+            new[] { "scaled", "10", "fellow", "unrated" },
             onlyAtTheEnd: false,
-            out scaled,
-            out unrated
+            out options
         );
 
         CollectionAssert.AreEqual(new[] { "10" }, rest);
-        Assert.IsTrue(scaled);
-        Assert.IsTrue(unrated);
+        Assert.IsTrue(options.Scaled);
+        Assert.IsTrue(options.Unrated);
+        Assert.IsTrue(options.Fellowship);
+    }
+
+    [TestMethod]
+    public void Commands_BoardsAreNamedBySizeAndKind()
+    {
+        Assert.AreEqual(new ArenaBoard(1, false), ACE.Server.Commands.PlayerCommands.ArenaCommand.ParseBoard(""));
+        Assert.AreEqual(new ArenaBoard(3, false), ACE.Server.Commands.PlayerCommands.ArenaCommand.ParseBoard("3v3"));
+        Assert.AreEqual(
+            new ArenaBoard(2, true),
+            ACE.Server.Commands.PlayerCommands.ArenaCommand.ParseBoard("scaled 2v2")
+        );
+        Assert.AreEqual(new ArenaBoard(4, false), ACE.Server.Commands.PlayerCommands.ArenaCommand.ParseBoard("4 raw"));
+        Assert.IsNull(
+            ACE.Server.Commands.PlayerCommands.ArenaCommand.ParseBoard("2v3"),
+            "the sides of a board are the same size"
+        );
+        Assert.IsNull(ACE.Server.Commands.PlayerCommands.ArenaCommand.ParseBoard("10v10"), "no fellowship is that big");
+        Assert.IsNull(ACE.Server.Commands.PlayerCommands.ArenaCommand.ParseBoard("best"));
+
+        Assert.AreEqual("1v1", ArenaBoard.OneOnOne.Name);
+        Assert.AreEqual("3v3 scaled", new ArenaBoard(3, true).Name);
+    }
+
+    #endregion
+
+    #region Team ratings
+
+    [TestMethod]
+    public void Elo_ATeamIsRatedAgainstTheOtherSidesAverage()
+    {
+        var (winners, losers) = ArenaElo.RateTeams(new[] { 1400, 1500 }, new[] { 1450, 1450 }, 50);
+
+        // the averages are even, so each winner gains what beating a 1450 is worth to them
+        Assert.AreEqual(ArenaElo.Rate(1400, 1450, 50).Winner, winners[0]);
+        Assert.AreEqual(ArenaElo.Rate(1500, 1450, 50).Winner, winners[1]);
+        Assert.AreEqual(ArenaElo.Rate(1450, 1450, 50).Loser, losers[0]);
+        Assert.IsTrue(winners[0] - 1400 > winners[1] - 1500, "the weaker winner gains more");
+
+        var single = ArenaElo.RateTeams(new[] { 1400 }, new[] { 1600 }, 50);
+        Assert.AreEqual(
+            ArenaElo.Rate(1400, 1600, 50),
+            (single.Winners[0], single.Losers[0]),
+            "one against one is plain Elo"
+        );
+    }
+
+    [TestMethod]
+    public void Boards_TeamBoardsAreKeptTogetherAndSurviveBadData()
+    {
+        var boards = ArenaBoards.ParseTeamBoards(null);
+        Assert.AreEqual(0, boards.Count);
+
+        boards["2v2"] = new ArenaStanding { Rating = 1425, Wins = 1 };
+        boards["3v3 scaled"] = new ArenaStanding
+        {
+            Rating = 1380,
+            Losses = 2,
+            Draws = 1
+        };
+
+        var json = ArenaBoards.WriteTeamBoards(boards);
+        var back = ArenaBoards.ParseTeamBoards(json);
+
+        Assert.AreEqual(2, back.Count);
+        Assert.AreEqual(1425, back["2v2"].Rating);
+        Assert.AreEqual(3, back["3v3 scaled"].Duels);
+        Assert.IsFalse(json.Contains("Duels"), "what can be worked out is not kept");
+
+        Assert.AreEqual(
+            0,
+            ArenaBoards.ParseTeamBoards("{ not json").Count,
+            "a duel is still recorded over something that can't be read"
+        );
     }
 
     #endregion

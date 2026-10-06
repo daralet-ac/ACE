@@ -2,18 +2,18 @@
 
 Players can duel each other. Every duel is fought in an **instance of its own** of an arena map (see [instanced-landblocks.md](instanced-landblocks.md)), so nobody else is ever in there with them, any number of duels can use the same map at once, and nothing is left behind when it is over. Nobody loses anything by being defeated, and everybody goes back to exactly where they were afterwards. Only non-player killers and player killer lites can duel, from the level the server asks for (`arena_dueling_minimum_level`). Admins can turn the whole thing off at once (`arena_dueling_enabled`).
 
-This is phase 1: one against one, from a challenge or from the queue. Spectating, fellowship against fellowship, a team queue and level scaling are for later (see the end).
+Duels are one against one, or a whole fellowship against another of the same size (2v2 up to 9v9), from a challenge or from the queue. They can be raw or scaled, and rated or unrated, and every kind of rated duel has its own leaderboard. Rewards and spectating are for later (see the end).
 
 ## Commands
 
 | Command | Does |
 |---|---|
 | `/arena` | How to use it, and where you stand (in the queue, or in a duel). |
-| `/arena challenge <name> [scaled] [unrated]` | Asks a player to a duel (raw and rated unless asked otherwise, see below). They get a yes/no question. Someone who says no can't be challenged by the same player again for a minute. A player who has squelched you can't be challenged by you. |
-| `/arena queue [levels] [scaled] [unrated]` | Waits for an opponent. The queue pairs players in the order they came, and only with someone who asked for the same kind of duel (scaled or raw, rated or unrated). With a number, you are only matched with someone within that many levels of you (and you are only matched with someone whose own band you are within). Without one, the server's `arena_queue_level_band` (0, any level, by default). Using it again changes your band and keeps your place. |
-| `/arena leave` | Leaves the queue, calls off a duel that has not begun, or gives up the one you are fighting. |
-| `/arena stats [name]` | Your arena ratings and records, raw and scaled (scaled once there is something on it), or someone else's. |
-| `/arena top [scaled]` | The ten best raw arena ratings, or scaled ones. |
+| `/arena challenge <name> [scaled] [unrated] [fellowship]` | Asks a player to a duel (raw and rated unless asked otherwise, see below). With `fellowship`, your fellowship challenges the one `<name>` is in (see Fellowship duels). They get a yes/no question. Someone who says no can't be challenged by the same player again for a minute. A player who has squelched you can't be challenged by you. |
+| `/arena queue [levels] [scaled] [unrated] [fellowship]` | Waits for an opponent (with `fellowship`, your whole fellowship waits for another of its size). The queue pairs players in the order they came, and only with someone who asked for the same kind of duel (scaled or raw, rated or unrated). With a number, you are only matched with someone within that many levels of you (and you are only matched with someone whose own band you are within). Without one, the server's `arena_queue_level_band` (0, any level, by default). Using it again changes your band and keeps your place. |
+| `/arena leave` | Leaves the queue (anyone in a waiting fellowship takes the whole fellowship out), calls off a duel that has not begun, or gives up the one you are fighting. |
+| `/arena stats [name]` | Your arena ratings and records on every board you have fought a rated duel on, or someone else's. |
+| `/arena top [2v2] [scaled]` | The ten best ratings on a board: `1v1` (the default), `2v2`, `3v3`... raw (the default) or `scaled`. |
 | `/arena maps` | The arenas duels are fought in. |
 | `/arena list` | (Sentinel and up) The duels going on, and who is in the queue. |
 | `/arena cancel <duel>` | (Sentinel and up) Calls a duel off. Fighters who are in the arena are taken home. |
@@ -21,7 +21,7 @@ This is phase 1: one against one, from a challenge or from the queue. Spectating
 ## How a duel goes
 
 1. **Yes.** A challenge asks the one who is challenged. When the queue finds two players, it asks both. They have `arena_accept_seconds` (20) to answer. If someone says no or doesn't answer, the duel is off. From the queue, whoever said no (or didn't answer) leaves the queue, and the other one goes back to the place they had. Someone who is challenged while they wait in the queue keeps their place whatever they answer.
-2. **To the arena.** One of the enabled maps is picked at random, an instance of it is made, and every fighter is taken to a different one of its starts, picked at random. Where they were, and their player killer status, are kept, to put back afterwards.
+2. **To the arena.** One of the enabled maps is picked at random, an instance of it is made, and every side is taken to a different one of its starts, picked at random (a fellowship starts together). Where they were, and their player killer status, are kept, to put back afterwards.
 3. **Countdown.** When everyone has arrived, they get `arena_countdown_seconds` (10). During it they are all non-player killers, so nothing can harm anyone. Their harmful enchantments are taken away and their vitals filled. Their beneficial enchantments stay with them. If someone leaves, or doesn't arrive within a minute, the duel is off.
 4. **Fight.** Everyone becomes a player killer lite with full vitals, and the fight is on. Only opponents can harm each other, and nobody can heal or buff an opponent. It ends when one side has nobody standing, or after `arena_time_limit_minutes` (20), which is a draw.
 5. **Home.** The loser is taken home once they have finished falling, with three quarters of their vitals. Whoever is still standing is taken home 5 seconds after the end. Everyone gets their own player killer status back, and harmful enchantments from the duel are taken away. 20 seconds after the end the instance is closed, which sends anyone who is still in it home too.
@@ -43,6 +43,16 @@ They still fall, and they and their opponent still see who defeated whom. Every 
 - **Leaving the arena any other way** (a portal in it, a recall, being moved by an admin) gives it up too, and gets them their own status back where they are.
 - If the server crashes in a duel, nothing needs mending: player killer lite status is never kept over a login (it is turned back to non-player killer), and the arena landblocks of `arenas.json` are ones where players log in at their lifestone.
 
+## Fellowship duels
+
+A fellowship fights another fellowship of the same size, everyone in each. Only the leader can take a fellowship into the arena.
+
+- **Challenge**: `/arena challenge <name> fellowship` (with `scaled` and `unrated` as for any duel). `<name>` is anybody in the other fellowship. Both fellowships have to be the same size, and everyone in them has to be able to duel. Everyone on both sides is asked, the challenger's own fellowship too, and the duel is off if anybody says no.
+- **Queue**: `/arena queue fellowship [levels]`. The fellowship waits as one, and is only paired with a fellowship of the same size that asked for the same kind of duel. A level band compares the highest level on each side. Anyone in it who was waiting on their own now waits with it. Everyone is asked when opponents are found. If someone says no, their fellowship leaves the queue and the other goes back to its place. A fellowship that changes while it waits (someone leaves or joins it, or logs out) is taken out of the queue, and its leader can put it back. `/arena leave` by anybody in it takes the whole fellowship out.
+- Someone who waits in the queue with their fellowship can't be challenged into another duel (on their own or with another fellowship) until it leaves the queue.
+- **In the arena** each fellowship starts together, at a start of its own. Nobody can harm their own side, and teammates can heal and buff each other as usual. A fighter who is defeated is taken home straight away, as in any duel; their side fights on. A side is beaten when everyone on it has been defeated, has given up, or has left; then the other side has won. The time limit is the same, and ends in a draw.
+- **Scaled**: scaling works between any two fighters, by their two levels: whoever is the higher of the two fights the other at their level. A heal on a higher-level teammate counts for more, and on a lower-level one for less, as shroud scaling does for Shrouded fellows.
+
 ## Kinds of duel
 
 Every duel is **raw** or **scaled**, and **rated** or **unrated**. Without `scaled` or `unrated`, a duel is raw and rated. Whoever is challenged is told what kind of duel it is before they answer.
@@ -57,14 +67,16 @@ A level band still works for the scaled queue, but it is there for raw duels: wi
 
 ### Ratings
 
-There is a board for each kind of rated duel, each with its own rating (starting at 1400) and record of wins, losses and draws: raw (`PropertyInt.ArenaRating`, `ArenaWins`, `ArenaLosses`, `ArenaDraws`) and scaled (`ArenaScaledRating`, `ArenaScaledWins`, `ArenaScaledLosses`, `ArenaScaledDraws`). They are server only properties.
+There is a board for each kind of rated duel: its size (1v1, 2v2, ... 9v9) and whether it was scaled (`ArenaBoard`). Each has its own rating (starting at 1400) and record of wins, losses and draws, so a 3v3 scaled rating has nothing to do with a 1v1 raw one. They are kept on the character as server only properties (`ArenaBoards`): the 1v1 boards in properties of their own (raw: `PropertyInt.ArenaRating`, `ArenaWins`, `ArenaLosses`, `ArenaDraws`; scaled: `ArenaScaledRating`, `ArenaScaledWins`, `ArenaScaledLosses`, `ArenaScaledDraws`), and every team board together in `PropertyString.ArenaTeamBoards`, as JSON keyed by the board's name (`{"2v2":{"Rating":1425,"Wins":1,...},"3v3 scaled":{...}}`), so a new size needs nothing new on the character.
 
-A rated duel changes both fighters' ratings on its board by Elo, with a K of `arena_elo_k` (50): beating an even opponent is worth 25 points, an upset more, beating someone far below at least 1. Draws don't change ratings, but count in the record. An unrated duel changes nothing: no rating, and no record.
+A rated duel changes every fighter's rating on its board by Elo, with a K of `arena_elo_k` (50): beating an even opponent is worth 25 points, an upset more, beating someone far below at least 1. In a fellowship duel each fighter is rated against the average rating of the other side, as if it were one opponent (`ArenaElo.RateTeams`), so the weaker players of a winning fellowship gain the most. Draws don't change ratings, but count in the record. An unrated duel changes nothing: no rating, and no record.
+
+`/arena top` reads every character's boards (a scan of every player, online or not), which is fine at a server's size. If it ever is not, the boards can move to a table of their own (character, board, rating, wins, losses, draws), and `/arena top` becomes a query.
 
 Who decides whether a duel is rated:
 
 - A player, by asking for `unrated`. The queue only pairs unrated players with each other.
-- The server: challenges are only rated while `arena_rated_challenges` is on (the challenger is told when their challenge can't be rated). A duel between two players connected from the same IP address is never rated while `arena_block_same_ip` is on, and the queue never pairs them.
+- The server: challenges are only rated while `arena_rated_challenges` is on (the challenger is told when their challenge can't be rated). A duel in which anybody on one side is connected from the same IP address as anybody on the other is never rated while `arena_block_same_ip` is on, and the queue never pairs them.
 
 ## Turning it off, and the minimum level
 
@@ -112,8 +124,10 @@ Every map is registered as an instance template called `arena:<name>`, so an adm
 |---|---|
 | `apps/server/Arena/ArenaManager.cs` | Everything a duel does, from the question to the end, and the hooks the rest of the server calls. One lock. Whatever is done to a player is queued on the player. |
 | `apps/server/Arena/ArenaMatch.cs` | A duel and its fighters. It is the `Owner` of its instance, and says where fighters go when they leave it. |
-| `apps/server/Arena/ArenaQueue.cs` | The queue and its pairing rules. |
-| `apps/server/Arena/ArenaElo.cs` | Ratings. |
+| `apps/server/Arena/ArenaManager.Fellowship.cs` | Fellowship challenges, and putting a fellowship in the queue. |
+| `apps/server/Arena/ArenaQueue.cs` | The queue and its pairing rules. An entry is a player, or a fellowship. |
+| `apps/server/Arena/ArenaElo.cs` | Ratings, one against one and for teams. |
+| `apps/server/Arena/ArenaBoards.cs` | The boards (1v1, 2v2 scaled, ...) and where a character's rating and record on each are kept. |
 | `apps/server/Arena/ArenaMap.cs`, `ArenaMapConfig.cs`, `ArenaMaps.cs` | Maps, reading `arenas.json`, and the maps that are loaded. |
 | `apps/server/Arena/ArenaConfirmation.cs` | A yes/no question that also says when the answer is no. |
 | `apps/server/Entity/LevelScaling.cs` | Scaled duels: `CanScalePlayer` asks `ArenaManager.IsScaledDuel`, and `GetDuelDamageScalar` replaces the monster health and armor tables between two fighters. |
@@ -134,16 +148,32 @@ Tests: `apps/server-tests/ArenaTests.cs` (ratings, the queue, maps and the `aren
 ### Phase 2
 
 - **Unrated duels** and **scaled duels**: done (see Kinds of duel). To test on a live server: a scaled duel between levels far apart both ways (melee, missile, war and void magic, damage over time, harms and drains), a scaled duel between fighters of the same level, a raw duel with a Shrouded fighter (nothing must be scaled), and `/modifybool debug_level_scaling_system true` to see the scalars on the console.
-- **Fellowship against fellowship, and a team queue.** `ArenaFighter.Side` and the rules for who may harm whom already work by side, and a duel ends when a side has nobody standing. Only one against one is rated today.
 
-### Leaderboards (once fellowship dueling is in)
+### Phase 3
 
-One rating, and one board, per kind of duel, instead of the single `ArenaRating`:
+- **Fellowship duels**, from a challenge or the queue, and **leaderboards** per size and kind: done (see Fellowship duels and Ratings). To test on a live server: a 2v2 and a 3v3 challenge and queue duel to the end (one side wiped out, a fighter giving up or logging out while their side fights on, the time limit), someone saying no on either side, a fellowship changing while it waits (someone leaves, joins, logs out), `/arena leave` by a member who is not the leader, heals and buffs between teammates and none on opponents (during the countdown too), a scaled 2v2 with mixed levels on each side, and `/arena stats` and `/arena top 2v2` afterwards.
+- Not done: fellowships of different sizes against each other, and putting together teams from players who queue on their own (Shoff's team queue, planned as phase 4). Both would need to say how a side's strength is weighed, which a same-size fellowship duel doesn't.
 
-- **By size**: 1v1, 2v2, 3v3, and so on.
-- **Scaled or raw**: duels fought with level scaling and duels fought at players' own levels are rated apart, since they are different contests.
+### Phase 4 (planned): teams for players who queue on their own
 
-So a rating is kept per (size, scaled or raw): 1v1 raw, 1v1 scaled, 2v2 raw, 2v2 scaled... Each needs its own rating and record on the character. Raw and scaled are already apart (`ArenaBoard`); size is still to come. A handful of new `PropertyInt`s per board works for a few boards; if there get to be many, a small shard table (character, board, rating, wins, losses, draws) is cleaner and makes `/arena top` a query instead of a scan of every player. For teams, each fighter's rating moves by Elo against the average rating of the other side. `/arena top [board]` and `/arena stats [name] [board]` pick the board, with 1v1 raw as the default (`/arena top scaled` already picks the scaled board). Unrated duels count on no board.
+To start once phase 3 has been tested on a live server: pickup teams fight exactly as fellowship teams do once they are in the arena, so a problem with team fights would show in both.
+
+A player who is not in a fellowship can queue for a team size, `/arena queue 3v3` (with `scaled`, `unrated` and a level band as for any duel). When there are enough players who want the same size and the same kind of duel (six, for 3v3), the queue splits them into two teams, and everyone is asked as for any duel.
+
+Already there from phase 3: sides, nobody harming their own side while teammates heal and buff each other, a start of their own for each side, team boards and team Elo, everyone being asked and who goes back in the queue when someone says no, and scaling between any two fighters by their two levels.
+
+To build:
+
+- **The team builder.** Today the queue pairs two entries; this waits for twice the team size in compatible players who asked for the same size and kind of duel, and then splits them. Players who wait longer go first, as now, and every pair of players is within each other's level band.
+- **A fair split.** The two teams are made as even as can be: by rating on the board the duel goes on, and for a raw duel by level too. Players connected from the same IP address go on the same side (or wait for another duel, while `arena_block_same_ip` is on), so nobody can throw a duel for someone they share a connection with. Every way of splitting the players can be tried (fewer than 25,000 even for 9v9), so this can be the best split rather than a greedy one.
+- **A fellowship for each team.** Without one, teammates don't see each other's vitals in the fellowship panel, which makes healing them hard, and have no fellowship chat. The server can make a fellowship (`Player.FellowshipCreate`), add players to it without asking them (`Fellowship.AddConfirmedMember`), and disband it when they leave the arena. A player can only be in one fellowship, so queueing on your own for a team means not being in one: a fellowship that wants to fight together uses `/arena queue fellowship`.
+- **Seeing the queue fill.** A 3v3 needs six players who want the same size and the same kind of duel (scaled or raw, rated or unrated) at the same time, which on a quiet server can take a while. Players should see how close it is ("4 of 6 waiting for 3v3"), and it may turn out that only some sizes are worth offering on their own.
+
+To decide before it is built (what we would do first):
+
+- **Do pickup teams meet fellowships?** Not at first: a fellowship that plays together has an edge over players who have just met.
+- **Their own boards?** Yes, "3v3 solo" next to "3v3": if the two never meet, one board would rank two pools of players that never fought each other.
+- **Fellowships with room left, filled up with players on their own** (a fellowship of two and one other player against three)? Not in phase 4. Most of the difficulty of Shoff's team queue is there, which is why his is greedy.
 
 ### Later (not designed yet)
 

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ACE.Server.Arena;
 
@@ -35,5 +37,20 @@ public static class ArenaElo
         }
 
         return (winnerRating + change, Math.Max(0, loserRating - change));
+    }
+
+    /// <summary>
+    /// The ratings of every fighter after a team duel: each of them is rated against the average rating of the other side,
+    /// as if it were one opponent. One against one this is the same as Rate.
+    /// </summary>
+    public static (int[] Winners, int[] Losers) RateTeams(IReadOnlyList<int> winners, IReadOnlyList<int> losers, int k)
+    {
+        var winnersAverage = (int)Math.Round(winners.Average(), MidpointRounding.AwayFromZero);
+        var losersAverage = (int)Math.Round(losers.Average(), MidpointRounding.AwayFromZero);
+
+        return (
+            winners.Select(rating => Rate(rating, losersAverage, k).Winner).ToArray(),
+            losers.Select(rating => Rate(winnersAverage, rating, k).Loser).ToArray()
+        );
     }
 }

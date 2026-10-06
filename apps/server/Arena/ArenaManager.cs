@@ -37,7 +37,7 @@ public enum ArenaVerdict
 /// Everything in here is changed while holding one lock. Whatever is done to a player is queued on that player
 /// (an ActionChain, or WorldManager.ThreadSafeTeleport), so it happens on the player's own landblock thread.
 /// </summary>
-public static class ArenaManager
+public static partial class ArenaManager
 {
     private static readonly ILogger _log = Log.ForContext(typeof(ArenaManager));
 
@@ -108,35 +108,6 @@ public static class ArenaManager
     private static int DefaultLevelBand => (int)Math.Max(0, PropertyManager.GetLong("arena_queue_level_band").Item);
 
     #region Ratings
-
-    /// <summary>
-    /// The properties a board's rating and record are kept in
-    /// </summary>
-    private static (PropertyInt Rating, PropertyInt Wins, PropertyInt Losses, PropertyInt Draws) PropertiesOf(
-        ArenaBoard board
-    ) =>
-        board == ArenaBoard.Scaled
-            ? (
-                PropertyInt.ArenaScaledRating,
-                PropertyInt.ArenaScaledWins,
-                PropertyInt.ArenaScaledLosses,
-                PropertyInt.ArenaScaledDraws
-            )
-            : (PropertyInt.ArenaRating, PropertyInt.ArenaWins, PropertyInt.ArenaLosses, PropertyInt.ArenaDraws);
-
-    public static int RatingOf(IPlayer player, ArenaBoard board = ArenaBoard.Raw) =>
-        player.GetProperty(PropertiesOf(board).Rating) ?? ArenaElo.StartingRating;
-
-    public static (int Wins, int Losses, int Draws) RecordOf(IPlayer player, ArenaBoard board = ArenaBoard.Raw)
-    {
-        var properties = PropertiesOf(board);
-
-        return (
-            player.GetProperty(properties.Wins) ?? 0,
-            player.GetProperty(properties.Losses) ?? 0,
-            player.GetProperty(properties.Draws) ?? 0
-        );
-    }
 
     /// <summary>
     /// Whether two players are fighting each other in a duel, and if they are, whether it is scaled. Null if they are not.
@@ -269,8 +240,17 @@ public static class ArenaManager
                 return;
             }
 
+            var already = queue.Find(guid);
+
+            if (already != null && already.Size > 1)
+            {
+                player.SendMessage(
+                    $"You are waiting in the arena queue with {already.Describe()}. /arena leave takes it out of the queue."
+                );
+                return;
+            }
+
             var band = Math.Max(0, levelBand ?? DefaultLevelBand);
-            var already = queue.Entries.FirstOrDefault(e => e.Guid == guid);
 
             queue.Add(
                 new ArenaQueueEntry
@@ -288,7 +268,9 @@ public static class ArenaManager
 
             var bandText = band > 0 ? $", with an opponent within {band} level{(band == 1 ? "" : "s")} of you" : "";
             var waitingFor = $" for {DescribeDuel(scaled, rated)}{bandText}";
-            var others = queue.Entries.Count(e => e.Guid != guid && e.Scaled == scaled && e.Rated == rated);
+            var others = queue.Entries.Count(e =>
+                e.Guid != guid && e.Size == 1 && e.Scaled == scaled && e.Rated == rated
+            );
 
             player.SendMessage(
                 already != null
@@ -351,6 +333,13 @@ public static class ArenaManager
                 return;
             }
 
+            var waitingWithFellowship = WhoWaitsWithAFellowship(new[] { challenger, target });
+            if (waitingWithFellowship != null)
+            {
+                challenger.SendMessage(waitingWithFellowship);
+                return;
+            }
+
             if (challengeCooldowns.TryGetValue((challenger.Guid.Full, target.Guid.Full), out var until) && now < until)
             {
                 challenger.SendMessage(
@@ -403,9 +392,24 @@ public static class ArenaManager
 
         lock (sync)
         {
-            if (queue.Remove(guid))
+            var waiting = queue.Take(guid);
+
+            if (waiting != null)
             {
-                player.SendMessage("You have left the arena queue.");
+                if (waiting.Size == 1)
+                {
+                    player.SendMessage("You have left the arena queue.");
+                }
+                else
+                {
+                    player.SendMessage("You have taken your fellowship out of the arena queue.");
+                    TellQueued(
+                        waiting,
+                        $"{player.Name} has taken your fellowship out of the arena queue.",
+                        except: guid
+                    );
+                }
+
                 return;
             }
 
@@ -448,7 +452,11 @@ public static class ArenaManager
             var place = queue.PositionOf(guid);
             if (place > 0)
             {
-                return $"You are number {place} of {queue.Count} in the arena queue.";
+                var waiting = queue.Find(guid);
+
+                return waiting.Size == 1
+                    ? $"You are number {place} of {queue.Count} in the arena queue, for {DescribeDuel(waiting.Scaled, waiting.Rated)}."
+                    : $"You are waiting with {waiting.Describe()}, number {place} of {queue.Count} in the arena queue, for {DescribeDuel(waiting.Scaled, waiting.Rated)}.";
             }
 
             var match = FindMatch(guid);
@@ -476,7 +484,7 @@ public static class ArenaManager
         {
             var lines = matches.Select(m => m.Describe()).ToList();
             lines.Add(
-                $"{queue.Count} in the queue{(queue.Count > 0 ? ": " + string.Join(", ", queue.Entries.Select(e => e.Name)) : "")}"
+                $"{queue.Count} in the queue{(queue.Count > 0 ? ": " + string.Join(", ", queue.Entries.Select(e => $"{e.Describe()} ({DescribeDuel(e.Scaled, e.Rated)})")) : "")}"
             );
             return lines;
         }
@@ -629,7 +637,16 @@ public static class ArenaManager
 
         lock (sync)
         {
-            queue.Remove(guid);
+            var waiting = queue.Take(guid);
+
+            if (waiting?.Size > 1)
+            {
+                TellQueued(
+                    waiting,
+                    $"{player.Name} has logged out, so your fellowship has left the arena queue.",
+                    except: guid
+                );
+            }
 
             var match = FindMatch(guid) ?? matches.FirstOrDefault(m => m.Get(guid) != null && m.InInstance(player));
             if (match == null)
@@ -721,7 +738,10 @@ public static class ArenaManager
 
     #region The life of a duel
 
-    /// <param name="queueEntry">Their place in the queue, if the queue paired them. Someone who is challenged while they wait in the queue keeps theirs too.</param>
+    /// <param name="queueEntry">
+    /// Their place in the queue (theirs, or their fellowship's), if the queue paired them. Someone who is challenged while they wait
+    /// in the queue on their own keeps theirs too.
+    /// </param>
     private static ArenaFighter NewFighter(Player player, int side, bool accepted, ArenaQueueEntry queueEntry = null)
     {
         return new ArenaFighter
@@ -732,7 +752,7 @@ public static class ArenaManager
             Side = side,
             Address = AddressOf(player),
             Accepted = accepted,
-            QueueEntry = queueEntry ?? queue.Entries.FirstOrDefault(e => e.Guid == player.Guid.Full)
+            QueueEntry = queueEntry ?? queue.Find(player.Guid.Full)
         };
     }
 
@@ -839,28 +859,33 @@ public static class ArenaManager
             }
             else
             {
-                player?.SendMessage("You said yes. Waiting for your opponent...");
+                player?.SendMessage(
+                    match.Fighters.Count > 2
+                        ? "You said yes. Waiting for everyone else..."
+                        : "You said yes. Waiting for your opponent..."
+                );
             }
         }
     }
 
     private static void PairQueue(DateTime now)
     {
-        // whoever has logged out is dropped
-        foreach (var entry in queue.Entries.Where(e => PlayerManager.GetOnlinePlayer(e.Guid) == null).ToList())
+        // whoever has gone is dropped: a player who has logged out, or a fellowship that has changed since it was put in the queue
+        foreach (var entry in queue.Entries.ToList())
         {
-            queue.Remove(entry.Guid);
+            var gone = WhyEntryIsGone(entry);
+
+            if (gone != null)
+            {
+                queue.Remove(entry.Guid);
+                TellQueued(entry, gone);
+            }
         }
 
         while (queue.TryTakePair(BlockSameAddress, out var first, out var second))
         {
-            var players = new[]
-            {
-                PlayerManager.GetOnlinePlayer(first.Guid),
-                PlayerManager.GetOnlinePlayer(second.Guid)
-            };
             var entries = new[] { first, second };
-            var problems = players.Select(p => p == null ? "you are gone" : WhyCantDuel(p)).ToArray();
+            var problems = entries.Select(WhyEntryCantDuel).ToArray();
 
             if (problems.Any(p => p != null))
             {
@@ -873,47 +898,118 @@ public static class ArenaManager
                     }
                     else
                     {
-                        players[i]?.SendMessage($"You have been taken out of the arena queue. {problems[i]}");
+                        TellQueued(
+                            entries[i],
+                            $"{(entries[i].Size == 1 ? "You have" : "Your fellowship has")} been taken out of the arena queue. {problems[i]}"
+                        );
                     }
                 }
 
                 continue;
             }
 
-            var sameAddress = first.Address != null && first.Address == second.Address;
+            var sides = entries
+                .Select(e => e.Members.Select(m => PlayerManager.GetOnlinePlayer(m.Guid)).ToList())
+                .ToArray();
 
-            // the queue only pairs players who asked for the same kind of duel
+            var fighters = new List<ArenaFighter>();
+
+            for (var side = 0; side < 2; side++)
+            {
+                fighters.AddRange(sides[side].Select(p => NewFighter(p, side, accepted: false, entries[side])));
+            }
+
+            var sameAddress = ArenaQueue.SharesAnAddress(
+                first.Members.Select(m => m.Address),
+                second.Members.Select(m => m.Address)
+            );
+
+            // the queue only pairs entries that asked for the same kind of duel, and are the same size
             var match = NewMatch(
                 ArenaMatchKind.Queue,
                 rated: first.Rated && !sameAddress,
                 first.Scaled,
                 now,
-                NewFighter(players[0], side: 0, accepted: false, first),
-                NewFighter(players[1], side: 1, accepted: false, second)
+                fighters.ToArray()
             );
 
-            for (var i = 0; i < 2; i++)
-            {
-                var opponent = players[1 - i];
+            var kind = DescribeDuel(match.Scaled, match.Rated, match.SideSize);
 
-                if (
-                    !Ask(
-                        match,
-                        match.Fighters[i],
-                        players[i],
-                        $"An opponent has been found for {DescribeDuel(match.Scaled, match.Rated)}: {Introduce(opponent, match.Scaled)}.{ExplainScaling(match.Scaled)} Will you fight?"
-                    )
-                )
+            foreach (var fighter in match.Fighters)
+            {
+                var player = PlayerManager.GetOnlinePlayer(fighter.Guid);
+                var opponents = entries[1 - fighter.Side];
+
+                var question =
+                    match.SideSize == 1
+                        ? $"An opponent has been found for {kind}: {Introduce(sides[1 - fighter.Side][0], match.Scaled)}.{ExplainScaling(match.Scaled)} Will you fight?"
+                        : $"Opponents have been found for your fellowship, for {kind}: {IntroduceFellowship(opponents.Name, sides[1 - fighter.Side], match.Scaled)}.{ExplainScaling(match.Scaled)} Will you fight?";
+
+                if (!Ask(match, fighter, player, question))
                 {
-                    players[i]
-                        .SendMessage(
-                            "An opponent was found for you, but you have another question open, so you have been taken out of the arena queue. Join it again when you have answered it."
-                        );
-                    CallOff(match, $"{players[i].Name} can't be asked right now.", match.Fighters[i]);
+                    player.SendMessage(
+                        "Opponents were found, but you have another question open, so you have been taken out of the arena queue. Join it again when you have answered it."
+                    );
+                    CallOff(match, $"{player.Name} can't be asked right now.", fighter);
                     break;
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Why an entry of the queue has to go, or null if it can stay: someone in it has logged out, or the fellowship is not the one that
+    /// was put in the queue any more (someone left it or joined it)
+    /// </summary>
+    private static string WhyEntryIsGone(ArenaQueueEntry entry)
+    {
+        foreach (var member in entry.Members)
+        {
+            if (PlayerManager.GetOnlinePlayer(member.Guid) == null)
+            {
+                return $"{member.Name} has logged out, so your fellowship has left the arena queue.";
+            }
+        }
+
+        if (entry.Size == 1)
+        {
+            return null;
+        }
+
+        var fellowship = PlayerManager.GetOnlinePlayer(entry.Guid)?.Fellowship;
+        var now = fellowship?.GetFellowshipMembers().Keys.ToHashSet();
+
+        if (now == null || now.Count != entry.Size || !entry.Members.All(m => now.Contains(m.Guid)))
+        {
+            return "Your fellowship has changed, so it has left the arena queue. Its leader can put it back with /arena queue fellowship.";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Why an entry of the queue can't fight the duel it has been paired for, or null if it can
+    /// </summary>
+    private static string WhyEntryCantDuel(ArenaQueueEntry entry)
+    {
+        var self = entry.Size == 1;
+
+        foreach (var member in entry.Members)
+        {
+            var player = PlayerManager.GetOnlinePlayer(member.Guid);
+
+            var why =
+                player == null
+                    ? $"{member.Name} is gone."
+                    : WhyCantDuel(player, self) ?? (entry.Scaled ? WhyCantScale(player, self) : null);
+
+            if (why != null)
+            {
+                return why;
+            }
+        }
+
+        return null;
     }
 
     private static void Update(ArenaMatch match, DateTime now)
@@ -1037,7 +1133,8 @@ public static class ArenaManager
             players.Add(player);
         }
 
-        // every fighter gets a different place to start, at random
+        // every side gets a different place to start, at random, and a fellowship starts together: players can stand
+        // in the same place, as they do when a portal or a lifestone puts many of them there at once
         var starts = match.Map.Starts.OrderBy(_ => ThreadSafeRandom.Next(0, int.MaxValue - 1)).ToList();
 
         for (var i = 0; i < match.Fighters.Count; i++)
@@ -1050,11 +1147,15 @@ public static class ArenaManager
             fighter.OriginalStatus = player.PlayerKillerStatus;
             fighter.OriginalLastPkAttack = player.LastPkAttackTimestamp;
 
-            fighter.Start = new Position(starts[i % starts.Count]);
+            fighter.Start = new Position(starts[fighter.Side % starts.Count]);
             WorldObject.AdjustDungeon(fighter.Start, match.Instance.Id);
 
             var opponents = string.Join(", ", match.Opponents(fighter).Select(f => f.Name));
-            player.SendMessage($"You are going to {match.Map.Description} to duel {opponents}.");
+            var team = match.Fighters.Where(f => f.Side == fighter.Side && f != fighter).Select(f => f.Name).ToList();
+
+            player.SendMessage(
+                $"You are going to {match.Map.Description} to duel {opponents}{(team.Count > 0 ? $", with {string.Join(", ", team)} on your side" : "")}."
+            );
 
             InstanceManager.Enter(player, match.Instance, fighter.Start);
         }
@@ -1308,52 +1409,66 @@ public static class ArenaManager
             return results;
         }
 
-        var board = match.Scaled ? ArenaBoard.Scaled : ArenaBoard.Raw;
-        var properties = PropertiesOf(board);
-        var boardName = match.Scaled ? "scaled arena rating" : "arena rating";
+        var board = match.Board;
 
         var characters = match.Fighters.ToDictionary(f => f.Guid, f => PlayerManager.FindByGuid(f.Guid));
+        var standings = match.Fighters.ToDictionary(
+            f => f.Guid,
+            f => characters[f.Guid] is IPlayer character ? ArenaBoards.Get(character, board) : null
+        );
 
         foreach (var fighter in match.Fighters)
         {
-            if (characters[fighter.Guid] is not IPlayer character)
+            var standing = standings[fighter.Guid];
+
+            if (standing == null)
             {
                 continue;
             }
 
-            var (wins, losses, draws) = RecordOf(character, board);
-
             if (match.WinningSide == null)
             {
-                character.SetProperty(properties.Draws, draws + 1);
+                standing.Draws++;
             }
             else if (winners.Contains(fighter))
             {
-                character.SetProperty(properties.Wins, wins + 1);
+                standing.Wins++;
             }
             else
             {
-                character.SetProperty(properties.Losses, losses + 1);
+                standing.Losses++;
             }
         }
 
-        // only one against one is rated
-        if (winners.Count == 1 && losers.Count == 1)
+        // every fighter is rated against the average of the other side; a draw changes no rating
+        if (match.WinningSide != null && match.Fighters.All(f => standings[f.Guid] != null))
         {
-            var winner = characters[winners[0].Guid];
-            var loser = characters[losers[0].Guid];
+            var after = ArenaElo.RateTeams(
+                winners.Select(f => standings[f.Guid].Rating).ToList(),
+                losers.Select(f => standings[f.Guid].Rating).ToList(),
+                EloK
+            );
 
-            if (winner != null && loser != null)
+            foreach (var (side, ratings) in new[] { (winners, after.Winners), (losers, after.Losers) })
             {
-                var before = (Winner: RatingOf(winner, board), Loser: RatingOf(loser, board));
-                var after = ArenaElo.Rate(before.Winner, before.Loser, EloK);
+                for (var i = 0; i < side.Count; i++)
+                {
+                    var standing = standings[side[i].Guid];
+                    var change = ratings[i] - standing.Rating;
 
-                winner.SetProperty(properties.Rating, after.Winner);
-                loser.SetProperty(properties.Rating, after.Loser);
+                    standing.Rating = ratings[i];
 
-                results[winners[0].Guid] +=
-                    $" Your {boardName} is now {after.Winner} (+{after.Winner - before.Winner}).";
-                results[losers[0].Guid] += $" Your {boardName} is now {after.Loser} ({after.Loser - before.Loser}).";
+                    results[side[i].Guid] +=
+                        $" Your {board.Name} arena rating is now {standing.Rating} ({(change >= 0 ? "+" : "")}{change}).";
+                }
+            }
+        }
+
+        foreach (var fighter in match.Fighters)
+        {
+            if (standings[fighter.Guid] != null)
+            {
+                ArenaBoards.Set(characters[fighter.Guid], board, standings[fighter.Guid]);
             }
         }
 
@@ -1381,9 +1496,10 @@ public static class ArenaManager
         {
             queue.Remove(entry.Guid);
 
-            PlayerManager
-                .GetOnlinePlayer(entry.Guid)
-                ?.SendMessage("Arena dueling has been turned off, so you have been taken out of the arena queue.");
+            TellQueued(
+                entry,
+                $"Arena dueling has been turned off, so {(entry.Size == 1 ? "you have" : "your fellowship has")} been taken out of the arena queue."
+            );
         }
 
         if (calledOff > 0 || waiting.Count > 0)
@@ -1399,7 +1515,8 @@ public static class ArenaManager
     /// <summary>
     /// Calls a duel off. Nothing is recorded. Fighters who were sent to the arena already are taken home, and if they had not been sent yet,
     /// those who were waiting in the queue are put back in it, in the place they had: all but whoever it was called off because of
-    /// (saying no to a duel the queue found is leaving the queue, and so is calling a duel off with /arena leave).
+    /// (saying no to a duel the queue found is leaving the queue, and so is calling a duel off with /arena leave). A fellowship goes back
+    /// only as a whole: not if any of them is why it is off.
     /// </summary>
     /// <param name="culprits">Whoever it is called off because of: they are just told it is off, and not put back in the queue</param>
     private static void CallOff(ArenaMatch match, string reason, params ArenaFighter[] culprits)
@@ -1439,18 +1556,39 @@ public static class ArenaManager
 
             player.SendMessage(culprit ? "The duel is off." : $"The duel is off: {reason}");
 
-            // nobody is put back in the queue while arena dueling is turned off: it is being emptied
-            if (Enabled && beforeTheArena && fighter.QueueEntry != null && (!culprit || culpritsKeepTheirPlace))
-            {
-                queue.Add(fighter.QueueEntry);
-                player.SendMessage("You are back in the arena queue, in the place you had.");
-            }
-
             // also someone who is still on their way in: once they get there, this takes them straight back
             // (and if they are still in portal space then, closing the instance does)
             if (fighter.Home != null)
             {
                 SendHome(match, fighter, player, 2);
+            }
+        }
+
+        // nobody is put back in the queue while arena dueling is turned off: it is being emptied
+        if (Enabled && beforeTheArena)
+        {
+            foreach (var entry in match.Fighters.Select(f => f.QueueEntry).Where(e => e != null).Distinct().ToList())
+            {
+                var theirs = match.Fighters.Where(f => f.QueueEntry == entry).ToList();
+
+                if (!culpritsKeepTheirPlace && theirs.Any(culprits.Contains))
+                {
+                    continue;
+                }
+
+                if (entry.Members.Any(m => PlayerManager.GetOnlinePlayer(m.Guid) == null))
+                {
+                    continue;
+                }
+
+                queue.Add(entry);
+
+                TellQueued(
+                    entry,
+                    entry.Size == 1
+                        ? "You are back in the arena queue, in the place you had."
+                        : "Your fellowship is back in the arena queue, in the place it had."
+                );
             }
         }
 
@@ -1531,17 +1669,58 @@ public static class ArenaManager
     /// <param name="scaled">Whose rating to show: the scaled board's for a scaled duel</param>
     private static string Introduce(Player player, bool scaled)
     {
-        var board = scaled ? ArenaBoard.Scaled : ArenaBoard.Raw;
+        var board = new ArenaBoard(1, scaled);
 
-        return $"{player.Name} (level {player.Level ?? 1}, {(scaled ? "scaled " : "")}arena rating {RatingOf(player, board)})";
+        return $"{player.Name} (level {player.Level ?? 1}, {board.Name} arena rating {ArenaBoards.Get(player, board).Rating})";
     }
 
     /// <summary>
-    /// "a raw duel", "a scaled, unrated duel"
+    /// "Bob's fellowship: Bob (level 120), Al (level 95), average 2v2 arena rating 1412"
     /// </summary>
-    public static string DescribeDuel(bool scaled, bool rated)
+    private static string IntroduceFellowship(string leaderName, IReadOnlyList<Player> players, bool scaled)
     {
-        return $"a {(scaled ? "scaled" : "raw")}{(rated ? "" : ", unrated")} duel";
+        var board = new ArenaBoard(players.Count, scaled);
+        var average = (int)Math.Round(players.Average(p => ArenaBoards.Get(p, board).Rating));
+
+        return $"{leaderName}'s fellowship: {string.Join(", ", players.Select(p => $"{p.Name} (level {p.Level ?? 1})"))}, average {board.Name} arena rating {average}";
+    }
+
+    /// <summary>
+    /// "a raw duel", "a scaled, unrated duel", "a 3v3 raw duel"
+    /// </summary>
+    public static string DescribeDuel(bool scaled, bool rated, int size = 1)
+    {
+        return $"a {(size > 1 ? $"{size}v{size} " : "")}{(scaled ? "scaled" : "raw")}{(rated ? "" : ", unrated")} duel";
+    }
+
+    /// <summary>
+    /// Tells everyone in an entry of the queue something
+    /// </summary>
+    private static void TellQueued(ArenaQueueEntry entry, string message, uint? except = null)
+    {
+        foreach (var member in entry.Members.Where(m => m.Guid != except))
+        {
+            PlayerManager.GetOnlinePlayer(member.Guid)?.SendMessage(message);
+        }
+    }
+
+    /// <summary>
+    /// If one of these players is waiting in the queue with their fellowship, says so: they can't be taken into another duel
+    /// without taking the fellowship out of the queue first. Null if none of them is.
+    /// </summary>
+    private static string WhoWaitsWithAFellowship(IEnumerable<Player> players)
+    {
+        foreach (var player in players)
+        {
+            var entry = queue.Find(player.Guid.Full);
+
+            if (entry != null && entry.Size > 1)
+            {
+                return $"{player.Name} is waiting in the arena queue with {entry.Describe()}. /arena leave takes it out of the queue.";
+            }
+        }
+
+        return null;
     }
 
     private static string ExplainScaling(bool scaled)
@@ -1570,6 +1749,15 @@ public static class ArenaManager
     /// </summary>
     private static void TellScaling(ArenaMatch match)
     {
+        if (match.SideSize > 1)
+        {
+            Tell(
+                match,
+                "This duel is scaled: of any two fighters, the higher-level one fights the other at their level."
+            );
+            return;
+        }
+
         var lowest = match.Fighters.Min(f => f.Level);
 
         foreach (var fighter in match.Fighters)

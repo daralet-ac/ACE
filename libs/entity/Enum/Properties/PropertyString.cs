@@ -134,6 +134,13 @@ public enum PropertyString : ushort
     CacheLog = 9012,
     AllegianceLog = 9013,
     CorpseLog = 9014,
+
+    /// <summary>
+    /// The character's arena ratings and records on the team boards (2v2, 3v3 scaled, ...), as JSON keyed by the board's name.
+    /// The 1v1 boards have properties of their own (PropertyInt.ArenaRating, ...).
+    /// </summary>
+    [ServerOnly]
+    ArenaTeamBoards = 9015,
     
 
 

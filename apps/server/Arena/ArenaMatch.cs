@@ -144,6 +144,16 @@ public sealed class ArenaMatch : IInstanceReturnPositions
 
     public ArenaFighter Get(uint guid) => Fighters.FirstOrDefault(f => f.Guid == guid);
 
+    /// <summary>
+    /// How many fight on each side: 1 one against one, more for fellowships
+    /// </summary>
+    public int SideSize => Fighters.Count(f => f.Side == 0);
+
+    /// <summary>
+    /// The board a rated duel goes on
+    /// </summary>
+    public ArenaBoard Board => new ArenaBoard(SideSize, Scaled);
+
     public IEnumerable<ArenaFighter> Opponents(ArenaFighter fighter) => Fighters.Where(f => f.Side != fighter.Side);
 
     public bool InInstance(Player player) => Instance != null && player.InstanceId == Instance.Id;
@@ -160,18 +170,6 @@ public sealed class ArenaMatch : IInstanceReturnPositions
             " vs ",
             Fighters.GroupBy(f => f.Side).Select(side => string.Join(", ", side.Select(f => f.Name)))
         );
-        return $"#{Id} {names} ({Kind}{(Scaled ? ", scaled" : "")}{(Rated ? ", rated" : "")}) - {State}{(Map != null ? $" in {Map.Name}" : "")}{(Instance != null ? $", instance {Instance.Id}" : "")}";
+        return $"#{Id} {names} ({Kind}, {SideSize}v{SideSize}{(Scaled ? ", scaled" : "")}{(Rated ? ", rated" : "")}) - {State}{(Map != null ? $" in {Map.Name}" : "")}{(Instance != null ? $", instance {Instance.Id}" : "")}";
     }
-}
-
-/// <summary>
-/// The kinds of rated duel that have a rating and a record of their own
-/// </summary>
-public enum ArenaBoard
-{
-    /// <summary>Fought at the fighters' own levels</summary>
-    Raw,
-
-    /// <summary>The higher-level fighter fought at their opponent's level</summary>
-    Scaled
 }
