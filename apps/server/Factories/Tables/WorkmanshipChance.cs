@@ -1,58 +1,74 @@
 using System;
-using System.Collections.Generic;
-using ACE.Server.Factories.Entity;
+using ACE.Common;
 
 namespace ACE.Server.Factories.Tables;
 
 public static class WorkmanshipChance
 {
-    private static ChanceTable<int> T1_Chances = [(1, 1.0f)];
+    // The power score (an item's rolls against the best its type can roll, 0 to 1) each workmanship from 2 to 10
+    // starts at. A higher score never gets a lower workmanship, so a stronger item never shows less than a weaker one.
+    // Stats grow much faster at the top tiers than the bottom, so the steps are placed to land each tier's typical
+    // drop on that tier (t0 1, t1 1-2, t2 2-3, t3 3-4, t4 4-5, t5 5-7, t6 6-8, t7 7-10) rather than spaced evenly.
+    private static readonly double[] PowerScoreThresholds = [0.165, 0.22, 0.28, 0.35, 0.45, 0.575, 0.76, 0.83, 0.89];
 
-    private static ChanceTable<int> T2_Chances = [(1, 0.9f), (2, 0.1f)];
+    // The workmanship each tier (t0 - t7) rolls for items with no stats to judge them by.
+    private static readonly int[] MinWorkmanshipPerTier = [1, 1, 2, 3, 4, 5, 6, 7];
+    private static readonly int[] MaxWorkmanshipPerTier = [1, 2, 3, 4, 5, 7, 8, 10];
 
-    private static ChanceTable<int> T3_Chances = [(1, 0.4f), (2, 0.5f), (3, 0.1f)];
-
-    private static ChanceTable<int> T4_Chances = [(2, 0.4f), (3, 0.5f), (4, 0.1f)];
-
-    private static ChanceTable<int> T5_Chances = [(3, 0.4f), (4, 0.5f), (5, 0.1f)];
-
-    private static ChanceTable<int> T6_Chances = [(4, 0.4f), (5, 0.59f), (6, 0.009f), (7, 0.001f)];
-
-    private static ChanceTable<int> T7_Chances = [(5, 0.4f), (6, 0.59f), (7, 0.009f), (8, 0.001f)];
-
-    private static ChanceTable<int> T8_Chances = [(6, 0.4f), (7, 0.5f), (8, 0.09f), (9, 0.009f), (10, 0.001f)];
-
-    private static readonly List<ChanceTable<int>> workmanshipChances =
-    [
-        T1_Chances,
-        T2_Chances,
-        T3_Chances,
-        T4_Chances,
-        T5_Chances,
-        T6_Chances,
-        T7_Chances,
-        T8_Chances
-    ];
+    // How good such an item's roll has to be, 0 to 1, for each point above its tier's minimum
+    private static readonly double[] BonusRollThresholds = [0.4, 0.6, 0.8];
 
     /// <summary>
-    /// Rolls for a 1-10 workmanship for an item
+    /// Returns the workmanship for an item whose rolls scored powerScore against the best its type can roll
+    /// </summary>
+    public static int FromPowerScore(double powerScore)
+    {
+        var workmanship = 1;
+
+        foreach (var threshold in PowerScoreThresholds)
+        {
+            if (powerScore >= threshold)
+            {
+                workmanship++;
+            }
+        }
+
+        return workmanship;
+    }
+
+    /// <summary>
+    /// Rolls a workmanship for an item of this tier (1-8) that has no stat rolls of its own to judge it by
     /// </summary>
     public static int Roll(int tier, float qualityMod = 0.0f, int cantripLevel = 0)
     {
-        // https://asheron.fandom.com/wiki/Quality_Flag - The Quality Flag also reduces the maximum worksmanship of items in the tier by 2. For example, in Wealth 6, the worksmanship range is 4 - 10. In Wealth 6(Quality), the range is 4 - 8.
-        // From the above combined with the fact that the non-zero loot_quality_mod values in the database ranges from 0.2 to 0.25 we can deduce that it's an inverted quality mod roll, capping the top instead of the bottom.
+        // Loot quality raises the floor of the roll, the same as it does for the stat rolls on gear,
+        // and a higher spell level on the item nudges it up a little further.
+        var lootQuality = Math.Max(qualityMod, 0.0f) + cantripLevel * 0.05f;
 
-        // todo: add t7 / t8
-        tier = Math.Clamp(tier, 1, 8);
+        // two rolls averaged, so most land on the tier's minimum and about 1 in 3 reach +1, 1 in 10 +2 and 1 in 40 +3
+        var roll = (RollDiminished(lootQuality) + RollDiminished(lootQuality)) / 2;
 
-        var workmanshipChance = workmanshipChances[tier - 1];
+        var tierIndex = Math.Clamp(tier, 1, 8) - 1;
 
-        // A higher spell level on the item biases the roll toward higher workmanship,
-        // the same way a negative qualityMod increases the odds of hitting the rarer,
-        // high-workmanship tail of the table (see ChanceTable.Roll's invertedQualityMod).
-        var effectiveQualityMod = qualityMod - cantripLevel * 0.05f;
+        var workmanship = MinWorkmanshipPerTier[tierIndex];
 
-        return workmanshipChance.Roll(effectiveQualityMod, true);
+        foreach (var threshold in BonusRollThresholds)
+        {
+            if (roll >= threshold)
+            {
+                workmanship++;
+            }
+        }
+
+        return Math.Min(workmanship, MaxWorkmanshipPerTier[tierIndex]);
+    }
+
+    private static double RollDiminished(float lootQuality)
+    {
+        var minimum = (float)(1 - Math.Exp(-lootQuality));
+        var roll = ThreadSafeRandom.Next(minimum, 1.0f);
+
+        return roll * roll;
     }
 
     /// <summary>

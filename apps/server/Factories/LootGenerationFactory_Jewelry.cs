@@ -644,6 +644,6 @@ public static partial class LootGenerationFactory
         //Console.WriteLine($"--FINAL: {finalPercentile}\n\n");
 
         // Workmanship Calculation
-        return (int)Math.Max(Math.Round(finalPercentile * 10, 0), 1);
+        return WorkmanshipChance.FromPowerScore(finalPercentile);
     }
 }

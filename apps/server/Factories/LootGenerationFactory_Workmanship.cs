@@ -163,15 +163,16 @@ public static partial class LootGenerationFactory
 
         if (ShouldUseWeaponDefenseForMods(wo, caster))
         {
-            if ((wo.WeaponPhysicalDefense ?? 0) > 0)
-            {
-                highestPercentile = Math.Max(highestPercentile, GetWeaponModPercentile(((wo.WeaponPhysicalDefense ?? 0) - 1) / multiplier));
-            }
+            // the two defense mods roll together and count as one mod, averaged, the same as when the item dropped
+            var physicalDefensePercentile = (wo.WeaponPhysicalDefense ?? 0) > 0
+                ? GetWeaponModPercentile(((wo.WeaponPhysicalDefense ?? 0) - 1) / multiplier)
+                : 0.0f;
 
-            if ((wo.WeaponMagicalDefense ?? 0) > 0)
-            {
-                highestPercentile = Math.Max(highestPercentile, GetWeaponModPercentile(((wo.WeaponMagicalDefense ?? 0) - 1) / multiplier));
-            }
+            var magicalDefensePercentile = (wo.WeaponMagicalDefense ?? 0) > 0
+                ? GetWeaponModPercentile(((wo.WeaponMagicalDefense ?? 0) - 1) / multiplier)
+                : 0.0f;
+
+            highestPercentile = Math.Max(highestPercentile, (physicalDefensePercentile + magicalDefensePercentile) / 2);
         }
 
         return highestPercentile;

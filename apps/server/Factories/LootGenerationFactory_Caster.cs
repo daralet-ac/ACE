@@ -890,6 +890,6 @@ public static partial class LootGenerationFactory
         //    $" --FINAL: {finalPercentile}\n\n");
 
         // Workmanship Calculation
-        return Math.Clamp((int)Math.Round(finalPercentile * 10, 0), 1, 10);
+        return WorkmanshipChance.FromPowerScore(finalPercentile);
     }
 }
