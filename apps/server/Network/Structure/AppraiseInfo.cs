@@ -2641,7 +2641,7 @@ public class AppraiseInfo
     }
 
     /// <summary>
-    /// Sorts spells for display by spell level, then magic school, then name
+    /// Sorts spells for display by spell level (highest first), then magic school, then name
     /// </summary>
     private static IEnumerable<int> SortSpellIds(List<int> spellIds)
     {
@@ -2652,7 +2652,8 @@ public class AppraiseInfo
 
         return spellIds
             .Select(id => (Id: id, Spell: new Spell(id)))
-            .OrderBy(i => i.Spell.NotFound ? uint.MaxValue : i.Spell.Level)
+            .OrderBy(i => i.Spell.NotFound)
+            .ThenByDescending(i => i.Spell.NotFound ? 0 : i.Spell.Level)
             .ThenBy(i => i.Spell.NotFound ? MagicSchool.None : i.Spell.School)
             .ThenBy(i => i.Spell.NotFound ? string.Empty : i.Spell.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(i => i.Id)
