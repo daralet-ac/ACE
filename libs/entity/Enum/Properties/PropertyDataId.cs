@@ -208,10 +208,11 @@ public enum PropertyDataId : ushort
     Spell2 = 66,
 
     /// <summary>
-    /// The second Setup (model) an item can switch to. Players swap it with the item's Setup using /style.
+    /// The second ClothingBase (worn look) an item can switch to. Players swap it with the item's ClothingBase
+    /// using /style.
     /// </summary>
     [ServerOnly]
-    AlternateSetup = 67,
+    AlternateClothingBase = 67,
 
     [ServerOnly]
     PCAPRecordedWeenieHeader = 8001,
