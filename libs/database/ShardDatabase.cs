@@ -1612,6 +1612,32 @@ LEFT JOIN biota_properties_int tq
     }
 
     /// <summary>
+    /// Returns every account_session_log row logged after since (server local time, as the rows are written).
+    /// </summary>
+    public virtual List<AccountSessionLog> GetAccountSessionsSince(DateTime since)
+    {
+        using var context = new ShardDbContext();
+
+        return context.AccountSessions.AsNoTracking()
+            .Where(a => a.LoginDateTime > since)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Returns the undeleted characters whose last login is after sinceUnixTime, with only Id, AccountId, Name and LastLoginTimestamp filled in.
+    /// A character only keeps its latest login, so one played twice in the window comes back once.
+    /// </summary>
+    public virtual List<Character> GetCharactersLoggedInSince(double sinceUnixTime)
+    {
+        using var context = new ShardDbContext();
+
+        return context.Character.AsNoTracking()
+            .Where(c => !c.IsDeleted && c.LastLoginTimestamp > sinceUnixTime)
+            .Select(c => new Character { Id = c.Id, AccountId = c.AccountId, Name = c.Name, LastLoginTimestamp = c.LastLoginTimestamp })
+            .ToList();
+    }
+
+    /// <summary>
     /// Adds an entry to an account's bank log (bank_activity_log), then drops all but the account's newest keepPerAccount.
     /// Throws if the database can't be reached or the table is missing; the caller decides how loudly to report it.
     /// </summary>
