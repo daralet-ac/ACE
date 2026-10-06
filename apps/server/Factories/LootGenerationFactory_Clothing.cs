@@ -334,7 +334,7 @@ public static partial class LootGenerationFactory
 
         // Final Calculation
         var newArmorLevel = baseArmorLevel * (tier - 1) + GetDiminishingRoll(treasureDeath) * baseArmorLevel;
-        var newWardLevel = baseWardLevel * (tier - 1) * armorSlots + GetDiminishingRoll(treasureDeath) * baseWardLevel;
+        var newWardLevel = baseWardLevel * (tier - 1) * armorSlots + GetDiminishingRoll(treasureDeath) * baseWardLevel * armorSlots;
 
         // Assign levels
         wo.SetProperty(PropertyInt.ArmorLevel, (int)newArmorLevel);

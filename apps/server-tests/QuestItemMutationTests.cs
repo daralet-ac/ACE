@@ -80,8 +80,8 @@ public class QuestItemMutationTests
         Assert.AreEqual((95, 190), QuestItemMutation.GetArmorLevelRange(95, 1));
 
         // Platemail Hauberk of the Ogre (T2, 4 slots) is authored at 28 ward, Shroud of Cazamal (T5 robe, 8 slots) at 192
-        Assert.AreEqual((28, 35), QuestItemMutation.GetWardLevelRange(7, 1, 4));
-        Assert.AreEqual((192, 198), QuestItemMutation.GetWardLevelRange(6, 4, 8));
+        Assert.AreEqual((28, 56), QuestItemMutation.GetWardLevelRange(7, 1, 4));
+        Assert.AreEqual((192, 240), QuestItemMutation.GetWardLevelRange(6, 4, 8));
 
         // a T6 ring, and a T4 necklace like the Amulet of Impulse (authored at 22)
         Assert.AreEqual((18, 25), QuestItemMutation.GetJewelryWardLevelRange(5, false));
@@ -276,7 +276,7 @@ public class QuestItemMutationTests
 
             Assert.AreEqual(2, hauberk.QuestItemTinks);
             AssertBetween(143, 190, hauberk.BaseArmor.Value);
-            AssertBetween(32, 35, hauberk.BaseWard.Value);
+            AssertBetween(42, 56, hauberk.BaseWard.Value);
             Assert.AreEqual(hauberk.BaseArmor + 2 * QuestItemMutation.GetPercentTinkBonus(hauberk.BaseArmor.Value, Salvage.IronTinkPercent), hauberk.ArmorLevel);
             Assert.AreEqual(hauberk.BaseWard + 2 * Salvage.SilverTinkWardLevel * 4, hauberk.WardLevel);
         }
@@ -458,13 +458,13 @@ public class QuestItemMutationTests
     [TestMethod]
     public void RollRanges_ArmorScalesArmorLevelByProtectionAndWardBySlots()
     {
-        // Platemail Hauberk of the Ogre: T2, 4 slots, authored at its 143 / 32 floors
+        // Platemail Hauberk of the Ogre: T2, 4 slots, authored at its 143 armor level floor; its 32 ward sits under the 42 median
         var hauberk = CreateArmor(ArmorStyle.Platemail, ArmorWeightClass.Heavy, armorLevel: 143, wardLevel: 32, armorSlots: 4, wieldDifficulty: 125);
 
         var ranges = LootGenerationFactory.GetQuestItemRollRanges(hauberk, null, 0.5, 0.55);
 
         Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Armor Level", 71 + 2 * 5, 104 + 2 * 7, false, null), ranges[0]);
-        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Ward Level", 32 + 2 * 12, 35 + 2 * 12, false, null), ranges[1]);
+        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Ward Level", 42 + 2 * 12, 56 + 2 * 12, false, null), ranges[1]);
     }
 
     [TestMethod]
