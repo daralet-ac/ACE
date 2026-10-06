@@ -106,10 +106,29 @@ The hooks into the rest of the server: `Player.CheckPKStatusVsTarget` and `Heale
 
 Tests: `apps/server-tests/ArenaTests.cs` (ratings, the queue, maps and the `arenas.json` that comes with the server).
 
-## Not done yet
+## Roadmap
+
+### Still to do from phase 1
 
 - **Testing on a live server.** Nothing here has been run against a real client yet. Things to try: a challenge and a queue duel to the end each way (defeat, giving up, logging out, a portal out, the time limit with `/modifylong arena_time_limit_minutes 1`), saying no and not answering, turning `arena_dueling_enabled` off in the queue, while asked, in the countdown and in a fight, a challenge across `arena_dueling_minimum_level`, a player killer lite and a non-player killer fighting, `/die` in the countdown, a fighter whose lifestone is somewhere else, logging out while falling, and `/arena cancel`. Watch that statuses come back right (`/pk` as a developer shows yours) and that nobody is left in an instance (`/instance list`).
-- **Spectating.** The arena already refuses harm and help between fighters and anyone else in the instance, so spectators can be sent in with `InstanceManager.Enter` and taken home by the duel like fighters.
-- **Fellowship against fellowship, and a team queue.** `ArenaFighter.Side` and the rules for who may harm whom already work by side, and a duel ends when a side has nobody standing. Only one against one is rated.
-- **Level scaling**, like shroud scaling: a choice for the queue (a scaled duel, or a level band). Fighters are made ready in `Player.PrepareForArenaDuel` and the fight begins in `Player.BeginArenaDuel`, which is where scaling would be put on, and `RestoreAfterArena` where it would be taken off.
 - **More maps**: the curated list of indoor and outdoor places, in `arenas.json`.
+
+### Phase 2
+
+- **Unrated duels.** Today a player can't choose: queue duels are always rated, and challenges are rated or not for everybody by `arena_rated_challenges` (and same-IP duels never are). Add a player's choice: `/arena challenge <name> unrated` (the one challenged sees "unrated" in the question), and an unrated queue (`/arena queue unrated [levels]`) that only pairs players who asked for unrated with each other. `ArenaMatch.Rated` is already set per duel, so this is about the commands and the queue keeping rated and unrated entries apart.
+- **Level scaling**, like shroud scaling: a choice for the queue and for challenges (a scaled duel, or a level band). Fighters are made ready in `Player.PrepareForArenaDuel` and the fight begins in `Player.BeginArenaDuel`, which is where scaling would be put on, and `RestoreAfterArena` where it would be taken off.
+- **Fellowship against fellowship, and a team queue.** `ArenaFighter.Side` and the rules for who may harm whom already work by side, and a duel ends when a side has nobody standing. Only one against one is rated today.
+
+### Leaderboards (once fellowship dueling is in)
+
+One rating, and one board, per kind of duel, instead of the single `ArenaRating`:
+
+- **By size**: 1v1, 2v2, 3v3, and so on.
+- **Scaled or raw**: duels fought with level scaling and duels fought at players' own levels are rated apart, since they are different contests.
+
+So a rating is kept per (size, scaled or raw): 1v1 raw, 1v1 scaled, 2v2 raw, 2v2 scaled... Each needs its own rating and record on the character. A handful of new `PropertyInt`s per board works for a few boards; if there get to be many, a small shard table (character, board, rating, wins, losses, draws) is cleaner and makes `/arena top` a query instead of a scan of every player. For teams, each fighter's rating moves by Elo against the average rating of the other side. `/arena top [board]` and `/arena stats [name] [board]` pick the board, with 1v1 raw as the default. Unrated duels count on no board.
+
+### Later (not designed yet)
+
+- **Weekly rewards and rating resets.** Once a week: the top of each board is rewarded (items, titles, luminance, to be decided), the board's standings are kept as history (last week's winners), and ratings go back to the start (or part way back toward it, so the best players don't start from nothing). Needs a scheduled job (the server has event and timer infrastructure to hang it on), a record of each week's results, and rewards that reach players who are offline (given at their next login). Watch for farming: rewards make the same-IP rule and rated-challenge abuse (two friends trading wins) matter much more, so a reward may need a minimum number of duels against different opponents.
+- **Watching duels.** `/arena watch` lists the duels going on (fighters, map, how long it has been running), and `/arena watch <number | name>` takes you in as a spectator. Spectators are invisible (cloaked, as admins are, so fighters can't see or target them and they don't get in the way), can't harm or help anyone (the arena already refuses that between fighters and anyone else in the instance), keep their own status, and are taken back to where they were when the duel ends or they `/arena leave`, the same way fighters are (`IInstanceReturnPositions`). A duel might be watchable only if its fighters allow it, or only when it is rated.
