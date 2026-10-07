@@ -121,7 +121,5 @@ public class HouseSelect
         actionChain.AddDelaySeconds(3.0f); // wait for slumlord inventory biotas above to save
         actionChain.AddAction(session.Player, session.Player.HandleActionQueryHouse);
         actionChain.EnqueueChain();
-
-        Console.WriteLine("OK");
     }
 }

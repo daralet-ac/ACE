@@ -249,6 +249,11 @@ public partial class Player : Creature, IPlayer
             {
                 IsAdvocate = true;
             }
+            else if (IsAdvocate && !AdvocateQuest)
+            {
+                // IsAdvocate came from a former account access level, not from the advocate quest
+                IsAdvocate = false;
+            }
         }
 
         IsOlthoiPlayer = HeritageGroup == HeritageGroup.Olthoi || HeritageGroup == HeritageGroup.OlthoiAcid;

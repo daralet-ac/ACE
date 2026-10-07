@@ -3371,6 +3371,7 @@ partial class WorldObject
             }
         }
     }
+
     /// <summary>
     /// If this property is not defined, defaults to false
     /// </summary>
@@ -4657,6 +4658,22 @@ partial class WorldObject
             else
             {
                 SetProperty(PropertyDataId.ItemSkillLimit, (uint)value);
+            }
+        }
+    }
+
+    public Skill? ItemSpecializedOnly
+    {
+        get => (Skill?)GetProperty(PropertyDataId.ItemSpecializedOnly);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyDataId.ItemSpecializedOnly);
+            }
+            else
+            {
+                SetProperty(PropertyDataId.ItemSpecializedOnly, (uint)value);
             }
         }
     }

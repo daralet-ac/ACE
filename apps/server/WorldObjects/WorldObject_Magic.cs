@@ -344,13 +344,13 @@ partial class WorldObject
         partialResist = pResist;
         _partialEvasion = pResist;
 
+        if (targetCreature.Invincible)
+        {
+            resisted = true;
+        }
+
         if (targetPlayer != null)
         {
-            if (targetPlayer.Invincible)
-            {
-                resisted = true;
-            }
-
             if (targetPlayer.UnderLifestoneProtection)
             {
                 targetPlayer.HandleLifestoneProtection();
