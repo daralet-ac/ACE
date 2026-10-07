@@ -587,10 +587,7 @@ public static class MarketBroker
             return;
         }
 
-        var tradeNoteTotal = (total / 100) * 100;
-        var pyrealRemainder = total % 100;
-
-        var breakdown = GetTradeNoteBreakdown(tradeNoteTotal);
+        var (breakdown, pyrealRemainder) = SplitPayout(total);
 
         // Pre-validate capacity for the full payout (no partial claims).
         var itemsToReceive = new ItemsToReceive(player);
@@ -689,20 +686,35 @@ public static class MarketBroker
         SendTell(player, broker, $"Claimed {payouts.Count} payout(s) for a total of {total:N0} pyreals.");
     }
 
-    private static System.Collections.Generic.List<(uint wcid, int amount)> GetTradeNoteBreakdown(int totalPyreals)
+    /// <summary>
+    /// Trade notes, largest first, and their value in pyreals
+    /// </summary>
+    internal static readonly (uint wcid, int value)[] TradeNoteDenominations =
+    {
+        ((uint)WeenieClassName.W_TRADENOTE100000_CLASS, 100_000),
+        ((uint)WeenieClassName.W_TRADENOTE50000_CLASS, 50_000),
+        ((uint)WeenieClassName.W_TRADENOTE10000_CLASS, 10_000),
+        ((uint)WeenieClassName.W_TRADENOTE5000_CLASS, 5_000),
+        ((uint)WeenieClassName.W_TRADENOTE1000_CLASS, 1_000),
+        ((uint)WeenieClassName.W_TRADENOTE500_CLASS, 500),
+        ((uint)WeenieClassName.W_TRADENOTE100_CLASS, 100),
+    };
+
+    /// <summary>
+    /// Splits a payout into trade notes and the pyreals left over, which are less than the smallest note
+    /// </summary>
+    internal static (System.Collections.Generic.List<(uint wcid, int amount)> Notes, int Pyreals) SplitPayout(int total)
+    {
+        var tradeNoteTotal = (total / 100) * 100;
+        var pyrealRemainder = total % 100;
+
+        return (GetTradeNoteBreakdown(tradeNoteTotal), pyrealRemainder);
+    }
+
+    internal static System.Collections.Generic.List<(uint wcid, int amount)> GetTradeNoteBreakdown(int totalPyreals)
     {
         // Prefer larger denominations to minimize created stacks.
-        // Values are in pyreals per trade note.
-        var denom = new (uint wcid, int value)[]
-        {
-            ((uint)WeenieClassName.W_TRADENOTE100000_CLASS, 100_000),
-            ((uint)WeenieClassName.W_TRADENOTE50000_CLASS, 50_000),
-            ((uint)WeenieClassName.W_TRADENOTE10000_CLASS, 10_000),
-            ((uint)WeenieClassName.W_TRADENOTE5000_CLASS, 5_000),
-            ((uint)WeenieClassName.W_TRADENOTE1000_CLASS, 1_000),
-            ((uint)WeenieClassName.W_TRADENOTE500_CLASS, 500),
-            ((uint)WeenieClassName.W_TRADENOTE100_CLASS, 100),
-        };
+        var denom = TradeNoteDenominations;
 
         var remaining = Math.Max(0, totalPyreals);
         var result = new System.Collections.Generic.List<(uint wcid, int amount)>(denom.Length);
@@ -910,7 +922,7 @@ public static class MarketBroker
         return count;
     }
 
-    private static bool TryParseCancelInput(string input, out int listingId)
+    internal static bool TryParseCancelInput(string input, out int listingId)
     {
         listingId = 0;
         if (string.IsNullOrWhiteSpace(input))
@@ -1331,7 +1343,7 @@ public static class MarketBroker
         SendTell(player, $"Listed {item.Name} for {price:N0} pyreals.");
     }
 
-    private static bool TryParsePriceInput(string input, out int price)
+    internal static bool TryParsePriceInput(string input, out int price)
     {
         price = 0;
         if (string.IsNullOrWhiteSpace(input))
