@@ -222,7 +222,16 @@ public class ChessLogic
             return ChessMoveResult.BadMoveInvalidCommand;
         }
 
-        return FinalizeMove(foundMove);
+        var result = FinalizeMove(foundMove);
+
+        // a move can't leave your own king in check
+        if (InCheck(color))
+        {
+            UndoMove(1);
+            return ChessMoveResult.BadMoveSelfCheck;
+        }
+
+        return result;
     }
 
     public ChessMoveResult AsyncCalculateAiSimpleMove(
@@ -492,13 +501,12 @@ public class ChessLogic
             }
         }
 
-        // only check for castling during full board generation or for a single king
-        if (!single || piece.Type == ChessPieceType.King)
+        // castling is a king move, so it is generated once, with the king's moves
+        if (piece.Type == ChessPieceType.King)
         {
-            if ((Castling[(int)color] & ChessMoveFlag.KingSideCastle | ChessMoveFlag.QueenSideCastle) != 0)
+            if ((Castling[(int)color] & (ChessMoveFlag.KingSideCastle | ChessMoveFlag.QueenSideCastle)) != 0)
             {
-                var king = GetPiece(color, ChessPieceType.King);
-                var kingCoord = king.Coord;
+                var kingCoord = piece.Coord;
 
                 var opColor = Chess.InverseColor(color);
 
@@ -510,7 +518,8 @@ public class ChessLogic
                     castlingToR.MoveOffset(1, 0);
 
                     if (
-                        GetPiece(castlingToR) == null
+                        HasCastlingRook(color, kingCoord, 3)
+                        && GetPiece(castlingToR) == null
                         && GetPiece(castlingToK) == null
                         && !CanAttack(opColor, kingCoord)
                         && !CanAttack(opColor, castlingToR)
@@ -538,7 +547,8 @@ public class ChessLogic
                     castlingToI.MoveOffset(-3, 0);
 
                     if (
-                        GetPiece(castlingToR) == null
+                        HasCastlingRook(color, kingCoord, -4)
+                        && GetPiece(castlingToR) == null
                         && GetPiece(castlingToK) == null
                         && GetPiece(castlingToI) == null
                         && !CanAttack(opColor, kingCoord)
@@ -614,14 +624,14 @@ public class ChessLogic
                                 break;
                             }
 
-                            var toPiece = GetPiece(to);
-                            if (toPiece != null)
+                            // the victim's square can be empty: castling asks whether the king's path is attacked
+                            if (to.Equals(victim))
                             {
-                                if (to.Equals(victim))
-                                {
-                                    return true;
-                                }
+                                return true;
+                            }
 
+                            if (GetPiece(to) != null)
+                            {
                                 break;
                             }
                         }
@@ -631,6 +641,19 @@ public class ChessLogic
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// True if the castling rook is still on its square, offsetX from the king
+    /// </summary>
+    private bool HasCastlingRook(ChessColor color, ChessPieceCoord kingCoord, int offsetX)
+    {
+        var rookCoord = new ChessPieceCoord(kingCoord);
+        rookCoord.MoveOffset(offsetX, 0);
+
+        var rook = GetPiece(rookCoord);
+
+        return rook != null && rook.Type == ChessPieceType.Rook && rook.Color == color;
     }
 
     public bool InCheck(ChessColor color)
@@ -719,7 +742,8 @@ public class ChessLogic
                 captured,
                 Move,
                 HalfMove,
-                Castling,
+                // a copy: InternalMove changes Castling, and UndoMove puts this one back
+                new List<ChessMoveFlag>(Castling),
                 EnPassantCoord,
                 fromPiece.Guid,
                 captured != ChessPieceType.Empty ? toPiece.Guid : new ObjectGuid(0)
@@ -817,7 +841,7 @@ public class ChessLogic
         // turn off castling if we capture one of the opponent's rooks
         if (Castling[(int)opColor] != ChessMoveFlag.None)
         {
-            DoCastleCheck(opColor, from);
+            DoCastleCheck(opColor, to);
         }
 
         if (flags.HasFlag(ChessMoveFlag.BigPawn))
@@ -857,10 +881,11 @@ public class ChessLogic
         while (History.Count > 0 && count > 0)
         {
             var move = History.Peek();
+            var opColor = Chess.InverseColor(move.Color);
 
             // undo 'global' information
-            Turn = Chess.InverseColor(move.Color);
-            Castling = move.Castling;
+            Turn = move.Color;
+            Castling = new List<ChessMoveFlag>(move.Castling);
             EnPassantCoord = move.EnPassantCoord;
             HalfMove = move.HalfMove;
             Move = move.Move;
@@ -870,13 +895,14 @@ public class ChessLogic
             var flags = move.Flags;
             if (flags.HasFlag(ChessMoveFlag.Promotion))
             {
-                var piece = AddPiece(Turn, ChessPieceType.Pawn, move.To);
+                // the queen goes back to being a pawn
+                var piece = AddPiece(move.Color, ChessPieceType.Pawn, move.From);
                 piece.Guid = move.Guid;
             }
 
             if (flags.HasFlag(ChessMoveFlag.Capture))
             {
-                var piece = AddPiece(Turn, move.Captured, move.To);
+                var piece = AddPiece(opColor, move.Captured, move.To);
                 piece.Guid = move.CapturedGuid;
             }
 
@@ -885,24 +911,25 @@ public class ChessLogic
                 var enPassantFrom = new ChessPieceCoord(move.To);
                 enPassantFrom.MoveOffset(0, move.Color == ChessColor.Black ? 1 : -1);
 
-                var piece = AddPiece(Turn, ChessPieceType.Pawn, enPassantFrom);
+                var piece = AddPiece(opColor, ChessPieceType.Pawn, enPassantFrom);
                 piece.Guid = move.CapturedGuid;
             }
 
             if ((flags & (ChessMoveFlag.KingSideCastle | ChessMoveFlag.QueenSideCastle)) != 0)
             {
+                // the same squares as InternalMove: the rook goes back from beside the king to its corner
                 var castlingTo = new ChessPieceCoord(move.To);
                 var castlingFrom = new ChessPieceCoord(castlingTo);
 
                 if (flags.HasFlag(ChessMoveFlag.KingSideCastle))
                 {
-                    castlingTo.MoveOffset(1, 0);
-                    castlingFrom.MoveOffset(-1, 0);
+                    castlingTo.MoveOffset(-1, 0);
+                    castlingFrom.MoveOffset(1, 0);
                 }
                 if (flags.HasFlag(ChessMoveFlag.QueenSideCastle))
                 {
-                    castlingTo.MoveOffset(-2, 0);
-                    castlingFrom.MoveOffset(1, 0);
+                    castlingTo.MoveOffset(1, 0);
+                    castlingFrom.MoveOffset(-2, 0);
                 }
 
                 MovePiece(castlingTo, castlingFrom);
