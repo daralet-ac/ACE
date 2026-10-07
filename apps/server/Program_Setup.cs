@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -532,99 +533,104 @@ partial class Program
             }
             Console.WriteLine(" connected!");
 
-            if (IsRunningInContainer)
+            var databasesWithData = FindDatabasesWithData(config);
+
+            if (databasesWithData.Count == 0 || ConfirmEraseExistingData(databasesWithData, nonInteractiveSetup))
             {
-                // if using our supplied docker compose file which includes mysql server, mysql is initialized with a test database called ace%, we will delete this database if it exists
-                Console.Write("Clearing out temporary ace% database .... ");
-                var sqlDBFile = "DROP DATABASE IF EXISTS `ace%`;";
-                var script = new MySqlConnector.MySqlCommand(sqlDBFile, sqlConnect);
+                if (IsRunningInContainer)
+                {
+                    // if using our supplied docker compose file which includes mysql server, mysql is initialized with a test database called ace%, we will delete this database if it exists
+                    Console.Write("Clearing out temporary ace% database .... ");
+                    var sqlDBFile = "DROP DATABASE IF EXISTS `ace%`;";
+                    var script = new MySqlConnector.MySqlCommand(sqlDBFile, sqlConnect);
 
-                Console.Write(
-                    $"Importing into SQL server at {config.MySql.World.Host}:{config.MySql.World.Port} .... "
+                    Console.Write(
+                        $"Importing into SQL server at {config.MySql.World.Host}:{config.MySql.World.Port} .... "
+                    );
+                    try
+                    {
+                        ExecuteScript(script);
+                    }
+                    catch (MySqlConnector.MySqlException) { }
+                    Console.WriteLine(" done!");
+                }
+
+                Console.WriteLine("Searching for base SQL scripts .... ");
+                foreach (
+                    var file in new DirectoryInfo($"DatabaseSetupScripts{Path.DirectorySeparatorChar}Base")
+                        .GetFiles("*.sql")
+                        .OrderBy(f => f.Name)
+                )
+                {
+                    Console.Write($"Found {file.Name} .... ");
+                    var sqlDBFile = File.ReadAllText(file.FullName);
+                    switch (file.Name)
+                    {
+                        case "AuthenticationBase.sql":
+                            sqlConnectInfo =
+                                $"server={config.MySql.Authentication.Host};port={config.MySql.Authentication.Port};user={config.MySql.Authentication.Username};password={config.MySql.Authentication.Password};{config.MySql.Shard.ConnectionOptions}";
+                            sqlDBFile = sqlDBFile.Replace("ace_auth", config.MySql.Authentication.Database);
+                            break;
+                        case "ShardBase.sql":
+                            sqlConnectInfo =
+                                $"server={config.MySql.Shard.Host};port={config.MySql.Shard.Port};user={config.MySql.Shard.Username};password={config.MySql.Shard.Password};{config.MySql.Shard.ConnectionOptions}";
+                            sqlDBFile = sqlDBFile.Replace("ace_shard", config.MySql.Shard.Database);
+                            break;
+                        case "WorldBase.sql":
+                        default:
+                            //sqlConnectInfo = $"server={config.MySql.World.Host};port={config.MySql.World.Port};user={config.MySql.World.Username};password={config.MySql.World.Password};{config.MySql.Shard.ConnectionOptions}";
+                            sqlDBFile = sqlDBFile.Replace("ace_world", config.MySql.World.Database);
+                            break;
+                    }
+                    var script = new MySqlConnector.MySqlCommand(sqlDBFile, sqlConnect);
+
+                    Console.Write(
+                        $"Importing into SQL server at {config.MySql.World.Host}:{config.MySql.World.Port} .... "
+                    );
+                    try
+                    {
+                        ExecuteScript(script);
+                    }
+                    catch (MySqlConnector.MySqlException) { }
+                    Console.WriteLine(" complete!");
+                }
+                Console.WriteLine("Base SQL scripts import complete!");
+
+                Console.WriteLine("Searching for Update SQL scripts .... ");
+
+                PatchDatabase(
+                    "Authentication",
+                    config.MySql.Authentication.Host,
+                    config.MySql.Authentication.Port,
+                    config.MySql.Authentication.Username,
+                    config.MySql.Authentication.Password,
+                    config.MySql.Authentication.Database,
+                    config.MySql.Shard.Database,
+                    config.MySql.World.Database
                 );
-                try
-                {
-                    ExecuteScript(script);
-                }
-                catch (MySqlConnector.MySqlException) { }
-                Console.WriteLine(" done!");
-            }
 
-            Console.WriteLine("Searching for base SQL scripts .... ");
-            foreach (
-                var file in new DirectoryInfo($"DatabaseSetupScripts{Path.DirectorySeparatorChar}Base")
-                    .GetFiles("*.sql")
-                    .OrderBy(f => f.Name)
-            )
-            {
-                Console.Write($"Found {file.Name} .... ");
-                var sqlDBFile = File.ReadAllText(file.FullName);
-                switch (file.Name)
-                {
-                    case "AuthenticationBase.sql":
-                        sqlConnectInfo =
-                            $"server={config.MySql.Authentication.Host};port={config.MySql.Authentication.Port};user={config.MySql.Authentication.Username};password={config.MySql.Authentication.Password};{config.MySql.Shard.ConnectionOptions}";
-                        sqlDBFile = sqlDBFile.Replace("ace_auth", config.MySql.Authentication.Database);
-                        break;
-                    case "ShardBase.sql":
-                        sqlConnectInfo =
-                            $"server={config.MySql.Shard.Host};port={config.MySql.Shard.Port};user={config.MySql.Shard.Username};password={config.MySql.Shard.Password};{config.MySql.Shard.ConnectionOptions}";
-                        sqlDBFile = sqlDBFile.Replace("ace_shard", config.MySql.Shard.Database);
-                        break;
-                    case "WorldBase.sql":
-                    default:
-                        //sqlConnectInfo = $"server={config.MySql.World.Host};port={config.MySql.World.Port};user={config.MySql.World.Username};password={config.MySql.World.Password};{config.MySql.Shard.ConnectionOptions}";
-                        sqlDBFile = sqlDBFile.Replace("ace_world", config.MySql.World.Database);
-                        break;
-                }
-                var script = new MySqlConnector.MySqlCommand(sqlDBFile, sqlConnect);
-
-                Console.Write(
-                    $"Importing into SQL server at {config.MySql.World.Host}:{config.MySql.World.Port} .... "
+                PatchDatabase(
+                    "Shard",
+                    config.MySql.Shard.Host,
+                    config.MySql.Shard.Port,
+                    config.MySql.Shard.Username,
+                    config.MySql.Shard.Password,
+                    config.MySql.Authentication.Database,
+                    config.MySql.Shard.Database,
+                    config.MySql.World.Database
                 );
-                try
-                {
-                    ExecuteScript(script);
-                }
-                catch (MySqlConnector.MySqlException) { }
-                Console.WriteLine(" complete!");
+
+                PatchDatabase(
+                    "World",
+                    config.MySql.World.Host,
+                    config.MySql.World.Port,
+                    config.MySql.World.Username,
+                    config.MySql.World.Password,
+                    config.MySql.Authentication.Database,
+                    config.MySql.Shard.Database,
+                    config.MySql.World.Database
+                );
             }
-            Console.WriteLine("Base SQL scripts import complete!");
-
-            Console.WriteLine("Searching for Update SQL scripts .... ");
-
-            PatchDatabase(
-                "Authentication",
-                config.MySql.Authentication.Host,
-                config.MySql.Authentication.Port,
-                config.MySql.Authentication.Username,
-                config.MySql.Authentication.Password,
-                config.MySql.Authentication.Database,
-                config.MySql.Shard.Database,
-                config.MySql.World.Database
-            );
-
-            PatchDatabase(
-                "Shard",
-                config.MySql.Shard.Host,
-                config.MySql.Shard.Port,
-                config.MySql.Shard.Username,
-                config.MySql.Shard.Password,
-                config.MySql.Authentication.Database,
-                config.MySql.Shard.Database,
-                config.MySql.World.Database
-            );
-
-            PatchDatabase(
-                "World",
-                config.MySql.World.Host,
-                config.MySql.World.Port,
-                config.MySql.World.Username,
-                config.MySql.World.Password,
-                config.MySql.Authentication.Database,
-                config.MySql.Shard.Database,
-                config.MySql.World.Database
-            );
         }
 
         Console.WriteLine();
@@ -646,6 +652,10 @@ partial class Program
         if (
             !variable.Equals("n", StringComparison.OrdinalIgnoreCase)
             && !variable.Equals("no", StringComparison.OrdinalIgnoreCase)
+            && (
+                !DatabaseHasData(config.MySql.World, "weenie")
+                || ConfirmEraseExistingData(new List<string> { config.MySql.World.Database }, nonInteractiveSetup)
+            )
         )
         {
             Console.WriteLine();
@@ -726,6 +736,97 @@ partial class Program
 
         CleanupConnection(sqlConnect);
         Console.WriteLine("exiting setup for ACEmulator.");
+    }
+
+    /// <summary>
+    /// Returns the configured databases that already hold data.
+    /// Setup runs whenever Config.js is missing next to ACE.Server.dll (ie. the build output folder moved after a
+    /// .NET upgrade, or a container lost its Config volume), and must never silently erase a live server.
+    /// </summary>
+    private static List<string> FindDatabasesWithData(MasterConfiguration config)
+    {
+        var databasesWithData = new List<string>();
+
+        if (DatabaseHasData(config.MySql.Authentication, "account"))
+        {
+            databasesWithData.Add(config.MySql.Authentication.Database);
+        }
+
+        if (DatabaseHasData(config.MySql.Shard, "biota"))
+        {
+            databasesWithData.Add(config.MySql.Shard.Database);
+        }
+
+        if (DatabaseHasData(config.MySql.World, "weenie"))
+        {
+            databasesWithData.Add(config.MySql.World.Database);
+        }
+
+        return databasesWithData;
+    }
+
+    private static bool DatabaseHasData(MySqlConfiguration database, string table)
+    {
+        var connectionString =
+            $"server={database.Host};port={database.Port};user={database.Username};password={database.Password};{database.ConnectionOptions}";
+
+        try
+        {
+            using var connection = new MySqlConnector.MySqlConnection(connectionString);
+            connection.Open();
+
+            using var command = new MySqlConnector.MySqlCommand(
+                $"SELECT EXISTS(SELECT 1 FROM `{database.Database}`.`{table}` LIMIT 1);",
+                connection
+            );
+
+            return Convert.ToInt64(command.ExecuteScalar()) == 1;
+        }
+        catch (MySqlConnector.MySqlException ex)
+            when (ex.ErrorCode
+                    is MySqlConnector.MySqlErrorCode.UnknownDatabase
+                        or MySqlConnector.MySqlErrorCode.NoSuchTable
+            )
+        {
+            return false;
+        }
+        catch (Exception ex)
+        {
+            // if we can't tell, assume there is data rather than risk erasing it
+            Console.WriteLine();
+            Console.WriteLine(
+                $"Couldn't check {database.Database} for existing data ({ex.Message}), assuming it has data."
+            );
+            return true;
+        }
+    }
+
+    private static bool ConfirmEraseExistingData(List<string> databases, bool nonInteractiveSetup)
+    {
+        Console.WriteLine();
+        Console.WriteLine();
+        Console.WriteLine($"WARNING: these databases already contain data: {string.Join(", ", databases)}");
+        Console.WriteLine("Continuing will ERASE them.");
+        Console.WriteLine(
+            "If you upgraded or moved this server, stop now and copy your existing Config.js next to ACE.Server.dll (or into the Config volume for docker) instead."
+        );
+
+        if (nonInteractiveSetup)
+        {
+            var allowErase = Convert.ToBoolean(Environment.GetEnvironmentVariable("ACE_SQL_ALLOW_ERASE_EXISTING_DATA"));
+
+            Console.WriteLine(
+                allowErase
+                    ? "ACE_SQL_ALLOW_ERASE_EXISTING_DATA is true, erasing."
+                    : "Skipping this step. Set ACE_SQL_ALLOW_ERASE_EXISTING_DATA=true to allow erasing them."
+            );
+
+            return allowErase;
+        }
+
+        Console.Write("Type ERASE to erase them, or press enter to skip this step: ");
+
+        return Console.ReadLine()?.Trim() == "ERASE";
     }
 
     private static void ExecuteScript(MySqlConnector.MySqlCommand scriptCommand)
