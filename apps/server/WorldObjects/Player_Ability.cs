@@ -1946,23 +1946,26 @@ partial class Player
         }
     }
 
+    /// <summary>
+    /// Adrenaline builds by the time each hit takes (at 200 Quickness), so every weapon builds it at the same rate over time.
+    /// Scaled so an average weapon builds it about as fast as before.
+    /// </summary>
+    private const float AdrenalineAttackTimeScale = 11.0f / 6.0f;
+
+    private static float GetAdrenalineAttackTime(WorldObject weapon)
+    {
+        var weaponTime = weapon?.WeaponTime ?? WeaponSpeed.UnarmedWeaponTime;
+
+        return WeaponSpeed.GetSecondsPerHit(weaponTime) * AdrenalineAttackTimeScale;
+    }
+
     public void IncreaseRelentlessAdrenalineMeter(WorldObject weapon)
     {
         var powerBarTime = GetPowerAccuracyBar();
 
         if (powerBarTime <= 0.5)
         {
-            var weaponAnimTime = WeaponAnimationLength.GetWeaponAnimLength(weapon);
-
-            if (weapon is { IsTwoHanded: true } or { W_AttackType: AttackType.DoubleStrike })
-            {
-                weaponAnimTime *= 0.5f;
-            }
-
-            if (weapon is { W_AttackType: AttackType.TripleStrike })
-            {
-                weaponAnimTime *= 0.33f;
-            }
+            var weaponAnimTime = GetAdrenalineAttackTime(weapon);
 
             AdrenalineMeter += weaponAnimTime * 0.05f;
 
@@ -1979,17 +1982,7 @@ partial class Player
 
         if (powerBarTime >= 0.5)
         {
-            var weaponAnimTime = WeaponAnimationLength.GetWeaponAnimLength(weapon);
-
-            if (weapon is { IsTwoHanded: true } or { W_AttackType: AttackType.DoubleStrike })
-            {
-                weaponAnimTime *= 0.5f;
-            }
-
-            if (weapon is { W_AttackType: AttackType.TripleStrike})
-            {
-                weaponAnimTime *= 0.33f;
-            }
+            var weaponAnimTime = GetAdrenalineAttackTime(weapon);
 
             var powerBarMod = powerBarTime * 20 * powerBarTime;
             var weaponTimeMod = weaponAnimTime / 100;

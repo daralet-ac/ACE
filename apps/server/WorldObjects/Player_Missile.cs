@@ -247,7 +247,11 @@ partial class Player
             return;
         }
 
-        var launchTime = EnqueueMotionPersist(actionChain, aimLevel);
+        // launch and reload animations are sped up or slowed down
+        // so the full attack takes the weapon's time per hit
+        var animSpeed = GetMissileAnimSpeed(motionStance, aimLevel, target as Creature);
+
+        var launchTime = EnqueueMotionPersist(actionChain, aimLevel, animSpeed);
 
         // launch projectile
         actionChain.AddAction(
@@ -374,7 +378,6 @@ partial class Player
         }
 
         // reload animation
-        var animSpeed = GetAnimSpeed(target as Creature);
         var reloadTime = EnqueueMotionPersist(actionChain, motionStance, MotionCommand.Reload, animSpeed);
 
         // reset for next projectile
@@ -382,7 +385,9 @@ partial class Player
         var linkTime = MotionTable.GetAnimationLength(MotionTableId, motionStance, MotionCommand.Reload, MotionCommand.Ready);
         //var cycleTime = MotionTable.GetCycleLength(MotionTableId, CurrentMotionState.Stance, MotionCommand.Ready);
 
-        LastAttackAnimationLength = (linkTime+launchTime+reloadTime) / animSpeed;
+        // stamina cost and accuracy damage bonus for missile attacks were tuned against about half of the attack time
+        const float missileAttackLengthScale = 0.55f;
+        LastAttackAnimationLength = (linkTime + launchTime + reloadTime) * missileAttackLengthScale;
         //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime} (BaseReload: {reloadTime*animSpeed}), Link: {linkTime}, TOTAL: {LastAttackAnimationLength}");
 
         var staminaCost = GetAttackStamina((float)LastAttackAnimationLength, weapon);

@@ -99,7 +99,8 @@ partial class Creature
             || CurrentMotionState.Stance == MotionStance.TwoHandedStaffCombat
         )
         {
-            return 2;
+            // two-handed swings play two strikes but deal one hit
+            return 1;
         }
 
         if ((attackType & AttackType.MultiStrike) == 0)

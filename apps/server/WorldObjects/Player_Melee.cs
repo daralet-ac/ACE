@@ -516,9 +516,21 @@ partial class Player
     /// </summary>
     public float DoSwingMotion(WorldObject target, out List<(float time, AttackHook attackHook)> attackFrames)
     {
+        var swingAnimation = GetSwingAnimation();
+        var baseAnimLength = MotionTable.GetAnimationLength(MotionTableId, CurrentMotionState.Stance, swingAnimation);
+
+        attackFrames = MotionTable.GetAttackFrames(MotionTableId, CurrentMotionState.Stance, swingAnimation);
+        //Console.WriteLine($"Attack frames: {string.Join(",", attackFrames)}");
+
+        // two-handed swings play two strikes but deal one hit
+        if (TwoHandedCombat)
+        {
+            attackFrames = WeaponSpeed.GetTwoHandedHitFrames(attackFrames);
+        }
+
         // get the proper animation speed for this attack,
-        // based on weapon speed and player quickness
-        var baseSpeed = GetAnimSpeed(target as Creature);
+        // so the swing takes the weapon's time per hit for each hit it deals
+        var baseSpeed = GetAttackAnimSpeed(baseAnimLength, attackFrames.Count, target as Creature);
 
         var isDualWieldSpec = GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
         var animSpeedMod = (IsDualWieldAttack && isDualWieldSpec) ? 1.25f : 1.0f; // Dual Wield Spec Bonus: +25% faster dual-wield swing animation
@@ -530,19 +542,10 @@ partial class Player
 
         var animSpeed = baseSpeed * animSpeedMod;
 
-        var swingAnimation = GetSwingAnimation();
-        var animLength = MotionTable.GetAnimationLength(
-            MotionTableId,
-            CurrentMotionState.Stance,
-            swingAnimation,
-            animSpeed
-        );
+        var animLength = baseAnimLength / animSpeed;
         //Console.WriteLine($"AnimSpeed: {animSpeed}, AnimLength: {animLength}");
 
         LastAttackAnimationLength = animLength;
-
-        attackFrames = MotionTable.GetAttackFrames(MotionTableId, CurrentMotionState.Stance, swingAnimation);
-        //Console.WriteLine($"Attack frames: {string.Join(",", attackFrames)}");
 
         // broadcast player swing animation to clients
         var motion = new ACE.Server.Entity.Motion(this, swingAnimation, animSpeed);

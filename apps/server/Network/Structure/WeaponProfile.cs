@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 
@@ -88,7 +89,8 @@ public class WeaponProfile
     }
 
     /// <summary>
-    /// Returns the weapon speed, with enchantments factored in
+    /// Returns the weapon speed, with enchantments factored in.
+    /// Enchantment_WeaponTime is the percentage the enchantments change the WeaponTime by.
     /// </summary>
     public uint GetWeaponSpeed(WorldObject weapon)
     {
@@ -96,7 +98,8 @@ public class WeaponProfile
         var speedMod = weapon.EnchantmentManager.GetWeaponSpeedMod();
         var auraSpeedMod = weapon.Wielder != null ? weapon.Wielder.EnchantmentManager.GetWeaponSpeedMod() : 0;
         Enchantment_WeaponTime = weapon.IsEnchantable ? speedMod + auraSpeedMod : speedMod;
-        return (uint)Math.Max(0, baseSpeed + Enchantment_WeaponTime);
+        var weaponTime = WeaponSpeed.ApplySpeedPercent(baseSpeed, Enchantment_WeaponTime);
+        return (uint)Math.Clamp(weaponTime, 0, WeaponSpeed.MaxDisplayWeaponTime);
     }
 
     /// <summary>

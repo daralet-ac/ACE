@@ -334,21 +334,20 @@ partial class WorldObject
         return DefaultModifier;
     }
 
-    private const uint defaultSpeed = 40; // TODO: find default speed
-
     /// <summary>
-    /// Returns the weapon speed, with enchantments factored in
+    /// Returns the weapon speed (WeaponTime), with enchantments factored in.
+    /// WeaponTime enchantments are percentages of the weapon's WeaponTime.
     /// </summary>
     public static uint GetWeaponSpeed(Creature wielder)
     {
         var weapon = GetWeapon(wielder as Player);
 
-        var baseSpeed = weapon?.WeaponTime ?? (int)defaultSpeed;
+        var baseSpeed = weapon?.WeaponTime ?? WeaponSpeed.UnarmedWeaponTime;
 
         var speedMod = weapon != null ? weapon.EnchantmentManager.GetWeaponSpeedMod() : 0;
         var auraSpeedMod = wielder != null ? wielder.EnchantmentManager.GetWeaponSpeedMod() : 0;
 
-        return (uint)Math.Max(0, baseSpeed + speedMod + auraSpeedMod);
+        return (uint)WeaponSpeed.ApplySpeedPercent(baseSpeed, speedMod + auraSpeedMod);
     }
 
     /// <summary>

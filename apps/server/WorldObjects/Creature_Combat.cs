@@ -740,28 +740,52 @@ partial class Creature
         return effectiveDefense;
     }
 
+    // monsters attack as if wielding a weapon with the old default WeaponTime of 40
+    private const float MonsterAttackWeaponTime = 40;
+
     /// <summary>
-    /// Returns the animation speed for an attack,
-    /// based on the current quickness and weapon speed
+    /// Returns the animation speed for a monster attack, based on the current quickness.
+    /// Monster attacks keep their own animation lengths, and don't use their weapon's WeaponTime.
     /// </summary>
     protected float GetAnimSpeed(Creature target = null)
     {
         var quickness = Quickness.Current * LevelScaling.GetPlayerAttributeScalar(this, target);
-        var weaponSpeed = (float)GetWeaponSpeed(this);
 
         const float minAttackSpeed = 1.0f;
         const float maxAttackSpeed = 2.5f;
         var quicknessMod = (quickness / 300.0) / 2.0;
-        var weaponSpeedMod = (1 - (weaponSpeed / 100.0));
+        var weaponSpeedMod = (1 - (MonsterAttackWeaponTime / 100.0));
 
         var animSpeed = (float)Math.Clamp(1.0 + quicknessMod + weaponSpeedMod, minAttackSpeed, maxAttackSpeed);
 
-        // if (Name is "")
-        // {
-        //     Console.WriteLine($"GetAnimSpeed() - {animSpeed}\n" +
-        //                       $" -quicknessMod: {quicknessMod} quickness: {quickness}\n" +
-        //                       $" -weaponSpeedMod: {weaponSpeedMod} weaponSpeed: {weaponSpeed}");
-        // }
+        return animSpeed;
+    }
+
+    /// <summary>
+    /// Returns the seconds each hit takes for this player's current weapon,
+    /// based on its WeaponTime (with enchantments) and the player's quickness
+    /// </summary>
+    public float GetSecondsPerHit(Creature target = null)
+    {
+        var quickness = Quickness.Current * LevelScaling.GetPlayerAttributeScalar(this, target);
+
+        return WeaponSpeed.GetSecondsPerHit(GetWeaponSpeed(this), quickness);
+    }
+
+    /// <summary>
+    /// Returns the animation speed for a melee swing, so that a player's swing takes
+    /// hitsPerSwing x the weapon's time per hit
+    /// </summary>
+    protected float GetAttackAnimSpeed(float baseAnimLength, int hitsPerSwing, Creature target = null)
+    {
+        if (this is not Player)
+        {
+            return GetAnimSpeed(target);
+        }
+
+        var swingTime = GetSecondsPerHit(target) * Math.Max(1, hitsPerSwing);
+
+        var animSpeed = WeaponSpeed.GetAnimSpeed(baseAnimLength, swingTime);
 
         if (this as Player is { SteadyStrikeIsActive: true })
         {
@@ -769,6 +793,21 @@ partial class Creature
         }
 
         return animSpeed;
+    }
+
+    /// <summary>
+    /// Returns the animation speed for the launch and reload animations of a player's missile attack,
+    /// so that the full attack (launch, reload, and return to ready) takes the weapon's time per hit
+    /// </summary>
+    protected float GetMissileAnimSpeed(MotionStance stance, MotionCommand aimLevel, Creature target = null)
+    {
+        var launchLength = MotionTable.GetAnimationLength(MotionTableId, stance, aimLevel);
+        var reloadLength = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload);
+        var linkLength = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready);
+
+        var attackTime = GetSecondsPerHit(target);
+
+        return WeaponSpeed.GetAnimSpeed(launchLength + reloadLength, attackTime - linkLength);
     }
 
     /// <summary>
