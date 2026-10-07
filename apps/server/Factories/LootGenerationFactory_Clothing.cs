@@ -210,16 +210,7 @@ public static partial class LootGenerationFactory
 
             TryMutateArmorSkillMod(wo, profile, roll, out totalSkillModPercentile);
 
-            MutateArmorModVsType(wo, profile);
-
-            NormalizeProtectionLevels(wo);
-
-            // Snapshot after NormalizeProtectionLevels, which rescales ArmorLevel. Scouring Stone reverts
-            // ArmorLevel to BaseArmor, so a pre-normalization snapshot would drop AL below the rolled value.
-            if (wo.ArmorLevel != null)
-            {
-                wo.BaseArmor = wo.ArmorLevel;
-            }
+            MutateArmorProtections(wo, profile);
         }
 
         // workmanship
@@ -553,6 +544,23 @@ public static partial class LootGenerationFactory
         // item value
         //if (wo.HasMutateFilter(MutateFilter.Value))
         MutateValue(wo, profile.Tier, roll);
+    }
+
+    /// <summary>
+    /// Rolls the protections, folds their average into the armor level, and keeps that armor level as BaseArmor
+    /// </summary>
+    internal static void MutateArmorProtections(WorldObject wo, TreasureDeath profile)
+    {
+        MutateArmorModVsType(wo, profile);
+
+        NormalizeProtectionLevels(wo);
+
+        // Snapshot after NormalizeProtectionLevels, which rescales ArmorLevel. Scouring Stone reverts
+        // ArmorLevel to BaseArmor, so a pre-normalization snapshot would drop AL below the rolled value.
+        if (wo.ArmorLevel != null)
+        {
+            wo.BaseArmor = wo.ArmorLevel;
+        }
     }
 
     private static void MutateArmorModVsType(WorldObject wo, TreasureDeath profile)

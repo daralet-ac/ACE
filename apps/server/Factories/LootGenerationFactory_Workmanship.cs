@@ -72,8 +72,7 @@ public static partial class LootGenerationFactory
         var targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
         var weaponVariance = wo.DamageVariance.Value;
         var averageBaseMaxDamage = targetAverageHitDamage / ((((1 - weaponVariance) + 1) / 2 * 0.9) + 0.2);
-        const double damageRangePerTier = 0.25;
-        var maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + (1 - damageRangePerTier));
+        var maximumBaseMaxDamage = GetTierDamageRange(averageBaseMaxDamage).Maximum;
 
         if (maximumBaseMaxDamage <= 0)
         {
@@ -103,8 +102,7 @@ public static partial class LootGenerationFactory
         var ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
         var targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
         var averageBaseDamageMod = targetAverageHitDamage / ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2));
-        const double damageRangePerTier = 0.25;
-        var maximumBaseMaxDamageMod = (averageBaseDamageMod * 2) / (1.0 + (1 - damageRangePerTier));
+        var maximumBaseMaxDamageMod = GetTierDamageRange(averageBaseDamageMod).Maximum;
 
         if (maximumBaseMaxDamageMod <= 1)
         {

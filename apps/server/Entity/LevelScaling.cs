@@ -49,8 +49,8 @@ public static class LevelScaling
     // Monster attack/defense are set a flat amount above these (Creature_ArchetypeSystem's EnemySkillGap, built from its
     // avgPlayerPhysicalMagicDefense), so a Shrouded player scaled to a monster's level gets the same evade odds a native
     // does. Keep these matching avgPlayerPhysicalMagicDefense.
-    private static readonly int[] AvgPlayerAttackSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
-    private static readonly int[] AvgPlayerDefenseSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
+    internal static readonly int[] AvgPlayerAttackSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
+    internal static readonly int[] AvgPlayerDefenseSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
     private static readonly float[] AvgPlayerResistancePerTier = [1.0f, 1.0f, 0.9f, 0.9f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f];
     private static readonly float[] AvgPlayerBoostPerTier = [5.0f, 7.5f, 12.5f, 17.5f, 22.5f, 27.5f, 32.5f, 37.5f, 42.5f];
 
@@ -298,7 +298,7 @@ public static class LevelScaling
         var statAtPlayerLevel = GetPlayerArmorWardAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerArmorWardAtLevel(monster.Level.Value);
 
-        var scalarMod = SkillFormula.CalcArmorMod(statAtMonsterLevel) / SkillFormula.CalcArmorMod(statAtPlayerLevel);
+        var scalarMod = GetArmorWardModRatio(player.Level.Value, monster.Level.Value);
 
         if (PropertyManager.GetBool("debug_level_scaling_system").Item)
         {
@@ -412,7 +412,7 @@ public static class LevelScaling
         var statAtPlayerLevel = GetPlayerDefenseSkillAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerDefenseSkillAtLevel(monster.Level.Value);
 
-        var scaledSkill = (uint)Math.Max(0, (int)defenseSkill - (statAtPlayerLevel - statAtMonsterLevel));
+        var scaledSkill = GetScaledDefenseSkill(defenseSkill, player.Level.Value, monster.Level.Value);
 
         if (PropertyManager.GetBool("debug_level_scaling_system").Item)
         {
@@ -499,8 +499,30 @@ public static class LevelScaling
         return (float)statAtMonsterLevel / statAtPlayerLevel;
     }
 
-    // --- Private Get At-Level Helpers ---
-    private static int GetPlayerHealthAtLevel(int level)
+    /// <summary>
+    /// Scales a player's armor/ward mod from their level to the monster's. Monster damage is authored against the
+    /// average armor at the monster's level, so armor as far above or below the average at the player's level is
+    /// worth the same against the monster.
+    /// </summary>
+    internal static float GetArmorWardModRatio(int playerLevel, int monsterLevel)
+    {
+        return SkillFormula.CalcArmorMod(GetPlayerArmorWardAtLevel(monsterLevel))
+            / SkillFormula.CalcArmorMod(GetPlayerArmorWardAtLevel(playerLevel));
+    }
+
+    /// <summary>
+    /// Lowers a player's defense by the difference in average defense between their level and the monster's,
+    /// so they keep their whole advantage over the average
+    /// </summary>
+    internal static uint GetScaledDefenseSkill(uint defenseSkill, int playerLevel, int monsterLevel)
+    {
+        var difference = GetPlayerDefenseSkillAtLevel(playerLevel) - GetPlayerDefenseSkillAtLevel(monsterLevel);
+
+        return (uint)Math.Max(0, (int)defenseSkill - difference);
+    }
+
+    // --- Get At-Level Helpers ---
+    internal static int GetPlayerHealthAtLevel(int level)
     {
         GetRangeAndStatWeight(level, out var range, out var statweight, 0.5f);
 
@@ -511,7 +533,7 @@ public static class LevelScaling
         return (int)stat;
     }
 
-    private static int GetPlayerArmorWardAtLevel(int level)
+    internal static int GetPlayerArmorWardAtLevel(int level)
     {
         GetRangeAndStatWeight(level, out var range, out var statweight, 0.0f);
 
@@ -522,7 +544,7 @@ public static class LevelScaling
         return (int)stat;
     }
 
-    private static int GetPlayerAttributeAtLevel(int level)
+    internal static int GetPlayerAttributeAtLevel(int level)
     {
         GetRangeAndStatWeight(level, out var range, out var statweight, 1.0f);
 
@@ -533,7 +555,7 @@ public static class LevelScaling
         return (int)stat;
     }
 
-    private static int GetPlayerAttackSkillAtLevel(int level)
+    internal static int GetPlayerAttackSkillAtLevel(int level)
     {
         GetRangeAndStatWeight(level, out var range, out var statweight, 0.5f);
 
@@ -544,7 +566,7 @@ public static class LevelScaling
         return (int)stat;
     }
 
-    private static int GetPlayerDefenseSkillAtLevel(int level)
+    internal static int GetPlayerDefenseSkillAtLevel(int level)
     {
         GetRangeAndStatWeight(level, out var range, out var statweight, 0.5f);
 
@@ -555,7 +577,7 @@ public static class LevelScaling
         return (int)stat;
     }
 
-    private static float GetPlayerResistanceAtLevel(int level)
+    internal static float GetPlayerResistanceAtLevel(int level)
     {
         GetRangeAndStatWeight(level, out var range, out var statweight, 0.0f);
 
@@ -566,7 +588,7 @@ public static class LevelScaling
         return stat;
     }
 
-    private static float GetPlayerBoostAtLevel(int level)
+    internal static float GetPlayerBoostAtLevel(int level)
     {
         GetRangeAndStatWeight(level, out var range, out var statweight, 0.0f);
 
@@ -577,7 +599,7 @@ public static class LevelScaling
         return stat;
     }
 
-    private static int GetMonsterHealthAtLevel(int level)
+    internal static int GetMonsterHealthAtLevel(int level)
     {
         GetRangeAndStatWeight(level, out var range, out var statweight, 0.5f);
 
@@ -610,7 +632,7 @@ public static class LevelScaling
         return (int)stat;
     }
 
-    private static int GetMonsterArmorWardAtLevel(int level)
+    internal static int GetMonsterArmorWardAtLevel(int level)
     {
         GetRangeAndStatWeight(level, out var range, out var statweight, 0.0f);
 

@@ -2400,6 +2400,32 @@ public static partial class LootGenerationFactory
         return roll;
     }
 
+    /// <summary>
+    /// How far below the top of its range a loot weapon's damage can roll
+    /// </summary>
+    private const double DamageRangePerTier = 0.25;
+
+    /// <summary>
+    /// The range a loot weapon's max damage (or a missile weapon's damage mod) rolls in: from 25% below the top
+    /// up to the top, with the given average in the middle
+    /// </summary>
+    internal static (double Minimum, double Maximum) GetTierDamageRange(double average)
+    {
+        var maximum = (average * 2) / (1.0 + (1 - DamageRangePerTier));
+
+        return (maximum * (1 - DamageRangePerTier), maximum);
+    }
+
+    /// <summary>
+    /// A roll of 0 gives the bottom of the range around the given average, and 1 the top
+    /// </summary>
+    internal static double RollTierDamage(double average, float roll)
+    {
+        var (minimum, maximum) = GetTierDamageRange(average);
+
+        return minimum + (maximum - minimum) * roll;
+    }
+
     private static int GetBaseWardOfTier(int tier)
     {
         // Values reduced ~50% from prior jewelry ward tuning pass
