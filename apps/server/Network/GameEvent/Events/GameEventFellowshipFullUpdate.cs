@@ -15,6 +15,11 @@ public class GameEventFellowshipFullUpdate : GameEventMessage
     {
         var fellowship = session.Player.Fellowship;
 
+        if (fellowship == null)
+        {
+            return;
+        }
+
         var fellows = fellowship.GetFellowshipMembers();
 
         PackableHashTable.WriteHeader(Writer, fellows.Count, FellowComparer.NumBuckets);

@@ -15,8 +15,14 @@ public enum PropertyInt64 : ushort
 
     [SendOnLogin]
     AvailableExperience = 2,
+
+    [AssessmentProperty]
     AugmentationCost = 3,
+
+    [AssessmentProperty]
     ItemTotalXp = 4,
+
+    [AssessmentProperty]
     ItemBaseXp = 5,
 
     [SendOnLogin]
@@ -27,16 +33,9 @@ public enum PropertyInt64 : ushort
     InteractionReqs = 8,
 
     /* custom */
-    [ServerOnly]
     AllegianceXPCached = 9000,
-
-    [ServerOnly]
     AllegianceXPGenerated = 9001,
-
-    [ServerOnly]
     AllegianceXPReceived = 9002,
-
-    [ServerOnly]
     VerifyXp = 9003
 }
 

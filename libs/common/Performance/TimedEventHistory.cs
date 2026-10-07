@@ -24,7 +24,7 @@ public class TimedEventHistory
     /// <summary>
     /// Average event duration in seconds
     /// </summary>
-    public double AverageEventDuration => TotalSeconds / TotalEvents;
+    public double AverageEventDuration => TotalEvents == 0 ? 0 : (TotalSeconds / TotalEvents);
 
     public void RegisterEvent(double totalSeconds)
     {
@@ -38,7 +38,7 @@ public class TimedEventHistory
             LongestEvent = LastEvent;
         }
 
-        if (LastEvent < ShortestEvent)
+        if (TotalEvents == 1 || LastEvent < ShortestEvent)
         {
             ShortestEvent = LastEvent;
         }

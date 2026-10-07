@@ -63,7 +63,7 @@ partial class WorldObject
             return;
         }
 
-        if (spell.Flags.HasFlag(SpellFlags.FellowshipSpell))
+        if (spell.IsFellowshipSpell)
         {
             if (target is not Player targetPlayer || targetPlayer.Fellowship == null)
             {
@@ -344,13 +344,13 @@ partial class WorldObject
         partialResist = pResist;
         _partialEvasion = pResist;
 
+        if (targetCreature.Invincible)
+        {
+            resisted = true;
+        }
+
         if (targetPlayer != null)
         {
-            if (targetPlayer.Invincible)
-            {
-                resisted = true;
-            }
-
             if (targetPlayer.UnderLifestoneProtection)
             {
                 targetPlayer.HandleLifestoneProtection();

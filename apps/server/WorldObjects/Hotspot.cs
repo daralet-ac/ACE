@@ -375,7 +375,7 @@ public class Hotspot : WorldObject
         {
             default:
 
-                if (creature.Invincible)
+                if (creature.Invincible || creature.IsDead)
                 {
                     return;
                 }
@@ -394,7 +394,7 @@ public class Hotspot : WorldObject
                     iAmount = (int)creature.TakeDamage(this, DamageType, amount);
                 }
 
-                if (creature.IsDead && Creatures.Contains(creature.Guid))
+                if (creature.IsDead)
                 {
                     Creatures.Remove(creature.Guid);
                 }
@@ -410,6 +410,12 @@ public class Hotspot : WorldObject
                 break;
 
             case DamageType.Health:
+
+                if (creature.Invincible || creature.IsDead)
+                {
+                    return;
+                }
+
                 iAmount = creature.UpdateVitalDelta(creature.Health, -iAmount);
 
                 if (iAmount > 0)
@@ -419,6 +425,14 @@ public class Hotspot : WorldObject
                 else
                 {
                     creature.DamageHistory.Add(this, DamageType.Health, (uint)-iAmount);
+                }
+
+                if (creature.IsDead)
+                {
+                    creature.OnDeath(creature.DamageHistory.LastDamager, DamageType.Health, false);
+                    creature.Die();
+
+                    Creatures.Remove(creature.Guid);
                 }
 
                 break;

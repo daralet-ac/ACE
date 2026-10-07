@@ -56,6 +56,7 @@ public class Session
     public bool DatWarnCell;
     public bool DatWarnPortal;
     public bool DatWarnLanguage;
+    public bool DatWarnHighRes;
 
     /// <summary>
     /// This boolean is set to true if GameMessageDDDBeginDDD is sent to the client. Used to determine when response is needed for DDD_EndDDD

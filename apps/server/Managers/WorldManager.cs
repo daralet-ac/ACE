@@ -347,7 +347,7 @@ public static class WorldManager
 
         // These warnings are set by DDD_InterrogationResponse
         if (
-            (session.DatWarnCell || session.DatWarnLanguage || session.DatWarnPortal)
+            (session.DatWarnCell || session.DatWarnLanguage || session.DatWarnPortal || session.DatWarnHighRes)
             && PropertyManager.GetBool("show_dat_warning").Item
         )
         {

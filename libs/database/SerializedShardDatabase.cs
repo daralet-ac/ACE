@@ -43,7 +43,7 @@ public class SerializedShardDatabase
 
     private void DoWork()
     {
-        while (!_queue.IsAddingCompleted)
+        while (!_queue.IsCompleted)
         {
             try
             {

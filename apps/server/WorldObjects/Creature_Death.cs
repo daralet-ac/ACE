@@ -485,7 +485,7 @@ partial class Creature
                 TryHandleKillTask(playerDamager, killQuest, killTaskCredits, cap);
             }
             // check option that requires killer to have killtask to pass to fellows
-            else if (!PropertyManager.GetBool("fellow_kt_killer").Item)
+            else if (PropertyManager.GetBool("fellow_kt_killer").Item)
             {
                 continue;
             }

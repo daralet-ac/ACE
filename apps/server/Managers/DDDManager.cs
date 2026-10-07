@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ACE.Common;
@@ -30,6 +31,11 @@ public static class DDDManager
     public static Dictionary<DatDatabaseType, ConcurrentDictionary<uint, byte[]>> CompressedDatFilesCache;
 
     /// <summary>
+    /// The int representation of a byte array from the string, HiFi, which represents the DatFileType of the HighRes DAT file
+    /// </summary>
+    public static readonly int HiFi_String_As_Int = BitConverter.ToInt32(Encoding.UTF8.GetBytes("HiFi"), 0);
+
+    /// <summary>
     /// The rate at which DDDManager.Tick() executes
     /// </summary>
     //private static readonly RateLimiter dddDataQueueRateLimiter = new RateLimiter(1000, TimeSpan.FromMinutes(1));
@@ -50,6 +56,11 @@ public static class DDDManager
         InitIterations(DatDatabaseType.Portal, DatManager.PortalDat);
         InitIterations(DatDatabaseType.Cell, DatManager.CellDat);
         InitIterations(DatDatabaseType.Language, DatManager.LanguageDat);
+
+        if (DatManager.HighResDat != null)
+        {
+            InitIterations(DatDatabaseType.HighRes, DatManager.HighResDat);
+        }
 
         _log.Debug("DDDManager Initialized.");
     }
@@ -177,6 +188,17 @@ public static class DDDManager
 
                 datDatabase = DatManager.LanguageDat;
                 break;
+
+            case DatDatabaseType.HighRes:
+
+                datDatabase = DatManager.HighResDat;
+                break;
+        }
+
+        if (datDatabase == null)
+        {
+            datFile = null;
+            return null;
         }
 
         var datFileFound = datDatabase.AllFiles.TryGetValue(datFileId, out datFile);
@@ -218,6 +240,7 @@ public static class DDDManager
         CMostlyConsecutiveIntSet clientPortalDatIntSet,
         CMostlyConsecutiveIntSet clientCellDatIntSet,
         CMostlyConsecutiveIntSet clientLanguageDatIntSet,
+        CMostlyConsecutiveIntSet clientHighResDatIntSet,
         out uint totalFileSize,
         out Dictionary<DatDatabaseType, Dictionary<uint, List<uint>>> iterations
     )
@@ -247,6 +270,13 @@ public static class DDDManager
             iterations,
             ref totalMissingIterations
         );
+        GetMissingIterations(
+            DatDatabaseType.HighRes,
+            clientHighResDatIntSet,
+            ref totalFileSize,
+            iterations,
+            ref totalMissingIterations
+        );
 
         return totalMissingIterations;
     }
@@ -260,6 +290,15 @@ public static class DDDManager
     )
     {
         if (!Iterations.ContainsKey(datDatabaseType))
+        {
+            return;
+        }
+
+        // if either CELL or HIGHRES dat files report 0 for iterations, that's okay. CELL will download on demand and HIGHRES will not be used.
+        if (
+            (datDatabaseType == DatDatabaseType.Cell || datDatabaseType == DatDatabaseType.HighRes)
+            && clientDatIterations.Iterations == 0
+        )
         {
             return;
         }
@@ -345,6 +384,9 @@ public static class DDDManager
                 break;
             case DatDatabaseType.Language:
                 dbFile = "client_Local_English.dat";
+                break;
+            case DatDatabaseType.HighRes:
+                dbFile = "client_highres.dat";
                 break;
         }
         var debugStr = dbFile + Environment.NewLine + "Completed Iterations:" + Environment.NewLine;

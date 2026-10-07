@@ -1512,7 +1512,25 @@ partial class WorldObject
     /// </summary>
     public uint WeenieClassId => Biota.WeenieClassId;
 
-    public string WeenieClassName => DatabaseManager.World.GetCachedWeenie(WeenieClassId).ClassName;
+    /// <summary>
+    /// Returns a placeholder if the weenie no longer exists in the world database
+    /// (instances of a deleted weenie can still exist in the shard database)
+    /// </summary>
+    public string WeenieClassName
+    {
+        get
+        {
+            var weenie = DatabaseManager.World.GetCachedWeenie(WeenieClassId);
+
+            if (weenie == null)
+            {
+                _log.Warning("WorldObject.WeenieClassName - no cached weenie found for wcid {WeenieClassId}", WeenieClassId);
+                return "WeenieClassName_NOT_FOUND";
+            }
+
+            return weenie.ClassName;
+        }
+    }
 
     public WeenieType WeenieType => (WeenieType)Biota.WeenieType;
 
@@ -3371,6 +3389,7 @@ partial class WorldObject
             }
         }
     }
+
     /// <summary>
     /// If this property is not defined, defaults to false
     /// </summary>
@@ -4657,6 +4676,22 @@ partial class WorldObject
             else
             {
                 SetProperty(PropertyDataId.ItemSkillLimit, (uint)value);
+            }
+        }
+    }
+
+    public Skill? ItemSpecializedOnly
+    {
+        get => (Skill?)GetProperty(PropertyDataId.ItemSpecializedOnly);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyDataId.ItemSpecializedOnly);
+            }
+            else
+            {
+                SetProperty(PropertyDataId.ItemSpecializedOnly, (uint)value);
             }
         }
     }

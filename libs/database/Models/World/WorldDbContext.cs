@@ -132,7 +132,7 @@ public partial class WorldDbContext : DbContext
 
             optionsBuilder.UseMySql(
                 connectionString,
-                ServerVersion.AutoDetect(connectionString),
+                DatabaseManager.CachedServerVersionAutoDetect(connectionString),
                 builder =>
                 {
                     builder.EnableRetryOnFailure(10);

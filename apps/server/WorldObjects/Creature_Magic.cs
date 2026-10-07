@@ -64,7 +64,7 @@ partial class Creature
 
             baseCost += spell.ManaMod * (uint)numTargetItems;
         }
-        else if ((spell.Flags & SpellFlags.FellowshipSpell) != 0)
+        else if (spell.IsFellowshipSpell)
         {
             var numFellows = 0;
             if (this is Player { Fellowship: not null } player)

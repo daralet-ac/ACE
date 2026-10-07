@@ -215,7 +215,7 @@ public class EnchantmentManager
 
         if (refreshSpell == null)
         {
-            var newEntry = BuildEntry(spell, caster, weapon, equip);
+            var newEntry = BuildEntry(spell, caster, weapon, equip, isWeaponSpell);
             newEntry.LayerId = result.NextLayerId;
 
             // for Stackable Spells cast from different GUIDs, make sure the newEntry receives the statModValue of the other modified entries
@@ -1169,7 +1169,10 @@ public class EnchantmentManager
     /// </summary>
     public float GetMultiplicativeMod(PropertyFloat statModKey)
     {
-        var enchantments = GetEnchantments_TopLayer(EnchantmentTypeFlags.Multiplicative, (uint)statModKey);
+        var typeFlags =
+            EnchantmentTypeFlags.Float | EnchantmentTypeFlags.SingleStat | EnchantmentTypeFlags.Multiplicative;
+
+        var enchantments = GetEnchantments_TopLayer(typeFlags, (uint)statModKey);
 
         // multiplicative
         var modifier = 1.0f;
@@ -1731,14 +1734,31 @@ public class EnchantmentManager
         {
             creature.DamageHistory.OnHeal((uint)healAmount);
         }
+        // account for negative HealOverTime spells, such as 5172 - Spectral Fountain Sip
+        else if (healAmount < 0)
+        {
+            creature.DamageHistory.Add(creature, DamageType.Health, (uint)-healAmount);
+        }
 
         if (creature is Player player)
         {
-            player.SendMessage($"You receive {healAmount} points of periodic healing.", ChatMessageType.Broadcast);
+            player.SendMessage(
+                $"You receive {Math.Abs(healAmount)} points of periodic {(healAmount >= 0 ? "healing" : "harm")}.",
+                ChatMessageType.Broadcast
+            );
 
-            // play heal vfx immediately (no delay for health)
-            var vfxStrength = Math.Clamp(tickAmountTotal / 100, 0.1f, 1.0f);
-            player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.HealthUpRed, vfxStrength));
+            if (healAmount >= 0)
+            {
+                // play heal vfx immediately (no delay for health)
+                var vfxStrength = Math.Clamp(tickAmountTotal / 100, 0.1f, 1.0f);
+                player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.HealthUpRed, vfxStrength));
+            }
+        }
+
+        if (creature.IsDead)
+        {
+            creature.OnDeath(creature.DamageHistory.LastDamager, DamageType.Health, false);
+            creature.Die();
         }
     }
 
@@ -2000,8 +2020,10 @@ public class EnchantmentManager
             }
         }
 
-
-        creature.TakeDamageOverTime(tickAmountTotal, damageType);
+        if (!creature.Invincible)
+        {
+            creature.TakeDamageOverTime(tickAmountTotal, damageType);
+        }
 
         if (!creature.IsAlive)
         {

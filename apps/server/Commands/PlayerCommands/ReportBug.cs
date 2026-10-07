@@ -62,7 +62,7 @@ public class ReportBug
             description += parameters[i] + " ";
         }
 
-        description.Trim();
+        description = description.Trim();
 
         switch (category.ToLower())
         {
@@ -97,7 +97,7 @@ public class ReportBug
         var w = "";
         var g = "";
 
-        if (cg == "creature" || cg == "npc" || cg == "item" || cg == "item")
+        if (cg == "creature" || cg == "npc" || cg == "item")
         {
             var objectId = new ObjectGuid();
             if (

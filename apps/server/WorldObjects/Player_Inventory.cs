@@ -3644,7 +3644,7 @@ partial class Player
                     }
 
                     // We make sure the stack is still valid. It could have changed during our movement
-                    if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
+                    if (stackOriginalContainer != stack.ContainerId || stack.StackSize <= amount)
                     {
                         _log.Debug(
                             "Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.",
@@ -3672,7 +3672,7 @@ partial class Player
                         () =>
                         {
                             // We make sure the stack is still valid. It could have changed during our pickup animation
-                            if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
+                            if (stackOriginalContainer != stack.ContainerId || stack.StackSize <= amount)
                             {
                                 _log.Debug(
                                     "Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.",
@@ -4245,7 +4245,7 @@ partial class Player
                     }
 
                     // We make sure the stack is still valid. It could have changed during our movement
-                    if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
+                    if (stackOriginalContainer != stack.ContainerId || stack.StackSize <= amount)
                     {
                         _log.Debug(
                             "Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.",
@@ -4273,7 +4273,7 @@ partial class Player
                         () =>
                         {
                             // We make sure the stack is still valid. It could have changed during our pickup animation
-                            if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
+                            if (stackOriginalContainer != stack.ContainerId || stack.StackSize <= amount)
                             {
                                 _log.Debug(
                                     "Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.",
@@ -5284,7 +5284,7 @@ partial class Player
             );
             Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
             var msg = new GameMessageSystemChat(
-                $"{Name} tries to give you {(item.StackSize > 1 ? $"{item.StackSize} " : "")}{item.GetNameWithMaterial(item.StackSize)}.",
+                $"{Name} tries to give you {(amount > 1 ? $"{amount} " : "")}{item.GetNameWithMaterial(amount)}.",
                 ChatMessageType.Broadcast
             );
             target.Session.Network.EnqueueSend(msg);
@@ -5306,7 +5306,7 @@ partial class Player
             );
             Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
             var msg = new GameMessageSystemChat(
-                $"{Name} tries to give you {(item.StackSize > 1 ? $"{item.StackSize} " : "")}{item.GetNameWithMaterial(item.StackSize)}.",
+                $"{Name} tries to give you {(amount > 1 ? $"{amount} " : "")}{item.GetNameWithMaterial(amount)}.",
                 ChatMessageType.Broadcast
             );
             target.Session.Network.EnqueueSend(msg);

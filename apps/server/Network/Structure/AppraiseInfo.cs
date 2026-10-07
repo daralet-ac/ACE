@@ -93,20 +93,17 @@ public class AppraiseInfo
         // Help us make sure the item identify properly
         NPCLooksLikeObject = wo.GetProperty(PropertyBool.NpcLooksLikeObject) ?? false;
 
-        if (
-            PropertiesIID.ContainsKey(PropertyInstanceId.AllowedWielder)
-            && !PropertiesBool.ContainsKey(PropertyBool.AppraisalHasAllowedWielder)
-        )
+        // AllowedWielder / AllowedActivator are not sent to the client, so check the object itself
+        var allowedWielder = wo.GetProperty(PropertyInstanceId.AllowedWielder);
+        if (allowedWielder > 0 && !PropertiesBool.ContainsKey(PropertyBool.AppraisalHasAllowedWielder))
         {
-            PropertiesBool.Add(PropertyBool.AppraisalHasAllowedWielder, true);
+            PropertiesBool[PropertyBool.AppraisalHasAllowedWielder] = true;
         }
 
-        if (
-            PropertiesIID.ContainsKey(PropertyInstanceId.AllowedActivator)
-            && !PropertiesBool.ContainsKey(PropertyBool.AppraisalHasAllowedActivator)
-        )
+        var allowedActivator = wo.GetProperty(PropertyInstanceId.AllowedActivator);
+        if (allowedActivator > 0 && !PropertiesBool.ContainsKey(PropertyBool.AppraisalHasAllowedActivator))
         {
-            PropertiesBool.Add(PropertyBool.AppraisalHasAllowedActivator, true);
+            PropertiesBool[PropertyBool.AppraisalHasAllowedActivator] = true;
         }
 
         if (
@@ -119,18 +116,6 @@ public class AppraiseInfo
         )
         {
             PropertiesString.Remove(PropertyString.ScribeAccount);
-        }
-
-        if (
-            PropertiesString.ContainsKey(PropertyString.HouseOwnerAccount)
-            && !examiner.IsAdmin
-            && !examiner.IsSentinel
-            && !examiner.IsEnvoy
-            && !examiner.IsArch
-            && !examiner.IsPsr
-        )
-        {
-            PropertiesString.Remove(PropertyString.HouseOwnerAccount);
         }
 
         if (PropertiesInt.ContainsKey(PropertyInt.Lifespan))
@@ -259,7 +244,7 @@ public class AppraiseInfo
                 }
             }
             // if wo has DefaultLocked property and is unlocked, add that state to the property buckets
-            else if (PropertiesBool.ContainsKey(PropertyBool.DefaultLocked))
+            else if (wo.GetProperty(PropertyBool.DefaultLocked) ?? false)
             {
                 PropertiesBool[PropertyBool.Locked] = false;
             }
@@ -617,13 +602,13 @@ public class AppraiseInfo
 
     private void BuildProperties(WorldObject wo)
     {
-        PropertiesInt = wo.GetAllPropertyIntWhere(ClientProperties.PropertiesInt);
-        PropertiesInt64 = wo.GetAllPropertyInt64Where(ClientProperties.PropertiesInt64);
-        PropertiesBool = wo.GetAllPropertyBoolsWhere(ClientProperties.PropertiesBool);
-        PropertiesFloat = wo.GetAllPropertyFloatWhere(ClientProperties.PropertiesDouble);
-        PropertiesString = wo.GetAllPropertyStringWhere(ClientProperties.PropertiesString);
-        PropertiesDID = wo.GetAllPropertyDataIdWhere(ClientProperties.PropertiesDataId);
-        PropertiesIID = wo.GetAllPropertyInstanceIdWhere(ClientProperties.PropertiesInstanceId);
+        PropertiesInt = wo.GetAllPropertyIntWhere(AssessmentProperties.PropertiesInt);
+        PropertiesInt64 = wo.GetAllPropertyInt64Where(AssessmentProperties.PropertiesInt64);
+        PropertiesBool = wo.GetAllPropertyBoolsWhere(AssessmentProperties.PropertiesBool);
+        PropertiesFloat = wo.GetAllPropertyFloatWhere(AssessmentProperties.PropertiesDouble);
+        PropertiesString = wo.GetAllPropertyStringWhere(AssessmentProperties.PropertiesString);
+        PropertiesDID = wo.GetAllPropertyDataIdWhere(AssessmentProperties.PropertiesDataId);
+        PropertiesIID = wo.GetAllPropertyInstanceIdWhere(AssessmentProperties.PropertiesInstanceId);
 
         // SPECIALIZED PACKS: EncumbranceVal is accumulated from the raw (undiscounted) weight of contained
         // items, since that raw total is also what feeds into the owning player's RecalculateBurden(), which

@@ -102,6 +102,38 @@ public static class PlayerManager
         }
     }
 
+    private static readonly LinkedList<Player> playersPendingFinalLogoff = new LinkedList<Player>();
+
+    private static readonly object playersPendingFinalLogoffLock = new object();
+
+    /// <summary>
+    /// How long a player can remain in the logging out state before being forced off
+    /// </summary>
+    private static readonly TimeSpan playerFinalLogoutDuration = TimeSpan.FromMinutes(15);
+
+    /// <summary>
+    /// Backstop for characters that get stuck logging out (ie. logout on death edge cases)
+    /// </summary>
+    public static void AddPlayerToFinalLogoffQueue(Player player)
+    {
+        lock (playersPendingFinalLogoffLock)
+        {
+            if (!playersPendingFinalLogoff.Contains(player))
+            {
+                player.LogOffFinalizedTime = Time.GetFutureUnixTime(playerFinalLogoutDuration.TotalSeconds);
+                playersPendingFinalLogoff.AddLast(player);
+            }
+        }
+    }
+
+    public static void RemovePlayerFromFinalLogoffQueue(Player player)
+    {
+        lock (playersPendingFinalLogoffLock)
+        {
+            playersPendingFinalLogoff.Remove(player);
+        }
+    }
+
     public static void Tick()
     {
         // Database Save
@@ -126,6 +158,48 @@ public static class PlayerManager
             {
                 break;
             }
+        }
+
+        while (true)
+        {
+            Player stuckPlayer;
+
+            lock (playersPendingFinalLogoffLock)
+            {
+                if (playersPendingFinalLogoff.Count == 0)
+                {
+                    break;
+                }
+
+                stuckPlayer = playersPendingFinalLogoff.First.Value;
+
+                if (currentUnixTime < stuckPlayer.LogOffFinalizedTime)
+                {
+                    break;
+                }
+
+                playersPendingFinalLogoff.RemoveFirst();
+            }
+
+            // only force off the exact player object still online, never a stale one from an earlier session
+            if (GetOnlinePlayer(stuckPlayer.Guid.Full) != stuckPlayer)
+            {
+                continue;
+            }
+
+            _log.Warning(
+                "[LOGOUT] {Player} (0x{Guid}) has been logging out for {Minutes} minutes, forcing log off",
+                stuckPlayer.Name,
+                stuckPlayer.Guid,
+                playerFinalLogoutDuration.TotalMinutes
+            );
+
+            stuckPlayer.ForcedLogOffRequested = true;
+            stuckPlayer.Session?.Terminate(
+                SessionTerminationReason.AutoForcedLogOff,
+                new GameMessageBootAccount(" because the character was forced to log off by system")
+            );
+            stuckPlayer.ForceLogoff();
         }
     }
 

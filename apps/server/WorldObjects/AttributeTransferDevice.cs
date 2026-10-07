@@ -86,6 +86,14 @@ public class AttributeTransferDevice : WorldObject
             return;
         }
 
+        // lowering an attribute also lowers the vitals and skills derived from it,
+        // which could leave the player wielding items they no longer meet the requirements for
+        if (CheckWieldedItems(player))
+        {
+            player.SendWeenieError(WeenieError.CannotTransferAttributesWhileWieldingItem);
+            return;
+        }
+
         var fromAttr = player.Attributes[TransferFromAttribute];
         var toAttr = player.Attributes[TransferToAttribute];
 
@@ -153,5 +161,42 @@ public class AttributeTransferDevice : WorldObject
         player.SaveBiotaToDatabase();
 
         player.TryConsumeFromInventoryWithNetworking(this, 1);
+    }
+
+    /// <summary>
+    /// Returns TRUE if any equipped item has a wield requirement that an attribute transfer could invalidate
+    /// </summary>
+    private static bool CheckWieldedItems(Player player)
+    {
+        foreach (var equippedItem in player.EquippedObjects.Values)
+        {
+            if (
+                IsAttributeDependent(equippedItem.WieldRequirements)
+                || IsAttributeDependent(equippedItem.WieldRequirements2)
+                || IsAttributeDependent(equippedItem.WieldRequirements3)
+                || IsAttributeDependent(equippedItem.WieldRequirements4)
+            )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsAttributeDependent(WieldRequirement itemWieldReq)
+    {
+        switch (itemWieldReq)
+        {
+            case WieldRequirement.Attrib:
+            case WieldRequirement.RawAttrib:
+            case WieldRequirement.SecondaryAttrib:
+            case WieldRequirement.RawSecondaryAttrib:
+            case WieldRequirement.Skill:
+            case WieldRequirement.RawSkill:
+                return true;
+            default:
+                return false;
+        }
     }
 }

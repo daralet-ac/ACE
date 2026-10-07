@@ -6,60 +6,42 @@ namespace ACE.Entity.Enum.Properties;
 
 public enum PropertyInt : ushort
 {
-    // properties marked as ServerOnly are properties we never saw in PCAPs, from here:
-    // http://ac.yotesfan.com/ace_object/not_used_enums.php
-    // source: @OptimShi
+    // No properties are sent to the client unless they feature an attribute.
+    // SendOnLogin gets sent to players in the PlayerDescription event
+    // AssessmentProperty gets sent in successful appraisal
     // description attributes are used by the weenie editor for a cleaner display name
 
     Undef = 0,
-
-    [ServerOnly]
     ItemType = 1,
-    CreatureType = 2,
 
-    [ServerOnly]
+    [AssessmentProperty]
+    CreatureType = 2,
     PaletteTemplate = 3,
     ClothingPriority = 4,
 
+    [AssessmentProperty]
     [SendOnLogin]
     EncumbranceVal = 5, // ENCUMB_VAL_INT,
-
-    [SendOnLogin]
     ItemsCapacity = 6,
 
     [SendOnLogin]
     ContainersCapacity = 7,
-
-    [ServerOnly]
     Mass = 8,
-
-    [ServerOnly]
     ValidLocations = 9, // LOCATIONS_INT
 
-    [ServerOnly]
     CurrentWieldedLocation = 10,
-
-    [ServerOnly]
     MaxStackSize = 11,
-
-    [ServerOnly]
     StackSize = 12,
-
-    [ServerOnly]
     StackUnitEncumbrance = 13,
-
-    [ServerOnly]
     StackUnitMass = 14,
-
-    [ServerOnly]
     StackUnitValue = 15,
-
-    [ServerOnly]
     ItemUseable = 16,
-    RareId = 17,
 
-    [ServerOnly]
+    [AssessmentProperty]
+    RareId = 17,
     UiEffects = 18,
+
+    [AssessmentProperty]
     Value = 19,
 
     [Ephemeral]
@@ -72,22 +54,36 @@ public enum PropertyInt : ushort
     [SendOnLogin]
     AvailableSkillCredits = 24,
 
+    [AssessmentProperty]
     [SendOnLogin]
     Level = 25,
+
+    [AssessmentProperty]
     AccountRequirements = 26,
     ArmorType = 27,
+
+    [AssessmentProperty]
     ArmorLevel = 28,
     AllegianceCpPool = 29,
 
+    [AssessmentProperty]
     [SendOnLogin]
     AllegianceRank = 30,
     ChannelsAllowed = 31,
     ChannelsActive = 32,
+
+    [AssessmentProperty]
     Bonded = 33,
     MonarchsRank = 34,
+
+    [AssessmentProperty]
     AllegianceFollowers = 35,
+
+    [AssessmentProperty]
     ResistMagic = 36,
     ResistItemAppraisal = 37,
+
+    [AssessmentProperty]
     ResistLockpick = 38,
     DeprecatedResistRepair = 39,
 
@@ -96,22 +92,22 @@ public enum PropertyInt : ushort
     CurrentAttackHeight = 41,
     CombatCollisions = 42,
 
+    [AssessmentProperty]
     [SendOnLogin]
     NumDeaths = 43,
     Damage = 44,
-    DamageType = 45,
 
-    [ServerOnly]
+    [AssessmentProperty]
+    DamageType = 45,
     DefaultCombatStyle = 46,
 
+    [AssessmentProperty]
     [SendOnLogin]
     AttackType = 47,
     WeaponSkill = 48,
     WeaponTime = 49,
     AmmoType = 50,
     CombatUse = 51,
-
-    [ServerOnly]
     ParentLocation = 52,
 
     /// <summary>
@@ -119,7 +115,6 @@ public enum PropertyInt : ushort
     /// TODO: PlacementPosition is used (very sparingly) in cache.bin, so it has (or had) a meaning at one point before we hijacked it
     /// TODO: and used it for our own inventory order
     /// </summary>
-    [ServerOnly]
     PlacementPosition = 53,
     WeaponEncumbrance = 54,
     WeaponMass = 55,
@@ -132,8 +127,6 @@ public enum PropertyInt : ushort
     DefendersSkill = 62,
     AttackersSkillValue = 63,
     AttackersClass = 64,
-
-    [ServerOnly]
     Placement = 65,
     CheckpointStatus = 66,
     Tolerance = 67,
@@ -159,23 +152,32 @@ public enum PropertyInt : ushort
     ActivationResponse = 83,
     OriginalValue = 84,
     NumMoveFailures = 85,
+
+    [AssessmentProperty]
     MinLevel = 86,
+
+    [AssessmentProperty]
     MaxLevel = 87,
     LockpickMod = 88,
+
+    [AssessmentProperty]
     BoosterEnum = 89,
+
+    [AssessmentProperty]
     BoostValue = 90,
+
+    [AssessmentProperty]
     MaxStructure = 91,
+
+    [AssessmentProperty]
     Structure = 92,
-
-    [ServerOnly]
     PhysicsState = 93,
-
-    [ServerOnly]
     TargetType = 94,
     RadarBlipColor = 95,
     EncumbranceCapacity = 96,
     LoginTimestamp = 97,
 
+    [AssessmentProperty]
     [SendOnLogin]
     CreationTimestamp = 98,
     PkLevelModifier = 99,
@@ -184,20 +186,41 @@ public enum PropertyInt : ushort
     LogoffTimestamp = 102,
     GeneratorDestructionType = 103,
     ActivationCreateClass = 104,
+
+    [AssessmentProperty]
     ItemWorkmanship = 105,
+
+    [AssessmentProperty]
     ItemSpellcraft = 106,
+
+    [AssessmentProperty]
     ItemCurMana = 107,
+
+    [AssessmentProperty]
     ItemMaxMana = 108,
+
+    [AssessmentProperty]
     ItemDifficulty = 109,
+
+    [AssessmentProperty]
     ItemAllegianceRankLimit = 110,
+
+    [AssessmentProperty]
     PortalBitmask = 111,
     AdvocateLevel = 112,
 
+    [AssessmentProperty]
     [SendOnLogin]
     Gender = 113,
+
+    [AssessmentProperty]
     Attuned = 114,
+
+    [AssessmentProperty]
     ItemSkillLevelLimit = 115,
     GateLogic = 116,
+
+    [AssessmentProperty]
     ItemManaCost = 117,
     Logoff = 118,
     Active = 119,
@@ -207,6 +230,7 @@ public enum PropertyInt : ushort
     AiAdvancementStrategy = 123,
     Version = 124,
 
+    [AssessmentProperty]
     [SendOnLogin]
     Age = 125,
     VendorHappyMean = 126,
@@ -216,6 +240,8 @@ public enum PropertyInt : ushort
     [SendOnLogin]
     VitaeCpPool = 129,
     NumServicesSold = 130,
+
+    [AssessmentProperty]
     MaterialType = 131,
 
     [SendOnLogin]
@@ -224,6 +250,7 @@ public enum PropertyInt : ushort
     [Ephemeral]
     ShowableOnRadar = 133,
 
+    [AssessmentProperty]
     [SendOnLogin]
     PlayerKillerStatus = 134,
     VendorHappyMaxItems = 135,
@@ -233,77 +260,81 @@ public enum PropertyInt : ushort
 
     [SendOnLogin]
     DeathLevel = 139,
-
-    [ServerOnly]
     AiOptions = 140,
-
-    [ServerOnly]
     OpenToEveryone = 141,
-
-    [ServerOnly]
     GeneratorTimeType = 142,
-
-    [ServerOnly]
     GeneratorStartTime = 143,
-
-    [ServerOnly]
     GeneratorEndTime = 144,
-
-    [ServerOnly]
     GeneratorEndDestructionType = 145,
-
-    [ServerOnly]
     XpOverride = 146,
     NumCrashAndTurns = 147,
     ComponentWarningThreshold = 148,
     HouseStatus = 149,
-
-    [ServerOnly]
     HookPlacement = 150,
-
-    [ServerOnly]
     HookType = 151,
-
-    [ServerOnly]
     HookItemType = 152,
     AiPpThreshold = 153,
     GeneratorVersion = 154,
     HouseType = 155,
     PickupEmoteOffset = 156,
     WeenieIteration = 157,
-    WieldRequirements = 158,
-    WieldSkillType = 159,
-    WieldDifficulty = 160,
 
-    [ServerOnly]
+    [AssessmentProperty]
+    WieldRequirements = 158,
+
+    [AssessmentProperty]
+    WieldSkillType = 159,
+
+    [AssessmentProperty]
+    WieldDifficulty = 160,
     HouseMaxHooksUsable = 161,
 
-    [ServerOnly]
     [Ephemeral]
     HouseCurrentHooksUsable = 162,
     AllegianceMinLevel = 163,
     AllegianceMaxLevel = 164,
     HouseRelinkHookCount = 165,
+
+    [AssessmentProperty]
     SlayerCreatureType = 166,
     ConfirmationInProgress = 167,
     ConfirmationTypeInProgress = 168,
     TsysMutationData = 169,
+
+    [AssessmentProperty]
     NumItemsInMaterial = 170,
+
+    [AssessmentProperty]
     NumTimesTinkered = 171,
+
+    [AssessmentProperty]
     AppraisalLongDescDecoration = 172,
+
+    [AssessmentProperty]
     AppraisalLockpickSuccessPercent = 173,
 
+    [AssessmentProperty]
     [Ephemeral]
     AppraisalPages = 174,
 
+    [AssessmentProperty]
     [Ephemeral]
     AppraisalMaxPages = 175,
+
+    [AssessmentProperty]
     AppraisalItemSkill = 176,
+
+    [AssessmentProperty]
     GemCount = 177,
+
+    [AssessmentProperty]
     GemType = 178,
+
+    [AssessmentProperty]
     ImbuedEffect = 179,
     AttackersRawSkillValue = 180,
 
+    [AssessmentProperty]
     [SendOnLogin]
     ChessRank = 181,
     ChessTotalGames = 182,
@@ -313,20 +344,22 @@ public enum PropertyInt : ushort
     SkillToBeAltered = 186,
     SkillAlterationCount = 187,
 
+    [AssessmentProperty]
     [SendOnLogin]
     HeritageGroup = 188,
     TransferFromAttribute = 189,
     TransferToAttribute = 190,
     AttributeTransferCount = 191,
 
+    [AssessmentProperty]
     [SendOnLogin]
     FakeFishingSkill = 192,
+
+    [AssessmentProperty]
     NumKeys = 193,
     DeathTimestamp = 194,
     PkTimestamp = 195,
     VictimTimestamp = 196,
-
-    [ServerOnly]
     HookGroup = 197,
     AllegianceSwearTimestamp = 198,
 
@@ -336,6 +369,8 @@ public enum PropertyInt : ushort
     MeleeDefenseImbuedEffectTypeCache = 201,
     MissileDefenseImbuedEffectTypeCache = 202,
     MagicDefenseImbuedEffectTypeCache = 203,
+
+    [AssessmentProperty]
     ElementalDamageBonus = 204,
     ImbueAttempts = 205,
     ImbueSuccesses = 206,
@@ -347,14 +382,8 @@ public enum PropertyInt : ushort
     RaresTierThree = 212,
     RaresTierFour = 213,
     RaresTierFive = 214,
-
-    [SendOnLogin]
     AugmentationStat = 215,
-
-    [SendOnLogin]
     AugmentationFamilyStat = 216,
-
-    [SendOnLogin]
     AugmentationInnateFamily = 217,
 
     [SendOnLogin]
@@ -419,8 +448,6 @@ public enum PropertyInt : ushort
 
     [SendOnLogin]
     AugmentationIncreasedSpellDuration = 238,
-
-    [SendOnLogin]
     AugmentationResistanceFamily = 239,
 
     [SendOnLogin]
@@ -453,33 +480,75 @@ public enum PropertyInt : ushort
     RaresTierSeven = 254,
     RaresTierSixLogin = 255,
     RaresTierSevenLogin = 256,
+
+    [AssessmentProperty]
     ItemAttributeLimit = 257,
+
+    [AssessmentProperty]
     ItemAttributeLevelLimit = 258,
+
+    [AssessmentProperty]
     ItemAttribute2ndLimit = 259,
+
+    [AssessmentProperty]
     ItemAttribute2ndLevelLimit = 260,
+
+    [AssessmentProperty]
     CharacterTitleId = 261,
+
+    [AssessmentProperty]
     NumCharacterTitles = 262,
+
+    [AssessmentProperty]
     ResistanceModifierType = 263,
     FreeTinkersBitfield = 264,
+
+    [AssessmentProperty]
     EquipmentSetId = 265,
     PetClass = 266,
+
+    [AssessmentProperty]
     Lifespan = 267,
 
+    [AssessmentProperty]
     [Ephemeral]
     RemainingLifespan = 268,
     UseCreateQuantity = 269,
+
+    [AssessmentProperty]
     WieldRequirements2 = 270,
+
+    [AssessmentProperty]
     WieldSkillType2 = 271,
+
+    [AssessmentProperty]
     WieldDifficulty2 = 272,
+
+    [AssessmentProperty]
     WieldRequirements3 = 273,
+
+    [AssessmentProperty]
     WieldSkillType3 = 274,
+
+    [AssessmentProperty]
     WieldDifficulty3 = 275,
+
+    [AssessmentProperty]
     WieldRequirements4 = 276,
+
+    [AssessmentProperty]
     WieldSkillType4 = 277,
+
+    [AssessmentProperty]
     WieldDifficulty4 = 278,
+
+    [AssessmentProperty]
     Unique = 279,
+
+    [AssessmentProperty]
     SharedCooldown = 280,
 
+    [AssessmentProperty]
     [SendOnLogin]
     Faction1Bits = 281,
     Faction2Bits = 282,
@@ -488,19 +557,22 @@ public enum PropertyInt : ushort
     Hatred2Bits = 285,
     Hatred3Bits = 286,
 
+    [AssessmentProperty]
     [SendOnLogin]
     SocietyRankCelhan = 287,
 
+    [AssessmentProperty]
     [SendOnLogin]
     SocietyRankEldweb = 288,
 
+    [AssessmentProperty]
     [SendOnLogin]
     SocietyRankRadblo = 289,
     HearLocalSignals = 290,
     HearLocalSignalsRadius = 291,
-    Cleaving = 292,
 
-    [SendOnLogin]
+    [AssessmentProperty]
+    Cleaving = 292,
     AugmentationSpecializeGearcraft = 293,
 
     [SendOnLogin]
@@ -529,14 +601,24 @@ public enum PropertyInt : ushort
 
     [SendOnLogin]
     AugmentationSkilledMagic = 302,
+
+    [AssessmentProperty]
     ImbuedEffect2 = 303,
+
+    [AssessmentProperty]
     ImbuedEffect3 = 304,
+
+    [AssessmentProperty]
     ImbuedEffect4 = 305,
+
+    [AssessmentProperty]
     ImbuedEffect5 = 306,
 
+    [AssessmentProperty]
     [SendOnLogin]
     DamageRating = 307,
 
+    [AssessmentProperty]
     [SendOnLogin]
     DamageResistRating = 308,
 
@@ -550,15 +632,19 @@ public enum PropertyInt : ushort
     [SendOnLogin]
     HealOverTime = 312,
 
+    [AssessmentProperty]
     [SendOnLogin]
     CritRating = 313,
 
+    [AssessmentProperty]
     [SendOnLogin]
     CritDamageRating = 314,
 
+    [AssessmentProperty]
     [SendOnLogin]
     CritResistRating = 315,
 
+    [AssessmentProperty]
     [SendOnLogin]
     CritDamageResistRating = 316,
 
@@ -567,22 +653,27 @@ public enum PropertyInt : ushort
 
     [SendOnLogin]
     DamageOverTime = 318,
+
+    [AssessmentProperty]
     ItemMaxLevel = 319,
+
+    [AssessmentProperty]
     ItemXpStyle = 320,
     EquipmentSetExtra = 321,
 
     [SendOnLogin]
     AetheriaBitfield = 322,
 
+    [AssessmentProperty]
     [SendOnLogin]
     HealingBoostRating = 323,
+
+    [AssessmentProperty]
     HeritageSpecificArmor = 324,
     AlternateRacialSkills = 325,
 
     [SendOnLogin]
     AugmentationJackOfAllTrades = 326,
-
-    [SendOnLogin]
     AugmentationResistanceNether = 327,
 
     [SendOnLogin]
@@ -633,20 +724,26 @@ public enum PropertyInt : ushort
 
     [SendOnLogin]
     LumAugSkilledSpec = 344,
-
-    [SendOnLogin]
     LumAugNoDestroyCraft = 345,
     RestrictInteraction = 346,
+
+    [SendOnLogin]
     OlthoiLootTimestamp = 347,
     OlthoiLootStep = 348,
     UseCreatesContractId = 349,
 
+    [AssessmentProperty]
     [SendOnLogin]
     DotResistRating = 350,
 
+    [AssessmentProperty]
     [SendOnLogin]
     LifeResistRating = 351,
+
+    [AssessmentProperty]
     CloakWeaveProc = 352,
+
+    [AssessmentProperty]
     WeaponType = 353,
 
     [SendOnLogin]
@@ -672,51 +769,73 @@ public enum PropertyInt : ushort
 
     [SendOnLogin]
     LumAugAllSkills = 365,
+
+    [AssessmentProperty]
     UseRequiresSkill = 366,
+
+    [AssessmentProperty]
     UseRequiresSkillLevel = 367,
+
+    [AssessmentProperty]
     UseRequiresSkillSpec = 368,
+
+    [AssessmentProperty]
     UseRequiresLevel = 369,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearDamage = 370,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearDamageResist = 371,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearCrit = 372,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearCritResist = 373,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearCritDamage = 374,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearCritDamageResist = 375,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearHealingBoost = 376,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearNetherResist = 377,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearLifeResist = 378,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearMaxHealth = 379,
     Unknown380 = 380,
 
+    [AssessmentProperty]
     [SendOnLogin]
     PKDamageRating = 381,
 
+    [AssessmentProperty]
     [SendOnLogin]
     PKDamageResistRating = 382,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearPKDamageRating = 383,
 
+    [AssessmentProperty]
     [SendOnLogin]
     GearPKDamageResistRating = 384,
     Unknown385 = 385,
@@ -724,229 +843,446 @@ public enum PropertyInt : ushort
     /// <summary>
     /// Overpower chance % for endgame creatures.
     /// </summary>
+    [AssessmentProperty]
     [SendOnLogin]
     Overpower = 386,
 
+    [AssessmentProperty]
     [SendOnLogin]
     OverpowerResist = 387,
 
     // Client does not display accurately
+    [AssessmentProperty]
     [SendOnLogin]
     GearOverpower = 388,
 
     // Client does not display accurately
+    [AssessmentProperty]
     [SendOnLogin]
     GearOverpowerResist = 389,
 
     // Number of times a character has enlightened
+    [AssessmentProperty]
     [SendOnLogin]
     Enlightenment = 390,
 
     // Daralet
+
+    [AssessmentProperty]
     WardLevel = 391,
+
+    [AssessmentProperty]
     ArmorSlots = 392,
+
+    [AssessmentProperty]
     ArmorWeightClass = 393,
+
+    [AssessmentProperty]
     GearMaxStamina = 394,
+
+    [AssessmentProperty]
     GearMaxMana = 395,
+
+    [AssessmentProperty]
     CombatFocusTypeId = 396,
+
+    [AssessmentProperty]
     WeightClassReqAmount = 397,
+
+    [AssessmentProperty]
     ArmorStyle = 398,
+
+    [AssessmentProperty]
     WeaponSubtype = 399,
+
+    [AssessmentProperty]
     ArmorPatchAmount = 400,
+
+    [AssessmentProperty]
     SigilTrinketColor = 401,
-
-    [ServerOnly]
     SigilTrinketSkill = 402,
-
-    [ServerOnly]
     SigilTrinketEffectId = 403,
+
+    [AssessmentProperty]
     SigilTrinketMaxTier = 404,
+
+    [AssessmentProperty]
     SigilTrinketElement = 405,
+
+    [AssessmentProperty]
     SigilTrinketBonusStat = 406,
+
+    [AssessmentProperty]
     SigilTrinketBonusStatAmount = 407,
+
+    [AssessmentProperty]
     JewelSockets = 408,
+
+    [AssessmentProperty]
     GearStrength = 409,
+
+    [AssessmentProperty]
     GearEndurance = 410,
+
+    [AssessmentProperty]
     GearCoordination = 411,
+
+    [AssessmentProperty]
     GearQuickness = 412,
+
+    [AssessmentProperty]
     GearFocus = 413,
+
+    [AssessmentProperty]
     GearSelf = 414,
+
+    [AssessmentProperty]
     GearLifesteal = 415,
+
+    [AssessmentProperty]
     GearSelfHarm = 416,
+
+    [AssessmentProperty]
     GearThreatGain = 417,
+
+    [AssessmentProperty]
     GearThreatReduction = 418,
+
+    [AssessmentProperty]
     GearElementalWard = 419,
+
+    [AssessmentProperty]
     GearPhysicalWard = 420,
+
+    [AssessmentProperty]
     GearMagicFind = 421,
+
+    [AssessmentProperty]
     GearBlock = 422,
+
+    [AssessmentProperty]
     GearItemManaUsage = 423,
+
+    [AssessmentProperty]
     GearThorns = 424,
+
+    [AssessmentProperty]
     GearVitalsTransfer = 425,
+
+    [AssessmentProperty]
     GearRedFury = 426,
+
+    [AssessmentProperty]
     GearSelflessness = 427,
+
+    [AssessmentProperty]
     GearVipersStrike = 428,
+
+    [AssessmentProperty]
     GearFamiliarity = 429,
+
+    [AssessmentProperty]
     GearBravado = 430,
+
+    [AssessmentProperty]
     GearHealthToStamina = 431,
+
+    [AssessmentProperty]
     GearHealthToMana = 432,
+
+    [AssessmentProperty]
     GearExperienceGain = 433,
+
+    [AssessmentProperty]
     GearManasteal = 434,
+
+    [AssessmentProperty]
     GearBludgeon = 435,
+
+    [AssessmentProperty]
     GearPierce = 436,
+
+    [AssessmentProperty]
     GearSlash = 437,
+
+    [AssessmentProperty]
     GearFire = 438,
+
+    [AssessmentProperty]
     GearFrost = 439,
+
+    [AssessmentProperty]
     GearAcid = 440,
+
+    [AssessmentProperty]
     GearLightning = 441,
+
+    [AssessmentProperty]
     GearHealBubble = 442,
+
+    [AssessmentProperty]
     GearCompBurn = 443,
+
+    [AssessmentProperty]
     GearPyrealFind = 444,
+
+    [AssessmentProperty]
     GearNullification = 445,
+
+    [AssessmentProperty]
     GearWardPen = 446,
+
+    [AssessmentProperty]
     GearStaminasteal = 447,
+
+    [AssessmentProperty]
     GearHardenedDefense = 448,
+
+    [AssessmentProperty]
     GearReprisal = 449,
+
+    [AssessmentProperty]
     GearElementalist = 450,
+
+    [AssessmentProperty]
     BaseArmor = 451,
+
+    [AssessmentProperty]
     BaseDamage = 452,
+
+    [AssessmentProperty]
     BaseWard = 453,
+
+    [AssessmentProperty]
     BaseWeaponTime = 454,
+
+    [AssessmentProperty]
     BaseMaxMana = 455,
+
+    [AssessmentProperty]
     ItemSpellId = 456,
+
+    [AssessmentProperty]
     CombatFocusAttributeSpellRemoved = 457,
+
+    [AssessmentProperty]
     CombatFocusAttributeSpellAdded = 458,
+
+    [AssessmentProperty]
     CombatFocusSkillSpellRemoved = 459,
+
+    [AssessmentProperty]
     CombatFocusSkillSpellAdded = 460,
+
+    [AssessmentProperty]
     StackableSpellType = 461,
+
+    [AssessmentProperty]
     NearbyPlayerScalingThreshold = 462,
+
+    [AssessmentProperty]
     NearbyPlayerScalingExtraPlayersPerAdd = 463,
+
+    [AssessmentProperty]
     NearbyPlayerScalingAddWcid = 464,
+
+    [AssessmentProperty]
     RemainingConfirmations = 465,
+
+    [AssessmentProperty]
     SigilTrinketType = 466,
+
+    [AssessmentProperty]
     TrophyQuality = 467,
+
+    [AssessmentProperty]
     AmmoEffect = 468,
+
+    [AssessmentProperty]
     AmmoEffectUsesRemaining = 469,
+
+    [AssessmentProperty]
     AltCurrencyValue = 470,
+
+    [AssessmentProperty]
     GearYellowFury = 471,
+
+    [AssessmentProperty]
     GearBlueFury = 472,
+
+    [AssessmentProperty]
     NoCompsRequiredForMagicSchool = 473,
+
+    [AssessmentProperty]
     JewelSocket1Material = 474,
+
+    [AssessmentProperty]
     JewelSocket1Quality = 475,
+
+    [AssessmentProperty]
     JewelSocket2Material = 476,
+
+    [AssessmentProperty]
     JewelSocket2Quality = 477,
+
+    [AssessmentProperty]
     JewelSocket3Material = 478,
+
+    [AssessmentProperty]
     JewelSocket3Quality = 479,
+
+    [AssessmentProperty]
     JewelSocket4Material = 480,
+
+    [AssessmentProperty]
     JewelSocket4Quality = 481,
+
+    [AssessmentProperty]
     JewelSocket5Material = 482,
+
+    [AssessmentProperty]
     JewelSocket5Quality = 483,
+
+    [AssessmentProperty]
     JewelSocket6Material = 484,
+
+    [AssessmentProperty]
     JewelSocket6Quality = 485,
+
+    [AssessmentProperty]
     JewelSocket7Material = 486,
+
+    [AssessmentProperty]
     JewelSocket7Quality = 487,
+
+    [AssessmentProperty]
     JewelSocket8Material = 488,
+
+    [AssessmentProperty]
     JewelSocket8Quality = 489,
+
+    [AssessmentProperty]
     JewelSocket9Material = 490,
+
+    [AssessmentProperty]
     JewelSocket9Quality = 491,
+
+    [AssessmentProperty]
     JewelSocket10Material = 492,
+
+    [AssessmentProperty]
     JewelSocket10Quality = 493,
+
+    [AssessmentProperty]
     JewelMaterialType = 494,
+
+    [AssessmentProperty]
     JewelQuality = 495,
+
+    [AssessmentProperty]
     GearToughness = 496,
+
+    [AssessmentProperty]
     GearResistance = 497,
+
+    [AssessmentProperty]
     GearSlashBane = 498,
+
+    [AssessmentProperty]
     GearBludgeonBane = 499,
+
+    [AssessmentProperty]
     GearPierceBane = 500,
+
+    [AssessmentProperty]
     GearAcidBane = 501,
+
+    [AssessmentProperty]
     GearFireBane = 502,
+
+    [AssessmentProperty]
     GearFrostBane = 503,
+
+    [AssessmentProperty]
     GearLightningBane = 504,
+
+    [AssessmentProperty]
     CombatFocusSkill2SpellRemoved = 505,
+
+    [AssessmentProperty]
     CombatFocusSkill2SpellAdded = 506,
+
+    [AssessmentProperty]
     CombatFocusNumSkillsRemoved = 507,
+
+    [AssessmentProperty]
     CombatFocusNumSkillsAdded = 508,
+
+    [AssessmentProperty]
     StaminaOverTime = 509,
+
+    [AssessmentProperty]
     ManaOverTime = 510,
+
+    [AssessmentProperty]
     MonsterRank = 511,
+
+    [AssessmentProperty]
     CombatFocusSkill3SpellRemoved = 512,
+
+    [AssessmentProperty]
     CombatFocusSkill3SpellAdded = 513,
+
+    [AssessmentProperty]
     CombatFocusPrestigeVersionId = 514,
-
-    [ServerOnly]
     MarketListingId = 515,
+
+    [AssessmentProperty]
     TrophyEssenceSpellId = 516,
+
+    [AssessmentProperty]
     TrophyEssenceSkill = 517,
+
+    [AssessmentProperty]
     TrophyEssenceEffectType = 518,
+
+    [AssessmentProperty]
     GearFrigidProtection = 519,
-
-    [ServerOnly]
     ForgePassCount = 520,
-
-    [ServerOnly]
     PassiveThreatThreshold = 521,
-
-    [ServerOnly]
     TargetSpecificWcid = 522,
-
-    [ServerOnly]
     WeaponRelicApplyCount = 523,
 
     /// <summary>
     /// The wcid of the armor piece an Armor Style Template's style was copied from.
     /// </summary>
-    [ServerOnly]
     ArmorStyleTemplateWcid = 524,
 
     /// <summary>
     /// How many tinks were baked into a quest item when it mutated on pickup. Upgrade Kits strip and
     /// re-apply them when they retier the item.
     /// </summary>
-    [ServerOnly]
     QuestItemTinks = 525,
 
     /// <summary>
     /// The character's arena rating (an Elo rating). A character that has none has the starting rating.
     /// </summary>
-    [ServerOnly]
     ArenaRating = 526,
-
-    [ServerOnly]
     ArenaWins = 527,
-
-    [ServerOnly]
     ArenaLosses = 528,
-
-    [ServerOnly]
     ArenaDraws = 529,
 
     /// <summary>
     /// The rating of the character's rated scaled duels, a board of its own (ArenaRating is for raw duels)
     /// </summary>
-    [ServerOnly]
     ArenaScaledRating = 530,
-
-    [ServerOnly]
     ArenaScaledWins = 531,
-
-    [ServerOnly]
     ArenaScaledLosses = 532,
-
-    [ServerOnly]
     ArenaScaledDraws = 533,
-
-    [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
-
-    [ServerOnly]
     PCAPRecordedMaxVelocityEstimated = 8030,
-
-    [ServerOnly]
     PCAPRecordedPlacement = 8041,
-
-    [ServerOnly]
     PCAPRecordedAppraisalPages = 8042,
-
-    [ServerOnly]
     PCAPRecordedAppraisalMaxPages = 8043,
 
     //[ServerOnly]
@@ -963,50 +1299,36 @@ public enum PropertyInt : ushort
     //GeneratorProbability                     = 9006,
     //[ServerOnly]
     //WeenieType                               = 9007 // I don't think this property type is needed anymore. We don't store the weenie type in the property bags, we store it as a separate field in the base objects.
-    [ServerOnly]
     CurrentLoyaltyAtLastLogoff = 9008,
-
-    [ServerOnly]
     CurrentLeadershipAtLastLogoff = 9009,
-
-    [ServerOnly]
     AllegianceOfficerRank = 9010,
-
-    [ServerOnly]
     HouseRentTimestamp = 9011,
 
     /// <summary>
     ///  Stores the player's selected hairstyle at creation or after a barber use. This is used only for Gear Knights and Olthoi characters who have more than a single part/texture for a "hairstyle" (BodyStyle)
     /// </summary>
-    [ServerOnly]
     Hairstyle = 9012,
 
     /// <summary>
     /// Used to store the calculated Clothing Priority for use with armor reduced items and items like Over-Robes.
     /// </summary>
     [Ephemeral]
-    [ServerOnly]
     VisualClothingPriority = 9013,
-
-    [ServerOnly]
     SquelchGlobal = 9014,
 
     /// <summary>
     /// TODO: This is a place holder for future use. See PlacementPosition
     /// This is the sort order for items in a container
     /// </summary>
-    [ServerOnly]
     InventoryOrder = 9015,
-
-    [ServerOnly]
     CombatAbilityId = 10000,
+
+    [AssessmentProperty]
     Tier = 10007,
+
+    [AssessmentProperty]
     ResistPerception = 10008,
-
-    [ServerOnly]
     EmptyId = 10009,
-
-    [ServerOnly]
     VendorStockMaxAmount = 10010
 }
 

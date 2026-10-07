@@ -412,6 +412,37 @@ partial class WorldObject
             }
         }
 
+        // verify skill specialized
+        // only found on a few items, doesn't show up on ID panel so is effectively a hidden requirement unless noted in ShortDesc/LongDesc string text
+        if (ItemSpecializedOnly != null)
+        {
+            var skill = activator.ConvertToMoASkill(ItemSpecializedOnly.Value);
+            var playerSkill = player.GetCreatureSkill(skill);
+
+            if (playerSkill.AdvancementClass < SkillAdvancementClass.Specialized)
+            {
+                return new ActivationResult(
+                    new GameEventWeenieErrorWithString(
+                        player.Session,
+                        WeenieErrorWithString.YouMustSpecialize_ToUseItemMagic,
+                        playerSkill.Skill.ToSentence()
+                    )
+                );
+            }
+
+            // verify skill level (if this was included)
+            if (ItemSkillLevelLimit != null && playerSkill.Current < ItemSkillLevelLimit.Value)
+            {
+                return new ActivationResult(
+                    new GameEventWeenieErrorWithString(
+                        player.Session,
+                        WeenieErrorWithString.Your_IsTooLowToUseItemMagic,
+                        playerSkill.Skill.ToSentence()
+                    )
+                );
+            }
+        }
+
         // verify player level
         if (UseRequiresLevel != null)
         {

@@ -576,7 +576,7 @@ public class SpellProjectile : WorldObject
         var sourcePlayer = damageSource as Player;
         var targetPlayer = target as Player;
 
-        if (source == null || !target.IsAlive || targetPlayer != null && targetPlayer.Invincible)
+        if (source == null || !target.IsAlive || target.Invincible)
         {
             return null;
         }
@@ -1390,7 +1390,7 @@ public class SpellProjectile : WorldObject
     {
         var targetPlayer = target as Player;
 
-        if (targetPlayer != null && targetPlayer.Invincible || target.IsDead)
+        if (target.Invincible || target.IsDead)
         {
             return;
         }

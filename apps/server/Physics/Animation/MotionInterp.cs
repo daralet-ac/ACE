@@ -960,7 +960,8 @@ public class MotionInterp
         }
 
         if (
-            WeenieObj == null && !WeenieObj.IsCreature()
+            WeenieObj == null
+            || !WeenieObj.IsCreature()
             || !PhysicsObj.State.HasFlag(PhysicsState.Gravity)
             || PhysicsObj.TransientState.HasFlag(TransientStateFlags.Contact | TransientStateFlags.OnWalkable)
         )

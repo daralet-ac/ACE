@@ -29,7 +29,9 @@ public static class CommandManager
 
     public static IEnumerable<CommandHandlerInfo> GetCommandByName(string commandname)
     {
-        return commandHandlers.Select(p => p.Value).Where(p => p.Attribute.Command == commandname);
+        return commandHandlers
+            .Select(p => p.Value)
+            .Where(p => p.Attribute.Command.Equals(commandname, StringComparison.OrdinalIgnoreCase));
     }
 
     public static CommandHandler GetDelegate(Action<Session, string[]> handler) =>
@@ -165,6 +167,13 @@ public static class CommandManager
             Console.Write("ACE >> ");
 
             var commandLine = Console.ReadLine();
+
+            if (commandLine == null)
+            {
+                _log.Information("ACEmulator command prompt disabled - console input stream was closed");
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(commandLine))
             {
                 continue;
