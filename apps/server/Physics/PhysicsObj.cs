@@ -177,7 +177,7 @@ public class PhysicsObj
 
         // todo: only allocate these for server objects
         // get rid of 'DatObject', use the existing WeenieObj == null
-        WeenieObj = new WeenieObject();
+        WeenieObj = WeenieObject.DummyObject;
         ObjMaint = new ObjectMaint(this);
 
         if (PhysicsEngine.Instance != null && PhysicsEngine.Instance.Server)

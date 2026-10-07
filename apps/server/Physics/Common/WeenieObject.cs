@@ -9,37 +9,61 @@ using Serilog;
 
 namespace ACE.Server.Physics.Common;
 
-public class WeenieObject
+/// <summary>
+/// Immutable after construction, so PhysicsObjs without a weenie can share DummyObject,
+/// and the type checks the physics engine calls constantly are cached instead of resolving the WorldObject each time
+/// </summary>
+public sealed class WeenieObject
 {
-    private readonly ILogger _log = Log.ForContext<WeenieObject>();
+    private static readonly ILogger _log = Log.ForContext<WeenieObject>();
 
-    public uint ID;
-    public double UpdateTime;
     public readonly WorldObjectInfo WorldObjectInfo;
     public WorldObject WorldObject => WorldObjectInfo?.TryGetWorldObject();
 
-    public bool IsMonster { get; set; }
+    private readonly bool isPlayer;
+    private readonly bool isCreature;
+    private readonly bool isStorage;
+    private readonly bool isCorpse;
 
-    public bool IsCombatPet { get; set; }
+    public readonly bool IsMonster;
 
-    public bool IsFactionMob { get; set; }
+    public readonly bool IsCombatPet;
 
-    public FactionBits Faction1Bits { get; set; }
+    public readonly bool IsFactionMob;
 
-    public CreatureType? FoeType { get; set; }
+    public readonly FactionBits Faction1Bits;
 
-    public PlayerKillerStatus PlayerKillerStatus { get; set; }
+    public readonly CreatureType? FoeType;
 
-    public WeenieObject() { }
+    public readonly PlayerKillerStatus PlayerKillerStatus;
+
+    private WeenieObject() { }
+
+    /// <summary>
+    /// Shared by all PhysicsObjs that don't have a WorldObject
+    /// </summary>
+    public static readonly WeenieObject DummyObject = new();
 
     public WeenieObject(WorldObject worldObject)
     {
         WorldObjectInfo = new WorldObjectInfo(worldObject);
 
-        if (!(worldObject is Creature creature))
+        if (worldObject is not Creature creature)
         {
+            if (worldObject is Corpse)
+            {
+                isCorpse = true;
+            }
+            else if (worldObject is Storage)
+            {
+                isStorage = true;
+            }
+
             return;
         }
+
+        isCreature = true;
+        isPlayer = creature is Player;
 
         IsCombatPet = worldObject is CombatPet;
 
@@ -73,6 +97,11 @@ public class WeenieObject
     public bool InqJumpVelocity(float extent, out float velocity_z)
     {
         velocity_z = 0.0f;
+
+        if (!isPlayer)
+        {
+            return false;
+        }
 
         var player = WorldObject as Player;
 
@@ -109,6 +138,11 @@ public class WeenieObject
     /// </summary>
     public float? InqBurden()
     {
+        if (!isPlayer)
+        {
+            return null;
+        }
+
         var player = WorldObject as Player;
 
         if (player == null)
@@ -146,37 +180,37 @@ public class WeenieObject
 
     public bool IsCorpse()
     {
-        return WorldObject is Corpse;
+        return isCorpse;
     }
 
     public bool IsImpenetrable()
     {
-        return WorldObject is Player player && player.PlayerKillerStatus == PlayerKillerStatus.Free;
+        return isPlayer && WorldObject is Player player && player.PlayerKillerStatus == PlayerKillerStatus.Free;
     }
 
     public bool IsPK()
     {
-        return WorldObject is Player player && player.IsPK;
+        return isPlayer && WorldObject is Player player && player.IsPK;
     }
 
     public bool IsPKLite()
     {
-        return WorldObject is Player player && player.IsPKL;
+        return isPlayer && WorldObject is Player player && player.IsPKL;
     }
 
     public bool IsPlayer()
     {
-        return WorldObject is Player;
+        return isPlayer;
     }
 
     public bool IsCreature()
     {
-        return WorldObject is Creature;
+        return isCreature;
     }
 
     public bool IsStorage()
     {
-        return WorldObject is Storage;
+        return isStorage;
     }
 
     public float JumpStaminaCost(float extent, int staminaCost)
@@ -191,15 +225,14 @@ public class WeenieObject
             return;
         }
 
-        prof.WCID = ID;
         prof.ItemType = WorldObject.ItemType;
 
-        if (WorldObject is Creature)
+        if (isCreature)
         {
             prof.Flags |= ObjCollisionProfileFlags.Creature;
         }
 
-        if (WorldObject is Player)
+        if (isPlayer)
         {
             prof.Flags |= ObjCollisionProfileFlags.Player;
         }
@@ -260,7 +293,7 @@ public class WeenieObject
             return 0;
         }
 
-        if (wo is Player player)
+        if (isPlayer && wo is Player player)
         {
             player.HandleFallingDamage(prof);
         }

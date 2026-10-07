@@ -2010,9 +2010,19 @@ partial class WorldObject
                 //if (player != null && player.Fellowship != null)
                 //player.Fellowship.OnVitalUpdate(player);
             }
+            else if (spell.DamageType != DamageType.Undef)
+            {
+                // Handle rare case where some of these "Life Magic" spells do physical damage e.g. Hunter's Lash 2970 and Thorn Valley 6159
+                damageType = spell.DamageType;
+            }
             else
             {
-                _log.Warning("Unknown DamageType for LifeProjectile {SpellName} - {SpellId}", spell.Name, spell.Id);
+                _log.Warning(
+                    "Unknown DamageType ({DamageType}) for LifeProjectile {SpellName} - {SpellId}",
+                    spell.DamageType,
+                    spell.Name,
+                    spell.Id
+                );
                 return;
             }
 

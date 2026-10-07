@@ -427,6 +427,22 @@ partial class Player
                     HandleActionChangeCombatMode(CombatMode.Magic);
                     break;
 
+                case EquipMask.Shield:
+
+                    // a shield can be used alongside thrown weapons, which stay in missile combat
+                    var weapon = GetEquippedWeapon(true);
+
+                    if (weapon != null && weapon.DefaultCombatStyle == CombatStyle.ThrownWeapon)
+                    {
+                        HandleActionChangeCombatMode(CombatMode.Missile);
+                    }
+                    else
+                    {
+                        HandleActionChangeCombatMode(CombatMode.Melee);
+                    }
+
+                    break;
+
                 default:
                     HandleActionChangeCombatMode(CombatMode.Melee);
                     break;
@@ -775,6 +791,14 @@ partial class Player
                 if (CombatMode == CombatMode.Missile && wieldedLocation == EquipMask.MissileAmmo)
                 {
                     newCombatMode = CombatMode.NonCombat;
+                }
+
+                // still holding a thrown weapon (ie. after removing a shield), so stay in missile combat
+                var weapon = GetEquippedWeapon(true);
+
+                if (weapon != null && weapon.DefaultCombatStyle == CombatStyle.ThrownWeapon)
+                {
+                    newCombatMode = CombatMode.Missile;
                 }
 
                 HandleActionChangeCombatMode(newCombatMode);
