@@ -6,7 +6,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ACE.DatLoader.Tests;
 
+// Needs the client DAT files
 [TestClass]
+[TestCategory("Integration")]
 public class DatTests
 {
     private static string DAT_PATH = @"C:\Turbine\Asheron's Call\";

@@ -8,7 +8,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ACE.Database.Tests;
 
+// Needs a Config.js and a live MySQL server
 [TestClass]
+[TestCategory("Integration")]
 public class AccountTests
 {
     private static AuthenticationDatabase authDb;

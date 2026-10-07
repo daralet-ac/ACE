@@ -72,6 +72,7 @@ public class SphereTests
     }
 
     [TestMethod]
+    [TestCategory("Integration")] // LandDefs loads the portal DAT
     public void Sphere_CollideWithPoint()
     {
         var sphere = new Sphere(Vector3.Zero, 5.0f);
@@ -239,6 +240,7 @@ public class SphereTests
     }
 
     [TestMethod]
+    [TestCategory("Integration")] // LandDefs loads the portal DAT
     public void Sphere_SlideSphere()
     {
         var sphere = new Sphere(Vector3.Zero, 5.0f);

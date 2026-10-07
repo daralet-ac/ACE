@@ -7,7 +7,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ACE.Server.Tests;
 
+// Needs a Config.js and a live MySQL server
 [TestClass]
+[TestCategory("Integration")]
 public class StartupTests
 {
     [ClassInitialize]
