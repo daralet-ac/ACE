@@ -33,6 +33,13 @@ public class GameMessageDDDDataMessage : GameMessage
                 datFileID = 3;
 
                 break;
+
+            case DatDatabaseType.HighRes:
+
+                datFileType = DDDManager.HiFi_String_As_Int; // HiFi
+                datFileID = 1;
+
+                break;
         }
 
         var datFileContents = DDDManager.TryGetDatFileContentsForTransmission(

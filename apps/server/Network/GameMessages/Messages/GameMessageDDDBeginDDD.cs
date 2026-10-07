@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ACE.DatLoader;
+using ACE.Server.Managers;
 
 namespace ACE.Server.Network.GameMessages.Messages;
 
@@ -30,6 +31,11 @@ public class GameMessageDDDBeginDDD : GameMessage
         {
             WriteIterations(DatDatabaseType.Cell, missingIterations[DatDatabaseType.Cell]);
         }
+
+        if (missingIterations.ContainsKey(DatDatabaseType.HighRes))
+        {
+            WriteIterations(DatDatabaseType.HighRes, missingIterations[DatDatabaseType.HighRes]);
+        }
     }
 
     private void WriteIterations(DatDatabaseType datDatabaseType, Dictionary<uint, List<uint>> iterations)
@@ -51,6 +57,11 @@ public class GameMessageDDDBeginDDD : GameMessage
                 case DatDatabaseType.Language:
                     Writer.Write(1);
                     Writer.Write(3);
+                    break;
+
+                case DatDatabaseType.HighRes:
+                    Writer.Write(DDDManager.HiFi_String_As_Int); // HiFi
+                    Writer.Write(1);
                     break;
             }
 
