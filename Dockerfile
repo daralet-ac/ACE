@@ -1,5 +1,5 @@
 # Build Stage
-FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
 WORKDIR /source
 
 # Install Node.js
@@ -20,7 +20,7 @@ COPY ./ .
 RUN npx nx run server:publish:docker
 
 # Final Stage
-FROM mcr.microsoft.com/dotnet/runtime:8.0-jammy
+FROM mcr.microsoft.com/dotnet/runtime:10.0-noble
 ARG DEBIAN_FRONTEND="noninteractive"
 WORKDIR /ace
 
