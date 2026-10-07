@@ -439,7 +439,7 @@ public static class GDLEConverter
     /// </summary>
     public static bool TryConvert(List<CookBook> cookbooks, out Models.RecipeCombined result)
     {
-        if (cookbooks == null || cookbooks.Count == 0)
+        if (cookbooks == null || cookbooks.Count == 0 || cookbooks[0].Recipe == null)
         {
             result = null;
             return false;
@@ -452,11 +452,12 @@ public static class GDLEConverter
         result.key = recipe.Id;
         result.desc = cookbooks[0].SourceWCID.ToString(); // TODO: get weenie name
 
-        TryConvert(recipe, out var newRecipe);
-        if (newRecipe != null)
+        if (!TryConvert(recipe, out var newRecipe))
         {
-            newRecipe.RecipeId = 0;
+            return false;
         }
+
+        newRecipe.RecipeId = 0;
 
         result.recipe = newRecipe;
 
@@ -573,8 +574,8 @@ public static class GDLEConverter
                     result.Requirements[iidReq.Index] = requirements;
                 }
 
-                requirements.DIDRequirements.Add(
-                    new Models.DIDRequirement
+                requirements.IIDRequirements.Add(
+                    new Models.IIDRequirement
                     {
                         Stat = iidReq.Stat,
                         Value = iidReq.Value,

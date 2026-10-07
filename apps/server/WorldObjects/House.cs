@@ -195,6 +195,8 @@ public class House : WorldObject
 
             house.ChildLinks.Remove(house.SlumLord);
             house.ChildLinks.Add(slumlord);
+
+            slumlord.ParentLink = house;
         }
         return house;
     }

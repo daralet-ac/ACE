@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Concurrent;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 namespace ACE.Database;
@@ -80,5 +82,16 @@ public static class DatabaseManager
         {
             serializedShardDb.Stop();
         }
+    }
+
+    private static readonly ConcurrentDictionary<string, ServerVersion> cachedServerVersions = new();
+
+    /// <summary>
+    /// ServerVersion.AutoDetect opens a new connection every time it is called.
+    /// DbContexts are created very frequently, so the detected version is cached per connection string.
+    /// </summary>
+    public static ServerVersion CachedServerVersionAutoDetect(string connectionString)
+    {
+        return cachedServerVersions.GetOrAdd(connectionString, ServerVersion.AutoDetect);
     }
 }

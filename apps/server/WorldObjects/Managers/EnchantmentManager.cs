@@ -1734,14 +1734,31 @@ public class EnchantmentManager
         {
             creature.DamageHistory.OnHeal((uint)healAmount);
         }
+        // account for negative HealOverTime spells, such as 5172 - Spectral Fountain Sip
+        else if (healAmount < 0)
+        {
+            creature.DamageHistory.Add(creature, DamageType.Health, (uint)-healAmount);
+        }
 
         if (creature is Player player)
         {
-            player.SendMessage($"You receive {healAmount} points of periodic healing.", ChatMessageType.Broadcast);
+            player.SendMessage(
+                $"You receive {Math.Abs(healAmount)} points of periodic {(healAmount >= 0 ? "healing" : "harm")}.",
+                ChatMessageType.Broadcast
+            );
 
-            // play heal vfx immediately (no delay for health)
-            var vfxStrength = Math.Clamp(tickAmountTotal / 100, 0.1f, 1.0f);
-            player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.HealthUpRed, vfxStrength));
+            if (healAmount >= 0)
+            {
+                // play heal vfx immediately (no delay for health)
+                var vfxStrength = Math.Clamp(tickAmountTotal / 100, 0.1f, 1.0f);
+                player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.HealthUpRed, vfxStrength));
+            }
+        }
+
+        if (creature.IsDead)
+        {
+            creature.OnDeath(creature.DamageHistory.LastDamager, DamageType.Health, false);
+            creature.Die();
         }
     }
 

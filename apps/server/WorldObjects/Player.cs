@@ -676,6 +676,8 @@ public partial class Player : Creature, IPlayer
         IsBusy = true;
         IsLoggingOut = true;
 
+        PlayerManager.AddPlayerToFinalLogoffQueue(this);
+
         EndStealth();
 
         if (Fellowship != null)
@@ -816,6 +818,11 @@ public partial class Player : Creature, IPlayer
         }
     }
 
+    /// <summary>
+    /// The time at which PlayerManager will force a player stuck logging out to finish logging out
+    /// </summary>
+    public double LogOffFinalizedTime;
+
     public bool ForcedLogOffRequested;
 
     /// <summary>
@@ -829,6 +836,13 @@ public partial class Player : Creature, IPlayer
             return;
         }
 
+        _log.Warning(
+            "[LOGOUT] Executing ForcedLogoff for Account {Account} with character {Character} (0x{Guid})",
+            Account?.AccountName,
+            Name,
+            Guid
+        );
+
         FinalizeLogout();
 
         ForcedLogOffRequested = false;
@@ -836,6 +850,7 @@ public partial class Player : Creature, IPlayer
 
     private void FinalizeLogout()
     {
+        PlayerManager.RemovePlayerFromFinalLogoffQueue(this);
         CurrentLandblock?.RemoveWorldObject(Guid, false);
 
         // someone who logs out in a duel gives it up, and gets back the player killer status they had before it

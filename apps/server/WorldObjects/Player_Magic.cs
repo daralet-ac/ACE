@@ -254,7 +254,7 @@ partial class Player
     {
         // fellowship spell
         var spell = new Spell(spellId);
-        if ((spell.Flags & SpellFlags.FellowshipSpell) != 0)
+        if (spell.IsFellowshipSpell)
         {
             target = this;
             return TargetCategory.Fellowship;
@@ -1186,7 +1186,7 @@ partial class Player
         {
             case CastingPreCheckStatus.Success:
 
-                if ((spell.Flags & SpellFlags.FellowshipSpell) == 0)
+                if (!spell.IsFellowshipSpell)
                 {
                     CreatePlayerSpell(target, spell, isWeaponSpell);
                 }

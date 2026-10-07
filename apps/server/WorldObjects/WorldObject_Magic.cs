@@ -63,7 +63,7 @@ partial class WorldObject
             return;
         }
 
-        if (spell.Flags.HasFlag(SpellFlags.FellowshipSpell))
+        if (spell.IsFellowshipSpell)
         {
             if (target is not Player targetPlayer || targetPlayer.Fellowship == null)
             {

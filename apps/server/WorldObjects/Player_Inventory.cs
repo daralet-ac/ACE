@@ -5284,7 +5284,7 @@ partial class Player
             );
             Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
             var msg = new GameMessageSystemChat(
-                $"{Name} tries to give you {(item.StackSize > 1 ? $"{item.StackSize} " : "")}{item.GetNameWithMaterial(item.StackSize)}.",
+                $"{Name} tries to give you {(amount > 1 ? $"{amount} " : "")}{item.GetNameWithMaterial(amount)}.",
                 ChatMessageType.Broadcast
             );
             target.Session.Network.EnqueueSend(msg);
@@ -5306,7 +5306,7 @@ partial class Player
             );
             Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
             var msg = new GameMessageSystemChat(
-                $"{Name} tries to give you {(item.StackSize > 1 ? $"{item.StackSize} " : "")}{item.GetNameWithMaterial(item.StackSize)}.",
+                $"{Name} tries to give you {(amount > 1 ? $"{amount} " : "")}{item.GetNameWithMaterial(amount)}.",
                 ChatMessageType.Broadcast
             );
             target.Session.Network.EnqueueSend(msg);

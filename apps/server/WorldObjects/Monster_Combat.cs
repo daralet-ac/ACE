@@ -525,7 +525,22 @@ partial class Creature
         {
             var weenie = DatabaseManager.World.GetCachedWeenie(wcid);
 
-            bpTable = new BodyPartTable(weenie);
+            if (weenie == null)
+            {
+                _log.Error("Monster_Combat.GetBodyParts({Wcid}) - unknown wcid", wcid);
+                return null;
+            }
+
+            try
+            {
+                bpTable = new BodyPartTable(weenie);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Monster_Combat.GetBodyParts({Wcid}) - bad body part data", wcid);
+                return null;
+            }
+
             BPTableCache[wcid] = bpTable;
         }
         return bpTable;

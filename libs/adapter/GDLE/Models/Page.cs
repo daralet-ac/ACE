@@ -23,7 +23,7 @@ public class Page
     {
         get
         {
-            return (!IgnoreAutor_Binder.HasValue) ? null : new bool?((IgnoreAutor_Binder.Value == 0) ? true : false);
+            return (!IgnoreAutor_Binder.HasValue) ? null : new bool?(IgnoreAutor_Binder.Value != 0);
         }
         set { IgnoreAutor_Binder = ((!value.HasValue) ? null : new byte?((byte)(value.Value ? 1 : 0))); }
     }

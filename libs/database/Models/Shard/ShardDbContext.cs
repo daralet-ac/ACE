@@ -116,7 +116,7 @@ public partial class ShardDbContext : DbContext
 
             optionsBuilder.UseMySql(
                 connectionString,
-                ServerVersion.AutoDetect(connectionString),
+                DatabaseManager.CachedServerVersionAutoDetect(connectionString),
                 builder =>
                 {
                     builder.EnableRetryOnFailure(10);
