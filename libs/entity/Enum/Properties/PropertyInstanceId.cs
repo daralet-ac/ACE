@@ -4,9 +4,9 @@ namespace ACE.Entity.Enum.Properties;
 
 public enum PropertyInstanceId : ushort
 {
-    // properties marked as ServerOnly are properties we never saw in PCAPs, from here:
-    // http://ac.yotesfan.com/ace_object/not_used_enums.php
-    // source: @OptimShi
+    // No properties are sent to the client unless they feature an attribute.
+    // SendOnLogin gets sent to players in the PlayerDescription event
+    // AssessmentProperty gets sent in successful appraisal
 
     // description attributes are used by the weenie editor for a cleaner display name
 
@@ -66,7 +66,6 @@ public enum PropertyInstanceId : ushort
     [Ephemeral]
     HealthQueryTarget = 28,
 
-    [ServerOnly]
     [Ephemeral]
     LastUnlocker = 29,
     CrashAndTurnTarget = 30,
@@ -87,22 +86,22 @@ public enum PropertyInstanceId : ushort
     Snooper = 41,
     TeleportedCharacter = 42,
 
-    [ServerOnly]
     [Ephemeral]
     Pet = 43,
     PetOwner = 44,
 
-    [ServerOnly]
     [Ephemeral]
     PetDevice = 45,
+
+    [AssessmentProperty]
     HotspotOwner = 46,
+
+    [AssessmentProperty]
     PatronAccountId = 47,
+
+    [AssessmentProperty]
     BankAccountId = 48,
-
-    [ServerOnly]
     PCAPRecordedObjectIID = 8000,
-
-    [ServerOnly]
     PCAPRecordedParentIID = 8008
 }
 

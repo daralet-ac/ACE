@@ -182,6 +182,5 @@ public enum PositionType : ushort
     /// </summary>
     TeleportedCharacter = 27,
 
-    [ServerOnly]
     PCAPRecordedLocation = 8040
 }

@@ -4,9 +4,9 @@ namespace ACE.Entity.Enum.Properties;
 
 public enum PropertyString : ushort
 {
-    // properties marked as ServerOnly are properties we never saw in PCAPs, from here:
-    // http://ac.yotesfan.com/ace_object/not_used_enums.php
-    // source: @OptimShi
+    // No properties are sent to the client unless they feature an attribute.
+    // SendOnLogin gets sent to players in the PlayerDescription event
+    // AssessmentProperty gets sent in successful appraisal
     // description attributes are used by the weenie editor for a cleaner display name
     Undef = 0,
 
@@ -19,34 +19,48 @@ public enum PropertyString : ushort
     Title = 2,
     Sex = 3,
     HeritageGroup = 4,
+
+    [AssessmentProperty]
+    [SendOnLogin]
     Template = 5,
     AttackersName = 6,
+
+    [AssessmentProperty]
     Inscription = 7,
 
+    [AssessmentProperty]
     [Description("Scribe Name")]
     ScribeName = 8,
     VendorsName = 9,
+
+    [AssessmentProperty]
     Fellowship = 10,
     MonarchsName = 11,
-
-    [ServerOnly]
     LockCode = 12,
-
-    [ServerOnly]
     KeyCode = 13,
+
+    [AssessmentProperty]
     Use = 14,
+
+    [AssessmentProperty]
     ShortDesc = 15,
+
+    [AssessmentProperty]
     LongDesc = 16,
     ActivationTalk = 17,
-
-    [ServerOnly]
     UseMessage = 18,
     ItemHeritageGroupRestriction = 19,
     PluralName = 20,
+
+    [AssessmentProperty]
     MonarchsTitle = 21,
     ActivationFailure = 22,
+
+    [AssessmentProperty]
     ScribeAccount = 23,
     TownName = 24,
+
+    [AssessmentProperty]
     CraftsmanName = 25,
     UsePkServerError = 26,
     ScoreCachedText = 27,
@@ -55,91 +69,81 @@ public enum PropertyString : ushort
     ScoreLastEntryFormat = 30,
     ScoreOnlyEntryFormat = 31,
     ScoreNoEntry = 32,
-
-    [ServerOnly]
     Quest = 33,
     GeneratorEvent = 34,
+
+    [AssessmentProperty]
     PatronsTitle = 35,
     HouseOwnerName = 36,
     QuestRestriction = 37,
+
+    [AssessmentProperty]
     AppraisalPortalDestination = 38,
+
+    [AssessmentProperty]
     TinkerName = 39,
+
+    [AssessmentProperty]
     ImbuerName = 40,
     HouseOwnerAccount = 41,
     DisplayName = 42,
+
+    [AssessmentProperty]
     DateOfBirth = 43,
     ThirdPartyApi = 44,
     KillQuest = 45,
 
     [Ephemeral]
     Afk = 46,
+
+    [AssessmentProperty]
     AllegianceName = 47,
     AugmentationAddQuest = 48,
     KillQuest2 = 49,
     KillQuest3 = 50,
     UseSendsSignal = 51,
 
+    [AssessmentProperty]
     [Description("Gear Plating Name")]
     GearPlatingName = 52,
-
-    [ServerOnly]
     SigilTrinketAllowedSpecializedSkills = 53,
-    [ServerOnly]
     PatrolPath = 54,
-
-    [ServerOnly]
     ScrollWritingComponents = 55,
-
-    [ServerOnly]
     SpellTomeDiscoveredFormulas = 56,
-
-    [ServerOnly]
     PCAPRecordedCurrentMotionState = 8006,
-
-    [ServerOnly]
     PCAPRecordedServerName = 8031,
-
-    [ServerOnly]
     PCAPRecordedCharacterName = 8032,
 
     /* custom */
-    [ServerOnly]
     AllegianceMotd = 9001,
-
-    [ServerOnly]
     AllegianceMotdSetBy = 9002,
-
-    [ServerOnly]
     AllegianceSpeakerTitle = 9003,
-
-    [ServerOnly]
     AllegianceSeneschalTitle = 9004,
-
-    [ServerOnly]
     AllegianceCastellanTitle = 9005,
-
-    [ServerOnly]
     GodState = 9006,
-
-    [ServerOnly]
     TinkerLog = 9007,
-
-    [ServerOnly]
     VendorBroadcastPrepend = 9008,
-
-    [ServerOnly]
     VendorBroadcastAppend = 9009,
+
+    [AssessmentProperty]
     LegacyJewelSocketString1 = 9010,
+
+    [AssessmentProperty]
     LegacyJewelSocketString2 = 9011,
+
+    [AssessmentProperty]
     CacheLog = 9012,
+
+    [AssessmentProperty]
     AllegianceLog = 9013,
+
+    [AssessmentProperty]
     CorpseLog = 9014,
 
     /// <summary>
     /// The character's arena ratings and records on the team boards (2v2, 3v3 scaled, ...), as JSON keyed by the board's name.
     /// The 1v1 boards have properties of their own (PropertyInt.ArenaRating, ...).
     /// </summary>
-    [ServerOnly]
     ArenaTeamBoards = 9015,
     
 

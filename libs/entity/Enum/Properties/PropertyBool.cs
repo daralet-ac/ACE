@@ -4,19 +4,21 @@ namespace ACE.Entity.Enum.Properties;
 
 public enum PropertyBool : ushort
 {
-    // properties marked as ServerOnly are properties we never saw in PCAPs, from here:
-    // http://ac.yotesfan.com/ace_object/not_used_enums.php
-    // source: @OptimShi
+    // No properties are sent to the client unless they feature an attribute.
+    // SendOnLogin gets sent to players in the PlayerDescription event
+    // AssessmentProperty gets sent in successful appraisal
     // description attributes are used by the weenie editor for a cleaner display name
 
     Undef = 0,
 
     [Ephemeral]
-    [ServerOnly]
     Stuck = 1,
 
+    [AssessmentProperty]
     [Ephemeral]
     Open = 2,
+
+    [AssessmentProperty]
     Locked = 3,
     RotProof = 4,
     AllegianceUpdateRequest = 5,
@@ -25,35 +27,20 @@ public enum PropertyBool : ushort
     AllowGive = 8,
     CurrentlyAttacking = 9,
     AttackerAi = 10,
-
-    [ServerOnly]
     IgnoreCollisions = 11,
-
-    [ServerOnly]
     ReportCollisions = 12,
-
-    [ServerOnly]
     Ethereal = 13,
-
-    [ServerOnly]
     GravityStatus = 14,
-
-    [ServerOnly]
     LightsStatus = 15,
-
-    [ServerOnly]
     ScriptedCollision = 16,
-
-    [ServerOnly]
     Inelastic = 17,
 
-    [ServerOnly]
     [Ephemeral]
     Visibility = 18,
-
-    [ServerOnly]
     Attackable = 19,
     SafeSpellComponents = 20,
+
+    [SendOnLogin]
     AdvocateState = 21,
     Inscribable = 22,
     DestroyOnSell = 23,
@@ -115,6 +102,8 @@ public enum PropertyBool : ushort
     IsAcceptingTells = 60,
     LoggingChannel = 61,
     OpensAnyLock = 62,
+
+    [AssessmentProperty]
     UnlimitedUse = 63,
     GeneratedTreasureItem = 64,
     IgnoreMagicResist = 65,
@@ -123,6 +112,8 @@ public enum PropertyBool : ushort
 
     [SendOnLogin]
     SpellComponentsRequired = 68,
+
+    [AssessmentProperty]
     IsSellable = 69,
     IgnoreShieldsBySkill = 70,
     NoDraw = 71,
@@ -139,19 +130,23 @@ public enum PropertyBool : ushort
     IgnorePortalRestrictions = 80,
     RequiresBackpackSlot = 81,
     DontTurnOrMoveWhenGiving = 82,
-
-    [ServerOnly]
     NpcLooksLikeObject = 83,
     IgnoreCloIcons = 84,
+
+    [AssessmentProperty]
     AppraisalHasAllowedWielder = 85,
     ChestRegenOnClose = 86,
     LogoffInMinigame = 87,
     PortalShowDestination = 88,
     PortalIgnoresPkAttackTimer = 89,
     NpcInteractsSilently = 90,
+
+    [AssessmentProperty]
     Retained = 91,
     IgnoreAuthor = 92,
     Limbo = 93,
+
+    [AssessmentProperty]
     AppraisalHasAllowedActivator = 94,
     ExistedBeforeAllegianceXpChanges = 95,
     IsDeaf = 96,
@@ -160,7 +155,11 @@ public enum PropertyBool : ushort
     [SendOnLogin]
     IsPsr = 97,
     Invincible = 98,
+
+    [AssessmentProperty]
     Ivoryable = 99,
+
+    [AssessmentProperty]
     Dyable = 100,
     CanGenerateRare = 101,
     CorpseGeneratedRare = 102,
@@ -173,6 +172,8 @@ public enum PropertyBool : ushort
     [Ephemeral]
     FirstEnterWorldDone = 106,
     RecallsDisabled = 107,
+
+    [AssessmentProperty]
     RareUsesTimer = 108,
     ActdPreorderReceivedItems = 109,
 
@@ -202,134 +203,181 @@ public enum PropertyBool : ushort
     [SendOnLogin]
     Account15Days = 127,
     HadNoVitae = 128,
-
-    [SendOnLogin]
     NoOlthoiTalk = 129,
+
+    [AssessmentProperty]
     AutowieldLeft = 130,
 
     // Timeline
+
+    [AssessmentProperty]
     UseArchetypeSystem = 131,
+
+    [AssessmentProperty]
     OverrideArchetypeXp = 132,
+
+    [AssessmentProperty]
     OverrideArchetypeHealth = 133,
+
+    [AssessmentProperty]
     OverrideArchetypeStamina = 134,
+
+    [AssessmentProperty]
     OverrideArchetypeMana = 135,
+
+    [AssessmentProperty]
     OverrideArchetypeSkills = 136,
+
+    [AssessmentProperty]
     BossKillXpReward = 137,
+
+    [AssessmentProperty]
     ArmorPatchApplied = 138,
+
+    [AssessmentProperty]
     UseLegacyThreatSystem = 139,
+
+    [AssessmentProperty]
     OverrideVisualRange = 140,
+
+    [AssessmentProperty]
     AffectsOnlyAis = 141,
+
+    [AssessmentProperty]
     ExamineItemsSilently = 142, // allows for no/custom message upon NPC Emote Refuse examination of items
+
+    [AssessmentProperty]
     TakeItemsSilently = 143, // allows for no/custom messages for NPC TakeItems emote
+
+    [AssessmentProperty]
     DungeonLockout = 144, // if object is on landblock, no new players will be added to permitted list
+
+    [AssessmentProperty]
     CannotBreakStealth = 145,
+
+    [AssessmentProperty]
     CampfireHotspot = 146,
+
+    [AssessmentProperty]
     MutableQuestItem = 147,
+
+    [AssessmentProperty]
     StruckByUnshrouded = 148,
+
+    [AssessmentProperty]
     MenhirManaHotspot = 149,
+
+    [AssessmentProperty]
     UseNearbyPlayerScaling = 150,
+
+    [AssessmentProperty]
     IsBankContainer = 151,
+
+    [AssessmentProperty]
     ShroudKillXpReward = 152,
+
+    [AssessmentProperty]
     IsPlayerTierChest = 153,
+
+    [AssessmentProperty]
     UpgradeableQuestItem = 154,
+
+    [AssessmentProperty]
     FellowshipRequired = 155,
+
+    [AssessmentProperty]
     SpecialPropertiesRequireMana = 156,
+
+    [AssessmentProperty]
     RepeatConfirmation = 157,
+
+    [AssessmentProperty]
     SilentCombat = 158,
+
+    [AssessmentProperty]
     ReturnHomeWhenStuck = 159,
+
+    [AssessmentProperty]
     ResetFromHotspot = 160,
+
+    [AssessmentProperty]
     JewelAlternateEffect = 161,
+
+    [AssessmentProperty]
     JewelSocket1AlternateEffect = 162,
+
+    [AssessmentProperty]
     JewelSocket2AlternateEffect = 163,
+
+    [AssessmentProperty]
     JewelSocket3AlternateEffect = 164,
+
+    [AssessmentProperty]
     JewelSocket4AlternateEffect = 165,
+
+    [AssessmentProperty]
     JewelSocket5AlternateEffect = 166,
+
+    [AssessmentProperty]
     JewelSocket6AlternateEffect = 167,
+
+    [AssessmentProperty]
     JewelSocket7AlternateEffect = 168,
+
+    [AssessmentProperty]
     JewelSocket8AlternateEffect = 169,
+
+    [AssessmentProperty]
     JewelSocket9AlternateEffect = 170,
+
+    [AssessmentProperty]
     JewelSocket10AlternateEffect = 171,
+
+    [AssessmentProperty]
     NoRotCorpse = 172,
+
+    [AssessmentProperty]
     CreatureArmorEffectsDamageReduction = 173,
-
-    [ServerOnly]
     PatrolEnabled = 174,
-    [ServerOnly]
     PatrolForceWalk = 175,
-    [ServerOnly]
     SignalCrossLB = 176,
-    [ServerOnly]
     UnstableLoot = 177,
-    [ServerOnly]
     IsUnstable = 178,
-    [ServerOnly]
     TerminalDestabilizedLock = 179,
-    [ServerOnly]
     GeneratesPassiveThreat = 180,
-
-    [ServerOnly]
     AttuneOnEquip = 181,
-
-    [ServerOnly]
     RequiresShrouded = 182,
 
     /// <summary>
     /// When true, this monster does NOT restore its vitals to max when it gives up on its target
     /// and returns home (homesick). Unset/false preserves the stock full-heal behavior.
     /// </summary>
-    [ServerOnly]
     NoHomesickHeal = 183,
 
     /// <summary>
     /// When true, all damage this creature receives is reduced to 0. Unlike Invincible, attacks
     /// still land (and trigger on-hit effects / emotes) - they just deal no damage.
     /// </summary>
-    [ServerOnly]
     Invulnerable = 184,
 
     /* custom */
-    [ServerOnly]
     LinkedPortalOneSummon = 9001,
-
-    [ServerOnly]
     LinkedPortalTwoSummon = 9002,
-
-    [ServerOnly]
     HouseEvicted = 9003,
-
-    [ServerOnly]
     UntrainedSkills = 9004,
 
     [Ephemeral]
-    [ServerOnly]
     IsEnvoy = 9005,
-
-    [ServerOnly]
     UnspecializedSkills = 9006,
-
-    [ServerOnly]
     FreeSkillResetRenewed = 9007,
-
-    [ServerOnly]
     FreeAttributeResetRenewed = 9008,
-
-    [ServerOnly]
     SkillTemplesTimerReset = 9009,
-
-    [ServerOnly]
     FreeMasteryResetRenewed = 9010,
 
     [Ephemeral]
-    [ServerOnly]
     IsPseudoRandomGenerator = 9011,
-
-    [ServerOnly]
     IsModified = 9012,
-
-    [ServerOnly]
     VendorSellsSalvage = 9013,
-
-    [ServerOnly]
     VendorSellsSpecialItems = 9014,
 
     /// <summary>
@@ -338,10 +386,7 @@ public enum PropertyBool : ushort
     /// the base, shifting the whole collision volume down by Height/2. Unset/false preserves the
     /// stock base-anchored behavior for every other object.
     /// </summary>
-    [ServerOnly]
     HotspotCollidesFromCenter = 9015,
-
-    [ServerOnly]
     AccountAttuned = 9016,
 }
 
