@@ -1,18 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using ACE.Common;
-using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
-using ACE.Server.Factories.Tables;
-using ACE.Server.Managers;
-using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
-using ACE.Server.WorldObjects.Entity;
-using Serilog;
-using Time = ACE.Common.Time;
 
 namespace ACE.Server.Entity;
 
@@ -428,19 +419,8 @@ public partial class DamageEvent
             return;
         }
 
-        //Console.WriteLine($"AttackHeight: {AttackHeight}, Quadrant: {quadrant & FrontBack}{quadrant & LeftRight}, AttackPart: {bodyPart}");
-
         defender.Biota.PropertiesBodyPart.TryGetValue(bodyPart, out var value);
         _propertiesBodyPart = new KeyValuePair<CombatBodyPart, PropertiesBodyPart>(bodyPart, value);
-
-        // select random body part @ current attack height
-        /*BiotaPropertiesBodyPart = BodyParts.GetBodyPart(defender, attackHeight);
-
-        if (BiotaPropertiesBodyPart == null)
-        {
-            Evaded = true;
-            return;
-        }*/
 
         _creaturePart = new Creature_BodyPart(defender, _propertiesBodyPart);
     }

@@ -1,18 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using ACE.Common;
-using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
-using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
-using ACE.Server.Factories.Tables;
-using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
-using ACE.Server.WorldObjects.Entity;
-using Serilog;
-using Time = ACE.Common.Time;
 
 namespace ACE.Server.Entity;
 
@@ -36,19 +25,6 @@ public partial class DamageEvent
         }
     }
 
-    private void PostDamageMitigationEffects()
-    {
-        if (_attacker.IsMonster)
-        {
-            Damage *= 1.0f;
-        }
-
-        if (!_attacker.IsMonster)
-        {
-            Damage *= 1.0f;
-        }
-    }
-
     private void PostDamageMitigationEffects(Creature attacker, Creature defender, WorldObject damageSource)
     {
         var playerAttacker = attacker as Player;
@@ -64,16 +40,6 @@ public partial class DamageEvent
         CheckForCombatAbilityAegisRestoration(playerDefender);
         CheckForWeaponMasterEffects(playerAttacker, defender);
         CheckForEnchantedBlade(playerAttacker, defender, _attackHeight);
-
-        if (_attacker.IsMonster)
-        {
-            Damage *= 1.0f;
-        }
-
-        if (!_attacker.IsMonster)
-        {
-            Damage *= 1.0f;
-        }
     }
 
     private void CheckForWeaponMasterEffects(Player playerAttacker, Creature defender)
@@ -128,12 +94,6 @@ public partial class DamageEvent
                 }
 
                 break;
-            // case Skill.Sword:
-            //     Console.WriteLine("Sword");
-            //     break;
-            // case Skill.Spear:
-            //     Console.WriteLine("Spear");
-            //     break;
         }
     }
 
@@ -264,32 +224,7 @@ public partial class DamageEvent
             return;
         }
 
-        // todo: Add weapon subtypes to all lootgen weapons for higher accuracy
-        // var weaponSubtype = weapon.WeaponSubtype.Value;
-        // var weaponSubtypeMinDamage = weaponSubtype switch
-        // {
-        //     (int)LootTables.WeaponSubtype.AxeLarge => 5,
-        //     (int)LootTables.WeaponSubtype.AxeMedium => 5,
-        //     (int)LootTables.WeaponSubtype.AxeSmall => 4,
-        //     (int)LootTables.WeaponSubtype.DaggerLarge => 5,
-        //     (int)LootTables.WeaponSubtype.DaggerSmall => 4,
-        //     (int)LootTables.WeaponSubtype.ThrownAxe => 11,
-        //     (int)LootTables.WeaponSubtype.ThrownDagger => 10,
-        //     (int)LootTables.WeaponSubtype.TwohandAxe => 5,
-        //     _ => throw new ArgumentOutOfRangeException()
-        // };
-        // var weaponSubtypeMaxDamage = weaponSubtype switch
-        // {
-        //     (int)LootTables.WeaponSubtype.AxeLarge => 132,
-        //     (int)LootTables.WeaponSubtype.AxeMedium => 120,
-        //     (int)LootTables.WeaponSubtype.AxeSmall => 110,
-        //     (int)LootTables.WeaponSubtype.DaggerLarge => 95,
-        //     (int)LootTables.WeaponSubtype.DaggerSmall => 71,
-        //     (int)LootTables.WeaponSubtype.ThrownAxe => 296,
-        //     (int)LootTables.WeaponSubtype.ThrownDagger => 278,
-        //     (int)LootTables.WeaponSubtype.TwohandAxe => 107,
-        //     _ => throw new ArgumentOutOfRangeException()
-        // };
+        // todo: use each weapon's subtype for its damage range once all lootgen weapons have one
 
         (int Min, int Max)? weaponTypeDamageRange = weapon.WeaponSkill switch
         {

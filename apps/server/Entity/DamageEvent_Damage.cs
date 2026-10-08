@@ -1,18 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using ACE.Common;
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
-using ACE.Server.Factories.Tables;
-using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
-using ACE.Server.WorldObjects.Entity;
-using Serilog;
-using Time = ACE.Common.Time;
 
 namespace ACE.Server.Entity;
 
@@ -93,7 +84,6 @@ public partial class DamageEvent
         _damageRatingMod = Creature.GetPositiveRatingMod(attacker.GetDamageRating());
         _dualWieldDamageBonus = GetDualWieldDamageBonus(playerAttacker, defender);
         _twohandedCombatDamageBonus = GetTwohandedCombatDamageBonus(playerAttacker, defender);
-        _combatAbilityMultishotDamagePenalty = GetCombatAbilityMultishotDamagePenalty(playerAttacker);
         _combatAbilityFuryDamageBonus = GetCombatAbilityFuryDamageBonus(playerAttacker, playerDefender);
         _combatAbilityRelentlessDamagePenalty = GetCombatAbilityRelentlessDamagePenalty(playerAttacker);
         _combatAbilitySteadyStrikeDamageBonus = GetCombatAbilitySteadyStrikeDamageBonus(playerAttacker);
@@ -168,26 +158,6 @@ public partial class DamageEvent
         var finalDamageMod = 1.0f + (float)damageMod;
 
         return finalDamageMod;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Multishot: Damage reduced by 25% if 2 targets, by 33% if 3 targets.
-    /// </summary>
-    private float GetCombatAbilityMultishotDamagePenalty(Player playerAttacker)
-    {
-        return 1.0f; // TODO: Decide if this damage penalty is needed
-
-        if (playerAttacker is not { MultiShotIsActive: true})
-        {
-            return 1.0f;
-        }
-
-        return playerAttacker.MultishotNumTargets switch
-        {
-            3 => 0.67f,
-            2 => 0.75f,
-            _ => 1.0f,
-        };
     }
 
     /// <summary>
@@ -341,7 +311,6 @@ public partial class DamageEvent
                * _criticalDamageMod
                * _dualWieldDamageBonus
                * _twohandedCombatDamageBonus
-               * _combatAbilityMultishotDamagePenalty
                * _combatAbilityFuryDamageBonus
                * _combatAbilityRelentlessDamagePenalty
                * _combatAbilitySteadyStrikeDamageBonus
@@ -370,7 +339,6 @@ public partial class DamageEvent
                * _ratingPierceResistanceBonus
                * _dualWieldDamageBonus
                * _twohandedCombatDamageBonus
-               * _combatAbilityMultishotDamagePenalty
                * _combatAbilityFuryDamageBonus
                * _combatAbilityRelentlessDamagePenalty
                * _combatAbilitySteadyStrikeDamageBonus

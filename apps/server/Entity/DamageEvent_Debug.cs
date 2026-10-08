@@ -1,102 +1,13 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using ACE.Common;
-using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
-using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
-using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
-using ACE.Server.WorldObjects.Entity;
-using Serilog;
-using Time = ACE.Common.Time;
 
 namespace ACE.Server.Entity;
 
 public partial class DamageEvent
 {
-    private void DpsLogging()
-    {
-        if (_attacker == null || _defender == null)
-        {
-            return;
-        }
-
-        // if (_attacker.Name is not "")
-        // {
-        //     return;
-        // }
-
-        var currentTime = Time.GetUnixTime();
-        var timeSinceLastAttack = currentTime - _attacker.LastAttackTime;
-        if (_attacker as Player == null)
-        {
-            timeSinceLastAttack = MonsterAverageAnimationLength.GetValueMod(_attacker.CreatureType);
-        }
-
-        var damageSource = Weapon == null ? _attacker : Weapon;
-
-        _log.Information("---- DAMAGE LOG ({DamageSource}) ----", damageSource.Name);
-        _log.Information(
-            "CurrentTime: {CurrentTime}, LastAttackTime: {LastAttackTime} TimeBetweenAttacks: {TimeBetweenAttacks}",
-            currentTime,
-            _attacker.LastAttackTime,
-            timeSinceLastAttack
-        );
-        _attacker.LastAttackTime = currentTime;
-
-        var critRate = _criticalChance;
-        var nonCritRate = 1 - critRate;
-        var critDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(damageSource, _attacker, _attackSkill, _defender);
-
-        var avgNonCritHit = (_baseDamageMod.MaxDamage + _baseDamageMod.MinDamage) / 2;
-        var critHit = _baseDamageMod.MaxDamage * critDamageMod;
-
-        var averageDamage = avgNonCritHit * nonCritRate + critHit * critRate;
-        var baseDps = averageDamage / timeSinceLastAttack;
-
-        var averageDamageBeforeMitigation =
-            averageDamage
-            * _powerMod
-            * _attributeMod
-            * _slayerMod
-            * _damageRatingMod
-            * _dualWieldDamageBonus
-            * _twohandedCombatDamageBonus
-            * _combatAbilitySteadyStrikeDamageBonus;
-        var averageDpsBeforeMitigation = averageDamageBeforeMitigation / timeSinceLastAttack;
-
-        var averageDamageAfterMitigation =
-            averageDamageBeforeMitigation
-            * _armorMod
-            * ShieldMod
-            * _resistanceMod
-            * _damageResistanceRatingMod
-            * _levelScalingMod;
-        var averageDpsAfterMitigation = averageDamageAfterMitigation / timeSinceLastAttack;
-
-        _log.Information(
-            "{DamageLog}",
-            $"TimeSinceLastAttack: {timeSinceLastAttack}"
-            + $"\n\n-- Base --\n"
-            + $"BaseDamageMod.MaxDamage: {_baseDamageMod.MaxDamage}, BaseDamageMod.MinDamage: {_baseDamageMod.MinDamage}, LiveBaseDamage: {_baseDamage}\n"
-            + $"AverageDamageNonCrit: {avgNonCritHit}, AverageDamageCrit: {critHit}, AverageDamageHit: {averageDamage}\n"
-            + $"DPS Base: {baseDps}\n\n"
-            + $"-- Before Mitigation --\n"
-            + $"PowerMod: {_powerMod}, AttributeMod: {_attributeMod}, SlayerMod: {_slayerMod}, DamageRatingMod: {_damageRatingMod}, DualWieldMod: {_dualWieldDamageBonus}, TwoHandMod: {_twohandedCombatDamageBonus}, SteadyStrikeMod: {_combatAbilitySteadyStrikeDamageBonus}\n"
-            + $"AverageDamage Before Mitigation: {averageDamageBeforeMitigation}\n"
-            + $"DPS Before Mitigation: {averageDpsBeforeMitigation}\n\n"
-            + $"-- After Mitigation --\n"
-            + $"DamageScalar(health): {_levelScalingMod}, ArmorMod: {_armorMod}, ShieldMod: {ShieldMod}, ResistanceMod: {_resistanceMod}, DamageResistanceRatingMod: {_damageResistanceRatingMod}\n"
-            + $"AverageDamage After Mitigation: {averageDamageAfterMitigation}\n"
-            + $"DPS After Mitigation: {averageDpsAfterMitigation}\n"
-            + $"---- END DAMAGE LOG ({damageSource.Name}) ----"
-        );
-    }
-
     private void ShowInfo(Creature creature)
     {
         var targetInfo = PlayerManager.GetOnlinePlayer(creature.DebugDamageTarget);

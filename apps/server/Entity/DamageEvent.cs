@@ -1,18 +1,11 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using ACE.Common;
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
-using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
-using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
-using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Entity;
 using Serilog;
-using Time = ACE.Common.Time;
 
 namespace ACE.Server.Entity;
 
@@ -38,7 +31,6 @@ public partial class DamageEvent
     private float _combatAbilityAegisDamageReduction;
     private float _combatAbilityFuryDamageBonus;
     private float _combatAbilityRelentlessDamagePenalty;
-    private float _combatAbilityMultishotDamagePenalty;
     private float _combatAbilityPhalanxDamageReduction;
     private float _combatAbilityProvokeDamageReduction;
     private Creature_BodyPart _creaturePart;
@@ -234,8 +226,6 @@ public partial class DamageEvent
             return 0.0f;
         }
 
-        //DpsLogging();
-
         return Damage;
     }
 
@@ -281,19 +271,6 @@ public partial class DamageEvent
     private static bool IsSkillSpecialized(Player player, Skill creatureSkill)
     {
         return player?.GetCreatureSkill(creatureSkill).AdvancementClass == SkillAdvancementClass.Specialized;
-    }
-
-    private bool IsAttackFromStealth()
-    {
-        if (_playerAttacker == null)
-        {
-            return false;
-        }
-
-        var isAttackFromStealth = _playerAttacker.IsAttackFromStealth;
-        _playerAttacker.IsAttackFromStealth = false;
-
-        return isAttackFromStealth;
     }
 
     private bool WeaponIsSpecialized(Player playerAttacker)
