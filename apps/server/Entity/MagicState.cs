@@ -195,11 +195,12 @@ public class MagicState
         WorldObject casterItem,
         uint magicSkill,
         uint manaUsed,
+        ManaCastRefund manaRefund,
         WorldObject target,
         Player.CastingPreCheckStatus status
     )
     {
-        CastSpellParams = new CastSpellParams(spell, casterItem, magicSkill, manaUsed, target, status);
+        CastSpellParams = new CastSpellParams(spell, casterItem, magicSkill, manaUsed, manaRefund, target, status);
 
         if (Player.RecordCast.Enabled && CastSpellParams.Target != null)
         {

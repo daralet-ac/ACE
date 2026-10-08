@@ -413,16 +413,31 @@ public static partial class ArenaManager
                 return;
             }
 
+            var watched = FindWatched(guid);
+
+            if (watched != null)
+            {
+                player.SendMessage("You stop watching the duel.");
+                SendSpectatorHome(watched, watched.GetSpectator(guid), player, 1);
+                return;
+            }
+
             var match = FindMatch(guid);
             if (match == null)
             {
-                player.SendMessage("You are not in the arena queue or in a duel.");
+                player.SendMessage("You are not in the arena queue, in a duel, or watching one.");
                 return;
             }
 
             var fighter = match.Get(guid);
 
-            if (match.State == ArenaMatchState.Fighting)
+            if (match.State == ArenaMatchState.Fighting && fighter.Spectating)
+            {
+                // defeated, and watching the rest of it
+                player.SendMessage("You stop watching the duel.");
+                SendHome(match, fighter, player, 1);
+            }
+            else if (match.State == ArenaMatchState.Fighting)
             {
                 player.SendMessage("You give up the duel.");
                 Eliminate(match, fighter, player, $"{fighter.Name} has given up.");
@@ -459,6 +474,12 @@ public static partial class ArenaManager
                     : $"You are waiting with {waiting.Describe()}, number {place} of {queue.Count} in the arena queue, for {DescribeDuel(waiting.Scaled, waiting.Rated)}.";
             }
 
+            var watched = FindWatched(guid);
+            if (watched != null)
+            {
+                return $"You are watching duel #{watched.Id}. /arena leave takes you back.";
+            }
+
             var match = FindMatch(guid);
             if (match == null)
             {
@@ -466,6 +487,12 @@ public static partial class ArenaManager
             }
 
             var fighter = match.Get(guid);
+
+            if (fighter.Spectating && !fighter.Returned)
+            {
+                return "You have been defeated, and are watching the rest of the duel. /arena leave takes you back.";
+            }
+
             var opponents = string.Join(", ", match.Opponents(fighter).Select(f => f.Name));
 
             return match.State switch
@@ -575,7 +602,7 @@ public static partial class ArenaManager
 
         lock (sync)
         {
-            return match.Get(player.Guid.Full) != null;
+            return match.Get(player.Guid.Full) != null || match.GetSpectator(player.Guid.Full) != null;
         }
     }
 
@@ -590,6 +617,14 @@ public static partial class ArenaManager
         lock (sync)
         {
             var fighter = match?.Get(guid);
+            var spectator = match?.GetSpectator(guid);
+
+            if (spectator != null)
+            {
+                // someone who came to watch can't be harmed, but /die still works: they are just taken back
+                SendSpectatorHome(match, spectator, player, homeDelaySeconds);
+                return;
+            }
 
             if (fighter == null)
             {
@@ -604,21 +639,33 @@ public static partial class ArenaManager
                 return;
             }
 
+            var by = topDamager?.Name;
+            var news =
+                by != null && by != fighter.Name
+                    ? $"{fighter.Name} has been defeated by {by}!"
+                    : $"{fighter.Name} has been defeated!";
+
+            // a fellowship fights on while anybody on it is standing: whoever is defeated watches the rest
+            if (
+                match.State == ArenaMatchState.Fighting
+                && !fighter.Eliminated
+                && !fighter.Returned
+                && SpectatingEnabled
+                && match.Fighters.Any(f => f != fighter && f.Side == fighter.Side && !f.Eliminated)
+            )
+            {
+                Spectate(match, fighter, player, homeDelaySeconds);
+                Eliminate(match, fighter, player, news);
+                return;
+            }
+
             // first, so that they get to finish falling. If they were sent home already (the duel ended a moment ago),
             // that will stand them up again when it happens.
             SendHome(match, fighter, player, homeDelaySeconds);
 
             if (match.State == ArenaMatchState.Fighting && !fighter.Eliminated)
             {
-                var by = topDamager?.Name;
-                Eliminate(
-                    match,
-                    fighter,
-                    player,
-                    by != null && by != fighter.Name
-                        ? $"{fighter.Name} has been defeated by {by}!"
-                        : $"{fighter.Name} has been defeated!"
-                );
+                Eliminate(match, fighter, player, news);
             }
             else if (match.State is ArenaMatchState.Arriving or ArenaMatchState.Countdown)
             {
@@ -646,6 +693,14 @@ public static partial class ArenaManager
                     $"{player.Name} has logged out, so your fellowship has left the arena queue.",
                     except: guid
                 );
+            }
+
+            var watched = matches.FirstOrDefault(m => m.GetSpectator(guid) != null);
+            if (watched != null)
+            {
+                watched.GetSpectator(guid).Returned = true;
+                player.StopArenaSpectating(reveal: false);
+                return;
             }
 
             var match = FindMatch(guid) ?? matches.FirstOrDefault(m => m.Get(guid) != null && m.InInstance(player));
@@ -715,6 +770,7 @@ public static partial class ArenaManager
             foreach (var match in matches.ToList())
             {
                 Update(match, now);
+                UpdateSpectators(match, now);
             }
 
             matches.RemoveAll(m => m.State == ArenaMatchState.Ended && now >= m.EndedAt + CloseDelay);
@@ -1193,8 +1249,10 @@ public static partial class ArenaManager
 
             Tell(
                 match,
-                $"The duel begins in {match.LastAnnounced} seconds. Nobody can be harmed until then. Your own enchantments stay with you."
+                $"The duel begins in {match.LastAnnounced} seconds. Nobody can be harmed until then. Your own enchantments stay with you.",
+                spectators: false
             );
+            TellSpectators(match, $"The duel begins in {match.LastAnnounced} seconds.");
 
             if (match.Scaled)
             {
@@ -1227,6 +1285,7 @@ public static partial class ArenaManager
         {
             match.State = ArenaMatchState.Fighting;
             match.Deadline = now + TimeLimit;
+            match.FightStartedAt = now;
 
             foreach (var fighter in match.Fighters)
             {
@@ -1234,7 +1293,8 @@ public static partial class ArenaManager
                 OnPlayer(player, () => player.BeginArenaDuel());
             }
 
-            Tell(match, $"Fight! You have {TimeLimit.TotalMinutes:N0} minutes.");
+            Tell(match, $"Fight! You have {TimeLimit.TotalMinutes:N0} minutes.", spectators: false);
+            TellSpectators(match, "Fight!");
 
             _log.Information("[ARENA] {Match}", match.Describe());
         }
@@ -1275,6 +1335,18 @@ public static partial class ArenaManager
             }
 
             CheckBoundary(match, fighter, player, now);
+        }
+
+        // a defeated fighter who is watching and leaves by themselves (a portal, a recall) gets their own status back where they are
+        foreach (var fighter in match.Fighters.Where(f => f.Eliminated && f.Spectating && !f.Returned))
+        {
+            var player = PlayerManager.GetOnlinePlayer(fighter.Guid);
+
+            if (player == null || !match.InInstance(player))
+            {
+                fighter.Returned = true;
+                OnPlayer(player, () => player.RestoreAfterArena(fighter.OriginalStatus, fighter.OriginalLastPkAttack));
+            }
         }
 
         if (match.State == ArenaMatchState.Fighting && now >= match.Deadline)
@@ -1373,6 +1445,14 @@ public static partial class ArenaManager
                 SendHome(match, fighter, player, HomeDelaySeconds);
             }
         }
+
+        SendSpectatorsHome(
+            match,
+            winningSide == null
+                ? "The duel is over. Nobody won."
+                : $"The duel is over: {string.Join(", ", match.Fighters.Where(f => f.Side == winningSide).Select(f => f.Name))} won.",
+            HomeDelaySeconds
+        );
 
         _log.Information(
             "[ARENA] {Match}: {Result}",
@@ -1564,6 +1644,8 @@ public static partial class ArenaManager
             }
         }
 
+        SendSpectatorsHome(match, $"The duel is off: {reason}", 2);
+
         // nobody is put back in the queue while arena dueling is turned off: it is being emptied
         if (Enabled && beforeTheArena)
         {
@@ -1646,11 +1728,25 @@ public static partial class ArenaManager
         return matches.FirstOrDefault(m => m.State != ArenaMatchState.Ended && m.Get(guid) != null);
     }
 
-    private static void Tell(ArenaMatch match, string message, ArenaFighter except = null)
+    /// <param name="spectators">Whether whoever has come to watch is told too</param>
+    private static void Tell(ArenaMatch match, string message, ArenaFighter except = null, bool spectators = true)
     {
         foreach (var fighter in match.Fighters.Where(f => f != except))
         {
             PlayerManager.GetOnlinePlayer(fighter.Guid)?.SendMessage(message);
+        }
+
+        if (spectators)
+        {
+            TellSpectators(match, message);
+        }
+    }
+
+    private static void TellSpectators(ArenaMatch match, string message)
+    {
+        foreach (var spectator in match.Spectators.Where(s => !s.Returned))
+        {
+            PlayerManager.GetOnlinePlayer(spectator.Guid)?.SendMessage(message);
         }
     }
 

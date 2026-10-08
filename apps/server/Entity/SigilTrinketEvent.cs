@@ -180,7 +180,7 @@ public class SigilTrinketEvent
                     break;
                 }
 
-                DamageEvent.CriticalOverridedByTrinket = true;
+                DamageEvent.ForceCriticalFromTrinket();
 
                 Player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
@@ -236,7 +236,7 @@ public class SigilTrinketEvent
                     break;
                 }
 
-                DamageEvent.CriticalDamageBonusFromTrinket += 1.0f;
+                DamageEvent.AddTrinketCriticalDamageBonus(1.0f);
 
                 Player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
@@ -253,8 +253,7 @@ public class SigilTrinketEvent
                     break;
                 }
 
-                DamageEvent.PartialEvasion = PartialEvasion.All;
-                DamageEvent.Evaded = true;
+                DamageEvent.ConvertGlancingBlowToFullEvade();
 
                 Player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(

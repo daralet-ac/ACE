@@ -1012,6 +1012,13 @@ public partial class Player : Creature, IPlayer
 
     public void HandleActionTalk(string message)
     {
+        var arenaRefusal = ArenaManager.WhyCantChat(this);
+        if (arenaRefusal != null)
+        {
+            SendMessage(arenaRefusal);
+            return;
+        }
+
         if (!IsGagged)
         {
             EnqueueBroadcast(
@@ -1059,6 +1066,13 @@ public partial class Player : Creature, IPlayer
 
     public void HandleActionEmote(string message)
     {
+        var arenaRefusal = ArenaManager.WhyCantChat(this);
+        if (arenaRefusal != null)
+        {
+            SendMessage(arenaRefusal);
+            return;
+        }
+
         if (!IsGagged)
         {
             EnqueueBroadcast(new GameMessageEmoteText(Guid.Full, GetNameWithSuffix(), message), LocalBroadcastRange);
@@ -1075,6 +1089,13 @@ public partial class Player : Creature, IPlayer
 
     public void HandleActionSoulEmote(string message)
     {
+        var arenaRefusal = ArenaManager.WhyCantChat(this);
+        if (arenaRefusal != null)
+        {
+            SendMessage(arenaRefusal);
+            return;
+        }
+
         if (!IsGagged)
         {
             if (!IsOlthoiPlayer || (IsOlthoiPlayer && NoOlthoiTalk))

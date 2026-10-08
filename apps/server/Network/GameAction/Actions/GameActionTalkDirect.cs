@@ -1,5 +1,6 @@
 using ACE.Common.Extensions;
 using ACE.Entity.Enum;
+using ACE.Server.Arena;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
@@ -24,6 +25,16 @@ public static class GameActionTalkDirect
             var statusMessage = new GameEventWeenieError(session, WeenieError.CharacterNotAvailable);
             session.Network.EnqueueSend(statusMessage);
             return;
+        }
+
+        if (creature is Player arenaTarget)
+        {
+            var arenaRefusal = ArenaManager.WhyCantTell(session.Player, arenaTarget);
+            if (arenaRefusal != null)
+            {
+                session.Player.SendMessage(arenaRefusal);
+                return;
+            }
         }
 
         session.Network.EnqueueSend(

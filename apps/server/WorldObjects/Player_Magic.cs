@@ -711,13 +711,15 @@ partial class Player
         Spell spell,
         WorldObject target,
         WorldObject casterItem,
-        out uint manaUsed
+        out uint manaUsed,
+        out ManaCastRefund manaRefund
     )
     {
         manaUsed = 0;
+        manaRefund = ManaCastRefund.None;
         if (castingPreCheckStatus == CastingPreCheckStatus.Success)
         {
-            manaUsed = CalculateManaUsage(this, spell, target);
+            manaUsed = CalculateManaUsage(this, spell, target, out manaRefund);
         }
         else if (castingPreCheckStatus == CastingPreCheckStatus.CastFailed)
         {
@@ -914,6 +916,7 @@ partial class Player
             state.CasterItem,
             state.MagicSkill,
             state.ManaUsed,
+            state.ManaRefund,
             state.Target,
             state.Status,
             checkAngle,
@@ -962,6 +965,7 @@ partial class Player
         WorldObject casterItem,
         uint magicSkill,
         uint manaUsed,
+        ManaCastRefund manaRefund,
         WorldObject target,
         CastingPreCheckStatus castingPreCheckStatus,
         bool checkAngle = true,
@@ -976,7 +980,7 @@ partial class Player
             if (target == null)
             {
                 SendWeenieError(WeenieError.TargetNotAcquired);
-                FinishCast(spell);
+                FinishCast();
                 return;
             }
 
@@ -992,7 +996,17 @@ partial class Player
                     actionChain.AddDelaySeconds(rotateTime);
                     actionChain.AddAction(
                         this,
-                        () => DoCastSpell(spell, casterItem, magicSkill, manaUsed, target, castingPreCheckStatus, false)
+                        () =>
+                            DoCastSpell(
+                                spell,
+                                casterItem,
+                                magicSkill,
+                                manaUsed,
+                                manaRefund,
+                                target,
+                                castingPreCheckStatus,
+                                false
+                            )
                     );
                     actionChain.EnqueueChain();
                 }
@@ -1014,18 +1028,27 @@ partial class Player
             // verify spell range
             if (!VerifySpellRange(target, targetCategory, spell, casterItem, magicSkill))
             {
-                FinishCast(spell);
+                FinishCast();
                 return;
             }
         }
 
         if (IsDead)
         {
-            FinishCast(spell);
+            FinishCast();
             return;
         }
 
-        DoCastSpell_Inner(spell, casterItem, manaUsed, target, castingPreCheckStatus, true, sigilTrinketSpell);
+        DoCastSpell_Inner(
+            spell,
+            casterItem,
+            manaUsed,
+            manaRefund,
+            target,
+            castingPreCheckStatus,
+            true,
+            sigilTrinketSpell
+        );
     }
 
     public WorldObject TurnTarget;
@@ -1068,6 +1091,7 @@ partial class Player
         Spell spell,
         WorldObject casterItem,
         uint manaUsed,
+        ManaCastRefund manaRefund,
         WorldObject target,
         CastingPreCheckStatus castingPreCheckStatus,
         bool finishCast = true,
@@ -1131,12 +1155,14 @@ partial class Player
         if (!isWeaponSpell)
         {
             UpdateVitalDelta(Mana, -(int)manaUsed);
+            ApplyManaCastRefund(manaRefund);
         }
         else
         {
             if (itemCaster != null)
             {
                 itemCaster.ItemCurMana -= (int)manaUsed;
+                ApplyManaCastRefund(manaRefund);
             }
             else
             {
@@ -1165,7 +1191,7 @@ partial class Player
 
             if (finishCast)
             {
-                FinishCast(spell);
+                FinishCast();
             }
 
             return;
@@ -1182,9 +1208,13 @@ partial class Player
             EndStealth(null, true);
         }
 
+        var spellReleased = false;
+
         switch (castingPreCheckStatus)
         {
             case CastingPreCheckStatus.Success:
+
+                spellReleased = true;
 
                 if (!spell.IsFellowshipSpell)
                 {
@@ -1226,6 +1256,7 @@ partial class Player
 
                 if (spell.NumProjectiles > 0)
                 {
+                    spellReleased = true;
                     HandleCastSpell(spell, target, itemCaster, caster, isWeaponSpell);
                 }
 
@@ -1295,11 +1326,60 @@ partial class Player
 
         if (finishCast)
         {
-            FinishCast(spell);
+            FinishCast();
+        }
+
+        if (spellReleased)
+        {
+            CheckForCombatAbilityOverloadBacklash(spell);
         }
     }
 
-    public void FinishCast(Spell spell = null)
+    /// <summary>
+    /// COMBAT ABILITY - Overload: a released spell has a chance to burn the caster, scaling with the charge level.
+    /// </summary>
+    private void CheckForCombatAbilityOverloadBacklash(Spell spell)
+    {
+        if (!OverloadStanceIsActive && !OverloadDischargeIsActive)
+        {
+            return;
+        }
+
+        var meter = OverloadStanceIsActive ? ManaChargeMeter : DischargeLevel;
+        var chance = meter * 0.5f;
+
+        if (ThreadSafeRandom.Next(0.0f, 1.0f) >= chance)
+        {
+            return;
+        }
+
+        var selfDamage = Convert.ToInt32(0.1f * meter * spell.BaseMana);
+
+        if (selfDamage <= 0)
+        {
+            return;
+        }
+
+        UpdateVitalDelta(Health, -selfDamage);
+        DamageHistory.Add(this, DamageType.Health, (uint)selfDamage);
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"Overload! The unstable mana in your spell burns you for {selfDamage} damage!",
+                ChatMessageType.CombatEnemy
+            )
+        );
+
+        if (!IsDead)
+        {
+            return;
+        }
+
+        OnDeath(DamageHistory.LastDamager, DamageType.Health);
+        Die();
+    }
+
+    public void FinishCast()
     {
         var hasWindupGestures = MagicState.CastSpellParams?.HasWindupGestures ?? true;
         var castGesture = MagicState.CastGesture;
@@ -1371,26 +1451,6 @@ partial class Player
             );
             actionChain.EnqueueChain();
         }
-
-        if ((OverloadStanceIsActive || OverloadDischargeIsActive) && spell is not null)
-        {
-            var meter = OverloadStanceIsActive ? ManaChargeMeter : DischargeLevel;
-            var chance = meter * 0.5f;
-
-            if (ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
-            {
-                var selfDamage = Convert.ToInt32(0.1f * meter * spell.BaseMana);
-
-                UpdateVitalDelta(Health, -selfDamage);
-
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"Overload! The unstable mana in your spell burns you for {selfDamage} damage!",
-                        ChatMessageType.CombatEnemy
-                    )
-                );
-            }
-        }
     }
 
     /// <summary>
@@ -1460,7 +1520,7 @@ partial class Player
         var castingPreCheckStatus = GetCastingPreCheckStatus(spell, magicSkill, isWeaponSpell);
 
         // calculate mana usage
-        if (!CalculateManaUsage(castingPreCheckStatus, spell, target, casterItem, out var manaUsed))
+        if (!CalculateManaUsage(castingPreCheckStatus, spell, target, casterItem, out var manaUsed, out var manaRefund))
         {
             return false;
         }
@@ -1477,11 +1537,11 @@ partial class Player
         // cast spell
         DoCastGesture(spell, casterItem, spellChain);
 
-        MagicState.SetCastParams(spell, casterItem, magicSkill, manaUsed, target, castingPreCheckStatus);
+        MagicState.SetCastParams(spell, casterItem, magicSkill, manaUsed, manaRefund, target, castingPreCheckStatus);
 
         if (!FastTick)
         {
-            spellChain.AddAction(this, () => DoCastSpell(MagicState, sigilTrinketSpell));
+            spellChain.AddAction(this, () => DoCastSpell(MagicState, true, sigilTrinketSpell));
         }
 
         spellChain.EnqueueChain();
@@ -1642,7 +1702,7 @@ partial class Player
         var castingPreCheckStatus = GetCastingPreCheckStatus(spell, magicSkill, false);
 
         // calculate mana usage
-        if (!CalculateManaUsage(castingPreCheckStatus, spell, null, null, out var manaUsed))
+        if (!CalculateManaUsage(castingPreCheckStatus, spell, null, null, out var manaUsed, out var manaRefund))
         {
             return false;
         }
@@ -1661,7 +1721,7 @@ partial class Player
         DoCastGesture(spell, null, spellChain);
 
         // cast untargeted spell
-        MagicState.SetCastParams(spell, null, magicSkill, manaUsed, null, castingPreCheckStatus);
+        MagicState.SetCastParams(spell, null, magicSkill, manaUsed, manaRefund, null, castingPreCheckStatus);
 
         if (!FastTick)
         {
@@ -1857,6 +1917,7 @@ partial class Player
                 parms.Spell,
                 parms.CasterItem,
                 parms.ManaUsed,
+                parms.ManaRefund,
                 parms.Target,
                 CastingPreCheckStatus.CastFailed,
                 false

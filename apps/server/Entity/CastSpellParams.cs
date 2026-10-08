@@ -11,6 +11,7 @@ public class CastSpellParams
     public WorldObject CasterItem { get; set; }
     public uint MagicSkill { get; set; }
     public uint ManaUsed { get; set; }
+    public ManaCastRefund ManaRefund { get; set; }
     public WorldObject Target { get; set; }
     public Player.CastingPreCheckStatus Status { get; set; }
 
@@ -22,6 +23,7 @@ public class CastSpellParams
         WorldObject casterItem,
         uint magicSkill,
         uint manaUsed,
+        ManaCastRefund manaRefund,
         WorldObject target,
         Player.CastingPreCheckStatus status
     )
@@ -31,6 +33,7 @@ public class CastSpellParams
         CasterItem = casterItem;
         MagicSkill = magicSkill;
         ManaUsed = manaUsed;
+        ManaRefund = manaRefund;
         Target = target;
         Status = status;
     }

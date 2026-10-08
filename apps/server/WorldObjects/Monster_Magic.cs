@@ -265,7 +265,7 @@ partial class Creature
         // do any monsters have mana conversion?
         var target = GetSpellMaxRange() < float.PositiveInfinity ? AttackTarget : this;
 
-        var manaUsed = CalculateManaUsage(this, CurrentSpell, target);
+        var manaUsed = CalculateManaUsage(this, CurrentSpell, target, out var manaRefund);
 
         if (manaUsed > Mana.Current)
         {
@@ -273,6 +273,7 @@ partial class Creature
         }
 
         Mana.Current -= manaUsed;
+        ApplyManaCastRefund(manaRefund);
         return true;
     }
 
@@ -457,7 +458,7 @@ partial class Creature
             case MagicSchool.WarMagic:
             case MagicSchool.VoidMagic:
 
-                HandleCastSpell(spell, target, caster);
+                HandleCastSpell(spell, target, null, caster);
                 break;
         }
     }

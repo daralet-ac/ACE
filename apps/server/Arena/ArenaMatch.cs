@@ -93,6 +93,42 @@ public sealed class ArenaFighter
     public DateTime? OutsideSince { get; set; }
 
     public int NextBoundaryWarning { get; set; }
+
+    /// <summary>
+    /// They were defeated in a fellowship duel while their side fought on, and are watching the rest of it
+    /// </summary>
+    public bool Spectating { get; set; }
+}
+
+/// <summary>
+/// Someone who is watching a duel (/arena watch), unseen. They keep their own player killer status, and nobody can do anything to them
+/// or be done anything by them.
+/// </summary>
+public sealed class ArenaSpectator
+{
+    public uint Guid { get; init; }
+
+    public string Name { get; init; }
+
+    /// <summary>
+    /// Where they were before they came to watch, and where they are sent back to
+    /// </summary>
+    public Position Home { get; init; }
+
+    /// <summary>
+    /// When they were sent into the arena
+    /// </summary>
+    public DateTime SentAt { get; init; }
+
+    /// <summary>
+    /// They have got to the arena
+    /// </summary>
+    public bool Arrived { get; set; }
+
+    /// <summary>
+    /// They have been sent back, or left by themselves, and can be seen again
+    /// </summary>
+    public bool Returned { get; set; }
 }
 
 /// <summary>
@@ -117,6 +153,11 @@ public sealed class ArenaMatch : IInstanceReturnPositions
 
     public List<ArenaFighter> Fighters { get; init; }
 
+    /// <summary>
+    /// Whoever has come to watch (/arena watch). A defeated fighter who watches the rest of the duel is not one of these, but a fighter who is Spectating.
+    /// </summary>
+    public List<ArenaSpectator> Spectators { get; } = new List<ArenaSpectator>();
+
     public ArenaMatchState State { get; set; }
 
     /// <summary>
@@ -135,6 +176,11 @@ public sealed class ArenaMatch : IInstanceReturnPositions
 
     public bool CalledOff { get; set; }
 
+    /// <summary>
+    /// When the countdown ended and the fight began
+    /// </summary>
+    public DateTime FightStartedAt { get; set; }
+
     public DateTime EndedAt { get; set; }
 
     /// <summary>
@@ -143,6 +189,11 @@ public sealed class ArenaMatch : IInstanceReturnPositions
     public int LastAnnounced { get; set; }
 
     public ArenaFighter Get(uint guid) => Fighters.FirstOrDefault(f => f.Guid == guid);
+
+    /// <summary>
+    /// Someone who has come to watch, and has not gone back yet
+    /// </summary>
+    public ArenaSpectator GetSpectator(uint guid) => Spectators.FirstOrDefault(s => s.Guid == guid && !s.Returned);
 
     /// <summary>
     /// How many fight on each side: 1 one against one, more for fellowships
@@ -162,7 +213,8 @@ public sealed class ArenaMatch : IInstanceReturnPositions
     /// Where a fighter goes when they leave the instance any other way than being sent home by the duel (logging out, /instance close):
     /// back to where they were before it
     /// </summary>
-    public Position GetReturnPosition(Player player) => Get(player.Guid.Full)?.Home;
+    public Position GetReturnPosition(Player player) =>
+        Get(player.Guid.Full)?.Home ?? Spectators.FirstOrDefault(s => s.Guid == player.Guid.Full)?.Home;
 
     public string Describe()
     {
