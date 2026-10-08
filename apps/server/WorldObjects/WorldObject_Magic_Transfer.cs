@@ -1,28 +1,8 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using ACE.Common;
-using ACE.Database;
-using ACE.DatLoader;
-using ACE.DatLoader.FileTypes;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
-using ACE.Server.Factories;
-using ACE.Server.Factories.Entity;
-using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
-using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.Network.Structure;
-using ACE.Server.Physics;
-using ACE.Server.Physics.Extensions;
-using ACE.Server.WorldObjects.Managers;
 
 namespace ACE.Server.WorldObjects;
 
@@ -275,7 +255,7 @@ partial class WorldObject
                     destVitalChange > 0 &&
                     (
                         transferSource is not Player ||
-                        (transferSource is Player && destination != transferSource)
+                        destination != transferSource
                     );
 
                 if (shouldIncreaseCharge &&
@@ -301,11 +281,6 @@ partial class WorldObject
                     destVitalChange = (uint)destination.UpdateVitalDelta(destination.Health, destVitalChange);
 
                     destination.DamageHistory.OnHeal(destVitalChange);
-
-                    //var destPlayer = destination as Player;
-                    //if (destPlayer != null && destPlayer.Fellowship != null)
-                    //destPlayer.Fellowship.OnVitalUpdate(destPlayer);
-
                     break;
             }
 
@@ -313,7 +288,7 @@ partial class WorldObject
             {
                 HandlePostDamageRatingEffects(transferSource, srcVitalChange, player, targetPlayer, creature, spell, ProjectileSpellType.Undef);
             }
-            else if (targetPlayer == player && destVitalChange >= 0)
+            else if (targetPlayer == player)
             {
                 HandlePostHealRatingEffects(player, targetPlayer);
             }
@@ -413,38 +388,11 @@ partial class WorldObject
                 var emoteChain = new ActionChain();
                 emoteChain.AddDelayForOneTick();
                 emoteChain.AddAction(targetCreature, () => targetCreature.EmoteManager.OnDamage(creature));
-                //if (critical)
-                //    emoteChain.AddAction(targetCreature, () => targetCreature.EmoteManager.OnReceiveCritical(creature));
                 emoteChain.EnqueueChain();
             }
         }
 
         HandleBoostTransferDeath(creature, targetCreature);
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Battery: Decrease vital transfer effectiveness.
-    /// </summary>
-    private static uint CheckForCombatAbilityBatteryVitalTransferPenalty(CombatAbility combatAbility, Player player, uint srcVitalChange, ref uint destVitalChange)
-    {
-        if (!player.BatteryDischargeIsActive)
-        {
-            return srcVitalChange;
-        }
-
-        var maxMana = (float)player.Mana.MaxValue;
-        var currentMana = (float)player.Mana.Current == 0 ? 1 : (float)player.Mana.Current;
-
-        if ((currentMana / maxMana) < 0.75)
-        {
-            var newMax = maxMana * 0.75;
-            var batteryMod = 1f - 0.25f * ((newMax - currentMana) / newMax);
-
-            srcVitalChange = (uint)(srcVitalChange * batteryMod);
-            destVitalChange = (uint)(destVitalChange * batteryMod);
-        }
-
-        return srcVitalChange;
     }
 
     /// <summary>

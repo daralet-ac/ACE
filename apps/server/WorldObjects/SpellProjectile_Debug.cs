@@ -1,20 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Numerics;
-using ACE.Common;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
-using ACE.Server.Entity.Actions;
-using ACE.Server.Factories;
 using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
-using DamageType = ACE.Entity.Enum.DamageType;
-using Position = ACE.Entity.Position;
 
 namespace ACE.Server.WorldObjects;
 
@@ -29,17 +19,13 @@ partial class SpellProjectile
         bool critDefended,
         bool overpower,
         float weaponCritDamageMod,
-        float magicSkillBonus,
         int baseDamage,
-        float critDamageBonus,
         float elementalDamageMod,
         float slayerMod,
         float weaponResistanceMod,
         float resistanceMod,
         float absorbMod,
-        float lifeProjectileDamage,
-        float lifeMagicDamage,
-        float finalDamage
+        float lifeProjectileDamage
     )
     {
         var observer = PlayerManager.GetOnlinePlayer(observed.DebugDamageTarget);
@@ -65,18 +51,12 @@ partial class SpellProjectile
             // life magic projectile
             info += $"LifeProjectileDamage: {lifeProjectileDamage}\n";
             info += $"DamageRatio: {spell.DamageRatio}\n";
-            info += $"LifeMagicDamage: {lifeMagicDamage}\n";
         }
         else
         {
             // war/void projectile
             var difficulty = Math.Min(spell.Power, 350);
             info += $"Difficulty: {difficulty}\n";
-
-            if (magicSkillBonus != 0.0f)
-            {
-                info += $"SkillBonus: {magicSkillBonus}\n";
-            }
 
             info += $"BaseDamageRange: {spell.MinDamage} - {spell.MaxDamage}\n";
             info += $"BaseDamage: {baseDamage}\n";
@@ -86,11 +66,6 @@ partial class SpellProjectile
         if (weaponCritDamageMod != 1.0f)
         {
             info += $"WeaponCritDamageMod: {weaponCritDamageMod}\n";
-        }
-
-        if (critDamageBonus != 0)
-        {
-            info += $"CritDamageBonus: {critDamageBonus}\n";
         }
 
         if (elementalDamageMod != 1.0f)
@@ -118,7 +93,6 @@ partial class SpellProjectile
             info += $"AbsorbMod: {absorbMod}\n";
         }
 
-        //observer.Session.Network.EnqueueSend(new GameMessageSystemChat(info, ChatMessageType.Broadcast));
         observer.DebugDamageBuffer += info;
     }
 

@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using ACE.Common;
-using ACE.DatLoader;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
-using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 
 namespace ACE.Server.WorldObjects;
@@ -38,7 +31,6 @@ partial class Player
         var currentMana = Mana.Current;
         if (casterItem != null)
         {
-            //var caster = GetEquippedWand();
             currentMana = (uint)(casterItem.ItemCurMana ?? 0);
         }
 

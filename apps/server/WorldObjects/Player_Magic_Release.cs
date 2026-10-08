@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
-using ACE.DatLoader;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
@@ -15,16 +13,14 @@ namespace ACE.Server.WorldObjects;
 
 partial class Player
 {
-    public void DoCastSpell(MagicState _state, bool checkAngle = true, bool sigilTrinketSpell = false)
+    public void DoCastSpell(bool checkAngle = true)
     {
-        //Console.WriteLine("DoCastSpell");
-
         if (!MagicState.IsCasting)
         {
             return;
         }
 
-        var state = _state?.CastSpellParams;
+        var state = MagicState.CastSpellParams;
 
         if (state == null)
         {
@@ -44,8 +40,7 @@ partial class Player
             state.ManaRefund,
             state.Target,
             state.Status,
-            checkAngle,
-            sigilTrinketSpell
+            checkAngle
         );
     }
 
@@ -57,8 +52,7 @@ partial class Player
         ManaCastRefund manaRefund,
         WorldObject target,
         CastingPreCheckStatus castingPreCheckStatus,
-        bool checkAngle = true,
-        bool sigilTrinketSpell = false
+        bool checkAngle = true
     )
     {
         if (target != null)
@@ -134,9 +128,7 @@ partial class Player
             manaUsed,
             manaRefund,
             target,
-            castingPreCheckStatus,
-            true,
-            sigilTrinketSpell
+            castingPreCheckStatus
         );
     }
 
@@ -147,8 +139,7 @@ partial class Player
         ManaCastRefund manaRefund,
         WorldObject target,
         CastingPreCheckStatus castingPreCheckStatus,
-        bool finishCast = true,
-        bool sigilTrinketSpell = false
+        bool finishCast = true
     )
     {
         if (RecordCast.Enabled)
@@ -178,50 +169,40 @@ partial class Player
         var itemCaster = isWeaponSpell ? caster : null;
 
         // SIGIL SCARAB - Mana Cost Reduction
-        if (!sigilTrinketSpell)
+        var manaModifier = spell.School == MagicSchool.LifeMagic
+            ? GetSigilTrinketManaReductionMod(spell, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Reduction)
+            : GetSigilTrinketManaReductionMod(spell, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Reduction);
+
+        var before = manaUsed;
+        manaUsed = (uint)(manaUsed * manaModifier);
+
+        if (DebugSpellcasting)
         {
-            var manaModifier = spell.School == MagicSchool.LifeMagic
-                ? GetSigilTrinketManaReductionMod(spell, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Reduction)
-                : GetSigilTrinketManaReductionMod(spell, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Reduction);
+            var scarabMsg = $"[ManaDbg]  scarab factor {manaModifier:F3}: manaUsed {before} -> {manaUsed}";
+            _log.Information(scarabMsg);
+            Session.Network.EnqueueSend(new GameMessageSystemChat(scarabMsg, ChatMessageType.Magic));
+        }
 
-            var before = manaUsed;
-            manaUsed = (uint)(manaUsed * manaModifier);
-
-            if (DebugSpellcasting)
-            {
-                var scarabMsg = $"[ManaDbg]  scarab factor {manaModifier:F3}: manaUsed {before} -> {manaUsed}";
-                _log.Information(scarabMsg);
-                Session.Network.EnqueueSend(new GameMessageSystemChat(scarabMsg, ChatMessageType.Magic));
-            }
-
-            if (manaModifier < 1.0f)
-            {
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"Sigil Scarab of Reduction reduced the spell's cost by {Math.Round((1.0f - manaModifier) * 100, 0)}%, from {before} to {manaUsed}!  ",
-                        ChatMessageType.Magic
-                    )
-                );
-            }
+        if (manaModifier < 1.0f)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Sigil Scarab of Reduction reduced the spell's cost by {Math.Round((1.0f - manaModifier) * 100, 0)}%, from {before} to {manaUsed}!  ",
+                    ChatMessageType.Magic
+                )
+            );
         }
 
         if (!isWeaponSpell)
         {
             UpdateVitalDelta(Mana, -(int)manaUsed);
-            ApplyManaCastRefund(manaRefund);
         }
         else
         {
-            if (itemCaster != null)
-            {
-                itemCaster.ItemCurMana -= (int)manaUsed;
-                ApplyManaCastRefund(manaRefund);
-            }
-            else
-            {
-                castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
-            }
+            itemCaster.ItemCurMana -= (int)manaUsed;
         }
+
+        ApplyManaCastRefund(manaRefund);
 
         // consume spell components
         if (!isWeaponSpell)
@@ -235,7 +216,6 @@ partial class Player
         // only PKs affected by these caps?
         if (dist > Windup_MaxMove && PlayerKillerStatus != PlayerKillerStatus.NPK)
         {
-            //player.Session.Network.EnqueueSend(new GameEventWeenieError(player.Session, WeenieError.YouHaveMovedTooFar));
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat("Your movement disrupted spell casting!", ChatMessageType.Magic)
             );
@@ -474,7 +454,6 @@ partial class Player
                         HandleCastQueue();
                     }
 
-                    //Console.WriteLine("====================================");
                 }
             );
             actionChain.EnqueueChain();
@@ -523,7 +502,6 @@ partial class Player
         var targetCreature = target as Creature;
         var targetPlayer = target as Player;
 
-        LastSuccessCast_School = spell.School;
         LastSuccessCast_Time = Time.GetUnixTime();
 
         if (spell.School == MagicSchool.VoidMagic && spell.Id != (uint)SpellId.VoidRestorationPenalty)
@@ -580,7 +558,7 @@ partial class Player
                         OnAttackMonster(targetCreature);
                     }
 
-                    if (TryResistSpell(target, spell, out var partialResist, itemCaster))
+                    if (TryResistSpell(target, spell, out _, itemCaster))
                     {
                         if (spell.IsHarmful && targetCreature != null && targetCreature != this)
                         {

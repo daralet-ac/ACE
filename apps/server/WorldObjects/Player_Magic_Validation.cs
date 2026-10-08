@@ -1,12 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
-using ACE.DatLoader;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
-using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
@@ -19,7 +15,7 @@ partial class Player
     /// Verifies spell is contained in player's spellbook,
     /// or in the weapon's spellbook in the case of built-in spells
     /// </summary>
-    /// <param name="builtInSpell">If TRUE, casting a built-in spell from a weapon</param>
+    /// <param name="casterItem">The casting item, when casting one of its built-in spells</param>
     public bool VerifySpell(uint spellId, WorldObject casterItem = null)
     {
         if (casterItem != null)
@@ -30,8 +26,6 @@ partial class Player
         {
             return SpellIsKnown(spellId);
         }
-
-        // send error message?
     }
 
     /// <summary>
@@ -40,12 +34,7 @@ partial class Player
     /// </summary>
     public bool IsWeaponSpell(uint spellId, WorldObject casterItem)
     {
-        var caster = GetEquippedWand();
-
-        if (casterItem != null)
-        {
-            caster = casterItem;
-        }
+        var caster = casterItem;
 
         if (caster == null || caster.SpellDID == null)
         {
@@ -216,8 +205,7 @@ partial class Player
 
         if (casterItem == null)
         {
-            // use init + ranks, same as acclient DetermineSpellRange -> InqSkillLevel
-            // this is much lower than base, and omits things like attribute formula + base augs + enlightenment
+            // range uses the current skill in the spell's school, not the modded skill used for casting
             var playerSkill = GetCreatureSkill(spell.School);
             magicSkill = playerSkill.Current;
         }
@@ -233,7 +221,7 @@ partial class Player
         // bootstrapping this function for indoor/outdoor check, since it is called both before and after windup
         if (spell.Flags.HasFlag(SpellFlags.NotIndoor))
         {
-            if (Location.Indoors || target != null && target.Location.Indoors)
+            if (Location.Indoors || target.Location.Indoors)
             {
                 SendUseDoneEvent(WeenieError.YourSpellCannotBeCastInside);
                 return false;
@@ -241,7 +229,7 @@ partial class Player
         }
         if (spell.Flags.HasFlag(SpellFlags.NotOutdoor))
         {
-            if (!Location.Indoors || target != null && !target.Location.Indoors)
+            if (!Location.Indoors || !target.Location.Indoors)
             {
                 SendUseDoneEvent(WeenieError.YourSpellCannotBeCastOutside);
                 return false;
@@ -286,12 +274,6 @@ partial class Player
             castingPreCheckStatus = CastingPreCheckStatus.Success;
         }
 
-        // limit casting time between war and void
-        //if (
-        //    spell.School == MagicSchool.VoidMagic && LastSuccessCast_School == MagicSchool.WarMagic
-        //    || spell.School == MagicSchool.WarMagic && LastSuccessCast_School == MagicSchool.VoidMagic
-        //)
-        //{
         // Check for Nether Dampening preventing Restoration Resonance spells
         if (EnchantmentManager.HasSpell((uint)SpellId.VoidRestorationPenalty) && IsRestorationResonanceSpell(spell.Category))
         {
@@ -334,19 +316,15 @@ partial class Player
 
             // banes / lures
             case ItemType.Vestements:
-                //return target is Clothing || target.IsShield;
                 return target is Creature || target is Clothing || target.IsShield;
 
             case ItemType.Weapon:
-                //return target is MeleeWeapon || target is MissileLauncher;
                 return target is Creature || target is MeleeWeapon || target is MissileLauncher;
 
             case ItemType.Caster:
-                //return target is Caster;
                 return target is Creature || target is Caster;
 
             case ItemType.WeaponOrCaster:
-                //return target is MeleeWeapon || target is MissileLauncher || target is Caster;
                 return target is Creature || target is MeleeWeapon || target is MissileLauncher || target is Caster;
 
             case ItemType.Portal:

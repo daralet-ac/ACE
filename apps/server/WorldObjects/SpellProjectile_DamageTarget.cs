@@ -1,20 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Numerics;
-using ACE.Common;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
-using ACE.Server.Entity.Actions;
-using ACE.Server.Factories;
-using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.WorldObjects.Entity;
-using DamageType = ACE.Entity.Enum.DamageType;
-using Position = ACE.Entity.Position;
 
 namespace ACE.Server.WorldObjects;
 
@@ -80,7 +68,6 @@ partial class SpellProjectile
                 // TODO: use target direction vs. projectile position, instead of player position
                 // could sneak attack be applied to void DoTs?
                 sneakAttackMod = sourcePlayer.GetSneakAttackMod(target);
-                //Console.WriteLine("Magic sneak attack:  + sneakAttackMod);
                 heritageMod = sourcePlayer.GetHeritageBonus(sourcePlayer.GetEquippedWand()) ? 1.05f : 1.0f;
             }
             // Calc sneak bonus for monsters
@@ -118,9 +105,6 @@ partial class SpellProjectile
             damage *= damageRatingMod * damageResistRatingMod;
 
             percent = damage / target.Health.MaxValue;
-
-            //Console.WriteLine($"DamageRating mod: {damageRatingMod}\n" +
-            //    $"DamageResistRating mod: {damageResistRatingMod}");
 
             equippedCloak = target.EquippedCloak;
 

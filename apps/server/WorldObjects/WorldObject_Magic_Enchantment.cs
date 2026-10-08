@@ -1,27 +1,12 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
-using System.Text;
-using ACE.Common;
-using ACE.Database;
-using ACE.DatLoader;
-using ACE.DatLoader.FileTypes;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
-using ACE.Server.Entity.Actions;
-using ACE.Server.Factories;
-using ACE.Server.Factories.Entity;
-using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
-using ACE.Server.Physics;
-using ACE.Server.Physics.Extensions;
 using ACE.Server.WorldObjects.Managers;
 
 namespace ACE.Server.WorldObjects;
@@ -45,7 +30,6 @@ partial class WorldObject
         // weird itemCaster -> caster collapsing going on here -- fixme
         
         var player = this as Player;
-        var targetCreature = target as Creature;
 
         var aetheriaProc = false;
         var cloakProc = false;
@@ -79,7 +63,6 @@ partial class WorldObject
         // Ward reduction of Creature and Life debuffs
         if (target is Player && !IsWardExcludedSpell(spell))
         {
-            //Console.WriteLine("enchantment target player: " + target.Name);
             var targetPlayer = target as Player;
 
             var wardBuffDebuffMod = targetPlayer.EnchantmentManager.GetWardMultiplicativeMod();
@@ -88,9 +71,6 @@ partial class WorldObject
 
             if (addResult.Enchantment.StatModValue < 0 && targetPlayerWard > 0)
             {
-                //Console.WriteLine($"StatModValue Before: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue} {addResult.Enchantment.Duration}\n" +
-                //    $" -Target Ward Level: {targetPlayer.GetWardLevel()}");
-
                 var ignoreWardMod = 1.0f;
 
                 if (player != null)
@@ -109,9 +89,8 @@ partial class WorldObject
 
                 wardMod += (1 - wardMod) * 0.5f;
 
-                //addResult.Enchantment.StatModValue *= wardMod;
+                // ward shortens the debuff, it doesn't weaken it
                 addResult.Enchantment.Duration *= wardMod;
-                //Console.WriteLine($"StatModValue After: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue} {addResult.Enchantment.Duration}");
             }
         }
 
@@ -348,7 +327,7 @@ partial class WorldObject
             // skip TryResistSpell() for non-player casters, they already performed it previously
             if (player != null && targetResist != null)
             {
-                if (TryResistSpell(targetResist, spell, out var resistedMod, caster))
+                if (TryResistSpell(targetResist, spell, out _, caster))
                 {
                     return;
                 }

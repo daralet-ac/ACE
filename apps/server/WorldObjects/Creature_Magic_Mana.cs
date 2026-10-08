@@ -5,7 +5,6 @@ using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 
 namespace ACE.Server.WorldObjects;
@@ -60,13 +59,9 @@ partial class Creature
             && target is Player targetPlayer
         )
         {
-            var numTargetItems = 1;
-            if (targetPlayer != null)
-            {
-                numTargetItems = targetPlayer.EquippedObjects.Values.Count(i =>
-                    (i is Clothing || i.IsShield) && i.IsEnchantable
-                );
-            }
+            var numTargetItems = targetPlayer.EquippedObjects.Values.Count(i =>
+                (i is Clothing || i.IsShield) && i.IsEnchantable
+            );
 
             baseCost += spell.ManaMod * (uint)numTargetItems;
         }

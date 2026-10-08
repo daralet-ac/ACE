@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using ACE.Common;
 using ACE.DatLoader;
 using ACE.Entity.Enum;
@@ -81,11 +80,6 @@ partial class Creature
     private bool HasKnownSpells => Biota.HasKnownSpell(BiotaDatabaseLock);
 
     /// <summary>
-    /// Returns TRUE if the modified monster has known spells
-    /// </summary>
-    private bool HasKnownSpellsModified => Weenie.PropertiesSpellBook != null && Weenie.PropertiesSpellBook.Count > 0;
-
-    /// <summary>
     /// The next spell the monster will attempt to cast
     /// </summary>
     private Spell CurrentSpell { get; set; }
@@ -93,8 +87,6 @@ partial class Creature
     private bool TryRollSpell()
     {
         CurrentSpell = null;
-
-        //Console.WriteLine($"{Name}.TryRollSpell(), probability={GetProbabilityAny()}");
 
         // monster spellbooks have probabilities with base 2.0
         // ie. a 5% chance would be 2.05 instead of 0.05
@@ -110,7 +102,6 @@ partial class Creature
 
         // We don't use thread safety here. Monster spell books aren't mutated cross-threads.
         // This reduces memory consumption by not cloning the spell book every single TryRollSpell()
-        //foreach (var spell in Biota.CloneSpells(BiotaDatabaseLock)) // Thread-safe
         foreach (var spell in Biota.PropertiesSpellBook) // Not thread-safe
         {
             var probability = spell.Value > 2.0f ? spell.Value - 2.0f : spell.Value / 100.0f;
@@ -137,23 +128,6 @@ partial class Creature
             }
         }
         return false;
-    }
-
-    /// <summary>
-    /// Returns the probability of this monster casting a spell for an attack
-    /// </summary>
-    private float GetProbabilityAny()
-    {
-        var probabilities = new List<float>();
-
-        foreach (var spell in Biota.GetKnownSpellsProbabilities(BiotaDatabaseLock))
-        {
-            var probability = spell > 2.0f ? spell - 2.0f : spell / 100.0f;
-
-            probabilities.Add(probability);
-        }
-
-        return Probability.GetProbabilityAny(probabilities);
     }
 
     /// <summary>
@@ -225,7 +199,7 @@ partial class Creature
             }
         }
 
-        var preCastTime = PreCastMotion(AttackTarget);
+        var preCastTime = PreCastMotion();
 
         var actionChain = new ActionChain();
         actionChain.AddDelaySeconds(preCastTime);
@@ -247,9 +221,6 @@ partial class Creature
         actionChain.EnqueueChain();
 
         var postCastTime = GetPostCastTime(spell);
-        var animTime = preCastTime + postCastTime;
-
-        //Console.WriteLine($"{Name}.MagicAttack(): preCastTime({preCastTime}), postCastTime({postCastTime})");
 
         // slight variation here
         PrevAttackTime = Timers.RunningTime + preCastTime;
@@ -284,17 +255,15 @@ partial class Creature
     /// <summary>
     /// Perform the first part of monster spell casting animation - spreading arms out
     /// </summary>
-    public float PreCastMotion(WorldObject target, bool fallback = false)
+    public float PreCastMotion(bool fallback = false)
     {
         if (AiUseHumanMagicAnimations && !fallback)
         {
-            return PreCastMotion_Human(target);
+            return PreCastMotion_Human();
         }
 
         var motion = new ACE.Server.Entity.Motion(this, MotionCommand.CastSpell, PreCastSpeed);
         motion.MotionState.TurnSpeed = 2.25f;
-        //motion.HasTarget = true;
-        //motion.TargetGuid = target.Guid;
         CurrentMotionState = motion;
 
         EnqueueBroadcastMotion(motion);
@@ -312,7 +281,7 @@ partial class Creature
     /// performs the windup gestures from the spell scarabs
     ///
     /// <returns>The amount of time for the windup gestures to complete</returns>
-    private float PreCastMotion_Human(WorldObject target)
+    private float PreCastMotion_Human()
     {
         // todo: play each motion at the proper time,
         // ensuring the monster is still alive at each step
@@ -328,7 +297,7 @@ partial class Creature
 
         if (castAnimTime == 0)
         {
-            return PreCastMotion(target, true);
+            return PreCastMotion(true);
         }
 
         var animTime = 0.0f;
@@ -406,7 +375,7 @@ partial class Creature
         }
 
         // try to resist spell, if applicable
-        if (TryResistSpell(target, spell, out var partialResist))
+        if (TryResistSpell(target, spell, out _))
         {
             TryHandleFactionMob(target);
             return;
@@ -473,8 +442,6 @@ partial class Creature
 
         var motion = new ACE.Server.Entity.Motion(this, MotionCommand.Ready, animSpeed);
         motion.MotionState.TurnSpeed = 2.25f;
-        //motion.HasTarget = true;
-        //motion.TargetGuid = target.Guid;
         CurrentMotionState = motion;
 
         EnqueueBroadcastMotion(motion);

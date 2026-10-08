@@ -1795,7 +1795,7 @@ public class Vendor : Creature
 
         IsBusy = true;
 
-        var preCastTime = PreCastMotion(target);
+        var preCastTime = PreCastMotion();
 
         var castChain = new ActionChain();
         castChain.AddDelaySeconds(preCastTime);

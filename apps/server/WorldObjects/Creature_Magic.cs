@@ -1,10 +1,5 @@
-using System;
-using System.Linq;
-using System.Text;
-using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
-using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 
@@ -106,22 +101,5 @@ partial class Creature
                 target.EnchantmentManager.Dispel(propertiesEnchantmentRegistry);
             }
         }
-    }
-
-    /// <summary>
-    /// Returns the creature's effective magic defense skill
-    /// with item.WeaponMagicDefense and imbues factored in
-    /// </summary>
-    public uint GetEffectiveMagicDefense()
-    {
-        var current = GetCreatureSkill(Skill.MagicDefense).Current;
-        var weaponDefenseMod = GetWeaponMagicDefenseModifier(this);
-        var defenseImbues = (uint)GetDefenseImbues(ImbuedEffectType.MagicDefense);
-
-        var effectiveMagicDefense = (uint)Math.Round((current * weaponDefenseMod) + defenseImbues);
-
-        //Console.WriteLine($"EffectiveMagicDefense: {effectiveMagicDefense}");
-
-        return effectiveMagicDefense;
     }
 }

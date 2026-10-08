@@ -1,20 +1,13 @@
 using System;
-using System.Collections.Generic;
-using System.Numerics;
 using ACE.Common;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
-using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 using DamageType = ACE.Entity.Enum.DamageType;
-using Position = ACE.Entity.Position;
 
 namespace ACE.Server.WorldObjects;
 
@@ -62,18 +55,13 @@ partial class SpellProjectile
             return null;
         }
 
-        var critDamageBonus = 0.0f;
         var criticalDamageMod = 1.0f;
         var weaponCritDamageMod = 1.0f;
         var weaponResistanceMod = 1.0f;
         var resistanceMod = 1.0f;
 
-        // life magic
-        var lifeMagicDamage = 0.0f;
-
         // war/void magic
         var baseDamage = 0;
-        var skillBonus = 0.0f;
 
         var finalDamage = 0.0f;
 
@@ -127,7 +115,6 @@ partial class SpellProjectile
             targetPlayer.CastReflectedSpell(Spell, sourceCreature, this);
 
             resisted = true;
-            _partialEvasion = PartialEvasion.All;
             return null;
         }
 
@@ -212,8 +199,6 @@ partial class SpellProjectile
         ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearWardPen, "WardPen");
 
         var wardMod = GetWardMod(sourceCreature, target, ignoreWardMod);
-
-        //Console.WriteLine($"TargetWard: {target.WardLevel} WardRend: {wardRendingMod} Nullification: {NullificationMod} WardMod: {wardMod}");
 
         // absorb mod
         var isPVP = source is Player && targetPlayer != null;
@@ -410,38 +395,6 @@ partial class SpellProjectile
             finalDamage *= targetPlayer?.GetPhalanxFullHitDamageMod() ?? 1.0f;
         }
 
-        //if (sourcePlayer is not null)
-        //{
-        //    Console.WriteLine($"\n{sourceCreature.Name} casted {Spell.Name} on {target.Name} for {Math.Round(finalDamage, 0)}.\n" +
-        //        $" -baseDamage: {baseDamage}\n" +
-        //        $" -critMultiplier: {criticalDamageMod}\n" +
-        //        $" -attributeMod: {attributeMod}\n" +
-        //        $" -elementalDamageMod: {elementalDamageMod}\n" +
-        //        $" -slayerMod: {slayerMod}\n" +
-        //        $" -overload: {overloadDamageMod}\n" +
-        //        $" -batteryMod: {batteryDamageMod}\n" +
-        //        $" -jewelElementalist: {jewelElementalist}\n" +
-        //        $" -jewelElemental: {jewelElemental}\n" +
-        //        $" -jewelSelfHarm: {jewelSelfHarm}\n" +
-        //        $" -jewelRedFury: {jewelRedFury}\n" +
-        //        $" -jewelBlueFury: {jewelBlueFury}\n" +
-        //        $" -strikethrough: {strikethroughMod}\n" +
-        //        $" -archetypeSpellDamageMod: {archetypeSpellDamageMod}\n" +
-        //        $" -levelscaling: {levelScalingMod}\n" +
-        //        $" -damageMultiplier: {damageMultiplier}\n" +
-        //        $" -spellcraftMod: {spellcraftMod}\n" +
-        //        $" -landblockScalingMod: {landblockScalingMod}\n" +
-        //        $" -damageBeforeMitigation: {damageBeforeMitigation}\n" +
-        //        $" -absorbMod: {absorbMod}\n" +
-        //        $" -wardMod: {wardMod}\n" +
-        //        $" -resistanceMod: {resistanceMod}\n" +
-        //        $" -resistedMod: {resistedMod}\n" +
-        //        $" -specDefMod: {specDefenseMod}\n" +
-        //        $" -ratingDamageTypeWard: {ratingDamageTypeWard}\n" +
-        //        $" -playerSpellDamageMultiplier: {(float)PropertyManager.GetDouble("player_spell_damage_multiplier").Item}\n" +
-        //        $" -FinalBeforeRatings: {finalDamage}");
-        //}
-
 
         // show debug info
         if (sourceCreature != null && sourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
@@ -455,17 +408,13 @@ partial class SpellProjectile
                 critDefended,
                 overpower,
                 weaponCritDamageMod,
-                skillBonus,
                 baseDamage,
-                critDamageBonus,
                 elementalDamageMod,
                 slayerMod,
                 weaponResistanceMod,
                 resistanceMod,
                 absorbMod,
-                LifeProjectileDamage,
-                lifeMagicDamage,
-                finalDamage
+                LifeProjectileDamage
             );
         }
         if (target.DebugDamage.HasFlag(Creature.DebugDamageType.Defender))
@@ -479,17 +428,13 @@ partial class SpellProjectile
                 critDefended,
                 overpower,
                 weaponCritDamageMod,
-                skillBonus,
                 baseDamage,
-                critDamageBonus,
                 elementalDamageMod,
                 slayerMod,
                 weaponResistanceMod,
                 resistanceMod,
                 absorbMod,
-                LifeProjectileDamage,
-                lifeMagicDamage,
-                finalDamage
+                LifeProjectileDamage
             );
         }
         return finalDamage;
@@ -504,6 +449,9 @@ partial class SpellProjectile
         return monsterHealthScalingMod;
     }
 
+    /// <summary>
+    /// SPEC BONUS - War Magic (Wand/Baton): +50% crit damage (additively)
+    /// </summary>
     private static float CheckForWarMagicSpecCriticalDamageBonus(Player sourcePlayer, WorldObject weapon)
     {
         if (sourcePlayer == null || weapon == null)

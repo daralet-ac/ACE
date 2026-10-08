@@ -1,22 +1,13 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using ACE.Common;
-using ACE.DatLoader;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
-using ACE.Server.Network.GameMessages.Messages;
 
 namespace ACE.Server.WorldObjects;
 
 partial class Player
 {
-    // 20 from MoveToManager threshold?
-    public const float MaxAngle = 5;
 
     public bool IsWithinAngle(WorldObject target)
     {
@@ -43,7 +34,6 @@ partial class Player
             }
         }
 
-        //Console.WriteLine($"Angle: " + angle);
         var maxAngle = PropertyManager.GetDouble("spellcast_max_angle").Item;
 
         if (RecordCast.Enabled)
@@ -58,7 +48,6 @@ partial class Player
 
     public void TurnTo_Magic(WorldObject target)
     {
-        //Console.WriteLine($"{Name}.TurnTo_Magic()");
         TurnTarget = target;
 
         MagicState.TurnStarted = true;
@@ -80,7 +69,6 @@ partial class Player
             }
 
             var stopCompletely = !MagicState.CastMotionDone;
-            //var stopCompletely = true;
 
             CreateTurnToChain2(target, null, null, stopCompletely, MagicState.AlwaysTurn);
 
@@ -90,8 +78,6 @@ partial class Player
 
     public void HandleMotionDone_Magic(uint motionID, bool success)
     {
-        //Console.WriteLine($"HandleMotionDone_Magic({(MotionCommand)motionID}, {success})");
-
         if (!FastTick || !MagicState.IsCasting)
         {
             return;
@@ -121,7 +107,7 @@ partial class Player
 
                     MagicState.AlwaysTurn = true;
 
-                    DoCastSpell(MagicState);
+                    DoCastSpell();
                 }
             );
             actionChain.EnqueueChain();
@@ -130,8 +116,6 @@ partial class Player
 
     public void OnMoveComplete_Magic(WeenieError status)
     {
-        //Console.WriteLine($"OnMoveComplete_Magic({status})");
-
         if (!FastTick || !MagicState.IsCasting || !MagicState.TurnStarted)
         {
             return;
@@ -167,7 +151,7 @@ partial class Player
                 }
                 else
                 {
-                    DoCastSpell(MagicState, checkAngle);
+                    DoCastSpell(checkAngle);
                 }
             }
         );
@@ -184,7 +168,7 @@ partial class Player
         }
         else
         {
-            DoCastSpell(MagicState, true);
+            DoCastSpell(true);
         }
     }
 

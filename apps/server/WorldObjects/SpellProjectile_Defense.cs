@@ -1,27 +1,16 @@
 using System;
-using System.Collections.Generic;
-using System.Numerics;
 using ACE.Common;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
-using ACE.Server.Entity.Actions;
-using ACE.Server.Factories;
-using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.WorldObjects.Entity;
-using DamageType = ACE.Entity.Enum.DamageType;
-using Position = ACE.Entity.Position;
 
 namespace ACE.Server.WorldObjects;
 
 partial class SpellProjectile
 {
     /// <summary>
-    /// SPEC BONUS - War Magic (Wand/Baton): +50% crit damage (additively)
+    /// Armor imbued with Reduced Magical Damage Taken: -1% magic damage per imbue, down to 50%
     /// </summary>
     private float GetImbuedArmorSpellDamageMod(Creature target)
     {
@@ -115,7 +104,6 @@ partial class SpellProjectile
         targetPlayer.QuestManager.Stamp($"{sourceCreature.Guid}/Reprisal");
 
         resisted = true;
-        _partialEvasion = PartialEvasion.All;
 
         var msg = $"Reprisal! You resist the spell cast by {sourceCreature.Name}";
         targetPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Magic));

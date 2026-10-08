@@ -1,14 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using ACE.Common;
 using ACE.DatLoader;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
-using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 
 namespace ACE.Server.WorldObjects;
@@ -17,8 +11,6 @@ partial class Player
 {
     public void DoWindup(WindupParams windupParams, bool checkAngle)
     {
-        //Console.WriteLine($"{Name}.DoWindup()");
-
         // ensure target still exists
         var targetCategory = GetTargetCategory(windupParams.TargetGuid, windupParams.SpellId, out var target);
 
@@ -87,8 +79,6 @@ partial class Player
             );
         }
 
-        var windupTime = 0.0f;
-
         foreach (var windupGesture in spell.Formula.WindupGestures)
         {
             if (RecordCast.Enabled)
@@ -111,18 +101,14 @@ partial class Player
             // don't mess with CurrentMotionState here?
             if (!FastTick)
             {
-                windupTime = EnqueueMotionMagic(castChain, windupGesture, CastSpeed);
+                EnqueueMotionMagic(castChain, windupGesture, CastSpeed);
             }
 
-            /*Console.WriteLine($"{spell.Name}");
-            Console.WriteLine($"Windup Gesture: " + windupGesture);
-            Console.WriteLine($"Windup time: " + windupTime);
-            Console.WriteLine("-------");*/
         }
 
         if (FastTick)
         {
-            windupTime = EnqueueMotionAction(castChain, spell.Formula.WindupGestures, CastSpeed, MotionStance.Magic);
+            EnqueueMotionAction(castChain, spell.Formula.WindupGestures, CastSpeed, MotionStance.Magic);
         }
     }
 
@@ -132,8 +118,7 @@ partial class Player
 
         if (casterItem != null)
         {
-            //var caster = GetEquippedWand();
-            if (casterItem.UseUserAnimation != 0)
+                if (casterItem.UseUserAnimation != 0)
             {
                 MagicState.CastGesture = casterItem.UseUserAnimation;
             }
@@ -179,34 +164,28 @@ partial class Player
             MagicState.CastGesture = MotionCommand.Ready;
         }
 
-        var castTime = 0.0f;
         if (FastTick)
         {
-            castTime = EnqueueMotion(castChain, MagicState.CastGesture, CastSpeed, true, null, true);
+            EnqueueMotion(castChain, MagicState.CastGesture, CastSpeed, true, null, true);
         }
         else
         {
-            castTime = EnqueueMotionMagic(castChain, MagicState.CastGesture, CastSpeed);
+            EnqueueMotionMagic(castChain, MagicState.CastGesture, CastSpeed);
         }
 
-        //Console.WriteLine($"Cast Gesture: " + MagicState.CastGesture);
-        //Console.WriteLine($"Cast time: " + castTime);
     }
 
     /// <summary>
     /// Method used for handling player targeted spell casts
     /// </summary>
-    /// <param name="builtInSpell">If TRUE, casting a built-in spell from a weapon</param>
+    /// <param name="casterItem">The casting item, when casting one of its built-in spells</param>
     public bool CreatePlayerSpell(
         WorldObject target,
         TargetCategory targetCategory,
         uint spellId,
-        WorldObject casterItem,
-        bool sigilTrinketSpell = false
+        WorldObject casterItem
     )
     {
-        var creatureTarget = target as Creature;
-
         var spell = ValidateSpell(spellId, casterItem != null);
         if (spell == null)
         {
@@ -269,7 +248,6 @@ partial class Player
         DoSpellWords(spell, isWeaponSpell);
 
         var spellChain = new ActionChain();
-        //StartPos = new Physics.Common.Position(PhysicsObj.Position);
 
         // do wind-up gestures: fastcast has no windup (creature enchantments)
         DoWindupGestures(spell, isWeaponSpell, spellChain);
@@ -281,7 +259,7 @@ partial class Player
 
         if (!FastTick)
         {
-            spellChain.AddAction(this, () => DoCastSpell(MagicState, true, sigilTrinketSpell));
+            spellChain.AddAction(this, () => DoCastSpell());
         }
 
         spellChain.EnqueueChain();
@@ -292,7 +270,7 @@ partial class Player
     /// <summary>
     /// Method used for handling player untargeted spell casts
     /// </summary>
-    public bool CreatePlayerSpell(uint spellId, bool sigilTrinketSpell = false)
+    public bool CreatePlayerSpell(uint spellId)
     {
         var spell = ValidateSpell(spellId);
         if (spell == null)
@@ -316,7 +294,6 @@ partial class Player
 
         var spellChain = new ActionChain();
 
-        //StartPos = new Physics.Common.Position(PhysicsObj.Position);
 
         // do wind-up gestures: fastcast has no windup (creature enchantments)
         DoWindupGestures(spell, false, spellChain);
@@ -329,7 +306,7 @@ partial class Player
 
         if (!FastTick)
         {
-            spellChain.AddAction(this, () => DoCastSpell(MagicState, true, sigilTrinketSpell));
+            spellChain.AddAction(this, () => DoCastSpell());
         }
 
         spellChain.EnqueueChain();

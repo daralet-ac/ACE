@@ -4,16 +4,12 @@ using System.Numerics;
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
-using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
-using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.WorldObjects.Entity;
-using DamageType = ACE.Entity.Enum.DamageType;
 using Position = ACE.Entity.Position;
 
 namespace ACE.Server.WorldObjects;
@@ -24,7 +20,6 @@ public partial class SpellProjectile : WorldObject
     public ProjectileSpellType SpellType { get; set; }
 
     public Position SpawnPos { get; set; }
-    public float DistanceToTarget { get; set; }
     public uint LifeProjectileDamage { get; set; }
 
     private PartialEvasion _partialEvasion;
@@ -161,10 +156,7 @@ public partial class SpellProjectile : WorldObject
         if ((RotationSpeed ?? 0) != 0)
         {
             AlignPath = false;
-            if (RotationSpeed != null)
-            {
-                PhysicsObj.Omega = new Vector3((float)(Math.PI * 2 * RotationSpeed), 0, 0);
-            }
+            PhysicsObj.Omega = new Vector3((float)(Math.PI * 2 * RotationSpeed), 0, 0);
         }
     }
 
@@ -282,8 +274,6 @@ public partial class SpellProjectile : WorldObject
 
     public void ProjectileImpact()
     {
-        //Console.WriteLine($"{Name}.ProjectileImpact()");
-
         ReportCollisions = false;
         Ethereal = true;
         IgnoreCollisions = true;
@@ -323,8 +313,6 @@ public partial class SpellProjectile : WorldObject
     /// </summary>
     public override void OnCollideEnvironment()
     {
-        //Console.WriteLine($"{Name}.OnCollideEnvironment()");
-
         if (Info != null && ProjectileSource is Player player && player.DebugSpell)
         {
             player.Session.Network.EnqueueSend(
@@ -338,9 +326,7 @@ public partial class SpellProjectile : WorldObject
 
     public override void OnCollideObject(WorldObject target)
     {
-        //Console.WriteLine($"{Name}.OnCollideObject({target.Name})");
-
-        if (target != null && _strikethroughTargets != null)
+        if (target != null)
         {
             if (_strikethroughTargets.Contains(target.Guid.Full))
             {
@@ -440,7 +426,7 @@ public partial class SpellProjectile : WorldObject
             targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(this, Spell, (int)damage, Skill.MagicDefense,
                 SigilTrinketMagicDefenseEffect.Absorption);
 
-            if (!damage.HasValue || damage < 0 || damage > uint.MaxValue)
+            if (damage < 0 || damage > uint.MaxValue)
             {
                 _log.Error("OnCollideObject({Target}) - damage ({Damage}) could not be converted to uint.", target.Name, damage);
             }
@@ -469,7 +455,7 @@ public partial class SpellProjectile : WorldObject
 
             Strikethrough++;
 
-            _strikethroughTargets?.Add(creatureTarget.Guid.Full);
+            _strikethroughTargets.Add(creatureTarget.Guid.Full);
 
             // if this SpellProjectile has a TargetEffect, play it on successful hit
             DoSpellEffects(Spell, ProjectileSource, creatureTarget, true);
@@ -544,7 +530,6 @@ public partial class SpellProjectile : WorldObject
             // check for faction combat
             if (
                 sourceCreature != null
-                && creatureTarget != null
                 && (sourceCreature.AllowFactionCombat(creatureTarget) || sourceCreature.PotentialFoe(creatureTarget))
             )
             {
@@ -568,15 +553,12 @@ public partial class SpellProjectile : WorldObject
 
         // TODO: Physics description timestamps (sequence numbers) don't seem to be getting updated
 
-        //Console.WriteLine("SpellProjectile PhysicsState: " + PhysicsObj.State);
-
         var pos = Location.Pos;
         var rotation = Location.Rotation;
         PhysicsObj.Position.Frame.Origin = pos;
         PhysicsObj.Position.Frame.Orientation = rotation;
 
         var velocity = Velocity;
-        //velocity = Vector3.Transform(velocity, Matrix4x4.Transpose(Matrix4x4.CreateFromQuaternion(rotation)));
         PhysicsObj.Velocity = velocity;
 
         if (target != null)

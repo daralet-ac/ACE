@@ -1,28 +1,9 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
 using ACE.Common;
-using ACE.Database;
-using ACE.DatLoader;
-using ACE.DatLoader.FileTypes;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
-using ACE.Server.Entity.Actions;
-using ACE.Server.Factories;
-using ACE.Server.Factories.Entity;
-using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
-using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.Network.Structure;
-using ACE.Server.Physics;
-using ACE.Server.Physics.Extensions;
-using ACE.Server.WorldObjects.Managers;
 
 namespace ACE.Server.WorldObjects;
 
@@ -84,9 +65,6 @@ partial class WorldObject
                 damage = (uint)-caster.UpdateVitalDelta(caster.Health, -tryDamage);
                 caster.DamageHistory.Add(this, DamageType.Health, damage);
                 damageType = DamageType.Health;
-
-                //if (player != null && player.Fellowship != null)
-                //player.Fellowship.OnVitalUpdate(player);
             }
             else if (spell.DamageType != DamageType.Undef)
             {

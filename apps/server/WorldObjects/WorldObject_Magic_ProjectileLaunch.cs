@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
 using ACE.Common;
 using ACE.Database;
 using ACE.DatLoader;
@@ -11,18 +9,12 @@ using ACE.DatLoader.FileTypes;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
-using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
-using ACE.Server.Factories.Entity;
 using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.Network.Structure;
 using ACE.Server.Physics;
 using ACE.Server.Physics.Extensions;
-using ACE.Server.WorldObjects.Managers;
 
 namespace ACE.Server.WorldObjects;
 
@@ -135,8 +127,7 @@ partial class WorldObject
     private List<Vector3> CalculateProjectileOrigins(
         Spell spell,
         ProjectileSpellType spellType,
-        WorldObject target,
-        bool castAtTarget = false
+        WorldObject target
     )
     {
         var numProjectiles = spell.NumProjectiles;
@@ -148,7 +139,6 @@ partial class WorldObject
         var origins = new List<Vector3>();
 
         var radius = GetProjectileRadius(spell);
-        //Console.WriteLine($"Radius: {radius}");
 
         var vRadius = Vector3.One * radius;
 
@@ -161,7 +151,6 @@ partial class WorldObject
         if (target != null)
         {
             var cylDist = GetCylinderDistance(target);
-            //Console.WriteLine($"CylDist: {cylDist}");
             if (cylDist < 0.6f)
             {
                 radsum = PhysicsObj.GetPhysicsRadius() + radius;
@@ -243,8 +232,6 @@ partial class WorldObject
                             numSteps *= -1;
                         }
 
-                        //Console.WriteLine($"NumSteps: {numSteps}");
-
                         var curAngle = anglePerStep * numSteps;
                         var rads = curAngle.ToRadians();
 
@@ -267,9 +254,6 @@ partial class WorldObject
                 break;
             }
         }
-
-        /*foreach (var origin in origins)
-            Console.WriteLine(origin);*/
 
         return origins;
     }
@@ -582,18 +566,13 @@ partial class WorldObject
         return result;
     }
 
-    /// <summary>
-    /// This is a temporary structure
-    /// GetSpellProjectileSpeed() can easily be moved to SpellProjectile.CalculateSpeed()
-    /// however the current calling pattern for Rings and Walls needs some work still..
-    /// </summary>
     private static readonly ConcurrentDictionary<uint, float> ProjectileSpeedCache =
         new ConcurrentDictionary<uint, float>();
 
     /// <summary>
-    /// Gets the speed of a projectile based on the distance to the target.
+    /// Gets the speed of a spell's projectile (its weenie's MaximumVelocity)
     /// </summary>
-    private float GetProjectileSpeed(Spell spell, float? distance = null)
+    private float GetProjectileSpeed(Spell spell)
     {
         var projectileWcid = spell.WeenieClassId;
 
@@ -604,7 +583,7 @@ partial class WorldObject
             if (weenie == null)
             {
                 _log.Error(
-                    $"{Name} ({Guid}).GetSpellProjectileSpeed({spell.Id} - {spell.Name}, {distance}): couldn't find weenie {projectileWcid}"
+                    $"{Name} ({Guid}).GetSpellProjectileSpeed({spell.Id} - {spell.Name}): couldn't find weenie {projectileWcid}"
                 );
                 return 0.0f;
             }
@@ -612,7 +591,7 @@ partial class WorldObject
             if (!weenie.PropertiesFloat.TryGetValue(PropertyFloat.MaximumVelocity, out var maxVelocity))
             {
                 _log.Error(
-                    $"{Name} ({Guid}).GetSpellProjectileSpeed({spell.Id} - {spell.Name}, {distance}): couldn't find MaxVelocity for {weenie.WeenieClassId} - {weenie.ClassName}"
+                    $"{Name} ({Guid}).GetSpellProjectileSpeed({spell.Id} - {spell.Name}): couldn't find MaxVelocity for {weenie.WeenieClassId} - {weenie.ClassName}"
                 );
                 return 0.0f;
             }
@@ -622,23 +601,6 @@ partial class WorldObject
             ProjectileSpeedCache.TryAdd(projectileWcid, baseSpeed);
         }
 
-        // TODO:
-        // Speed seems to increase when target is moving away from the caster and decrease when
-        // the target is moving toward the caster. This still needs more research.
-        if (distance == null)
-        {
-            return baseSpeed;
-        }
-
-        var speed = (float)(
-            (baseSpeed * .9998363f)
-            - (baseSpeed * .62034f) / distance
-            + (baseSpeed * .44868f) / Math.Pow(distance.Value, 2f)
-            - (baseSpeed * .25256f) / Math.Pow(distance.Value, 3f)
-        );
-
-        speed = Math.Clamp(speed, 1, 50);
-
-        return speed;
+        return baseSpeed;
     }
 }

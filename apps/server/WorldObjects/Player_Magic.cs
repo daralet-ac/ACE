@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using ACE.Common;
-using ACE.DatLoader;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
-using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 
 namespace ACE.Server.WorldObjects;
@@ -38,7 +31,6 @@ partial class Player
     /// Limiter for switching between war and void magic
     /// </summary>
     public double LastSuccessCast_Time;
-    public MagicSchool LastSuccessCast_School;
 
     public bool DebugSpell { get; set; }
 
@@ -78,11 +70,9 @@ partial class Player
     /// <summary>
     /// Handles player targeted casting message
     /// </summary>
-    /// <param name="builtInSpell">If TRUE, casting a built-in spell from a weapon</param>
+    /// <param name="casterItem">The casting item, when casting one of its built-in spells</param>
     public void HandleActionCastTargetedSpell(uint targetGuid, uint spellId, WorldObject casterItem = null)
     {
-        //Console.WriteLine($"{Name}.HandleActionCastTargetedSpell({targetGuid:X8}, {spellId}, {builtInSpell})");
-
         if (CombatMode != CombatMode.Magic)
         {
             _log.Error(
@@ -279,8 +269,6 @@ partial class Player
     /// </summary>
     public void HandleActionMagicCastUnTargetedSpell(uint spellId)
     {
-        //Console.WriteLine($"{Name}.HandleActionCastUnTargetedSpell({spellId})");
-
         if (CombatMode != CombatMode.Magic)
         {
             _log.Error(
@@ -365,7 +353,6 @@ partial class Player
     }
 
     public static float Windup_MaxMove = 6.0f;
-    public static float Windup_MaxMoveSq = Windup_MaxMove * Windup_MaxMove;
 
     public Physics.Common.Position StartPos { get; set; }
 
