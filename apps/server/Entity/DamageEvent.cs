@@ -300,18 +300,18 @@ public partial class DamageEvent
     }
 
     /// <summary>
-    /// Returns true if the player attacker has specialized the skill for this attack's weapon (Unarmed Combat with no weapon)
+    /// Returns true if the player has specialized the skill for a weapon (Unarmed Combat with no weapon)
     /// </summary>
-    private bool WeaponIsSpecialized()
+    private static bool IsWeaponSpecialized(Player player, WorldObject weapon)
     {
-        if (_playerAttacker == null)
+        if (player == null)
         {
             return false;
         }
 
-        var specializationSkill = GetSpecializationSkill(Weapon?.WeaponSkill ?? Skill.UnarmedCombat);
+        var specializationSkill = GetSpecializationSkill(weapon?.WeaponSkill ?? Skill.UnarmedCombat);
 
-        return specializationSkill != null && IsSkillSpecialized(_playerAttacker, specializationSkill.Value);
+        return specializationSkill != null && IsSkillSpecialized(player, specializationSkill.Value);
     }
 
     /// <summary>
