@@ -100,7 +100,7 @@ public static class VpnDetection
             .Contains(accountName, StringComparer.OrdinalIgnoreCase);
     }
 
-    private static bool IsLocalAddress(IPAddress address)
+    internal static bool IsLocalAddress(IPAddress address)
     {
         if (address.IsIPv4MappedToIPv6)
         {
@@ -143,44 +143,47 @@ public static class VpnDetection
             // Login handling is synchronous, so block here; the HttpClient timeout bounds the wait.
             var data = HttpClient.GetStringAsync(url).GetAwaiter().GetResult();
 
-            using var doc = JsonDocument.Parse(data);
-            var root = doc.RootElement;
-
-            if (!root.TryGetProperty(ip, out var info) || info.ValueKind != JsonValueKind.Object)
-            {
-                var status = root.TryGetProperty("status", out var s) ? s.ToString() : "unknown";
-                var message = root.TryGetProperty("message", out var m) ? m.ToString() : "";
-                _log.Warning(
-                    "VPN lookup for {Ip} returned no result. Status: {Status} {Message}",
-                    ip,
-                    status,
-                    message
-                );
-                return null;
-            }
-
-            var proxy = GetString(info, "proxy");
-            var isVpn = string.Equals(proxy, "yes", StringComparison.OrdinalIgnoreCase);
-
-            if (isVpn)
-            {
-                _log.Warning(
-                    "VPN detected for {Ip}. Type: {Type}, Provider: {Provider}, ASN: {Asn}, Country: {Country}",
-                    ip,
-                    GetString(info, "type"),
-                    GetString(info, "provider"),
-                    GetString(info, "asn"),
-                    GetString(info, "country")
-                );
-            }
-
-            return isVpn;
+            return ParseLookup(ip, data);
         }
         catch (Exception ex)
         {
             _log.Warning(ex, "VPN lookup for {Ip} failed", ip);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Reads proxycheck.io's answer for an IP. Returns null if it has no answer for that IP.
+    /// </summary>
+    internal static bool? ParseLookup(string ip, string data)
+    {
+        using var doc = JsonDocument.Parse(data);
+        var root = doc.RootElement;
+
+        if (!root.TryGetProperty(ip, out var info) || info.ValueKind != JsonValueKind.Object)
+        {
+            var status = root.TryGetProperty("status", out var s) ? s.ToString() : "unknown";
+            var message = root.TryGetProperty("message", out var m) ? m.ToString() : "";
+            _log.Warning("VPN lookup for {Ip} returned no result. Status: {Status} {Message}", ip, status, message);
+            return null;
+        }
+
+        var proxy = GetString(info, "proxy");
+        var isVpn = string.Equals(proxy, "yes", StringComparison.OrdinalIgnoreCase);
+
+        if (isVpn)
+        {
+            _log.Warning(
+                "VPN detected for {Ip}. Type: {Type}, Provider: {Provider}, ASN: {Asn}, Country: {Country}",
+                ip,
+                GetString(info, "type"),
+                GetString(info, "provider"),
+                GetString(info, "asn"),
+                GetString(info, "country")
+            );
+        }
+
+        return isVpn;
     }
 
     private static string GetString(JsonElement element, string name)

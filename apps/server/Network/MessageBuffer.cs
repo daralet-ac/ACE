@@ -23,7 +23,12 @@ internal class MessageBuffer
     {
         lock (fragments)
         {
-            if (!Complete && fragments.All(x => x.Header.Index != fragment.Header.Index))
+            // fragments are numbered from 0 to one less than their count
+            if (
+                !Complete
+                && fragment.Header.Index < TotalFragments
+                && fragments.All(x => x.Header.Index != fragment.Header.Index)
+            )
             {
                 fragments.Add(fragment);
             }
