@@ -36,7 +36,9 @@ public partial class DamageEvent
             return;
         }
 
-        var thornsAmount = blockedAttack.GetNonCriticalDamageBeforeMitigation() * Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearThorns);
+        var thornsAmount =
+            blockedAttack.GetNonCriticalDamageBeforeMitigation()
+            * Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearThorns);
 
         var damageDealt = ApplyReactiveDamage(_playerDefender, _attacker, blockedAttack.DamageType, thornsAmount);
 
@@ -53,7 +55,11 @@ public partial class DamageEvent
 
     public void CheckForRiposte(Creature attacker, Creature defender)
     {
-        if ((!Parried && !Blocked) || defender is not Player playerDefender || !(attacker.GetDistance(playerDefender) < 10))
+        if (
+            (!Parried && !Blocked)
+            || defender is not Player playerDefender
+            || !(attacker.GetDistance(playerDefender) < 10)
+        )
         {
             return;
         }
@@ -63,7 +69,11 @@ public partial class DamageEvent
             return;
         }
 
-        if (!playerDefender.TwoHandedCombat && !playerDefender.IsDualWieldAttack && playerDefender.GetEquippedShield() is null)
+        if (
+            !playerDefender.TwoHandedCombat
+            && !playerDefender.IsDualWieldAttack
+            && playerDefender.GetEquippedShield() is null
+        )
         {
             return;
         }
@@ -100,14 +110,20 @@ public partial class DamageEvent
 
         var parryType = Parried ? "parry" : "block";
 
-        var msg = $"You follow up your {parryType} with a quick riposte, dealing {damageDealt} {riposte.DamageType} damage to {attacker.Name}!";
+        var msg =
+            $"You follow up your {parryType} with a quick riposte, dealing {damageDealt} {riposte.DamageType} damage to {attacker.Name}!";
         playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
     }
 
     /// <summary>
     /// Calculates reactive damage (Thorns, Riposte) in a separate DamageEvent, so this event keeps describing the original attack
     /// </summary>
-    private DamageEvent CreateReactiveDamageEvent(Creature source, Creature target, WorldObject damageSource, float? powerMod = null)
+    private DamageEvent CreateReactiveDamageEvent(
+        Creature source,
+        Creature target,
+        WorldObject damageSource,
+        float? powerMod = null
+    )
     {
         var reactiveDamageEvent = new DamageEvent
         {

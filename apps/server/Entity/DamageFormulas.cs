@@ -86,7 +86,13 @@ internal static class DamageFormulas
     /// add together and multiply the base chance: Spec Physical Defense (up to 50%) and Riposte (100%).
     /// COMBAT ABILITY - Phalanx multiplies the result.
     /// </summary>
-    public static double GetParryChance(uint parrySkill, uint attackSkill, float specPhysicalDefenseBonus, float riposteBonus, float phalanxMod)
+    public static double GetParryChance(
+        uint parrySkill,
+        uint attackSkill,
+        float specPhysicalDefenseBonus,
+        float riposteBonus,
+        float phalanxMod
+    )
     {
         var parryMod = SkillCheck.GetSkillChance((uint)(parrySkill * 1.5), attackSkill);
 

@@ -57,22 +57,22 @@ internal struct DamageModifiers
     public readonly float Apply(float baseDamage)
     {
         return baseDamage
-               * Attribute
-               * Power
-               * Slayer
-               * DamageRating
-               * Recklessness
-               * SneakAttack
-               * Backstab
-               * AttackHeight
-               * ElementalRating
-               * PierceRating
-               * DualWield
-               * TwoHandedCombat
-               * Fury
-               * Relentless
-               * SteadyStrike
-               * Ammo
-               * LevelScaling;
+            * Attribute
+            * Power
+            * Slayer
+            * DamageRating
+            * Recklessness
+            * SneakAttack
+            * Backstab
+            * AttackHeight
+            * ElementalRating
+            * PierceRating
+            * DualWield
+            * TwoHandedCombat
+            * Fury
+            * Relentless
+            * SteadyStrike
+            * Ammo
+            * LevelScaling;
     }
 }

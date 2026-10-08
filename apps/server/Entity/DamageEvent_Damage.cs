@@ -1,5 +1,4 @@
 using ACE.Common;
-using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Network.GameMessages.Messages;
@@ -27,8 +26,18 @@ public partial class DamageEvent
 
         if (!criticalRolled || _criticalDefendedFromAug || criticalDefendedFromPerception)
         {
-            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(_defender, this, Skill.TwoHandedCombat, SigilTrinketShieldTwohandedCombatEffect.Might);
-            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(_defender, this, Skill.Shield, SigilTrinketShieldTwohandedCombatEffect.Might);
+            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(
+                _defender,
+                this,
+                Skill.TwoHandedCombat,
+                SigilTrinketShieldTwohandedCombatEffect.Might
+            );
+            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(
+                _defender,
+                this,
+                Skill.Shield,
+                SigilTrinketShieldTwohandedCombatEffect.Might
+            );
 
             if (!CriticalOverridedByTrinket)
             {
@@ -120,12 +129,15 @@ public partial class DamageEvent
     /// </summary>
     private static float GetDualWieldDamageBonus(Player playerAttacker, Creature defender)
     {
-        if (playerAttacker is not {IsDualWieldAttack: true} || defender is null)
+        if (playerAttacker is not { IsDualWieldAttack: true } || defender is null)
         {
             return 1.0f;
         }
 
-        return DamageFormulas.GetCombatSkillDamageBonus(playerAttacker.GetModdedDualWieldSkill(), defender.GetModdedPhysicalDefSkill());
+        return DamageFormulas.GetCombatSkillDamageBonus(
+            playerAttacker.GetModdedDualWieldSkill(),
+            defender.GetModdedPhysicalDefSkill()
+        );
     }
 
     /// <summary>
@@ -133,14 +145,19 @@ public partial class DamageEvent
     /// </summary>
     private static float GetTwohandedCombatDamageBonus(Player playerAttacker, Creature defender)
     {
-        if (playerAttacker?.GetEquippedWeapon() is null
+        if (
+            playerAttacker?.GetEquippedWeapon() is null
             || playerAttacker.GetEquippedWeapon().W_WeaponType is not WeaponType.TwoHanded
-            || defender is null)
+            || defender is null
+        )
         {
             return 1.0f;
         }
 
-        return DamageFormulas.GetCombatSkillDamageBonus(playerAttacker.GetModdedTwohandedCombatSkill(), defender.GetModdedPhysicalDefSkill());
+        return DamageFormulas.GetCombatSkillDamageBonus(
+            playerAttacker.GetModdedTwohandedCombatSkill(),
+            defender.GetModdedPhysicalDefSkill()
+        );
     }
 
     /// <summary>
@@ -152,7 +169,7 @@ public partial class DamageEvent
     {
         var recklessMod = 1.0f;
 
-        if (playerAttacker is {FuryStanceIsActive: true})
+        if (playerAttacker is { FuryStanceIsActive: true })
         {
             recklessMod += 0.25f * playerAttacker.AdrenalineMeter;
         }
@@ -162,7 +179,7 @@ public partial class DamageEvent
             recklessMod += 0.25f * playerDefender.AdrenalineMeter;
         }
 
-        if (playerAttacker is {FuryEnrageIsActive: true})
+        if (playerAttacker is { FuryEnrageIsActive: true })
         {
             recklessMod += playerAttacker.EnrageLevel;
         }
@@ -200,7 +217,7 @@ public partial class DamageEvent
             return 1.0f;
         }
 
-        return playerAttacker is {SteadyStrikeIsActive: true} ? 1.25f : 1.0f;
+        return playerAttacker is { SteadyStrikeIsActive: true } ? 1.25f : 1.0f;
     }
 
     /// <summary>
@@ -218,16 +235,24 @@ public partial class DamageEvent
 
     private static float GetLevelScalingMod(Creature attacker, Creature defender, Player playerDefender)
     {
-        var monsterHealthScalingMod = playerDefender != null
-            ? LevelScaling.GetMonsterDamageDealtHealthScalar(playerDefender, attacker)
-            : LevelScaling.GetMonsterDamageTakenHealthScalar(attacker, defender);
+        var monsterHealthScalingMod =
+            playerDefender != null
+                ? LevelScaling.GetMonsterDamageDealtHealthScalar(playerDefender, attacker)
+                : LevelScaling.GetMonsterDamageTakenHealthScalar(attacker, defender);
 
         return monsterHealthScalingMod;
     }
 
     private float GetCriticalChance()
     {
-        if (_playerDefender != null && (_playerDefender.IsLoggingOut || _playerDefender.PKLogout || _playerDefender.CombatMode is CombatMode.NonCombat))
+        if (
+            _playerDefender != null
+            && (
+                _playerDefender.IsLoggingOut
+                || _playerDefender.PKLogout
+                || _playerDefender.CombatMode is CombatMode.NonCombat
+            )
+        )
         {
             return 1.0f;
         }
@@ -253,12 +278,25 @@ public partial class DamageEvent
     private float GetCriticalDamageBeforeMitigation()
     {
         CriticalDamageBonusFromTrinket = 1.0f;
-        _playerAttacker?.CheckForSigilTrinketOnAttackEffects(_defender, this, Skill.Thievery, SigilTrinketThieveryEffect.Treachery, true);
+        _playerAttacker?.CheckForSigilTrinketOnAttackEffects(
+            _defender,
+            this,
+            Skill.Thievery,
+            SigilTrinketThieveryEffect.Treachery,
+            true
+        );
 
         _criticalDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(Weapon, _attacker, _attackSkill, _defender);
         _criticalDamageMod += GetMaceSpecCriticalDamageBonus(_playerAttacker);
         _criticalDamageMod += GetStaffSpecCriticalDamageBonus(_playerAttacker);
-        _criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(_playerAttacker, PropertyInt.GearBludgeon, "Bludgeon", rampQuestSource: _defender);
+        _criticalDamageMod *=
+            1.0f
+            + Jewel.GetJewelEffectMod(
+                _playerAttacker,
+                PropertyInt.GearBludgeon,
+                "Bludgeon",
+                rampQuestSource: _defender
+            );
         _criticalDamageMod *= CriticalDamageBonusFromTrinket;
 
         // RATING - Reprisal: the defender may evade the critical hit (see DoCalculateDamage)
@@ -270,7 +308,11 @@ public partial class DamageEvent
 
         if (_baseDamageMod is null)
         {
-            _log.Error("GetCriticalDamageBeforeMitigation({Attacker}, {Defender}) - _baseDamageMod is null", _attacker.Name, _defender.Name);
+            _log.Error(
+                "GetCriticalDamageBeforeMitigation({Attacker}, {Defender}) - _baseDamageMod is null",
+                _attacker.Name,
+                _defender.Name
+            );
             return 0;
         }
 
@@ -390,7 +432,10 @@ public partial class DamageEvent
             return false;
         }
 
-        var criticalDefenseChance = SkillCheck.GetSkillRatioChance(_playerDefender.GetModdedPerceptionSkill(), EffectiveAttackSkill);
+        var criticalDefenseChance = SkillCheck.GetSkillRatioChance(
+            _playerDefender.GetModdedPerceptionSkill(),
+            EffectiveAttackSkill
+        );
 
         return criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f);
     }
@@ -492,7 +537,11 @@ public partial class DamageEvent
 
         if (_damageSource.ItemType == ItemType.MissileWeapon)
         {
-            _baseDamageMod.ElementalBonus = WorldObject.GetMissileElementalDamageBonus(Weapon, _playerAttacker, DamageType);
+            _baseDamageMod.ElementalBonus = WorldObject.GetMissileElementalDamageBonus(
+                Weapon,
+                _playerAttacker,
+                DamageType
+            );
             _baseDamageMod.DamageMod = WorldObject.GetMissileElementalDamageModifier(Weapon, DamageType);
         }
 
@@ -519,7 +568,7 @@ public partial class DamageEvent
 
     private static float GetAmmoEffectMod(WorldObject weapon, Player player)
     {
-        if (weapon is {IsAmmoLauncher: not true} || player is null)
+        if (weapon is { IsAmmoLauncher: not true } || player is null)
         {
             return 1.0f;
         }
@@ -533,8 +582,10 @@ public partial class DamageEvent
 
         switch ((AmmoEffect)(ammo.AmmoEffect ?? 0))
         {
-            case AmmoEffect.Sharpened: return 1.1f;
-            default: return 1.0f;
+            case AmmoEffect.Sharpened:
+                return 1.1f;
+            default:
+                return 1.0f;
         }
     }
 }

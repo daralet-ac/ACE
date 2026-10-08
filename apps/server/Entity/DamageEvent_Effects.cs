@@ -163,7 +163,13 @@ public partial class DamageEvent
     /// <summary>
     /// Applies a Weapon Master debuff spell to the defender, scaled by power bar and weapon tier, and uses up Weapon Master
     /// </summary>
-    private void ApplyWeaponMasterDebuff(SpellId spellId, PlayScript playScript, string message, int weaponTier, float powerLevel)
+    private void ApplyWeaponMasterDebuff(
+        SpellId spellId,
+        PlayScript playScript,
+        string message,
+        int weaponTier,
+        float powerLevel
+    )
     {
         var tierMod = DamageFormulas.GetWeaponMasterTierMod(weaponTier);
 
@@ -210,7 +216,10 @@ public partial class DamageEvent
             return;
         }
 
-        var weaponDamageRollPercentile = DamageFormulas.GetBleedDamagePercentile(Weapon.Damage.Value, weaponTypeDamageRange.Value);
+        var weaponDamageRollPercentile = DamageFormulas.GetBleedDamagePercentile(
+            Weapon.Damage.Value,
+            weaponTypeDamageRange.Value
+        );
 
         var spell = new Spell(SpellId.Bleed);
 
@@ -225,10 +234,7 @@ public partial class DamageEvent
         _defender.EnqueueBroadcast(new GameMessageScript(_defender.Guid, PlayScript.DirtyFightingDamageOverTime));
 
         _playerAttacker.Session.Network.EnqueueSend(
-            new GameMessageSystemChat(
-                $"You cause {_defender.Name} to bleed!",
-                ChatMessageType.Broadcast
-            )
+            new GameMessageSystemChat($"You cause {_defender.Name} to bleed!", ChatMessageType.Broadcast)
         );
 
         _playerAttacker.WeaponMasterSingleUseIsActive = false;

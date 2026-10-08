@@ -51,11 +51,9 @@ public partial class DamageEvent
     private Quadrant _quadrant;
     private float _weaponResistanceMod;
 
-    private bool IgnoreMagicArmor =>
-        (Weapon?.IgnoreMagicArmor ?? false) || (_attacker?.IgnoreMagicArmor ?? false); // ignores impen / banes
+    private bool IgnoreMagicArmor => (Weapon?.IgnoreMagicArmor ?? false) || (_attacker?.IgnoreMagicArmor ?? false); // ignores impen / banes
 
-    private bool IgnoreMagicResist =>
-        (Weapon?.IgnoreMagicResist ?? false) || (_attacker?.IgnoreMagicResist ?? false); // ignores life armor / prots
+    private bool IgnoreMagicResist => (Weapon?.IgnoreMagicResist ?? false) || (_attacker?.IgnoreMagicResist ?? false); // ignores life armor / prots
 
     public bool Blocked { get; private set; }
     public bool Parried { get; private set; }
@@ -170,7 +168,12 @@ public partial class DamageEvent
     /// <item>On-hit effects see the final damage.</item>
     /// </list>
     /// </summary>
-    private void DoCalculateDamage(Creature attacker, Creature defender, WorldObject damageSource, bool cleaveHits = false)
+    private void DoCalculateDamage(
+        Creature attacker,
+        Creature defender,
+        WorldObject damageSource,
+        bool cleaveHits = false
+    )
     {
         if (PropertyManager.GetBool("debug_level_scaling_system").Item && (attacker is Player || defender is Player))
         {
@@ -270,8 +273,7 @@ public partial class DamageEvent
                 ? attacker.GetEquippedMeleeWeapon()
                 : (damageSource.ProjectileLauncher ?? damageSource.ProjectileAmmo);
 
-        DefenderWeapon =
-            defender.GetEquippedWeapon();
+        DefenderWeapon = defender.GetEquippedWeapon();
 
         Offhand = attacker.GetEquippedOffHand();
 
@@ -287,8 +289,8 @@ public partial class DamageEvent
         var specializationSkill = GetSpecializationSkill(weaponSkill);
 
         return specializationSkill != null
-               && player.GetEquippedWeapon().WeaponSkill == weaponSkill
-               && IsSkillSpecialized(player, specializationSkill.Value);
+            && player.GetEquippedWeapon().WeaponSkill == weaponSkill
+            && IsSkillSpecialized(player, specializationSkill.Value);
     }
 
     private static bool IsSkillSpecialized(Player player, Skill creatureSkill)

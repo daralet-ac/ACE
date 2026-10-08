@@ -50,7 +50,6 @@ public partial class DamageEvent
             return 1.0f;
         }
 
-
         _ignoreArmorMod = GetIgnoreArmorMod();
         _ignoreArmorMod -= GetSpearSpecIgnoreArmorBonus(_playerAttacker);
 
@@ -71,7 +70,8 @@ public partial class DamageEvent
         // not also be folded into the target's resistance here.
 
         _mitigationModifiers.DamageResistanceRating = GetDamageResistRatingMod();
-        _mitigationModifiers.DamageResistanceRating *= 1.0f - GetRatingHardenedDefenseDamageResistanceBonus(_playerDefender);
+        _mitigationModifiers.DamageResistanceRating *=
+            1.0f - GetRatingHardenedDefenseDamageResistanceBonus(_playerDefender);
 
         _mitigationModifiers.SpecDefense = GetSpecDefenseMod(_attacker, _playerDefender);
 
@@ -86,8 +86,10 @@ public partial class DamageEvent
         _mitigationModifiers.YellowFury = 1.0f + Jewel.GetJewelYellowFury(_playerAttacker);
         _mitigationModifiers.DamageTypeWard = DamageType switch
         {
-            var dt when (dt & DamageType.Physical) != 0 => 1.0f - Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearPhysicalWard),
-            var dt when (dt & DamageType.Elemental) != 0 => 1.0f - Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearElementalWard),
+            var dt when (dt & DamageType.Physical) != 0
+                => 1.0f - Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearPhysicalWard),
+            var dt when (dt & DamageType.Elemental) != 0
+                => 1.0f - Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearElementalWard),
             _ => 1.0f
         };
 
@@ -103,7 +105,9 @@ public partial class DamageEvent
 
     private static float GetImbuedArmorPhysicalDamageMod(Creature defender)
     {
-        return DamageFormulas.GetImbuedArmorMod(defender.GetArmorDefenseImbues(ImbuedEffectType.ReducedPhysicalDamageTaken));
+        return DamageFormulas.GetImbuedArmorMod(
+            defender.GetArmorDefenseImbues(ImbuedEffectType.ReducedPhysicalDamageTaken)
+        );
     }
 
     private float GetImbuedArmorCritDamageMod()
@@ -113,7 +117,9 @@ public partial class DamageEvent
             return 1.0f;
         }
 
-        return DamageFormulas.GetImbuedArmorMod(_defender.GetArmorDefenseImbues(ImbuedEffectType.ReducedCriticalDamageTaken));
+        return DamageFormulas.GetImbuedArmorMod(
+            _defender.GetArmorDefenseImbues(ImbuedEffectType.ReducedCriticalDamageTaken)
+        );
     }
 
     /// <summary>
@@ -142,7 +148,6 @@ public partial class DamageEvent
         {
             return 1.0f;
         }
-
 
         var armorRendingMod = GetArmorRendingMod();
         var armorCleavingMod = _attacker.GetArmorCleavingMod(Weapon);
@@ -246,18 +251,20 @@ public partial class DamageEvent
     {
         if (
             playerDefender == null
-            || playerDefender.GetCreatureSkill(Skill.PhysicalDefense).AdvancementClass != SkillAdvancementClass.Specialized
+            || playerDefender.GetCreatureSkill(Skill.PhysicalDefense).AdvancementClass
+                != SkillAdvancementClass.Specialized
         )
         {
             return 1.0f;
         }
 
         // float, so the division below isn't integer division
-        var playerDefenderPhysicalDefense = (float)LevelScaling.GetScaledPlayerDefenseSkill(
-            playerDefender.GetModdedPhysicalDefSkill(),
-            playerDefender,
-            attacker
-        );
+        var playerDefenderPhysicalDefense = (float)
+            LevelScaling.GetScaledPlayerDefenseSkill(
+                playerDefender.GetModdedPhysicalDefSkill(),
+                playerDefender,
+                attacker
+            );
         return DamageFormulas.GetSpecDefenseMod(playerDefenderPhysicalDefense);
     }
 
@@ -280,7 +287,8 @@ public partial class DamageEvent
             return 0.0f;
         }
 
-        var rampPercentage = (float)playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") / 100;
+        var rampPercentage =
+            (float)playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") / 100;
 
         const float baseMod = 0.2f;
         const float bonusPerRating = 0.01f;

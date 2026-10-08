@@ -66,8 +66,11 @@ public partial class DamageEvent
         }
 
         // Roll combat hit chance
+        var smokescreen = _playerDefender is { SmokescreenIsActive: true };
+        var evadeChance = DamageFormulas.GetEvadeChance(_effectiveDefenseSkill, EffectiveAttackSkill, smokescreen);
+
         var attackRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-        if (attackRoll > DamageFormulas.GetEvadeChance(_effectiveDefenseSkill, EffectiveAttackSkill, _playerDefender is { SmokescreenIsActive: true }))
+        if (attackRoll > evadeChance)
         {
             return;
         }
@@ -81,7 +84,12 @@ public partial class DamageEvent
 
         if (_playerDefender is not null && PartialEvasion == PartialEvasion.Some)
         {
-            _playerDefender.CheckForSigilTrinketOnAttackEffects(_playerAttacker, this, Skill.PhysicalDefense, SigilTrinketPhysicalDefenseEffect.Evasion);
+            _playerDefender.CheckForSigilTrinketOnAttackEffects(
+                _playerAttacker,
+                this,
+                Skill.PhysicalDefense,
+                SigilTrinketPhysicalDefenseEffect.Evasion
+            );
         }
     }
 
@@ -98,7 +106,7 @@ public partial class DamageEvent
 
     private bool CheckForCombatAbilityEnrageNoEvade()
     {
-        if (_playerAttacker is not {FuryEnrageIsActive: true})
+        if (_playerAttacker is not { FuryEnrageIsActive: true })
         {
             return false;
         }
@@ -116,9 +124,11 @@ public partial class DamageEvent
     /// </summary>
     private bool CheckForCombatAbilityBackstabStealthNoEvade()
     {
-        if (_playerAttacker is {BackstabIsActive: true, IsAttackFromStealth: true}
+        if (
+            _playerAttacker is { BackstabIsActive: true, IsAttackFromStealth: true }
             && _playerAttacker.IsBehindTargetCreature(_defender)
-            && _defender is not Player { PhalanxIsEffective: true })
+            && _defender is not Player { PhalanxIsEffective: true }
+        )
         {
             Evaded = false;
             PartialEvasion = PartialEvasion.None;
@@ -144,7 +154,6 @@ public partial class DamageEvent
     {
         Blocked = false;
 
-
         if (_defender.CombatMode is CombatMode.NonCombat)
         {
             return;
@@ -159,7 +168,9 @@ public partial class DamageEvent
         var effectiveAngle = 180.0f;
         effectiveAngle += GetSpecShieldEffectiveAngleBonus(_playerDefender);
 
-        var blockableAngle = Math.Abs(_defender.GetAngle(_attacker)) < effectiveAngle / 2.0f || _playerDefender is { PhalanxIsEffective: true };
+        var blockableAngle =
+            Math.Abs(_defender.GetAngle(_attacker)) < effectiveAngle / 2.0f
+            || _playerDefender is { PhalanxIsEffective: true };
 
         if (!blockableAngle)
         {
@@ -189,7 +200,6 @@ public partial class DamageEvent
     {
         Parried = false;
 
-
         if (_defender.CombatMode is CombatMode.NonCombat)
         {
             return;
@@ -199,13 +209,18 @@ public partial class DamageEvent
         var equippedOffHand = _defender.GetEquippedOffHand();
 
         // parrying requires a two-handed weapon, or a weapon in each hand
-        if (equippedMainHand is null || (!equippedMainHand.IsTwoHanded && equippedOffHand is not { ItemType: ItemType.MeleeWeapon }))
+        if (
+            equippedMainHand is null
+            || (!equippedMainHand.IsTwoHanded && equippedOffHand is not { ItemType: ItemType.MeleeWeapon })
+        )
         {
             return;
         }
 
         const float effectiveAngle = 180.0f;
-        var parryAngle = Math.Abs(_defender.GetAngle(_attacker)) < effectiveAngle / 2.0f || _playerDefender is { PhalanxIsEffective: true };
+        var parryAngle =
+            Math.Abs(_defender.GetAngle(_attacker)) < effectiveAngle / 2.0f
+            || _playerDefender is { PhalanxIsEffective: true };
 
         if (!parryAngle)
         {
@@ -239,19 +254,49 @@ public partial class DamageEvent
     {
         _accuracyMod = _attacker.GetAccuracySkillMod(Weapon);
 
-        EffectiveAttackSkill = (uint)(_attacker.GetEffectiveAttackSkill() * LevelScaling.GetPlayerAttackSkillScalar(_playerAttacker, _defender));
+        EffectiveAttackSkill = (uint)(
+            _attacker.GetEffectiveAttackSkill() * LevelScaling.GetPlayerAttackSkillScalar(_playerAttacker, _defender)
+        );
 
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForAttackHeightMediumAttackSkillBonus());
-        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForCombatAbilitySteadyStrikeAttackSkillBonus(_playerAttacker));
-        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * (1.0f + Jewel.GetJewelEffectMod(_playerAttacker, PropertyInt.GearBravado, "Bravado", rampQuestSource: _defender)));
+        EffectiveAttackSkill = Convert.ToUInt32(
+            EffectiveAttackSkill * CheckForCombatAbilitySteadyStrikeAttackSkillBonus(_playerAttacker)
+        );
+        EffectiveAttackSkill = Convert.ToUInt32(
+            EffectiveAttackSkill
+                * (
+                    1.0f
+                    + Jewel.GetJewelEffectMod(
+                        _playerAttacker,
+                        PropertyInt.GearBravado,
+                        "Bravado",
+                        rampQuestSource: _defender
+                    )
+                )
+        );
 
         _effectiveDefenseSkill = _defender.GetEffectiveDefenseSkill(CombatType);
 
         _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * CheckForAttackHeightLowDefenseSkillBonus());
-        _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * (1.0f + Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearFamiliarity, "Familiarity", rampQuestSource: _attacker)));
+        _effectiveDefenseSkill = Convert.ToUInt32(
+            _effectiveDefenseSkill
+                * (
+                    1.0f
+                    + Jewel.GetJewelEffectMod(
+                        _playerDefender,
+                        PropertyInt.GearFamiliarity,
+                        "Familiarity",
+                        rampQuestSource: _attacker
+                    )
+                )
+        );
 
         // level scaling goes last, so the bonuses above are worth the same at every level (see GetScaledPlayerDefenseSkill)
-        _effectiveDefenseSkill = LevelScaling.GetScaledPlayerDefenseSkill(_effectiveDefenseSkill, _playerDefender, _attacker);
+        _effectiveDefenseSkill = LevelScaling.GetScaledPlayerDefenseSkill(
+            _effectiveDefenseSkill,
+            _playerDefender,
+            _attacker
+        );
     }
 
     /// <summary>
@@ -269,7 +314,7 @@ public partial class DamageEvent
             return 1.0f;
         }
 
-        return playerAttacker is {SteadyStrikeIsActive: true} ? 1.25f : 1.0f;
+        return playerAttacker is { SteadyStrikeIsActive: true } ? 1.25f : 1.0f;
     }
 
     /// <summary>

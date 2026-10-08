@@ -75,20 +75,20 @@ internal struct MitigationModifiers
     public readonly float Product()
     {
         return Armor
-               * Shield
-               * Resistance
-               * DamageResistanceRating
-               * Evasion
-               * SpecDefense
-               * Provoke
-               * Aegis
-               * Phalanx
-               * DamageTypeWard
-               * SelfHarm
-               * RedFury
-               * YellowFury
-               * Swarmed
-               * ImbuedArmorPhysical
-               * ImbuedArmorCritical;
+            * Shield
+            * Resistance
+            * DamageResistanceRating
+            * Evasion
+            * SpecDefense
+            * Provoke
+            * Aegis
+            * Phalanx
+            * DamageTypeWard
+            * SelfHarm
+            * RedFury
+            * YellowFury
+            * Swarmed
+            * ImbuedArmorPhysical
+            * ImbuedArmorCritical;
     }
 }
