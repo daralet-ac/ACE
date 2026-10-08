@@ -21,7 +21,7 @@ partial class Player
         manaRefund = ManaCastRefund.None;
         if (castingPreCheckStatus == CastingPreCheckStatus.Success)
         {
-            manaUsed = CalculateManaUsage(this, spell, target, out manaRefund);
+            manaUsed = CalculateManaUsage(spell, target, out manaRefund);
         }
         else if (castingPreCheckStatus == CastingPreCheckStatus.CastFailed)
         {

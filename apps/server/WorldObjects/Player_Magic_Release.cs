@@ -101,6 +101,9 @@ partial class Player
         DoCastSpell_Inner(cast, target, cast.Status);
     }
 
+    /// <summary>
+    /// Releases the spell: spends its mana and components, then casts it, or fizzles it
+    /// </summary>
     /// <param name="target">The cast's target, looked up again when the spell is released</param>
     /// <param name="castingPreCheckStatus">The cast's status, or CastFailed for a fizzle</param>
     public void DoCastSpell_Inner(
@@ -111,8 +114,6 @@ partial class Player
     )
     {
         var spell = cast.Spell;
-        var casterItem = cast.CasterItem;
-        var manaUsed = cast.ManaUsed;
 
         if (RecordCast.Enabled)
         {
@@ -121,60 +122,16 @@ partial class Player
 
         if (MagicState.CastMeter)
         {
-            var gestureTime = Physics.Animation.MotionTable.GetAnimationLength(
-                MotionTableId,
-                CurrentMotionState.Stance,
-                MagicState.CastGesture,
-                CastSpeed
-            );
-            var castTime = DateTime.UtcNow - MagicState.CastGestureStartTime;
-            var efficiency = 1.0f - (float)castTime.TotalSeconds / gestureTime;
-            var msg = $"Cast efficiency: {efficiency * 100}%";
-            Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
+            ShowCastEfficiency();
         }
 
-        // consume mana
-        var caster = casterItem ?? GetEquippedWand(); // TODO: persist this from the beginning, since this is done with delay
+        var caster = cast.CasterItem ?? GetEquippedWand(); // TODO: persist this from the beginning, since this is done with delay
 
-        var isWeaponSpell = casterItem != null;
+        var isWeaponSpell = cast.CasterItem != null;
 
         var itemCaster = isWeaponSpell ? caster : null;
 
-        // SIGIL SCARAB - Mana Cost Reduction
-        var manaModifier = spell.School == MagicSchool.LifeMagic
-            ? GetSigilTrinketManaReductionMod(spell, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Reduction)
-            : GetSigilTrinketManaReductionMod(spell, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Reduction);
-
-        var before = manaUsed;
-        manaUsed = (uint)(manaUsed * manaModifier);
-
-        if (DebugSpellcasting)
-        {
-            var scarabMsg = $"[ManaDbg]  scarab factor {manaModifier:F3}: manaUsed {before} -> {manaUsed}";
-            _log.Information(scarabMsg);
-            Session.Network.EnqueueSend(new GameMessageSystemChat(scarabMsg, ChatMessageType.Magic));
-        }
-
-        if (manaModifier < 1.0f)
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"Sigil Scarab of Reduction reduced the spell's cost by {Math.Round((1.0f - manaModifier) * 100, 0)}%, from {before} to {manaUsed}!  ",
-                    ChatMessageType.Magic
-                )
-            );
-        }
-
-        if (!isWeaponSpell)
-        {
-            UpdateVitalDelta(Mana, -(int)manaUsed);
-        }
-        else
-        {
-            itemCaster.ItemCurMana -= (int)manaUsed;
-        }
-
-        ApplyManaCastRefund(cast.ManaRefund);
+        SpendCastMana(cast, itemCaster);
 
         // consume spell components
         if (!isWeaponSpell)
@@ -182,11 +139,7 @@ partial class Player
             TryBurnComponents(spell);
         }
 
-        // check windup move distance cap
-        var dist = StartPos.Distance(PhysicsObj.Position);
-
-        // only PKs affected by these caps?
-        if (dist > Windup_MaxMove && PlayerKillerStatus != PlayerKillerStatus.NPK)
+        if (HasMovedTooFarToCast())
         {
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat("Your movement disrupted spell casting!", ChatMessageType.Magic)
@@ -213,79 +166,11 @@ partial class Player
             EndStealth(null, true);
         }
 
-        var spellReleased = false;
-
-        switch (castingPreCheckStatus)
-        {
-            case CastingPreCheckStatus.Success:
-
-                spellReleased = true;
-
-                if (!spell.IsFellowshipSpell)
-                {
-                    CreatePlayerSpell(target, spell, isWeaponSpell);
-                }
-                else
-                {
-                    var fellows = GetFellowshipTargets();
-                    foreach (var fellow in fellows)
-                    {
-                        // Fellowship spells do not affect the caster
-                        if (fellow == this)
-                        {
-                            continue;
-                        }
-
-                        // Fellowship spells only affect targets in range
-                        var magicSkill = GetCreatureSkill(spell.School).Current;
-                        var maxRange = spell.GetMaxCastRange(magicSkill);
-
-                        if (GetDistance(fellow) > maxRange)
-                        {
-                            continue;
-                        }
-
-                        CreatePlayerSpell(fellow, spell, isWeaponSpell);
-                    }
-                }
-
-                // handle self procs
-                if (spell.IsHarmful && target != this)
-                {
-                    TryProcEquippedItems(this, this, true, caster);
-                }
-
-                break;
-
-            case CastingPreCheckStatus.InvalidPKStatus:
-
-                if (spell.NumProjectiles > 0)
-                {
-                    spellReleased = true;
-                    HandleCastSpell(spell, target, itemCaster, caster, isWeaponSpell);
-                }
-
-                break;
-
-            default:
-                EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.Fizzle, 0.5f));
-                SendWeenieError(WeenieError.YourSpellFizzled);
-
-                SendRestrictedCasterFizzleMessages(caster, spell);
-
-                break;
-        }
+        var spellReleased = ReleaseSpell(spell, target, castingPreCheckStatus, caster, itemCaster, isWeaponSpell);
 
         if (pk_error != null && spell.NumProjectiles == 0)
         {
-            Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(Session, pk_error[0], target.Name));
-
-            if (target is Player targetPlayer)
-            {
-                targetPlayer.Session.Network.EnqueueSend(
-                    new GameEventWeenieErrorWithString(targetPlayer.Session, pk_error[1], Name)
-                );
-            }
+            SendPkCastErrors(target, pk_error);
         }
 
         if (finishCast)
@@ -296,6 +181,183 @@ partial class Player
         if (spellReleased)
         {
             CheckForCombatAbilityOverloadBacklash(spell);
+        }
+    }
+
+    /// <summary>
+    /// Debug: how far through the cast gesture the spell was released
+    /// </summary>
+    private void ShowCastEfficiency()
+    {
+        var gestureTime = Physics.Animation.MotionTable.GetAnimationLength(
+            MotionTableId,
+            CurrentMotionState.Stance,
+            MagicState.CastGesture,
+            CastSpeed
+        );
+        var castTime = DateTime.UtcNow - MagicState.CastGestureStartTime;
+        var efficiency = 1.0f - (float)castTime.TotalSeconds / gestureTime;
+        var msg = $"Cast efficiency: {efficiency * 100}%";
+        Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
+    }
+
+    /// <summary>
+    /// Spends the spell's mana, from the player or from the casting item for a built-in spell,
+    /// and grants the health/stamina refund for it
+    /// </summary>
+    private void SpendCastMana(CastSpellParams cast, WorldObject itemCaster)
+    {
+        var manaUsed = ApplySigilScarabManaReduction(cast.Spell, cast.ManaUsed);
+
+        if (itemCaster == null)
+        {
+            UpdateVitalDelta(Mana, -(int)manaUsed);
+        }
+        else
+        {
+            itemCaster.ItemCurMana -= (int)manaUsed;
+        }
+
+        ApplyManaCastRefund(cast.ManaRefund);
+    }
+
+    /// <summary>
+    /// SIGIL SCARAB - Mana Cost Reduction
+    /// </summary>
+    private uint ApplySigilScarabManaReduction(Spell spell, uint manaUsed)
+    {
+        var manaModifier = spell.School == MagicSchool.LifeMagic
+            ? GetSigilTrinketManaReductionMod(spell, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Reduction)
+            : GetSigilTrinketManaReductionMod(spell, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Reduction);
+
+        var before = manaUsed;
+        manaUsed = (uint)(manaUsed * manaModifier);
+
+        if (DebugSpellcasting)
+        {
+            var scarabMsg = $"[ManaDbg]  scarab factor {manaModifier:F3}: manaUsed {before} -> {manaUsed}";
+            _log.Information(scarabMsg);
+            Session.Network.EnqueueSend(new GameMessageSystemChat(scarabMsg, ChatMessageType.Magic));
+        }
+
+        if (manaModifier < 1.0f)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Sigil Scarab of Reduction reduced the spell's cost by {Math.Round((1.0f - manaModifier) * 100, 0)}%, from {before} to {manaUsed}!  ",
+                    ChatMessageType.Magic
+                )
+            );
+        }
+
+        return manaUsed;
+    }
+
+    /// <summary>
+    /// A PK moving too far during the windup disrupts the cast
+    /// </summary>
+    private bool HasMovedTooFarToCast()
+    {
+        // check windup move distance cap
+        var dist = StartPos.Distance(PhysicsObj.Position);
+
+        // only PKs affected by these caps?
+        return dist > Windup_MaxMove && PlayerKillerStatus != PlayerKillerStatus.NPK;
+    }
+
+    /// <summary>
+    /// Casts the spell on its target (or fellows), or fizzles it. Returns TRUE if the spell was cast.
+    /// </summary>
+    private bool ReleaseSpell(
+        Spell spell,
+        WorldObject target,
+        CastingPreCheckStatus castingPreCheckStatus,
+        WorldObject caster,
+        WorldObject itemCaster,
+        bool isWeaponSpell
+    )
+    {
+        switch (castingPreCheckStatus)
+        {
+            case CastingPreCheckStatus.Success:
+
+                if (!spell.IsFellowshipSpell)
+                {
+                    CastPlayerSpellOn(target, spell, isWeaponSpell);
+                }
+                else
+                {
+                    CastOnFellows(spell, isWeaponSpell);
+                }
+
+                // handle self procs
+                if (spell.IsHarmful && target != this)
+                {
+                    TryProcEquippedItems(this, this, true, caster);
+                }
+
+                return true;
+
+            case CastingPreCheckStatus.InvalidPKStatus:
+
+                // projectiles still launch at a target the caster can't attack (they can't damage it)
+                if (spell.NumProjectiles <= 0)
+                {
+                    return false;
+                }
+
+                HandleCastSpell(spell, target, itemCaster, caster, isWeaponSpell);
+                return true;
+
+            default:
+                EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.Fizzle, 0.5f));
+                SendWeenieError(WeenieError.YourSpellFizzled);
+
+                SendRestrictedCasterFizzleMessages(caster, spell);
+
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// Casts a fellowship spell on the caster's fellows in range
+    /// </summary>
+    private void CastOnFellows(Spell spell, bool isWeaponSpell)
+    {
+        var fellows = GetFellowshipTargets();
+        foreach (var fellow in fellows)
+        {
+            // Fellowship spells do not affect the caster
+            if (fellow == this)
+            {
+                continue;
+            }
+
+            // Fellowship spells only affect targets in range
+            var magicSkill = GetCreatureSkill(spell.School).Current;
+            var maxRange = spell.GetMaxCastRange(magicSkill);
+
+            if (GetDistance(fellow) > maxRange)
+            {
+                continue;
+            }
+
+            CastPlayerSpellOn(fellow, spell, isWeaponSpell);
+        }
+    }
+
+    /// <summary>
+    /// Tells the caster, and a target player, that the caster can't cast on the target with their PK statuses
+    /// </summary>
+    private void SendPkCastErrors(WorldObject target, List<WeenieErrorWithString> pk_error)
+    {
+        Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(Session, pk_error[0], target.Name));
+
+        if (target is Player targetPlayer)
+        {
+            targetPlayer.Session.Network.EnqueueSend(
+                new GameEventWeenieErrorWithString(targetPlayer.Session, pk_error[1], Name)
+            );
         }
     }
 
@@ -456,23 +518,14 @@ partial class Player
         }
     }
 
-    private void CreatePlayerSpell(WorldObject target, Spell spell, bool isWeaponSpell, bool sigilTrinketSpell = false)
+    /// <summary>
+    /// Casts a released spell on one target
+    /// </summary>
+    private void CastPlayerSpellOn(WorldObject target, Spell spell, bool isWeaponSpell, bool sigilTrinketSpell = false)
     {
-        var targetCreature = target as Creature;
-        var targetPlayer = target as Player;
-
         LastSuccessCast_Time = Time.GetUnixTime();
 
-        if (spell.School == MagicSchool.VoidMagic && spell.Id != (uint)SpellId.VoidRestorationPenalty)
-        {
-            CreatePlayerSpell(this, new Spell((int)SpellId.VoidRestorationPenalty), false);
-        }
-
-        // Apply Restoration Resonance for VitalityMend, VigorMend, or ClarityMend spells cast
-        if (IsRestorationResonanceSpell(spell.Category))
-        {
-            CreatePlayerSpell(this, new Spell((int)SpellId.RestorationResonance), false);
-        }
+        ApplyCastAftereffectSpells(spell);
 
         var caster = GetEquippedWand();
 
@@ -484,98 +537,151 @@ partial class Player
             return;
         }
 
-        switch (spell.School)
+        if (spell.School == MagicSchool.PortalMagic)
         {
-            case MagicSchool.PortalMagic:
+            CastPortalItemSpell(spell, target, itemCaster);
+            return;
+        }
 
-                TryCastItemEnchantment_WithRedirects(spell, target, itemCaster);
+        if (!spell.IsProjectile && !TryLandNonProjectileSpell(spell, target, itemCaster))
+        {
+            return;
+        }
 
-                // use target resistance?
-                // Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.PortalMagic), spell.PowerMod);
+        HandleCastSpell(
+            spell,
+            target,
+            itemCaster,
+            weapon: caster,
+            isWeaponSpell,
+            fromProc: false,
+            equip: false,
+            showMsg: true,
+            sigilTrinketSpell
+        );
 
-                if (spell.IsHarmful)
-                {
-                    var playerRedirect = targetPlayer;
-                    if (playerRedirect == null && target?.WielderId != null)
-                    {
-                        playerRedirect = CurrentLandblock?.GetObject(target.WielderId.Value) as Player;
-                    }
+        if (!spell.IsProjectile)
+        {
+            OnNonProjectileSpellLanded(spell, target, caster);
+        }
+    }
 
-                    if (playerRedirect != null)
-                    {
-                        UpdatePKTimers(this, playerRedirect);
-                    }
-                }
-                break;
+    /// <summary>
+    /// Spells a cast applies to its caster: void magic applies the void restoration penalty,
+    /// and Vitality / Vigor / Clarity Mend apply Restoration Resonance
+    /// </summary>
+    private void ApplyCastAftereffectSpells(Spell spell)
+    {
+        if (spell.School == MagicSchool.VoidMagic && spell.Id != (uint)SpellId.VoidRestorationPenalty)
+        {
+            CastPlayerSpellOn(this, new Spell((int)SpellId.VoidRestorationPenalty), false);
+        }
 
-            default:
+        // Apply Restoration Resonance for VitalityMend, VigorMend, or ClarityMend spells cast
+        if (IsRestorationResonanceSpell(spell.Category))
+        {
+            CastPlayerSpellOn(this, new Spell((int)SpellId.RestorationResonance), false);
+        }
+    }
 
-                if (!spell.IsProjectile)
-                {
-                    if (targetPlayer == null)
-                    {
-                        OnAttackMonster(targetCreature);
-                    }
+    /// <summary>
+    /// Portal magic item spells (impen, bane, etc).
+    /// A harmful one starts the PK timers with the target player, or the player wielding the target item.
+    /// </summary>
+    private void CastPortalItemSpell(Spell spell, WorldObject target, WorldObject itemCaster)
+    {
+        TryCastItemEnchantment_WithRedirects(spell, target, itemCaster);
 
-                    if (TryResistSpell(target, spell, out _, itemCaster))
-                    {
-                        if (spell.IsHarmful && targetCreature != null && targetCreature != this)
-                        {
-                            targetCreature.OnAttackReceived(this, CombatType.Magic, false, true);
-                        }
+        if (spell.IsHarmful)
+        {
+            var playerRedirect = target as Player;
+            if (playerRedirect == null && target?.WielderId != null)
+            {
+                playerRedirect = CurrentLandblock?.GetObject(target.WielderId.Value) as Player;
+            }
 
-                        break;
-                    }
-                    else if (spell.IsHarmful && targetCreature != null && targetCreature != this)
-                    {
-                        targetCreature.OnAttackReceived(this, CombatType.Magic, false, false);
-                    }
+            if (playerRedirect != null)
+            {
+                UpdatePKTimers(this, playerRedirect);
+            }
+        }
+    }
 
-                    if (targetCreature != null && targetCreature.NonProjectileMagicImmune)
-                    {
-                        Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"You fail to affect {targetCreature.Name} with {spell.Name}",
-                                ChatMessageType.Magic
-                            )
-                        );
-                        break;
-                    }
-                }
+    /// <summary>
+    /// A non-projectile spell lands unless the target resists it or is immune to non-projectile magic
+    /// </summary>
+    private bool TryLandNonProjectileSpell(Spell spell, WorldObject target, WorldObject itemCaster)
+    {
+        var targetCreature = target as Creature;
+        var targetPlayer = target as Player;
 
-                HandleCastSpell(spell, target, itemCaster, caster, isWeaponSpell, false, false, true, sigilTrinketSpell);
+        if (targetPlayer == null)
+        {
+            OnAttackMonster(targetCreature);
+        }
 
-                if (!spell.IsProjectile)
-                {
-                    if (spell.IsHarmful)
-                    {
-                        if (targetCreature != null)
-                        {
-                            Proficiency.OnSuccessUse(
-                                this,
-                                GetCreatureSkill(spell.School),
-                                targetCreature.GetCreatureSkill(Skill.MagicDefense).Current
-                            );
-                        }
+        var harmsOther = spell.IsHarmful && targetCreature != null && targetCreature != this;
 
-                        // handle target procs
-                        if (targetCreature != null && targetCreature != this)
-                        {
-                            TryProcEquippedItems(this, targetCreature, false, caster);
-                        }
+        if (TryResistSpell(target, spell, out _, itemCaster))
+        {
+            if (harmsOther)
+            {
+                targetCreature.OnAttackReceived(this, CombatType.Magic, false, true);
+            }
 
-                        if (targetPlayer != null)
-                        {
-                            UpdatePKTimers(this, targetPlayer);
-                        }
-                    }
-                    else
-                    {
-                        Proficiency.OnSuccessUse(this, GetCreatureSkill(spell.School), spell.PowerMod);
-                    }
-                }
+            return false;
+        }
 
-                break;
+        if (harmsOther)
+        {
+            targetCreature.OnAttackReceived(this, CombatType.Magic, false, false);
+        }
+
+        if (targetCreature != null && targetCreature.NonProjectileMagicImmune)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You fail to affect {targetCreature.Name} with {spell.Name}",
+                    ChatMessageType.Magic
+                )
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// After a non-projectile spell lands: proficiency, and for a harmful spell, the caster's procs and PK timers
+    /// </summary>
+    private void OnNonProjectileSpellLanded(Spell spell, WorldObject target, WorldObject caster)
+    {
+        var targetCreature = target as Creature;
+
+        if (!spell.IsHarmful)
+        {
+            Proficiency.OnSuccessUse(this, GetCreatureSkill(spell.School), spell.PowerMod);
+            return;
+        }
+
+        if (targetCreature != null)
+        {
+            Proficiency.OnSuccessUse(
+                this,
+                GetCreatureSkill(spell.School),
+                targetCreature.GetCreatureSkill(Skill.MagicDefense).Current
+            );
+        }
+
+        // handle target procs
+        if (targetCreature != null && targetCreature != this)
+        {
+            TryProcEquippedItems(this, targetCreature, false, caster);
+        }
+
+        if (target is Player targetPlayer)
+        {
+            UpdatePKTimers(this, targetPlayer);
         }
     }
 

@@ -233,7 +233,7 @@ partial class Creature
         // do any monsters have mana conversion?
         var target = GetSpellMaxRange() < float.PositiveInfinity ? AttackTarget : this;
 
-        var manaUsed = CalculateManaUsage(this, CurrentSpell, target, out var manaRefund);
+        var manaUsed = CalculateManaUsage(CurrentSpell, target, out var manaRefund);
 
         if (manaUsed > Mana.Current)
         {
@@ -336,18 +336,7 @@ partial class Creature
             return;
         }
 
-        var targetSelf = spell.Flags.HasFlag(SpellFlags.SelfTargeted);
-        var untargeted = spell.NonComponentTargetType == ItemType.None;
-
-        var target = AttackTarget;
-        if (untargeted)
-        {
-            target = null;
-        }
-        else if (targetSelf)
-        {
-            target = this;
-        }
+        var target = GetMonsterSpellTarget(spell);
 
         var caster = GetEquippedWand();
 
@@ -359,14 +348,7 @@ partial class Creature
 
         // If the target is too far away, don't cast. This checks to see of this monster and the target are on separate landblock groups, and potentially separate threads.
         // This also fixes cross-threading issues
-        if (
-            target != null
-            && (
-                CurrentLandblock == null
-                || target.CurrentLandblock == null
-                || CurrentLandblock.CurrentLandblockGroup != target.CurrentLandblock.CurrentLandblockGroup
-            )
-        )
+        if (target != null && !IsInSameLandblockGroup(target))
         {
             return;
         }
@@ -378,8 +360,6 @@ partial class Creature
             return;
         }
 
-        var targetCreature = target as Creature;
-
         // TODO: see if this can be coalesced
         switch (spell.School)
         {
@@ -387,14 +367,7 @@ partial class Creature
 
                 HandleCastSpell(spell, target);
 
-                if (spell.IsHarmful)
-                {
-                    // handle target procs
-                    if (targetCreature != null && targetCreature != this)
-                    {
-                        TryProcEquippedItems(this, targetCreature, false, caster);
-                    }
-                }
+                TryProcOnSpellTarget(spell, target, caster);
                 break;
 
             case MagicSchool.PortalMagic:
@@ -410,14 +383,7 @@ partial class Creature
                 {
                     TryHandleFactionMob(target);
 
-                    if (spell.IsHarmful)
-                    {
-                        // handle target procs
-                        if (targetCreature != null && targetCreature != this)
-                        {
-                            TryProcEquippedItems(this, targetCreature, false, caster);
-                        }
-                    }
+                    TryProcOnSpellTarget(spell, target, caster);
                 }
                 break;
 
@@ -426,6 +392,43 @@ partial class Creature
 
                 HandleCastSpell(spell, target, null, caster);
                 break;
+        }
+    }
+
+    /// <summary>
+    /// Untargeted spells have no target, self-targeted spells target the monster, the rest target its attack target
+    /// </summary>
+    private WorldObject GetMonsterSpellTarget(Spell spell)
+    {
+        if (spell.NonComponentTargetType == ItemType.None)
+        {
+            return null;
+        }
+
+        if (spell.Flags.HasFlag(SpellFlags.SelfTargeted))
+        {
+            return this;
+        }
+
+        return AttackTarget;
+    }
+
+    private bool IsInSameLandblockGroup(WorldObject target)
+    {
+        return CurrentLandblock != null
+            && target.CurrentLandblock != null
+            && CurrentLandblock.CurrentLandblockGroup == target.CurrentLandblock.CurrentLandblockGroup;
+    }
+
+    /// <summary>
+    /// A harmful spell procs the monster's equipped items on its target
+    /// </summary>
+    private void TryProcOnSpellTarget(Spell spell, WorldObject target, WorldObject caster)
+    {
+        // handle target procs
+        if (spell.IsHarmful && target is Creature targetCreature && targetCreature != this)
+        {
+            TryProcEquippedItems(this, targetCreature, false, caster);
         }
     }
 

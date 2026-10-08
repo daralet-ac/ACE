@@ -370,6 +370,6 @@ partial class Player
 
     public void CreateSigilPlayerSpell(WorldObject target, Spell castSpell, bool isWeaponSpell)
     {
-        CreatePlayerSpell(target, castSpell, isWeaponSpell, true);
+        CastPlayerSpellOn(target, castSpell, isWeaponSpell, sigilTrinketSpell: true);
     }
 }
