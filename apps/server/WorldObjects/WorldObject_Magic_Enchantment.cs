@@ -28,11 +28,82 @@ partial class WorldObject
     )
     {
         // weird itemCaster -> caster collapsing going on here -- fixme
-        
-        var player = this as Player;
+        ResolveProcCaster(spell, fromProc, ref caster, out var aetheriaProc, out var cloakProc);
 
-        var aetheriaProc = false;
-        var cloakProc = false;
+        // create enchantment
+        var addResult = target.EnchantmentManager.Add(spell, caster, weapon, equip);
+
+        // Ward reduction of Creature and Life debuffs
+        if (target is Player wardedPlayer && !IsWardExcludedSpell(spell))
+        {
+            ApplyWardToDebuff(wardedPlayer, caster, weapon, addResult);
+        }
+
+        var suffix = GetStackTypeSuffix(addResult);
+
+        if (aetheriaProc)
+        {
+            var message = new GameMessageSystemChat(
+                $"Aetheria surges on {target.Name} with the power of {spell.Name}!",
+                ChatMessageType.Spellcasting
+            );
+
+            EnqueueBroadcast(message, LocalBroadcastRange, ChatMessageType.Spellcasting);
+        }
+        else if (this is Player player && !cloakProc)
+        {
+            SendEnchantmentCasterMessage(player, target, caster, spell, suffix, showMsg);
+        }
+
+        var playerTarget = target as Player;
+
+        if (playerTarget != null)
+        {
+            playerTarget.Session.Network.EnqueueSend(
+                new GameEventMagicUpdateEnchantment(
+                    playerTarget.Session,
+                    new Enchantment(playerTarget, addResult.Enchantment)
+                )
+            );
+
+            playerTarget.HandleSpellHooks(spell);
+
+            if (!spell.IsBeneficial && this is Creature creatureCaster)
+            {
+                playerTarget.SetCurrentAttacker(creatureCaster);
+            }
+        }
+
+        // the target message goes to the target player, or the player wielding the target item
+        if (playerTarget == null && target.Wielder is Player wielder)
+        {
+            playerTarget = wielder;
+        }
+
+        if (playerTarget == null || playerTarget == this || cloakProc)
+        {
+            return;
+        }
+
+        var targetName = target == playerTarget ? "you" : $"your {target.Name}";
+
+        if (showMsg)
+        {
+            playerTarget.SendChatMessage(
+                this,
+                $"{caster.Name} cast {spell.Name} on {targetName}{suffix}",
+                ChatMessageType.Magic
+            );
+        }
+    }
+
+    /// <summary>
+    /// An Aetheria or cloak proc is cast by the item's wielder (this), instead of the item
+    /// </summary>
+    private void ResolveProcCaster(Spell spell, bool fromProc, ref WorldObject caster, out bool aetheriaProc, out bool cloakProc)
+    {
+        aetheriaProc = false;
+        cloakProc = false;
 
         // technically unsafe, should be using fromProc
         if (caster.ProcSpell == spell.Id)
@@ -56,138 +127,86 @@ partial class WorldObject
             caster = this;
             cloakProc = true;
         }
+    }
 
-        // create enchantment
-        var addResult = target.EnchantmentManager.Add(spell, caster, weapon, equip);
+    /// <summary>
+    /// A player's ward shortens a debuff on them: halfway to the ward's full mitigation,
+    /// after the caster's ward rending and ward penetration
+    /// </summary>
+    private void ApplyWardToDebuff(Player targetPlayer, WorldObject caster, WorldObject weapon, AddEnchantmentResult addResult)
+    {
+        var wardBuffDebuffMod = targetPlayer.EnchantmentManager.GetWardMultiplicativeMod();
 
-        // Ward reduction of Creature and Life debuffs
-        if (target is Player && !IsWardExcludedSpell(spell))
+        var targetPlayerWard = targetPlayer.GetWardLevel() * wardBuffDebuffMod;
+
+        if (addResult.Enchantment.StatModValue < 0 && targetPlayerWard > 0)
         {
-            var targetPlayer = target as Player;
+            var ignoreWardMod = 1.0f;
 
-            var wardBuffDebuffMod = targetPlayer.EnchantmentManager.GetWardMultiplicativeMod();
-
-            var targetPlayerWard = targetPlayer.GetWardLevel() * wardBuffDebuffMod;
-
-            if (addResult.Enchantment.StatModValue < 0 && targetPlayerWard > 0)
+            if (this is Player player)
             {
-                var ignoreWardMod = 1.0f;
+                ignoreWardMod = player.GetIgnoreWardMod(weapon);
 
-                if (player != null)
+                if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.WardRending))
                 {
-                    ignoreWardMod = player.GetIgnoreWardMod(weapon);
-
-                    if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.WardRending))
-                    {
-                        ignoreWardMod -= GetWardRendingMod(player.GetCreatureSkill(Skill.LifeMagic));
-                    }
-
-                    ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearWardPen, "WardPen");
+                    ignoreWardMod -= GetWardRendingMod(player.GetCreatureSkill(Skill.LifeMagic));
                 }
 
-                var wardMod = GetWardMod(caster as Creature, targetPlayer, ignoreWardMod);
-
-                wardMod += (1 - wardMod) * 0.5f;
-
-                // ward shortens the debuff, it doesn't weaken it
-                addResult.Enchantment.Duration *= wardMod;
+                ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearWardPen, "WardPen");
             }
-        }
 
-        // build message
-        var suffix = "";
-        switch (addResult.StackType)
+            var wardMod = GetWardMod(caster as Creature, targetPlayer, ignoreWardMod);
+
+            wardMod += (1 - wardMod) * 0.5f;
+
+            // ward shortens the debuff, it doesn't weaken it
+            addResult.Enchantment.Duration *= wardMod;
+        }
+    }
+
+    /// <summary>
+    /// The end of the cast message, for an enchantment that surpasses, refreshes, or is surpassed by another
+    /// </summary>
+    private static string GetStackTypeSuffix(AddEnchantmentResult addResult)
+    {
+        return addResult.StackType switch
         {
-            case StackType.Surpass:
-                suffix = $", surpassing {addResult.SurpassSpell.Name}";
-                break;
-            case StackType.Refresh:
-                suffix = $", refreshing {addResult.RefreshSpell.Name}";
-                break;
-            case StackType.Surpassed:
-                suffix = $", but it is surpassed by {addResult.SurpassedSpell.Name}";
-                break;
-        }
+            StackType.Surpass => $", surpassing {addResult.SurpassSpell.Name}",
+            StackType.Refresh => $", refreshing {addResult.RefreshSpell.Name}",
+            StackType.Surpassed => $", but it is surpassed by {addResult.SurpassedSpell.Name}",
+            _ => "",
+        };
+    }
 
-        if (aetheriaProc)
-        {
-            var message = new GameMessageSystemChat(
-                $"Aetheria surges on {target.Name} with the power of {spell.Name}!",
-                ChatMessageType.Spellcasting
-            );
+    private void SendEnchantmentCasterMessage(Player player, WorldObject target, WorldObject caster, Spell spell, string suffix, bool showMsg)
+    {
+        // TODO: replace with some kind of 'rootOwner unless equip' concept?
+        // for item casters where the message should be 'You cast', we still need pass the caster as item
+        // down this far, to prevent using player's AugmentationIncreasedSpellDuration
+        var casterCheck = caster == this || caster is Gem || caster is Food;
 
-            EnqueueBroadcast(message, LocalBroadcastRange, ChatMessageType.Spellcasting);
-        }
-        else if (player != null && !cloakProc)
-        {
-            // TODO: replace with some kind of 'rootOwner unless equip' concept?
-            // for item casters where the message should be 'You cast', we still need pass the caster as item
-            // down this far, to prevent using player's AugmentationIncreasedSpellDuration
-            var casterCheck = caster == this || caster is Gem || caster is Food;
-
-            if (casterCheck || target == this || caster != target)
-            {
-                var chargedMsg = player.GetChargedMessage();
-
-                var casterName = casterCheck ? "You" : caster.Name;
-                var targetName = target.Name;
-                if (target == this)
-                {
-                    targetName = casterCheck ? "yourself" : "you";
-                    chargedMsg = "";
-                }
-
-                if (showMsg)
-                {
-                    player.SendChatMessage(
-                        player,
-                        $"{chargedMsg}{casterName} cast {spell.Name} on {targetName}{suffix}",
-                        ChatMessageType.Magic
-                    );
-                }
-            }
-        }
-
-        var playerTarget = target as Player;
-
-        if (playerTarget != null)
-        {
-            playerTarget.Session.Network.EnqueueSend(
-                new GameEventMagicUpdateEnchantment(
-                    playerTarget.Session,
-                    new Enchantment(playerTarget, addResult.Enchantment)
-                )
-            );
-
-            playerTarget.HandleSpellHooks(spell);
-
-            if (!spell.IsBeneficial && this is Creature creatureCaster)
-            {
-                playerTarget.SetCurrentAttacker(creatureCaster);
-            }
-        }
-
-        if (playerTarget == null && target.Wielder is Player wielder)
-        {
-            playerTarget = wielder;
-        }
-
-        if (playerTarget == null || playerTarget == this || cloakProc)
+        if (!casterCheck && target != this && caster == target)
         {
             return;
         }
 
-        {
-            var targetName = target == playerTarget ? "you" : $"your {target.Name}";
+        var chargedMsg = player.GetChargedMessage();
 
-            if (showMsg)
-            {
-                playerTarget.SendChatMessage(
-                    this,
-                    $"{caster.Name} cast {spell.Name} on {targetName}{suffix}",
-                    ChatMessageType.Magic
-                );
-            }
+        var casterName = casterCheck ? "You" : caster.Name;
+        var targetName = target.Name;
+        if (target == this)
+        {
+            targetName = casterCheck ? "yourself" : "you";
+            chargedMsg = "";
+        }
+
+        if (showMsg)
+        {
+            player.SendChatMessage(
+                player,
+                $"{chargedMsg}{casterName} cast {spell.Name} on {targetName}{suffix}",
+                ChatMessageType.Magic
+            );
         }
     }
 
@@ -296,127 +315,130 @@ partial class WorldObject
         return enchantment_statModVal;
     }
 
+    /// <summary>
+    /// Casts an item spell. Item spells cast on a creature are redirected to its items:
+    /// impen / bane spells to its armor or shield, weapon spells to its weapon or caster.
+    /// </summary>
     public void TryCastItemEnchantment_WithRedirects(Spell spell, WorldObject target, WorldObject itemCaster = null)
     {
-        var caster = itemCaster ?? this;
-
-        var creature = this as Creature;
-        var player = this as Player;
+        // if negative item spell, can be resisted by the wielder
+        if (spell.IsHarmful && TryResistItemSpell(spell, target, itemCaster ?? this))
+        {
+            return;
+        }
 
         var targetCreature = target as Creature;
-        var targetPlayer = target as Player;
 
-        // if negative item spell, can be resisted by the wielder
-        if (spell.IsHarmful)
+        if (targetCreature != null && spell.IsImpenBaneType)
         {
-            var targetResist = targetCreature;
-
-            if (targetResist == null && target?.WielderId != null)
-            {
-                targetResist = CurrentLandblock?.GetObject(target.WielderId.Value) as Creature;
-            }
-
-            // skip TryResistSpell() for non-player casters, they already performed it previously
-            if (player != null && targetResist != null)
-            {
-                if (TryResistSpell(targetResist, spell, out _, caster))
-                {
-                    return;
-                }
-            }
-            // should this be set if the spell is invalid / 'fails to affect' below?
-            if (creature != null && targetResist is Player playerTargetResist)
-            {
-                playerTargetResist.SetCurrentAttacker(creature);
-            }
+            CastImpenBaneOnCreature(spell, targetCreature);
         }
-
-        if (spell.IsImpenBaneType)
+        else if (targetCreature != null && spell.IsItemRedirectableType)
         {
-            // impen / bane / brittlemail / lure
-
-            // a lot of these will already be filtered out by IsInvalidTarget()
-            if (targetCreature == null)
-            {
-                // targeting an individual item / wo
-                HandleCastSpell(spell, target);
-            }
-            else
-            {
-                // targeting a creature
-                if (targetPlayer == this)
-                {
-                    // targeting self
-                    if (creature != null)
-                    {
-                        var items = creature
-                            .EquippedObjects.Values.Where(i =>
-                                (i.WeenieType == WeenieType.Clothing || i.IsShield) && i.IsEnchantable
-                            )
-                            .ToList();
-
-                        foreach (var item in items)
-                        {
-                            HandleCastSpell(spell, item);
-                        }
-
-                        if (items.Count > 0)
-                        {
-                            DoSpellEffects(spell, this, creature);
-                        }
-                    }
-                }
-                else
-                {
-                    // targeting another player or monster
-                    var item = targetCreature.EquippedObjects.Values.FirstOrDefault(i => i.IsShield && i.IsEnchantable);
-
-                    if (item != null)
-                    {
-                        HandleCastSpell(spell, item);
-                    }
-                    else
-                    {
-                        SendFailsToAffectMessages(spell, targetCreature, player, targetPlayer);
-                    }
-                }
-            }
-        }
-        else if (spell.IsItemRedirectableType)
-        {
-            // blood loather, spirit loather, lure blade, turn blade, leaden weapon, hermetic void
-            if (targetCreature == null)
-            {
-                // targeting an individual item / wo
-                HandleCastSpell(spell, target);
-            }
-            else
-            {
-                // targeting a creature, try to redirect to primary weapon
-                var weapon = spell.NonComponentTargetType switch
-                {
-                    ItemType.Weapon => targetCreature.GetEquippedWeapon(),
-                    ItemType.Caster => targetCreature.GetEquippedWand(),
-                    ItemType.WeaponOrCaster => targetCreature.GetEquippedWeapon() ?? targetCreature.GetEquippedWand(),
-                    ItemType.MeleeWeapon => targetCreature.GetEquippedMeleeWeapon(),
-                    ItemType.MissileWeapon => targetCreature.GetEquippedMissileWeapon(),
-                    _ => null
-                };
-
-                if (weapon != null && weapon.IsEnchantable)
-                {
-                    HandleCastSpell(spell, weapon);
-                }
-                else
-                {
-                    SendFailsToAffectMessages(spell, targetCreature, player, targetPlayer);
-                }
-            }
+            CastWeaponSpellOnCreature(spell, targetCreature);
         }
         else
         {
-            // all other item spells, cast directly on target
+            // targeting an individual item / wo, or all other item spells: cast directly on target
             HandleCastSpell(spell, target);
+        }
+    }
+
+    /// <summary>
+    /// A harmful item spell can be resisted by the creature it targets, or by the creature wielding the item it targets.
+    /// Returns TRUE if resisted.
+    /// </summary>
+    private bool TryResistItemSpell(Spell spell, WorldObject target, WorldObject caster)
+    {
+        var targetResist = target as Creature;
+
+        if (targetResist == null && target?.WielderId != null)
+        {
+            targetResist = CurrentLandblock?.GetObject(target.WielderId.Value) as Creature;
+        }
+
+        // skip TryResistSpell() for non-player casters, they already performed it previously
+        if (this is Player && targetResist != null)
+        {
+            if (TryResistSpell(targetResist, spell, out _, caster))
+            {
+                return true;
+            }
+        }
+
+        // should this be set if the spell is invalid / 'fails to affect' below?
+        if (this is Creature creature && targetResist is Player playerTargetResist)
+        {
+            playerTargetResist.SetCurrentAttacker(creature);
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Impen / bane / brittlemail / lure spells on a creature.
+    /// Cast on yourself, they affect all your enchantable armor and shields. Cast on another, they affect their shield.
+    /// </summary>
+    private void CastImpenBaneOnCreature(Spell spell, Creature targetCreature)
+    {
+        // a lot of these will already be filtered out by IsInvalidTarget()
+        if (targetCreature is Player targetPlayer && targetPlayer == this)
+        {
+            var items = targetPlayer
+                .EquippedObjects.Values.Where(i =>
+                    (i.WeenieType == WeenieType.Clothing || i.IsShield) && i.IsEnchantable
+                )
+                .ToList();
+
+            foreach (var item in items)
+            {
+                HandleCastSpell(spell, item);
+            }
+
+            if (items.Count > 0)
+            {
+                DoSpellEffects(spell, this, targetPlayer);
+            }
+
+            return;
+        }
+
+        // targeting another player or monster
+        var shield = targetCreature.EquippedObjects.Values.FirstOrDefault(i => i.IsShield && i.IsEnchantable);
+
+        if (shield != null)
+        {
+            HandleCastSpell(spell, shield);
+        }
+        else
+        {
+            SendFailsToAffectMessages(spell, targetCreature, this as Player, targetCreature as Player);
+        }
+    }
+
+    /// <summary>
+    /// Weapon spells on a creature (blood loather, spirit loather, lure blade, turn blade, leaden weapon, hermetic void)
+    /// affect its equipped weapon or caster
+    /// </summary>
+    private void CastWeaponSpellOnCreature(Spell spell, Creature targetCreature)
+    {
+        var weapon = spell.NonComponentTargetType switch
+        {
+            ItemType.Weapon => targetCreature.GetEquippedWeapon(),
+            ItemType.Caster => targetCreature.GetEquippedWand(),
+            ItemType.WeaponOrCaster => targetCreature.GetEquippedWeapon() ?? targetCreature.GetEquippedWand(),
+            ItemType.MeleeWeapon => targetCreature.GetEquippedMeleeWeapon(),
+            ItemType.MissileWeapon => targetCreature.GetEquippedMissileWeapon(),
+            _ => null
+        };
+
+        if (weapon != null && weapon.IsEnchantable)
+        {
+            HandleCastSpell(spell, weapon);
+        }
+        else
+        {
+            SendFailsToAffectMessages(spell, targetCreature, this as Player, targetCreature as Player);
         }
     }
 

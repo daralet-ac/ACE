@@ -148,8 +148,32 @@ partial class WorldObject
             return;
         }
 
+        var recall = GetRecallDestination(spell, player, targetPlayer, out var recallDid);
+
+        if (recall == PositionType.Undef)
+        {
+            return;
+        }
+
+        if (recallDid == null)
+        {
+            TeleportToRecallPosition(targetPlayer, recall);
+        }
+        else
+        {
+            RecallToPortal(player, targetPlayer, recallDid.Value);
+        }
+    }
+
+    /// <summary>
+    /// Where a recall spell sends the target: a linked position (lifestone, sanctuary),
+    /// or a portal (recallDid) for portal and portal tie recalls.
+    /// Returns PositionType.Undef, and tells the target, when they haven't linked the destination.
+    /// </summary>
+    private static PositionType GetRecallDestination(Spell spell, Player player, Player targetPlayer, out uint? recallDid)
+    {
         var recall = PositionType.Undef;
-        uint? recallDid = null;
+        recallDid = null;
 
         // verify pre-requirements for recalls
 
@@ -242,67 +266,71 @@ partial class WorldObject
                 break;
         }
 
-        if (recall != PositionType.Undef)
+        return recall;
+    }
+
+    /// <summary>
+    /// Teleports the target to one of their linked positions (lifestone, sanctuary), after a 2 second delay
+    /// </summary>
+    private static void TeleportToRecallPosition(Player targetPlayer, PositionType recall)
+    {
+        var lifestoneRecall = new ActionChain();
+        lifestoneRecall.AddAction(targetPlayer, () =>
         {
-            if (recallDid == null)
-            {
-                // lifestone recall
-                var lifestoneRecall = new ActionChain();
-                lifestoneRecall.AddAction(targetPlayer, () =>
-                {
-                    targetPlayer?.DoPreTeleportHide();
-                });
-                lifestoneRecall.AddDelaySeconds(2.0f); // 2 second delay
-                lifestoneRecall.AddAction(targetPlayer, () => targetPlayer?.TeleToPosition(recall));
-                lifestoneRecall.EnqueueChain();
-            }
-            else
-            {
-                // portal recall
-                var portal = GetPortal(recallDid.Value);
-                if (portal == null || portal.NoRecall)
-                {
-                    // You cannot recall that portal!
-                    player?.Session.Network.EnqueueSend(
-                        new GameEventWeenieError(player.Session, WeenieError.YouCannotRecallPortal)
-                    );
+            targetPlayer?.DoPreTeleportHide();
+        });
+        lifestoneRecall.AddDelaySeconds(2.0f); // 2 second delay
+        lifestoneRecall.AddAction(targetPlayer, () => targetPlayer?.TeleToPosition(recall));
+        lifestoneRecall.EnqueueChain();
+    }
 
-                    return;
-                }
+    /// <summary>
+    /// Teleports the target to a portal's destination, after a 2 second delay, if the portal can be recalled and used
+    /// </summary>
+    private void RecallToPortal(Player player, Player targetPlayer, uint recallDid)
+    {
+        var portal = GetPortal(recallDid);
+        if (portal == null || portal.NoRecall)
+        {
+            // You cannot recall that portal!
+            player?.Session.Network.EnqueueSend(
+                new GameEventWeenieError(player.Session, WeenieError.YouCannotRecallPortal)
+            );
 
-                var result = portal.CheckUseRequirements(targetPlayer);
-                if (!result.Success)
-                {
-                    if (result.Message != null)
-                    {
-                        targetPlayer.Session.Network.EnqueueSend(result.Message);
-                    }
-
-                    return;
-                }
-
-                var portalRecall = new ActionChain();
-                portalRecall.AddAction(targetPlayer, () => targetPlayer.DoPreTeleportHide());
-                portalRecall.AddDelaySeconds(2.0f); // 2 second delay
-                portalRecall.AddAction(
-                    targetPlayer,
-                    () =>
-                    {
-                        // a capstone dungeon's entrance leaves it to its Portal emote to send the player anywhere
-                        if (!portal.IsCapstoneEntrance)
-                        {
-                            var teleportDest = new Position(portal.Destination);
-                            AdjustDungeon(teleportDest);
-
-                            targetPlayer.Teleport(teleportDest);
-                        }
-
-                        portal.EmoteManager.OnPortal(player);
-                    }
-                );
-                portalRecall.EnqueueChain();
-            }
+            return;
         }
+
+        var result = portal.CheckUseRequirements(targetPlayer);
+        if (!result.Success)
+        {
+            if (result.Message != null)
+            {
+                targetPlayer.Session.Network.EnqueueSend(result.Message);
+            }
+
+            return;
+        }
+
+        var portalRecall = new ActionChain();
+        portalRecall.AddAction(targetPlayer, () => targetPlayer.DoPreTeleportHide());
+        portalRecall.AddDelaySeconds(2.0f); // 2 second delay
+        portalRecall.AddAction(
+            targetPlayer,
+            () =>
+            {
+                // a capstone dungeon's entrance leaves it to its Portal emote to send the player anywhere
+                if (!portal.IsCapstoneEntrance)
+                {
+                    var teleportDest = new Position(portal.Destination);
+                    AdjustDungeon(teleportDest);
+
+                    targetPlayer.Teleport(teleportDest);
+                }
+
+                portal.EmoteManager.OnPortal(player);
+            }
+        );
+        portalRecall.EnqueueChain();
     }
 
     /// <summary>

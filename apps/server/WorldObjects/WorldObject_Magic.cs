@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Entity.Enum;
@@ -170,32 +171,9 @@ partial class WorldObject
         // Excludes spells triggered by consuming a Food/Drink/Gem item (e.g. Alchemy potions) -
         // those are cast as `player.TryCastSpell(spell, player, item, ...)`, so `this` is
         // still the player even though the player didn't actively cast the spell themselves.
-        if (this is Player && itemCaster is not (Food or Gem))
+        if (this is Player player && itemCaster is not (Food or Gem) && targetCreature != null && !equip)
         {
-            if (targetCreature != null && !equip)
-            {
-                var player = this as Player;
-                switch (spell.School)
-                {
-                    case MagicSchool.LifeMagic:
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, sigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, sigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastProt, null, false, sigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastVuln, null, false, sigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastItemBuff, null, false, sigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastVitalRate, null, false, sigilTrinketSpell);
-                        break;
-                    case MagicSchool.WarMagic:
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, sigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, sigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketWarMagicEffect.Duplicate, null, false, sigilTrinketSpell);
-                        break;
-                    case MagicSchool.VoidMagic:
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, sigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, sigilTrinketSpell);
-                        break;
-                }
-            }
+            TriggerSigilTrinketOnCastEffects(player, targetCreature, spell, sigilTrinketSpell);
         }
 
         switch (spell.MetaSpellType)
@@ -203,30 +181,7 @@ partial class WorldObject
             case SpellType.Enchantment:
             case SpellType.FellowEnchantment:
 
-                if (itemCaster == null && targetCreature != null)
-                {
-                    GenerateSupportSpellThreat(spell, targetCreature);
-                }
-
-                var playerCaster = this as Player;
-
-                if (playerCaster is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true } &&
-                    spell.School is MagicSchool.VoidMagic &&
-                    targetCreature != playerCaster)
-                {
-                    playerCaster.IncreaseChargedMeter(spell, fromProc);
-                }
-                
-                // TODO: replace with some kind of 'rootOwner unless equip' concept?
-                if (itemCaster != null && (equip || itemCaster is Gem || itemCaster is Food))
-                {
-                    CreateEnchantment(targetCreature ?? target, itemCaster, itemCaster, spell, equip, false, showMsg);
-                }
-                else
-                {
-                    CreateEnchantment(targetCreature ?? target, this, this, spell, equip, false, showMsg);
-                }
-
+                HandleCastSpell_Enchantment(spell, target, targetCreature, itemCaster, fromProc, equip, showMsg);
                 break;
 
             case SpellType.Boost:
@@ -290,9 +245,9 @@ partial class WorldObject
 
             default:
 
-                if (this is Player player)
+                if (this is Player playerCaster)
                 {
-                    player.Session.Network.EnqueueSend(
+                    playerCaster.Session.Network.EnqueueSend(
                         new GameMessageSystemChat("Spell not implemented, yet!", ChatMessageType.Magic)
                     );
                 }
@@ -304,6 +259,98 @@ partial class WorldObject
         DoSpellEffects(spell, this, target);
 
         return true;
+    }
+
+    /// <summary>
+    /// The Sigil Scarab effects a player's cast can trigger, by spell school, in the order they're checked
+    /// </summary>
+    private static readonly Dictionary<MagicSchool, (Skill Skill, Enum[] Effects)> SigilTrinketOnCastEffects = new()
+    {
+        [MagicSchool.LifeMagic] = (
+            Skill.LifeMagic,
+            [
+                SigilTrinketLifeWarMagicEffect.Intensity,
+                SigilTrinketLifeWarMagicEffect.Shielding,
+                SigilTrinketLifeMagicEffect.CastProt,
+                SigilTrinketLifeMagicEffect.CastVuln,
+                SigilTrinketLifeMagicEffect.CastItemBuff,
+                SigilTrinketLifeMagicEffect.CastVitalRate,
+            ]
+        ),
+        [MagicSchool.WarMagic] = (
+            Skill.WarMagic,
+            [
+                SigilTrinketLifeWarMagicEffect.Intensity,
+                SigilTrinketLifeWarMagicEffect.Shielding,
+                SigilTrinketWarMagicEffect.Duplicate,
+            ]
+        ),
+        [MagicSchool.VoidMagic] = (
+            Skill.VoidMagic,
+            [
+                SigilTrinketLifeWarMagicEffect.Intensity,
+                SigilTrinketLifeWarMagicEffect.Shielding,
+            ]
+        ),
+    };
+
+    private static void TriggerSigilTrinketOnCastEffects(Player player, Creature targetCreature, Spell spell, bool sigilTrinketSpell)
+    {
+        if (!SigilTrinketOnCastEffects.TryGetValue(spell.School, out var onCast))
+        {
+            return;
+        }
+
+        foreach (var effect in onCast.Effects)
+        {
+            player.CheckForSigilTrinketOnCastEffects(
+                targetCreature,
+                spell,
+                isWeaponSpell: true,
+                onCast.Skill,
+                effect,
+                sigilTrinketSpell: sigilTrinketSpell
+            );
+        }
+    }
+
+    /// <summary>
+    /// Handles casting SpellType.Enchantment / FellowEnchantment spells
+    /// </summary>
+    private void HandleCastSpell_Enchantment(
+        Spell spell,
+        WorldObject target,
+        Creature targetCreature,
+        WorldObject itemCaster,
+        bool fromProc,
+        bool equip,
+        bool showMsg
+    )
+    {
+        if (itemCaster == null && targetCreature != null)
+        {
+            GenerateSupportSpellThreat(spell, targetCreature);
+        }
+
+        var playerCaster = this as Player;
+
+        // COMBAT ABILITY - Overload/Battery: void enchantments on others charge the meter
+        if (playerCaster is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true } &&
+            spell.School is MagicSchool.VoidMagic &&
+            targetCreature != playerCaster)
+        {
+            playerCaster.IncreaseChargedMeter(spell, fromProc);
+        }
+
+        // TODO: replace with some kind of 'rootOwner unless equip' concept?
+        if (itemCaster != null && (equip || itemCaster is Gem || itemCaster is Food))
+        {
+            CreateEnchantment(targetCreature ?? target, itemCaster, itemCaster, spell, equip, false, showMsg);
+        }
+        else
+        {
+            CreateEnchantment(targetCreature ?? target, this, this, spell, equip, false, showMsg);
+        }
     }
 
     /// <summary>

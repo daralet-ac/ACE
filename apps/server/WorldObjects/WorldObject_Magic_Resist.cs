@@ -69,6 +69,75 @@ partial class WorldObject
         partialResist = PartialEvasion.None;
         _partialEvasion = partialResist;
 
+        if (!CanBeResisted(spell, itemCaster, projectileHit))
+        {
+            return false;
+        }
+
+        var caster = itemCaster ?? this;
+
+        var casterCreature = caster as Creature;
+        var player = this as Player;
+        var targetPlayer = target as Player;
+
+        var magicSkill = GetEffectiveMagicSkill(target, spell, itemCaster, weaponSpellcraft, weaponAttackMod);
+
+        // only creatures can resist spells?
+        if (target is not Creature targetCreature)
+        {
+            return false;
+        }
+
+        var difficulty = GetMagicDefenseAgainst(targetCreature, casterCreature);
+
+        var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance, targetPlayer);
+
+        partialResist = pResist;
+        _partialEvasion = pResist;
+
+        if (targetCreature.Invincible)
+        {
+            resisted = true;
+        }
+
+        if (targetPlayer != null)
+        {
+            if (targetPlayer.UnderLifestoneProtection)
+            {
+                targetPlayer.HandleLifestoneProtection();
+                resisted = true;
+            }
+        }
+
+        // a caster can't resist its own spell, unless it was reflected back at them
+        if (caster == target && !isReflected)
+        {
+            resisted = false;
+        }
+
+        if (resisted)
+        {
+            OnSpellResisted(targetCreature, casterCreature, magicSkill);
+        }
+
+        if (player != null && player.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
+        {
+            ShowResistInfo(player, this, target, spell, magicSkill, difficulty, resistChance, resisted);
+        }
+        if (targetCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Defender))
+        {
+            ShowResistInfo(targetCreature, this, target, spell, magicSkill, difficulty, resistChance, resisted);
+        }
+
+        return resisted;
+    }
+
+    /// <summary>
+    /// Spells that can't be resisted: unresistable and self-targeted spells, negative dispels (server setting),
+    /// projectiles before they hit, and cloak procs
+    /// </summary>
+    private static bool CanBeResisted(Spell spell, WorldObject itemCaster, bool projectileHit)
+    {
         // fix hermetic void?
         if (!spell.IsResistable && spell.Category != SpellCategory.ManaConversionModLowering || spell.IsSelfTargeted)
         {
@@ -94,19 +163,16 @@ partial class WorldObject
             return false;
         }
 
-        var caster = itemCaster ?? this;
+        return true;
+    }
 
-        var casterCreature = caster as Creature;
-        var player = this as Player;
-        var targetPlayer = target as Player;
-
-        var magicSkill = GetEffectiveMagicSkill(target, spell, itemCaster, weaponSpellcraft, weaponAttackMod);
-
-        // only creatures can resist spells?
-        if (target is not Creature targetCreature)
-        {
-            return false;
-        }
+    /// <summary>
+    /// The target's magic defense against a caster's spell,
+    /// with COMBAT ABILITY - Reflect, RATING - Familiarity and level scaling
+    /// </summary>
+    private static uint GetMagicDefenseAgainst(Creature targetCreature, Creature casterCreature)
+    {
+        var targetPlayer = targetCreature as Player;
 
         // Retrieve target's Magic Defense Skill
         var difficulty = targetCreature.GetModdedMagicDefSkill();
@@ -117,86 +183,57 @@ partial class WorldObject
         difficulty = Convert.ToUInt32(difficulty * (1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearFamiliarity, "Familiarity", rampQuestSource: casterCreature)));
 
         // level scaling goes last, so the bonuses above are worth the same at every level (see LevelScaling.GetScaledPlayerDefenseSkill)
-        difficulty = LevelScaling.GetScaledPlayerDefenseSkill(difficulty, targetCreature, casterCreature);
+        return LevelScaling.GetScaledPlayerDefenseSkill(difficulty, targetCreature, casterCreature);
+    }
 
-        var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance, targetPlayer);
+    /// <summary>
+    /// Tells the caster and the target the spell was resisted.
+    /// Magic defense gains proficiency, and the target's resist emotes run.
+    /// </summary>
+    private void OnSpellResisted(Creature targetCreature, Creature casterCreature, uint magicSkill)
+    {
+        var targetPlayer = targetCreature as Player;
 
-        partialResist = pResist;
-        _partialEvasion = pResist;
-
-        if (targetCreature.Invincible)
+        if (this is Player player)
         {
-            resisted = true;
+            player.SendChatMessage(
+                targetCreature,
+                $"{targetCreature.Name} resists your spell",
+                ChatMessageType.Magic
+            );
+
+            player.Session.Network.EnqueueSend(new GameMessageSound(player.Guid, Sound.ResistSpell));
         }
 
         if (targetPlayer != null)
         {
-            if (targetPlayer.UnderLifestoneProtection)
+            if (targetPlayer.Reprisal)
             {
-                targetPlayer.HandleLifestoneProtection();
-                resisted = true;
-            }
-        }
-
-        if (caster == target && !isReflected)
-        {
-            resisted = false;
-        }
-
-        if (resisted)
-        {
-            if (player != null)
-            {
-                player.SendChatMessage(
-                    targetCreature,
-                    $"{targetCreature.Name} resists your spell",
+                targetPlayer.Reprisal = false;
+                targetPlayer.SendChatMessage(
+                    this,
+                    $"Reprisal! You resist the spell cast by {Name}",
                     ChatMessageType.Magic
                 );
-
-                player.Session.Network.EnqueueSend(new GameMessageSound(player.Guid, Sound.ResistSpell));
             }
+            targetPlayer.SendChatMessage(this, $"You resist the spell cast by {Name}", ChatMessageType.Magic);
 
-            if (targetPlayer != null)
+            targetPlayer.Session.Network.EnqueueSend(
+                new GameMessageSound(targetPlayer.Guid, Sound.ResistSpell)
+            );
+
+            if (casterCreature != null)
             {
-                if (targetPlayer.Reprisal)
-                {
-                    targetPlayer.Reprisal = false;
-                    targetPlayer.SendChatMessage(
-                        this,
-                        $"Reprisal! You resist the spell cast by {Name}",
-                        ChatMessageType.Magic
-                    );
-                }
-                targetPlayer.SendChatMessage(this, $"You resist the spell cast by {Name}", ChatMessageType.Magic);
-
-                targetPlayer.Session.Network.EnqueueSend(
-                    new GameMessageSound(targetPlayer.Guid, Sound.ResistSpell)
-                );
-
-                if (casterCreature != null)
-                {
-                    targetPlayer.SetCurrentAttacker(casterCreature);
-                }
-
-                Proficiency.OnSuccessUse(targetPlayer, targetPlayer.GetCreatureSkill(Skill.MagicDefense), magicSkill);
+                targetPlayer.SetCurrentAttacker(casterCreature);
             }
 
-            if (this is Creature creature)
-            {
-                targetCreature.EmoteManager.OnResistSpell(creature);
-            }
+            Proficiency.OnSuccessUse(targetPlayer, targetPlayer.GetCreatureSkill(Skill.MagicDefense), magicSkill);
         }
 
-        if (player != null && player.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
+        if (this is Creature creature)
         {
-            ShowResistInfo(player, this, target, spell, magicSkill, difficulty, resistChance, resisted);
+            targetCreature.EmoteManager.OnResistSpell(creature);
         }
-        if (targetCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Defender))
-        {
-            ShowResistInfo(targetCreature, this, target, spell, magicSkill, difficulty, resistChance, resisted);
-        }
-
-        return resisted;
     }
 
     /// <summary>
