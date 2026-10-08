@@ -1027,6 +1027,8 @@ public partial class Player : Creature, IPlayer
                 ChatMessageType.Speech
             );
 
+            PlayerManager.LogPlayerChat("chat_log_local", "LOCAL", Name, "says", message);
+
             OnTalk(message);
         }
         else
@@ -1075,6 +1077,8 @@ public partial class Player : Creature, IPlayer
         {
             EnqueueBroadcast(new GameMessageEmoteText(Guid.Full, GetNameWithSuffix(), message), LocalBroadcastRange);
 
+            PlayerManager.LogPlayerChat("chat_log_local", "EMOTE", Name, "emotes", message);
+
             OnTalk(message);
         }
         else
@@ -1098,6 +1102,8 @@ public partial class Player : Creature, IPlayer
             {
                 EnqueueBroadcast(new GameMessageSoulEmote(Guid.Full, Name, message), LocalBroadcastRange);
             }
+
+            PlayerManager.LogPlayerChat("chat_log_local", "SOULEMOTE", Name, "soul emotes", message);
 
             OnTalk(message);
         }

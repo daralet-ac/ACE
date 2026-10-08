@@ -784,6 +784,19 @@ public static class PlayerManager
         }
     }
 
+    /// <summary>
+    /// Logs direct player chat (tells, local chat, emotes) that does not go through a channel broadcast
+    /// </summary>
+    public static void LogPlayerChat(string flag, string tag, string sender, string verb, string message)
+    {
+        if (!PropertyManager.GetBool(flag).Item)
+        {
+            return;
+        }
+
+        _log.Information($"[CHAT][{tag}] {sender} {verb}, \"{message}\"");
+    }
+
     public static void LogBroadcastChat(Channel channel, WorldObject sender, string message)
     {
         switch (channel)
