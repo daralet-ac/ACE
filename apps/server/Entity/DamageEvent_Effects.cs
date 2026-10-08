@@ -301,14 +301,14 @@ public partial class DamageEvent
     /// </summary>
     private void CheckForCombatAbilityAegisRestoration()
     {
-        // _combatAbilityAegisDamageReduction is 1.0 unless Aegis reduced this hit
-        if (_playerDefender is null || _combatAbilityAegisDamageReduction is <= 0.0f or >= 1.0f)
+        // _mitigationModifiers.Aegis is 1.0 unless Aegis reduced this hit
+        if (_playerDefender is null || _mitigationModifiers.Aegis is <= 0.0f or >= 1.0f)
         {
             return;
         }
 
         // Damage already includes the Aegis reduction, so this is the amount Aegis alone prevented
-        var damagePrevented = Damage / _combatAbilityAegisDamageReduction - Damage;
+        var damagePrevented = Damage / _mitigationModifiers.Aegis - Damage;
         var restoreAmount = (int)Math.Round(damagePrevented * Player.AegisRestorationMod);
 
         if (restoreAmount <= 0)

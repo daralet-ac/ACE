@@ -78,16 +78,16 @@ public partial class DamageEvent
         info += $"BaseDamage: {_baseDamage}\n";
 
         // damage modifiers
-        info += $"AttributeMod: {_attributeMod}\n";
+        info += $"AttributeMod: {_damageModifiers.Attribute}\n";
 
-        if (_powerMod != 0.0f && _powerMod != 1.0f)
+        if (_damageModifiers.Power != 0.0f && _damageModifiers.Power != 1.0f)
         {
-            info += $"PowerMod: {_powerMod}\n";
+            info += $"PowerMod: {_damageModifiers.Power}\n";
         }
 
-        if (_slayerMod != 0.0f && _slayerMod != 1.0f)
+        if (_damageModifiers.Slayer != 0.0f && _damageModifiers.Slayer != 1.0f)
         {
-            info += $"SlayerMod: {_slayerMod}\n";
+            info += $"SlayerMod: {_damageModifiers.Slayer}\n";
         }
 
         if (_baseDamageMod != null)
@@ -128,9 +128,9 @@ public partial class DamageEvent
         }
 
         // damage ratings
-        if (_recklessnessMod != 0.0f && _recklessnessMod != 1.0f)
+        if (_damageModifiers.Recklessness != 0.0f && _damageModifiers.Recklessness != 1.0f)
         {
-            info += $"RecklessnessMod: {_recklessnessMod}\n";
+            info += $"RecklessnessMod: {_damageModifiers.Recklessness}\n";
         }
 
         if (SneakAttackMod != 0.0f && SneakAttackMod != 1.0f)
@@ -143,9 +143,9 @@ public partial class DamageEvent
             info += $"PkDamageMod: {_pkDamageMod}\n";
         }
 
-        if (_damageRatingMod != 0.0f && _damageRatingMod != 1.0f)
+        if (_damageModifiers.DamageRating != 0.0f && _damageModifiers.DamageRating != 1.0f)
         {
-            info += $"DamageRatingMod: {_damageRatingMod}\n";
+            info += $"DamageRatingMod: {_damageModifiers.DamageRating}\n";
         }
 
         if (BodyPart != 0)
@@ -167,14 +167,14 @@ public partial class DamageEvent
         }
 
         // damage mitigation
-        if (_armorMod != 0.0f && _armorMod != 1.0f)
+        if (_mitigationModifiers.Armor != 0.0f && _mitigationModifiers.Armor != 1.0f)
         {
-            info += $"ArmorMod: {_armorMod}\n";
+            info += $"ArmorMod: {_mitigationModifiers.Armor}\n";
         }
 
-        if (_resistanceMod != 0.0f && _resistanceMod != 1.0f)
+        if (_mitigationModifiers.Resistance != 0.0f && _mitigationModifiers.Resistance != 1.0f)
         {
-            info += $"ResistanceMod: {_resistanceMod}\n";
+            info += $"ResistanceMod: {_mitigationModifiers.Resistance}\n";
         }
 
         if (ShieldMod != 0.0f && ShieldMod != 1.0f)
@@ -202,9 +202,9 @@ public partial class DamageEvent
             info += $"PkDamageResistanceMod: {_pkDamageResistanceMod}\n";
         }
 
-        if (_damageResistanceRatingMod != 0.0f && _damageResistanceRatingMod != 1.0f)
+        if (_mitigationModifiers.DamageResistanceRating != 0.0f && _mitigationModifiers.DamageResistanceRating != 1.0f)
         {
-            info += $"DamageResistanceRatingMod: {_damageResistanceRatingMod}\n";
+            info += $"DamageResistanceRatingMod: {_mitigationModifiers.DamageResistanceRating}\n";
         }
 
         if (IgnoreMagicArmor)

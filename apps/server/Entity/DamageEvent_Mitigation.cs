@@ -54,7 +54,7 @@ public partial class DamageEvent
         _ignoreArmorMod = GetIgnoreArmorMod();
         _ignoreArmorMod -= GetSpearSpecIgnoreArmorBonus(_playerAttacker);
 
-        _armorMod = GetArmorMod();
+        _mitigationModifiers.Armor = GetArmorMod();
 
         _weaponResistanceMod = WorldObject.GetWeaponResistanceModifier(
             Weapon,
@@ -64,54 +64,41 @@ public partial class DamageEvent
             _defender
         );
 
-        _resistanceMod = GetResistanceMod();
+        _mitigationModifiers.Resistance = GetResistanceMod();
 
         // Piercing resistance penetration (Black Garnet / Precision Strikes) is applied as a damage
-        // multiplier via _ratingPierceResistanceBonus in GetRatingPierceResistanceBonus(); it must
+        // multiplier via _damageModifiers.PierceRating in GetRatingPierceResistanceBonus(); it must
         // not also be folded into the target's resistance here.
 
-        _damageResistanceRatingMod = GetDamageResistRatingMod();
-        _damageResistanceRatingMod *= 1.0f - GetRatingHardenedDefenseDamageResistanceBonus(_playerDefender);
+        _mitigationModifiers.DamageResistanceRating = GetDamageResistRatingMod();
+        _mitigationModifiers.DamageResistanceRating *= 1.0f - GetRatingHardenedDefenseDamageResistanceBonus(_playerDefender);
 
-        _specDefenseMod = GetSpecDefenseMod(_attacker, _playerDefender);
+        _mitigationModifiers.SpecDefense = GetSpecDefenseMod(_attacker, _playerDefender);
 
-        ShieldMod = _defender.GetShieldMod(_attacker, DamageType, Weapon);
+        _mitigationModifiers.Shield = _defender.GetShieldMod(_attacker, DamageType, Weapon);
 
-        _combatAbilityProvokeDamageReduction = GetCombatAbilityProvokeDamageReduction(_playerDefender);
-        _combatAbilityAegisDamageReduction = GetCombatAbilityAegisDamageReduction();
-        _combatAbilityPhalanxDamageReduction = GetCombatAbilityPhalanxDamageReduction();
+        _mitigationModifiers.Provoke = GetCombatAbilityProvokeDamageReduction(_playerDefender);
+        _mitigationModifiers.Aegis = GetCombatAbilityAegisDamageReduction();
+        _mitigationModifiers.Phalanx = GetCombatAbilityPhalanxDamageReduction();
 
-        _ratingSelfHarm = 1.0f + Jewel.GetJewelEffectMod(_playerAttacker, PropertyInt.GearSelfHarm);
-        _ratingRedFury = 1.0f + Jewel.GetJewelRedFury(_playerAttacker);
-        _ratingYellowFury = 1.0f + Jewel.GetJewelYellowFury(_playerAttacker);
-        _ratingDamageTypeWard = DamageType switch
+        _mitigationModifiers.SelfHarm = 1.0f + Jewel.GetJewelEffectMod(_playerAttacker, PropertyInt.GearSelfHarm);
+        _mitigationModifiers.RedFury = 1.0f + Jewel.GetJewelRedFury(_playerAttacker);
+        _mitigationModifiers.YellowFury = 1.0f + Jewel.GetJewelYellowFury(_playerAttacker);
+        _mitigationModifiers.DamageTypeWard = DamageType switch
         {
             var dt when (dt & DamageType.Physical) != 0 => 1.0f - Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearPhysicalWard),
             var dt when (dt & DamageType.Elemental) != 0 => 1.0f - Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearElementalWard),
             _ => 1.0f
         };
 
-        _swarmedDamageReductionMod = GetSwarmedMod(_playerDefender);
+        _mitigationModifiers.Swarmed = GetSwarmedMod(_playerDefender);
 
-        _imbuedArmorPhysicalDamageMod = GetImbuedArmorPhysicalDamageMod(_defender);
-        _imbuedArmorCritDamageMod = GetImbuedArmorCritDamageMod();
+        _mitigationModifiers.ImbuedArmorPhysical = GetImbuedArmorPhysicalDamageMod(_defender);
+        _mitigationModifiers.ImbuedArmorCritical = GetImbuedArmorCritDamageMod();
 
-        return _armorMod
-               * ShieldMod
-               * _resistanceMod
-               * _damageResistanceRatingMod
-               * _evasionMod
-               * _specDefenseMod
-               * _combatAbilityProvokeDamageReduction
-               * _combatAbilityAegisDamageReduction
-               * _combatAbilityPhalanxDamageReduction
-               * _ratingDamageTypeWard
-               * _ratingSelfHarm
-               * _ratingRedFury
-               * _ratingYellowFury
-               * _swarmedDamageReductionMod
-               * _imbuedArmorPhysicalDamageMod
-               * _imbuedArmorCritDamageMod;
+        _mitigationModifiers.Evasion = _evasionMod;
+
+        return _mitigationModifiers.Product();
     }
 
     private const float ImbuedArmorPhysicalDamageReductionPerPiece = 0.01f;

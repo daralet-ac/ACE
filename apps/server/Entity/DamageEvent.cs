@@ -13,70 +13,42 @@ public partial class DamageEvent
 {
     private readonly ILogger _log = Log.ForContext<DamageEvent>();
     private float _accuracyMod;
-    private float _ammoEffectMod;
     private List<WorldObject> _armor;
-    private float _armorMod;
     private Creature _attacker;
     private AttackHeight _attackHeight;
-    private float _attackHeightDamageBonus;
     private AttackHook _attackHook;
     private MotionCommand? _attackMotion;
     private KeyValuePair<CombatBodyPart, PropertiesBodyPart> _attackPart; // body part this monster is attacking with
     private CreatureSkill _attackSkill;
     private AttackType _attackType; // slash / thrust / punch / kick / offhand / multistrike
-    private float _attributeMod;
-    private float _backstabDamageMultiplier;
     private float _baseDamage;
     private BaseDamageMod _baseDamageMod;
-    private float _combatAbilityAegisDamageReduction;
-    private float _combatAbilityFuryDamageBonus;
-    private float _combatAbilityRelentlessDamagePenalty;
-    private float _combatAbilityPhalanxDamageReduction;
-    private float _combatAbilityProvokeDamageReduction;
     private Creature_BodyPart _creaturePart;
     private float _criticalChance;
     private float _criticalDamageMod;
     private float _criticalDamageRating;
     private float _criticalDamageResistanceRatingMod;
-    private float _imbuedArmorPhysicalDamageMod;
-    private float _imbuedArmorCritDamageMod;
     private bool _criticalDefendedFromAug;
     private float _damageBeforeMitigation;
     private float _damageMitigated;
-    private float _damageRatingMod;
     private float _damageResistanceRatingBaseMod;
-    private float _damageResistanceRatingMod;
     private WorldObject _damageSource;
     private Creature _defender;
-    private float _dualWieldDamageBonus;
     private uint _effectiveDefenseSkill;
+    private DamageModifiers _damageModifiers;
     private float _evasionMod;
     private bool _generalFailure;
     private float _ignoreArmorMod;
     private bool _invulnerable;
-    private float _levelScalingMod;
+    private MitigationModifiers _mitigationModifiers;
     private bool _overpower;
     private bool _pkBattle;
     private float _pkDamageMod;
     private float _pkDamageResistanceMod;
     private Player _playerAttacker;
     private Player _playerDefender;
-    private float _powerMod;
     private KeyValuePair<CombatBodyPart, PropertiesBodyPart> _propertiesBodyPart;
     private Quadrant _quadrant;
-    private float _ratingElementalDamageBonus;
-    private float _ratingDamageTypeWard;
-    private float _ratingRedFury;
-    private float _ratingYellowFury;
-    private float _ratingSelfHarm;
-    private float _ratingPierceResistanceBonus;
-    private float _recklessnessMod;
-    private float _resistanceMod;
-    private float _slayerMod;
-    private float _specDefenseMod;
-    private float _swarmedDamageReductionMod;
-    private float _combatAbilitySteadyStrikeDamageBonus;
-    private float _twohandedCombatDamageBonus;
     private float _weaponResistanceMod;
 
     private bool IgnoreMagicArmor =>
@@ -93,10 +65,10 @@ public partial class DamageEvent
     public bool LifestoneProtection { get; private set; }
     public PartialEvasion PartialEvasion { get; set; }
     public uint EffectiveAttackSkill { get; private set; }
-    public float SneakAttackMod { get; private set; }
+    public float SneakAttackMod => _damageModifiers.SneakAttack;
     public bool IsCritical { get; private set; }
     public BodyPart BodyPart { get; private set; }
-    public float ShieldMod { get; private set; }
+    public float ShieldMod => _mitigationModifiers.Shield;
     public float Damage { get; private set; }
     public CombatType CombatType { get; private set; }
     public DamageType DamageType { get; private set; }
@@ -116,7 +88,7 @@ public partial class DamageEvent
                 attackConditions |= AttackConditions.CriticalProtectionAugmentation;
             }
 
-            if (_recklessnessMod > 1.0f)
+            if (_damageModifiers.Recklessness > 1.0f)
             {
                 attackConditions |= AttackConditions.Recklessness;
             }

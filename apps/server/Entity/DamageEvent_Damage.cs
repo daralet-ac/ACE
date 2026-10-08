@@ -75,36 +75,36 @@ public partial class DamageEvent
 
     private void SetDamageModifiers(float? powerMod = null, bool consumeSneakAttackBonuses = true)
     {
-        _powerMod = powerMod ?? _attacker.GetPowerMod(Weapon);
-        _attributeMod = _attacker.GetAttributeMod(Weapon, false);
-        _slayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, _attacker, _defender);
-        _damageRatingMod = Creature.GetPositiveRatingMod(_attacker.GetDamageRating());
-        _dualWieldDamageBonus = GetDualWieldDamageBonus(_playerAttacker, _defender);
-        _twohandedCombatDamageBonus = GetTwohandedCombatDamageBonus(_playerAttacker, _defender);
-        _combatAbilityFuryDamageBonus = GetCombatAbilityFuryDamageBonus(_playerAttacker, _playerDefender);
-        _combatAbilityRelentlessDamagePenalty = GetCombatAbilityRelentlessDamagePenalty(_playerAttacker);
-        _combatAbilitySteadyStrikeDamageBonus = GetCombatAbilitySteadyStrikeDamageBonus(_playerAttacker);
-        _recklessnessMod = Creature.GetRecklessnessMod(_attacker, _defender);
+        _damageModifiers.Power = powerMod ?? _attacker.GetPowerMod(Weapon);
+        _damageModifiers.Attribute = _attacker.GetAttributeMod(Weapon, false);
+        _damageModifiers.Slayer = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, _attacker, _defender);
+        _damageModifiers.DamageRating = Creature.GetPositiveRatingMod(_attacker.GetDamageRating());
+        _damageModifiers.DualWield = GetDualWieldDamageBonus(_playerAttacker, _defender);
+        _damageModifiers.TwoHandedCombat = GetTwohandedCombatDamageBonus(_playerAttacker, _defender);
+        _damageModifiers.Fury = GetCombatAbilityFuryDamageBonus(_playerAttacker, _playerDefender);
+        _damageModifiers.Relentless = GetCombatAbilityRelentlessDamagePenalty(_playerAttacker);
+        _damageModifiers.SteadyStrike = GetCombatAbilitySteadyStrikeDamageBonus(_playerAttacker);
+        _damageModifiers.Recklessness = Creature.GetRecklessnessMod(_attacker, _defender);
 
         // Sneak attack / Backstab bonuses (and their one-shot charges) should only be
         // consumed by an attacker's own normal attack - not by ancillary reactive damage
         // calculations like Thorns reflection or a Riposte counter-hit.
         if (consumeSneakAttackBonuses)
         {
-            SneakAttackMod = _attacker.GetSneakAttackMod(_defender);
-            _backstabDamageMultiplier = Creature.GetStealthBackstabDamageMultiplier(_playerAttacker, _defender);
+            _damageModifiers.SneakAttack = _attacker.GetSneakAttackMod(_defender);
+            _damageModifiers.Backstab = Creature.GetStealthBackstabDamageMultiplier(_playerAttacker, _defender);
         }
         else
         {
-            SneakAttackMod = 1.0f;
-            _backstabDamageMultiplier = 1.0f;
+            _damageModifiers.SneakAttack = 1.0f;
+            _damageModifiers.Backstab = 1.0f;
         }
 
-        _attackHeightDamageBonus = GetHighAttackHeightBonus();
-        _ratingElementalDamageBonus = Jewel.HandleElementalBonuses(_playerAttacker, DamageType);
-        _ratingPierceResistanceBonus = GetRatingPierceResistanceBonus();
-        _levelScalingMod = GetLevelScalingMod(_attacker, _defender, _playerDefender);
-        _ammoEffectMod = GetAmmoEffectMod(Weapon, _playerAttacker);
+        _damageModifiers.AttackHeight = GetHighAttackHeightBonus();
+        _damageModifiers.ElementalRating = Jewel.HandleElementalBonuses(_playerAttacker, DamageType);
+        _damageModifiers.PierceRating = GetRatingPierceResistanceBonus();
+        _damageModifiers.LevelScaling = GetLevelScalingMod(_attacker, _defender, _playerDefender);
+        _damageModifiers.Ammo = GetAmmoEffectMod(Weapon, _playerAttacker);
 
         if (!_pkBattle)
         {
@@ -112,7 +112,7 @@ public partial class DamageEvent
         }
 
         _pkDamageMod = Creature.GetPositiveRatingMod(_attacker.GetPKDamageRating());
-        _damageRatingMod = Creature.AdditiveCombine(_damageRatingMod, _pkDamageMod);
+        _damageModifiers.DamageRating = Creature.AdditiveCombine(_damageModifiers.DamageRating, _pkDamageMod);
     }
 
     /// <summary>
@@ -278,9 +278,9 @@ public partial class DamageEvent
         // RATING - Reprisal: the defender may evade the critical hit (see DoCalculateDamage)
         CheckForRatingReprisalCriticalDefense();
 
-        // _damageRatingMod already includes the PK damage rating (see SetDamageModifiers)
+        // _damageModifiers.DamageRating already includes the PK damage rating (see SetDamageModifiers)
         _criticalDamageRating = Creature.GetPositiveRatingMod(_attacker.GetCritDamageRating());
-        _damageRatingMod = Creature.AdditiveCombine(_damageRatingMod, _criticalDamageRating);
+        _damageModifiers.DamageRating = Creature.AdditiveCombine(_damageModifiers.DamageRating, _criticalDamageRating);
 
         if (_baseDamageMod is null)
         {
@@ -292,47 +292,12 @@ public partial class DamageEvent
         // the median of their attack's range. Non-critical hits use a random roll for both (see _baseDamage).
         var baseDamage = _playerAttacker != null ? _baseDamageMod.MaxDamage : _baseDamageMod.MedianDamage;
 
-        return baseDamage
-               * _attributeMod
-               * _powerMod
-               * _slayerMod
-               * _damageRatingMod
-               * _criticalDamageMod
-               * _dualWieldDamageBonus
-               * _twohandedCombatDamageBonus
-               * _combatAbilityFuryDamageBonus
-               * _combatAbilityRelentlessDamagePenalty
-               * _combatAbilitySteadyStrikeDamageBonus
-               * _ratingElementalDamageBonus
-               * _ratingPierceResistanceBonus
-               * _recklessnessMod
-               * SneakAttackMod
-               * _backstabDamageMultiplier
-               * _attackHeightDamageBonus
-               * _ammoEffectMod
-               * _levelScalingMod;
+        return _damageModifiers.Apply(baseDamage) * _criticalDamageMod;
     }
 
     private float GetNonCriticalDamageBeforeMitigation()
     {
-        return _baseDamage
-               * _attributeMod
-               * _powerMod
-               * _slayerMod
-               * _damageRatingMod
-               * _recklessnessMod
-               * SneakAttackMod
-               * _backstabDamageMultiplier
-               * _attackHeightDamageBonus
-               * _ratingElementalDamageBonus
-               * _ratingPierceResistanceBonus
-               * _dualWieldDamageBonus
-               * _twohandedCombatDamageBonus
-               * _combatAbilityFuryDamageBonus
-               * _combatAbilityRelentlessDamagePenalty
-               * _combatAbilitySteadyStrikeDamageBonus
-               * _ammoEffectMod
-               * _levelScalingMod;
+        return _damageModifiers.Apply(_baseDamage);
     }
 
     /// <summary>
