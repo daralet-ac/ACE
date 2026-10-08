@@ -11,46 +11,44 @@ public partial class DamageEvent
     /// RATING - Thorns: Reflects a percentage of a blocked attack's damage back to a close-range attacker
     /// (JEWEL - White Quartz)
     /// </summary>
-    private void CheckForRatingThorns(Creature attacker, Creature defender, WorldObject damageSource)
+    private void CheckForRatingThorns()
     {
-        var playerDefender = defender as Player;
-
-        if (Blocked != true || playerDefender == null || !(attacker.GetDistance(playerDefender) < 10))
+        if (Blocked != true || _playerDefender == null || !(_attacker.GetDistance(_playerDefender) < 10))
         {
             return;
         }
 
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThorns) <= 0)
+        if (_playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThorns) <= 0)
         {
             return;
         }
 
-        if (damageSource is null)
+        if (_damageSource is null)
         {
             return;
         }
 
         // the damage the blocked attack would have dealt, before mitigation
-        var blockedAttack = CreateReactiveDamageEvent(attacker, defender, damageSource);
+        var blockedAttack = CreateReactiveDamageEvent(_attacker, _defender, _damageSource);
 
         if (blockedAttack._generalFailure)
         {
             return;
         }
 
-        var thornsAmount = blockedAttack.GetNonCriticalDamageBeforeMitigation() * Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearThorns);
+        var thornsAmount = blockedAttack.GetNonCriticalDamageBeforeMitigation() * Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearThorns);
 
-        var damageDealt = ApplyReactiveDamage(playerDefender, attacker, blockedAttack.DamageType, thornsAmount);
+        var damageDealt = ApplyReactiveDamage(_playerDefender, _attacker, blockedAttack.DamageType, thornsAmount);
 
         if (damageDealt is null)
         {
             return;
         }
 
-        playerDefender.ShieldReprisal = damageDealt;
+        _playerDefender.ShieldReprisal = damageDealt;
 
         var msg = $"You deflect {damageDealt} damage back to the attacker!";
-        playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
+        _playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
     }
 
     public void CheckForRiposte(Creature attacker, Creature defender)
@@ -85,7 +83,7 @@ public partial class DamageEvent
         }
 
         var baseDamage = riposte.GetNonCriticalDamageBeforeMitigation();
-        var mitigation = riposte.GetMitigation(defender, attacker);
+        var mitigation = riposte.GetMitigation();
 
         // GetMitigation evades the riposte if the attacker has no body part to hit
         if (riposte.Evaded)
@@ -119,8 +117,8 @@ public partial class DamageEvent
         };
 
         reactiveDamageEvent.SetCombatSources(source, target, damageSource);
-        reactiveDamageEvent.SetBaseDamage(source, target, damageSource);
-        reactiveDamageEvent.SetDamageModifiers(source, target, powerMod, consumeSneakAttackBonuses: false);
+        reactiveDamageEvent.SetBaseDamage();
+        reactiveDamageEvent.SetDamageModifiers(powerMod, consumeSneakAttackBonuses: false);
 
         return reactiveDamageEvent;
     }

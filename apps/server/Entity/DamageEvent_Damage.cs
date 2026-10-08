@@ -9,26 +9,26 @@ namespace ACE.Server.Entity;
 
 public partial class DamageEvent
 {
-    private float GetDamageBeforeMitigation(Creature attacker, Creature defender, WorldObject damageSource)
+    private float GetDamageBeforeMitigation()
     {
-        SetBaseDamage(attacker, defender, damageSource);
-        SetDamageModifiers(attacker, defender);
+        SetBaseDamage();
+        SetDamageModifiers();
 
-        _criticalChance = GetCriticalChance(attacker, defender);
+        _criticalChance = GetCriticalChance();
 
         var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
         var criticalRolled = roll <= _criticalChance;
         var criticalDefendedFromPerception = false;
 
-        if (criticalRolled && !GetCriticalDefendedFromAug(attacker, defender))
+        if (criticalRolled && !GetCriticalDefendedFromAug())
         {
-            criticalDefendedFromPerception = CheckForSpecPerceptionCriticalDefense(_playerDefender);
+            criticalDefendedFromPerception = CheckForSpecPerceptionCriticalDefense();
         }
 
         if (!criticalRolled || _criticalDefendedFromAug || criticalDefendedFromPerception)
         {
-            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.TwoHandedCombat, SigilTrinketShieldTwohandedCombatEffect.Might);
-            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Shield, SigilTrinketShieldTwohandedCombatEffect.Might);
+            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(_defender, this, Skill.TwoHandedCombat, SigilTrinketShieldTwohandedCombatEffect.Might);
+            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(_defender, this, Skill.Shield, SigilTrinketShieldTwohandedCombatEffect.Might);
 
             if (!CriticalOverridedByTrinket)
             {
@@ -47,55 +47,52 @@ public partial class DamageEvent
         }
 
         IsCritical = true;
-        return GetCriticalDamageBeforeMitigation(attacker, defender);
+        return GetCriticalDamageBeforeMitigation();
     }
 
-    private void SetBaseDamage(Creature attacker, Creature defender, WorldObject damageSource)
+    private void SetBaseDamage()
     {
-        if (attacker is Player playerAttacker)
+        if (_playerAttacker != null)
         {
-            GetBaseDamage(playerAttacker);
+            SetPlayerBaseDamage();
         }
         else
         {
-            GetBaseDamage(attacker, _attackMotion ?? MotionCommand.Invalid, _attackHook);
+            SetCreatureBaseDamage();
         }
 
         if (DamageType == DamageType.Undef)
         {
-            if ((attacker?.Guid.IsPlayer() ?? false) || (damageSource?.Guid.IsPlayer() ?? false))
+            if ((_attacker?.Guid.IsPlayer() ?? false) || (_damageSource?.Guid.IsPlayer() ?? false))
             {
                 _log.Error(
-                    $"DamageEvent.DoCalculateDamage({attacker?.Name} ({attacker?.Guid}), {defender?.Name} ({defender?.Guid}), {damageSource?.Name} ({damageSource?.Guid})) - DamageType == DamageType.Undef"
+                    $"DamageEvent.DoCalculateDamage({_attacker?.Name} ({_attacker?.Guid}), {_defender?.Name} ({_defender?.Guid}), {_damageSource?.Name} ({_damageSource?.Guid})) - DamageType == DamageType.Undef"
                 );
                 _generalFailure = true;
             }
         }
     }
 
-    private void SetDamageModifiers(Creature attacker, Creature defender, float? powerMod = null, bool consumeSneakAttackBonuses = true)
+    private void SetDamageModifiers(float? powerMod = null, bool consumeSneakAttackBonuses = true)
     {
-        var playerAttacker = attacker as Player;
-        var playerDefender = defender as Player;
-
-        _powerMod = powerMod ?? attacker.GetPowerMod(Weapon);
-        _attributeMod = attacker.GetAttributeMod(Weapon, false);
-        _slayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, attacker, defender);
-        _damageRatingMod = Creature.GetPositiveRatingMod(attacker.GetDamageRating());
-        _dualWieldDamageBonus = GetDualWieldDamageBonus(playerAttacker, defender);
-        _twohandedCombatDamageBonus = GetTwohandedCombatDamageBonus(playerAttacker, defender);
-        _combatAbilityFuryDamageBonus = GetCombatAbilityFuryDamageBonus(playerAttacker, playerDefender);
-        _combatAbilityRelentlessDamagePenalty = GetCombatAbilityRelentlessDamagePenalty(playerAttacker);
-        _combatAbilitySteadyStrikeDamageBonus = GetCombatAbilitySteadyStrikeDamageBonus(playerAttacker);
-        _recklessnessMod = Creature.GetRecklessnessMod(attacker, defender);
+        _powerMod = powerMod ?? _attacker.GetPowerMod(Weapon);
+        _attributeMod = _attacker.GetAttributeMod(Weapon, false);
+        _slayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, _attacker, _defender);
+        _damageRatingMod = Creature.GetPositiveRatingMod(_attacker.GetDamageRating());
+        _dualWieldDamageBonus = GetDualWieldDamageBonus(_playerAttacker, _defender);
+        _twohandedCombatDamageBonus = GetTwohandedCombatDamageBonus(_playerAttacker, _defender);
+        _combatAbilityFuryDamageBonus = GetCombatAbilityFuryDamageBonus(_playerAttacker, _playerDefender);
+        _combatAbilityRelentlessDamagePenalty = GetCombatAbilityRelentlessDamagePenalty(_playerAttacker);
+        _combatAbilitySteadyStrikeDamageBonus = GetCombatAbilitySteadyStrikeDamageBonus(_playerAttacker);
+        _recklessnessMod = Creature.GetRecklessnessMod(_attacker, _defender);
 
         // Sneak attack / Backstab bonuses (and their one-shot charges) should only be
         // consumed by an attacker's own normal attack - not by ancillary reactive damage
         // calculations like Thorns reflection or a Riposte counter-hit.
         if (consumeSneakAttackBonuses)
         {
-            SneakAttackMod = attacker.GetSneakAttackMod(defender);
-            _backstabDamageMultiplier = Creature.GetStealthBackstabDamageMultiplier(playerAttacker, defender);
+            SneakAttackMod = _attacker.GetSneakAttackMod(_defender);
+            _backstabDamageMultiplier = Creature.GetStealthBackstabDamageMultiplier(_playerAttacker, _defender);
         }
         else
         {
@@ -103,18 +100,18 @@ public partial class DamageEvent
             _backstabDamageMultiplier = 1.0f;
         }
 
-        _attackHeightDamageBonus = GetHighAttackHeightBonus(playerAttacker);
-        _ratingElementalDamageBonus = Jewel.HandleElementalBonuses(playerAttacker, DamageType);
-        _ratingPierceResistanceBonus = GetRatingPierceResistanceBonus(defender, playerAttacker);
-        _levelScalingMod = GetLevelScalingMod(attacker, defender, playerDefender);
-        _ammoEffectMod = GetAmmoEffectMod(Weapon, playerAttacker);
+        _attackHeightDamageBonus = GetHighAttackHeightBonus();
+        _ratingElementalDamageBonus = Jewel.HandleElementalBonuses(_playerAttacker, DamageType);
+        _ratingPierceResistanceBonus = GetRatingPierceResistanceBonus();
+        _levelScalingMod = GetLevelScalingMod(_attacker, _defender, _playerDefender);
+        _ammoEffectMod = GetAmmoEffectMod(Weapon, _playerAttacker);
 
         if (!_pkBattle)
         {
             return;
         }
 
-        _pkDamageMod = Creature.GetPositiveRatingMod(attacker.GetPKDamageRating());
+        _pkDamageMod = Creature.GetPositiveRatingMod(_attacker.GetPKDamageRating());
         _damageRatingMod = Creature.AdditiveCombine(_damageRatingMod, _pkDamageMod);
     }
 
@@ -223,11 +220,11 @@ public partial class DamageEvent
     /// <summary>
     /// ATTACK HEIGHT BONUS - High: (10% increased damage, 20% if weapon is specialized)
     /// </summary>
-    private float GetHighAttackHeightBonus(Player playerAttacker)
+    private float GetHighAttackHeightBonus()
     {
-        if (playerAttacker is { AttackHeight: AttackHeight.High })
+        if (_playerAttacker is { AttackHeight: AttackHeight.High })
         {
-            return WeaponIsSpecialized(playerAttacker) ? 1.2f : 1.10f;
+            return WeaponIsSpecialized() ? 1.2f : 1.10f;
         }
 
         return 1.0f;
@@ -242,66 +239,58 @@ public partial class DamageEvent
         return monsterHealthScalingMod;
     }
 
-    private float GetCriticalChance(Creature attacker, Creature defender)
+    private float GetCriticalChance()
     {
-        var playerAttacker = attacker as Player;
-        var playerDefender = defender as Player;
-
-        if (playerDefender != null && (playerDefender.IsLoggingOut || playerDefender.PKLogout || playerDefender.CombatMode is CombatMode.NonCombat))
+        if (_playerDefender != null && (_playerDefender.IsLoggingOut || _playerDefender.PKLogout || _playerDefender.CombatMode is CombatMode.NonCombat))
         {
             return 1.0f;
         }
 
-        if (CheckForRatingReprisal(playerAttacker))
+        if (CheckForRatingReprisal())
         {
             return 1.0f;
         }
 
-        var criticalChance = WorldObject.GetWeaponCriticalChance(Weapon, attacker, _attackSkill, defender);
+        var criticalChance = WorldObject.GetWeaponCriticalChance(Weapon, _attacker, _attackSkill, _defender);
         criticalChance += GetPlayerSpecSkillCriticalChanceBonus();
 
         return criticalChance;
     }
 
-    private bool GetCriticalDefendedFromAug(Creature attacker, Creature defender)
+    private bool GetCriticalDefendedFromAug()
     {
-        var playerAttacker = attacker as Player;
-        var playerDefender = defender as Player;
-
-        _criticalDefendedFromAug = CheckForAugmentationCriticalDefense(playerDefender, playerAttacker);
+        _criticalDefendedFromAug = CheckForAugmentationCriticalDefense(_playerDefender, _playerAttacker);
 
         return _criticalDefendedFromAug;
     }
 
-    private float GetCriticalDamageBeforeMitigation(Creature attacker, Creature defender)
+    private float GetCriticalDamageBeforeMitigation()
     {
-        var playerAttacker = attacker as Player;
-
         CriticalDamageBonusFromTrinket = 1.0f;
-        playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Thievery, SigilTrinketThieveryEffect.Treachery, true);
+        _playerAttacker?.CheckForSigilTrinketOnAttackEffects(_defender, this, Skill.Thievery, SigilTrinketThieveryEffect.Treachery, true);
 
-        _criticalDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(Weapon, attacker, _attackSkill, defender);
-        _criticalDamageMod += GetMaceSpecCriticalDamageBonus(playerAttacker);
-        _criticalDamageMod += GetStaffSpecCriticalDamageBonus(playerAttacker);
-        _criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBludgeon, "Bludgeon", rampQuestSource: defender);
+        _criticalDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(Weapon, _attacker, _attackSkill, _defender);
+        _criticalDamageMod += GetMaceSpecCriticalDamageBonus(_playerAttacker);
+        _criticalDamageMod += GetStaffSpecCriticalDamageBonus(_playerAttacker);
+        _criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(_playerAttacker, PropertyInt.GearBludgeon, "Bludgeon", rampQuestSource: _defender);
         _criticalDamageMod *= CriticalDamageBonusFromTrinket;
 
         // RATING - Reprisal: the defender may evade the critical hit (see DoCalculateDamage)
-        CheckForRatingReprisalCriticalDefense(attacker, _playerDefender);
+        CheckForRatingReprisalCriticalDefense();
 
         // _damageRatingMod already includes the PK damage rating (see SetDamageModifiers)
-        _criticalDamageRating = Creature.GetPositiveRatingMod(attacker.GetCritDamageRating());
+        _criticalDamageRating = Creature.GetPositiveRatingMod(_attacker.GetCritDamageRating());
         _damageRatingMod = Creature.AdditiveCombine(_damageRatingMod, _criticalDamageRating);
 
         if (_baseDamageMod is null)
         {
-            _log.Error("GetCriticalDamageBeforeMitigation({Attacker}, {Defender}) - _baseDamageMod is null", attacker.Name, defender.Name);
+            _log.Error("GetCriticalDamageBeforeMitigation({Attacker}, {Defender}) - _baseDamageMod is null", _attacker.Name, _defender.Name);
             return 0;
         }
 
         // Intentional: player crits always use the top of the weapon's damage range, while monster crits use
         // the median of their attack's range. Non-critical hits use a random roll for both (see _baseDamage).
-        var baseDamage = playerAttacker != null ? _baseDamageMod.MaxDamage : _baseDamageMod.MedianDamage;
+        var baseDamage = _playerAttacker != null ? _baseDamageMod.MaxDamage : _baseDamageMod.MedianDamage;
 
         return baseDamage
                * _attributeMod
@@ -351,21 +340,21 @@ public partial class DamageEvent
     /// Up to +20% + 1% per rating (at max quest stamps).
     /// (JEWEL - Black Garnet)
     /// </summary>
-    private float GetRatingPierceResistanceBonus(Creature defender, Player playerAttacker)
+    private float GetRatingPierceResistanceBonus()
     {
-        if (playerAttacker == null)
+        if (_playerAttacker == null)
         {
             return 1.0f;
         }
 
-        var rating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce);
+        var rating = _playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce);
 
         if (rating <= 0 || DamageType != DamageType.Pierce)
         {
             return 1.0f;
         }
 
-        var rampPercentage = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Pierce") / 100;
+        var rampPercentage = (float)_defender.QuestManager.GetCurrentSolves($"{_playerAttacker.Name},Pierce") / 100;
 
         const float baseMod = 0.2f;
         const float bonusPerRating = 0.01f;
@@ -377,35 +366,35 @@ public partial class DamageEvent
     /// RATING - Reprisal: Evade an Incoming Crit, auto crit in return
     /// (JEWEL - Black Opal)
     /// </summary>
-    private void CheckForRatingReprisalCriticalDefense(Creature attacker, Player playerDefender)
+    private void CheckForRatingReprisalCriticalDefense()
     {
-        if (playerDefender == null)
+        if (_playerDefender == null)
         {
             return;
         }
 
-        var rating = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal);
+        var rating = _playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal);
 
         if (rating <= 0)
         {
             return;
         }
 
-        var chance = Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearReprisal);
+        var chance = Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearReprisal);
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return;
         }
 
-        playerDefender.QuestManager.HandleReprisalQuest();
-        playerDefender.QuestManager.Stamp($"{attacker.Guid}/Reprisal");
+        _playerDefender.QuestManager.HandleReprisalQuest();
+        _playerDefender.QuestManager.Stamp($"{_attacker.Guid}/Reprisal");
         Evaded = true;
         PartialEvasion = PartialEvasion.All;
-        playerDefender.Reprisal = true;
+        _playerDefender.Reprisal = true;
 
-        var msg = $"Reprisal! You evade the attack by {attacker.Name}";
-        playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatEnemy));
+        var msg = $"Reprisal! You evade the attack by {_attacker.Name}";
+        _playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatEnemy));
     }
 
     /// <summary>
@@ -418,7 +407,7 @@ public partial class DamageEvent
             return 0.0f;
         }
 
-        return IsWeaponSkillSpecialized(playerAttacker, Skill.Staff, Skill.Staff) ? 0.5f : 0.0f;
+        return IsWeaponSkillSpecialized(playerAttacker, Skill.Staff) ? 0.5f : 0.0f;
     }
 
     /// <summary>
@@ -431,27 +420,27 @@ public partial class DamageEvent
             return 0.0f;
         }
 
-        return IsWeaponSkillSpecialized(playerAttacker, Skill.Mace, Skill.MartialWeapons) ? 0.5f : 0.0f;
+        return IsWeaponSkillSpecialized(playerAttacker, Skill.Mace) ? 0.5f : 0.0f;
     }
 
     /// <summary>
     /// SPEC BONUS - Perception - Up to 50% chance to defend against a critical hit, based on Perception vs the attacker's effective attack skill
     /// </summary>
-    private bool CheckForSpecPerceptionCriticalDefense(Player playerDefender)
+    private bool CheckForSpecPerceptionCriticalDefense()
     {
-        if (playerDefender == null)
+        if (_playerDefender == null)
         {
             return false;
         }
 
-        var perception = playerDefender.GetCreatureSkill(Skill.Perception);
+        var perception = _playerDefender.GetCreatureSkill(Skill.Perception);
         if (perception.AdvancementClass != SkillAdvancementClass.Specialized)
         {
             return false;
         }
 
         // an attack skill of 0 can't beat any Perception, so it gets the full 50%
-        var skillCheck = EffectiveAttackSkill > 0 ? playerDefender.GetModdedPerceptionSkill() / (float)EffectiveAttackSkill : 1.0f;
+        var skillCheck = EffectiveAttackSkill > 0 ? _playerDefender.GetModdedPerceptionSkill() / (float)EffectiveAttackSkill : 1.0f;
         var criticalDefenseChance = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
 
         return criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f);
@@ -470,24 +459,24 @@ public partial class DamageEvent
         return !(criticalDefenseChance < ThreadSafeRandom.Next(0.0f, 1.0f));
     }
 
-    private bool CheckForRatingReprisal(Player playerAttacker)
+    private bool CheckForRatingReprisal()
     {
-        if (playerAttacker == null)
+        if (_playerAttacker == null)
         {
             return false;
         }
 
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) <= 0)
+        if (_playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) <= 0)
         {
             return false;
         }
 
-        if (!playerAttacker.QuestManager.HasQuest($"{_defender.Guid}/Reprisal"))
+        if (!_playerAttacker.QuestManager.HasQuest($"{_defender.Guid}/Reprisal"))
         {
             return false;
         }
 
-        playerAttacker.QuestManager.Erase($"{_defender.Guid}/Reprisal");
+        _playerAttacker.QuestManager.Erase($"{_defender.Guid}/Reprisal");
         return true;
     }
 
@@ -502,13 +491,13 @@ public partial class DamageEvent
         }
 
         // SPEC BONUS - Martial Weapons (Axe): +5% crit chance (additively)
-        if (IsWeaponSkillSpecialized(_playerAttacker, Skill.Axe, Skill.MartialWeapons))
+        if (IsWeaponSkillSpecialized(_playerAttacker, Skill.Axe))
         {
             return 0.05f;
         }
 
         // SPEC BONUS - Dagger: +5% crit chance (additively)
-        if (IsWeaponSkillSpecialized(_playerAttacker, Skill.Dagger, Skill.Dagger))
+        if (IsWeaponSkillSpecialized(_playerAttacker, Skill.Dagger))
         {
             return 0.05f;
         }
@@ -517,9 +506,9 @@ public partial class DamageEvent
     }
 
     /// <summary>
-    /// Returns the base damage for a player attacker
+    /// Sets the damage type, damage range and rolled base damage for a player attacker
     /// </summary>
-    private void GetBaseDamage(Player attacker)
+    private void SetPlayerBaseDamage()
     {
         if (_damageSource.ItemType == ItemType.MissileWeapon)
         {
@@ -540,11 +529,11 @@ public partial class DamageEvent
         }
         else
         {
-            DamageType = attacker.GetDamageType(false, CombatType.Melee);
+            DamageType = _playerAttacker.GetDamageType(false, CombatType.Melee);
         }
 
         // TODO: combat maneuvers for player?
-        _baseDamageMod = attacker.GetBaseDamageMod(_damageSource);
+        _baseDamageMod = _playerAttacker.GetBaseDamageMod(_damageSource);
 
         // some quest bows can have built-in damage bonus
         if (Weapon?.WeenieType == WeenieType.MissileLauncher)
@@ -554,7 +543,7 @@ public partial class DamageEvent
 
         if (_damageSource.ItemType == ItemType.MissileWeapon)
         {
-            _baseDamageMod.ElementalBonus = WorldObject.GetMissileElementalDamageBonus(Weapon, attacker, DamageType);
+            _baseDamageMod.ElementalBonus = WorldObject.GetMissileElementalDamageBonus(Weapon, _playerAttacker, DamageType);
             _baseDamageMod.DamageMod = WorldObject.GetMissileElementalDamageModifier(Weapon, DamageType);
         }
 
@@ -562,21 +551,21 @@ public partial class DamageEvent
     }
 
     /// <summary>
-    /// Returns the base damage for a non-player attacker
+    /// Sets the attacking body part, damage range, rolled base damage and damage type for a non-player attacker
     /// </summary>
-    private void GetBaseDamage(Creature attacker, MotionCommand motionCommand, AttackHook attackHook)
+    private void SetCreatureBaseDamage()
     {
-        _attackPart = attacker.GetAttackPart(motionCommand, attackHook);
+        _attackPart = _attacker.GetAttackPart(_attackMotion ?? MotionCommand.Invalid, _attackHook);
         if (_attackPart.Value == null)
         {
             _generalFailure = true;
             return;
         }
 
-        _baseDamageMod = attacker.GetBaseDamage(_attackPart.Value);
+        _baseDamageMod = _attacker.GetBaseDamage(_attackPart.Value);
         _baseDamage = (float)ThreadSafeRandom.Next(_baseDamageMod.MinDamage, _baseDamageMod.MaxDamage);
 
-        DamageType = attacker.GetDamageType(_attackPart.Value, CombatType);
+        DamageType = _attacker.GetDamageType(_attackPart.Value, CombatType);
     }
 
     public static float GetAmmoEffectMod(WorldObject weapon, Player player)

@@ -170,7 +170,7 @@ public partial class DamageEvent
         SetCombatSources(attacker, defender, damageSource);
         CheckForOnAttackEffects(cleaveHits);
 
-        SetInvulnerable(defender);
+        SetInvulnerable();
 
         if (_invulnerable)
         {
@@ -179,30 +179,30 @@ public partial class DamageEvent
 
         // Evade, block and parry all compare against these skills, so they must be set before any of them roll,
         // including when a guaranteed hit (Overpower, Enrage, Backstab) skips the evade roll.
-        SetAttackAndDefenseSkills(attacker, defender);
+        SetAttackAndDefenseSkills();
 
-        SetEvaded(attacker, defender);
-        SetBlocked(attacker, defender);
-        SetParry(attacker, defender);
+        SetEvaded();
+        SetBlocked();
+        SetParry();
 
         if (Evaded || Blocked || Parried)
         {
             if (Blocked)
             {
-                CheckForRatingThorns(attacker, defender, damageSource);
+                CheckForRatingThorns();
             }
 
             return 0.0f;
         }
 
-        _damageBeforeMitigation = GetDamageBeforeMitigation(attacker, defender, damageSource);
+        _damageBeforeMitigation = GetDamageBeforeMitigation();
 
         if (_generalFailure)
         {
             return 0.0f;
         }
 
-        var mitigation = GetMitigation(attacker, defender);
+        var mitigation = GetMitigation();
         var cleaveMod = cleaveHits ? 0.5f : 1.0f;
 
         Damage = _damageBeforeMitigation * mitigation * cleaveMod;
@@ -215,7 +215,7 @@ public partial class DamageEvent
 
         _damageMitigated = _damageBeforeMitigation - Damage;
 
-        PostDamageMitigationEffects(attacker, defender, damageSource);
+        PostDamageMitigationEffects();
 
         // Reprisal (during the critical hit) and a missing body part (during the armor lookup) can evade the attack after
         // its damage is rolled. The on-hit effects above still trigger, but no damage is dealt and no threat is generated.
@@ -262,10 +262,16 @@ public partial class DamageEvent
         _attackHeight = attacker.AttackHeight ?? AttackHeight.Medium;
     }
 
-    private static bool IsWeaponSkillSpecialized(Player player, Skill weaponSkill, Skill creatureSkill)
+    /// <summary>
+    /// Returns true if the player's equipped weapon uses weaponSkill and the skill that specializes it is specialized
+    /// </summary>
+    private static bool IsWeaponSkillSpecialized(Player player, Skill weaponSkill)
     {
-        return player.GetEquippedWeapon().WeaponSkill == weaponSkill
-               && player.GetCreatureSkill(creatureSkill).AdvancementClass == SkillAdvancementClass.Specialized;
+        var specializationSkill = GetSpecializationSkill(weaponSkill);
+
+        return specializationSkill != null
+               && player.GetEquippedWeapon().WeaponSkill == weaponSkill
+               && IsSkillSpecialized(player, specializationSkill.Value);
     }
 
     private static bool IsSkillSpecialized(Player player, Skill creatureSkill)
@@ -273,52 +279,32 @@ public partial class DamageEvent
         return player?.GetCreatureSkill(creatureSkill).AdvancementClass == SkillAdvancementClass.Specialized;
     }
 
-    private bool WeaponIsSpecialized(Player playerAttacker)
+    /// <summary>
+    /// Returns true if the player attacker has specialized the skill for this attack's weapon (Unarmed Combat with no weapon)
+    /// </summary>
+    private bool WeaponIsSpecialized()
     {
-        if (playerAttacker == null)
+        if (_playerAttacker == null)
         {
             return false;
         }
 
-        if (Weapon != null)
-        {
-            switch (Weapon.WeaponSkill)
-            {
-                case Skill.Axe:
-                    return playerAttacker.GetCreatureSkill(Skill.MartialWeapons).AdvancementClass
-                           == SkillAdvancementClass.Specialized;
-                case Skill.Mace:
-                    return playerAttacker.GetCreatureSkill(Skill.MartialWeapons).AdvancementClass
-                           == SkillAdvancementClass.Specialized;
-                case Skill.Sword:
-                    return playerAttacker.GetCreatureSkill(Skill.MartialWeapons).AdvancementClass
-                           == SkillAdvancementClass.Specialized;
-                case Skill.Spear:
-                    return playerAttacker.GetCreatureSkill(Skill.MartialWeapons).AdvancementClass
-                           == SkillAdvancementClass.Specialized;
-                case Skill.Dagger:
-                    return playerAttacker.GetCreatureSkill(Skill.Dagger).AdvancementClass
-                           == SkillAdvancementClass.Specialized;
-                case Skill.Staff:
-                    return playerAttacker.GetCreatureSkill(Skill.Staff).AdvancementClass
-                           == SkillAdvancementClass.Specialized;
-                case Skill.UnarmedCombat:
-                    return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass
-                           == SkillAdvancementClass.Specialized;
-                case Skill.Bow:
-                    return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass
-                           == SkillAdvancementClass.Specialized;
-                case Skill.Crossbow:
-                    return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass
-                           == SkillAdvancementClass.Specialized;
-                case Skill.ThrownWeapon:
-                    return playerAttacker.GetCreatureSkill(Skill.ThrownWeapon).AdvancementClass
-                           == SkillAdvancementClass.Specialized;
-                default:
-                    return false;
-            }
-        }
+        var specializationSkill = GetSpecializationSkill(Weapon?.WeaponSkill ?? Skill.UnarmedCombat);
 
-        return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized;
+        return specializationSkill != null && IsSkillSpecialized(_playerAttacker, specializationSkill.Value);
+    }
+
+    /// <summary>
+    /// Returns the skill that has to be specialized for a weapon skill's specialization bonuses, or null if it has none
+    /// </summary>
+    private static Skill? GetSpecializationSkill(Skill weaponSkill)
+    {
+        return weaponSkill switch
+        {
+            Skill.Axe or Skill.Mace or Skill.Sword or Skill.Spear => Skill.MartialWeapons,
+            Skill.Crossbow => Skill.Bow,
+            Skill.Dagger or Skill.Staff or Skill.UnarmedCombat or Skill.Bow or Skill.ThrownWeapon => weaponSkill,
+            _ => null,
+        };
     }
 }

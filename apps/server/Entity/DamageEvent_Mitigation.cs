@@ -20,9 +20,9 @@ public partial class DamageEvent
     /// <summary>
     /// COMBAT ABILITY - Aegis: Damage taken from weapon attacks reduced by 50%. Attacks can't be evaded while active (see SetEvaded).
     /// </summary>
-    private float GetCombatAbilityAegisDamageReduction(Player playerDefender)
+    private float GetCombatAbilityAegisDamageReduction()
     {
-        if (playerDefender is not { AegisIsActive: true } || Evaded)
+        if (_playerDefender is not { AegisIsActive: true } || Evaded)
         {
             return 1.0f;
         }
@@ -33,70 +33,68 @@ public partial class DamageEvent
     /// <summary>
     /// COMBAT ABILITY - Phalanx: Damage taken from full hits reduced by 30%. Glancing blows are unaffected.
     /// </summary>
-    private float GetCombatAbilityPhalanxDamageReduction(Player playerDefender)
+    private float GetCombatAbilityPhalanxDamageReduction()
     {
-        if (playerDefender is null || Evaded || PartialEvasion != PartialEvasion.None)
+        if (_playerDefender is null || Evaded || PartialEvasion != PartialEvasion.None)
         {
             return 1.0f;
         }
 
-        return playerDefender.GetPhalanxFullHitDamageMod();
+        return _playerDefender.GetPhalanxFullHitDamageMod();
     }
 
-    private float GetMitigation(Creature attacker, Creature defender)
+    private float GetMitigation()
     {
-        if (attacker is null || defender is null)
+        if (_attacker is null || _defender is null)
         {
             return 1.0f;
         }
 
-        var playerAttacker = attacker as Player;
-        var playerDefender = defender as Player;
 
-        _ignoreArmorMod = GetIgnoreArmorMod(attacker, defender);
-        _ignoreArmorMod -= GetSpearSpecIgnoreArmorBonus(attacker);
+        _ignoreArmorMod = GetIgnoreArmorMod();
+        _ignoreArmorMod -= GetSpearSpecIgnoreArmorBonus(_playerAttacker);
 
-        _armorMod = GetArmorMod(attacker, defender);
+        _armorMod = GetArmorMod();
 
         _weaponResistanceMod = WorldObject.GetWeaponResistanceModifier(
             Weapon,
-            attacker,
+            _attacker,
             _attackSkill,
             DamageType,
-            defender
+            _defender
         );
 
-        _resistanceMod = GetResistanceMod(defender, playerDefender);
+        _resistanceMod = GetResistanceMod();
 
         // Piercing resistance penetration (Black Garnet / Precision Strikes) is applied as a damage
         // multiplier via _ratingPierceResistanceBonus in GetRatingPierceResistanceBonus(); it must
         // not also be folded into the target's resistance here.
 
-        _damageResistanceRatingMod = GetDamageResistRatingMod(defender, _pkBattle);
-        _damageResistanceRatingMod *= 1.0f - GetRatingHardenedDefenseDamageResistanceBonus(playerDefender);
+        _damageResistanceRatingMod = GetDamageResistRatingMod();
+        _damageResistanceRatingMod *= 1.0f - GetRatingHardenedDefenseDamageResistanceBonus(_playerDefender);
 
-        _specDefenseMod = GetSpecDefenseMod(attacker, playerDefender);
+        _specDefenseMod = GetSpecDefenseMod(_attacker, _playerDefender);
 
-        ShieldMod = _defender.GetShieldMod(attacker, DamageType, Weapon);
+        ShieldMod = _defender.GetShieldMod(_attacker, DamageType, Weapon);
 
-        _combatAbilityProvokeDamageReduction = GetCombatAbilityProvokeDamageReduction(playerDefender);
-        _combatAbilityAegisDamageReduction = GetCombatAbilityAegisDamageReduction(playerDefender);
-        _combatAbilityPhalanxDamageReduction = GetCombatAbilityPhalanxDamageReduction(playerDefender);
+        _combatAbilityProvokeDamageReduction = GetCombatAbilityProvokeDamageReduction(_playerDefender);
+        _combatAbilityAegisDamageReduction = GetCombatAbilityAegisDamageReduction();
+        _combatAbilityPhalanxDamageReduction = GetCombatAbilityPhalanxDamageReduction();
 
-        _ratingSelfHarm = 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
-        _ratingRedFury = 1.0f + Jewel.GetJewelRedFury(playerAttacker);
-        _ratingYellowFury = 1.0f + Jewel.GetJewelYellowFury(playerAttacker);
+        _ratingSelfHarm = 1.0f + Jewel.GetJewelEffectMod(_playerAttacker, PropertyInt.GearSelfHarm);
+        _ratingRedFury = 1.0f + Jewel.GetJewelRedFury(_playerAttacker);
+        _ratingYellowFury = 1.0f + Jewel.GetJewelYellowFury(_playerAttacker);
         _ratingDamageTypeWard = DamageType switch
         {
-            var dt when (dt & DamageType.Physical) != 0 => 1.0f - Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearPhysicalWard),
-            var dt when (dt & DamageType.Elemental) != 0 => 1.0f - Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearElementalWard),
+            var dt when (dt & DamageType.Physical) != 0 => 1.0f - Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearPhysicalWard),
+            var dt when (dt & DamageType.Elemental) != 0 => 1.0f - Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearElementalWard),
             _ => 1.0f
         };
 
-        _swarmedDamageReductionMod = GetSwarmedMod(playerDefender);
+        _swarmedDamageReductionMod = GetSwarmedMod(_playerDefender);
 
-        _imbuedArmorPhysicalDamageMod = GetImbuedArmorPhysicalDamageMod(defender);
-        _imbuedArmorCritDamageMod = GetImbuedArmorCritDamageMod(defender);
+        _imbuedArmorPhysicalDamageMod = GetImbuedArmorPhysicalDamageMod(_defender);
+        _imbuedArmorCritDamageMod = GetImbuedArmorCritDamageMod();
 
         return _armorMod
                * ShieldMod
@@ -129,13 +127,13 @@ public partial class DamageEvent
         return 1.0f;
     }
 
-    private float GetImbuedArmorCritDamageMod(Creature defender)
+    private float GetImbuedArmorCritDamageMod()
     {
         if (!IsCritical)
         {
             return 1.0f;
         }
-        var count = defender.GetArmorDefenseImbues(ImbuedEffectType.ReducedCriticalDamageTaken);
+        var count = _defender.GetArmorDefenseImbues(ImbuedEffectType.ReducedCriticalDamageTaken);
         if (count > 0)
         {
             return Math.Max(0.5f, 1.0f - count * ImbuedArmorCritDamageReductionPerPiece);
@@ -178,22 +176,21 @@ public partial class DamageEvent
         return swarmedMod;
     }
 
-    private float GetIgnoreArmorMod(Creature attacker, Creature defender)
+    private float GetIgnoreArmorMod()
     {
         if (Weapon is null or { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
         {
             return 1.0f;
         }
 
-        var playerAttacker = attacker as Player;
 
-        var armorRendingMod = GetArmorRendingMod(defender, playerAttacker);
-        var armorCleavingMod = attacker.GetArmorCleavingMod(Weapon);
+        var armorRendingMod = GetArmorRendingMod();
+        var armorCleavingMod = _attacker.GetArmorCleavingMod(Weapon);
 
         return armorCleavingMod - (1.0f - armorRendingMod);
     }
 
-    private float GetArmorRendingMod(Creature defender, Player playerAttacker)
+    private float GetArmorRendingMod()
     {
         if (Weapon is null or { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
         {
@@ -202,7 +199,7 @@ public partial class DamageEvent
 
         if (Weapon.HasImbuedEffect(ImbuedEffectType.ArmorRending))
         {
-            return 1.0f - WorldObject.GetArmorRendingMod(_attackSkill, playerAttacker, defender);
+            return 1.0f - WorldObject.GetArmorRendingMod(_attackSkill, _playerAttacker, _defender);
         }
 
         return 1.0f;
@@ -211,55 +208,51 @@ public partial class DamageEvent
     /// <summary>
     /// SPEC BONUS - Martial Weapons (Spear): +10% armor penetration (additively)
     /// </summary>
-    private static float GetSpearSpecIgnoreArmorBonus(Creature attacker)
+    private static float GetSpearSpecIgnoreArmorBonus(Player playerAttacker)
     {
-        var playerAttacker = attacker as Player;
-
         if (playerAttacker?.GetEquippedWeapon() == null)
         {
             return 0.0f;
         }
 
-        return IsWeaponSkillSpecialized(playerAttacker, Skill.Spear, Skill.MartialWeapons) ? 0.1f : 0.0f;
+        return IsWeaponSkillSpecialized(playerAttacker, Skill.Spear) ? 0.1f : 0.0f;
     }
 
-    private float GetArmorMod(Creature attacker, Creature defender)
+    private float GetArmorMod()
     {
-        var playerDefender = defender as Player;
-
         if (Weapon != null && Weapon.HasImbuedEffect(ImbuedEffectType.IgnoreAllArmor))
         {
             return 1.0f;
         }
 
-        if (playerDefender != null)
+        if (_playerDefender != null)
         {
             // select random body part @ current attack height
             GetBodyPart(_attackHeight);
 
             // get player armor pieces
-            _armor = attacker.GetArmorLayers(playerDefender, BodyPart);
+            _armor = _attacker.GetArmorLayers(_playerDefender, BodyPart);
 
             // get armor modifiers
-            return attacker.GetArmorMod(playerDefender, DamageType, _armor, Weapon, _ignoreArmorMod);
+            return _attacker.GetArmorMod(_playerDefender, DamageType, _armor, Weapon, _ignoreArmorMod);
         }
 
         // determine height quadrant
-        _quadrant = GetQuadrant(defender, attacker, _attackHeight, _damageSource);
+        _quadrant = GetQuadrant(_defender, _attacker, _attackHeight, _damageSource);
 
         // select random body part @ current attack height
-        GetBodyPart(defender, _quadrant);
+        GetBodyPart(_quadrant);
 
         // Defensive check: GetBodyPart may have failed to populate _creaturePart when there's no body part table.
         if (_creaturePart == null)
         {
             _log.Error(
                 "DamageEvent.GetArmorMod({Attacker} ({AttackerGuid}), {Defender} ({DefenderGuid})) - no creature body part available for wcid {DefenderWeenieClassId}; returning neutral armor mod.",
-                attacker?.Name,
-                attacker?.Guid,
-                defender?.Name,
-                defender?.Guid,
-                defender.WeenieClassId
+                _attacker?.Name,
+                _attacker?.Guid,
+                _defender?.Name,
+                _defender?.Guid,
+                _defender.WeenieClassId
             );
 
             // Mark as evaded (GetBodyPart already sets Evaded when appropriate), but ensure we return a safe neutral modifier.
@@ -270,20 +263,20 @@ public partial class DamageEvent
         _armor = _creaturePart.GetArmorLayers(_propertiesBodyPart.Key);
 
         // get target armor
-        return _creaturePart.GetArmorMod(DamageType, _armor, attacker, Weapon, _ignoreArmorMod);
+        return _creaturePart.GetArmorMod(DamageType, _armor, _attacker, Weapon, _ignoreArmorMod);
     }
 
-    private float GetResistanceMod(Creature defender, Player playerDefender)
+    private float GetResistanceMod()
     {
-        if (playerDefender != null)
+        if (_playerDefender != null)
         {
-            return playerDefender.GetResistanceMod(DamageType, _attacker, Weapon, _weaponResistanceMod);
+            return _playerDefender.GetResistanceMod(DamageType, _attacker, Weapon, _weaponResistanceMod);
         }
 
         var resistanceType = Creature.GetResistanceType(DamageType);
 
         return (float)
-            Math.Max(0.0f, defender.GetResistanceMod(resistanceType, _attacker, Weapon, _weaponResistanceMod));
+            Math.Max(0.0f, _defender.GetResistanceMod(resistanceType, _attacker, Weapon, _weaponResistanceMod));
     }
 
     /// <summary>
@@ -337,21 +330,21 @@ public partial class DamageEvent
         return rampPercentage * (baseMod + bonusPerRating * rating);
     }
 
-    private float GetDamageResistRatingMod(Creature defender, bool pkBattle)
+    private float GetDamageResistRatingMod()
     {
-        _damageResistanceRatingBaseMod = defender.GetDamageResistRatingMod(CombatType);
+        _damageResistanceRatingBaseMod = _defender.GetDamageResistRatingMod(CombatType);
 
         var damageResistRatingMod = _damageResistanceRatingBaseMod;
 
         if (IsCritical)
         {
-            _criticalDamageResistanceRatingMod = Creature.GetNegativeRatingMod(defender.GetCritDamageResistRating());
+            _criticalDamageResistanceRatingMod = Creature.GetNegativeRatingMod(_defender.GetCritDamageResistRating());
             damageResistRatingMod = Creature.AdditiveCombine(damageResistRatingMod, _criticalDamageResistanceRatingMod);
         }
 
-        if (pkBattle)
+        if (_pkBattle)
         {
-            _pkDamageResistanceMod = Creature.GetNegativeRatingMod(defender.GetPKDamageResistRating());
+            _pkDamageResistanceMod = Creature.GetNegativeRatingMod(_defender.GetPKDamageResistRating());
             damageResistRatingMod = Creature.AdditiveCombine(damageResistRatingMod, _pkDamageResistanceMod);
         }
 
@@ -386,18 +379,18 @@ public partial class DamageEvent
     /// <summary>
     /// Returns a body part for a creature defender
     /// </summary>
-    private void GetBodyPart(Creature defender, Quadrant quadrant)
+    private void GetBodyPart(Quadrant quadrant)
     {
         // get cached body parts table
-        var bodyParts = Creature.GetBodyParts(defender.WeenieClassId);
+        var bodyParts = Creature.GetBodyParts(_defender.WeenieClassId);
 
         if (bodyParts == null)
         {
             _log.Debug(
                 "DamageEvent.GetBodyPart({Defender} ({DefenderGuid}) ) - no body parts table for wcid {DefenderWeenieClassId}",
-                defender.Name,
-                defender.Guid,
-                defender.WeenieClassId
+                _defender.Name,
+                _defender.Guid,
+                _defender.WeenieClassId
             );
             Evaded = true;
             return;
@@ -410,18 +403,18 @@ public partial class DamageEvent
         {
             _log.Debug(
                 "DamageEvent.GetBodyPart({Defender} ({DefenderGuid}) ) - couldn't find body part for wcid {DefenderWeenieClassId}, Quadrant {BodyPartQuadrant}",
-                defender.Name,
-                defender.Guid,
-                defender.WeenieClassId,
+                _defender.Name,
+                _defender.Guid,
+                _defender.WeenieClassId,
                 quadrant
             );
             Evaded = true;
             return;
         }
 
-        defender.Biota.PropertiesBodyPart.TryGetValue(bodyPart, out var value);
+        _defender.Biota.PropertiesBodyPart.TryGetValue(bodyPart, out var value);
         _propertiesBodyPart = new KeyValuePair<CombatBodyPart, PropertiesBodyPart>(bodyPart, value);
 
-        _creaturePart = new Creature_BodyPart(defender, _propertiesBodyPart);
+        _creaturePart = new Creature_BodyPart(_defender, _propertiesBodyPart);
     }
 }

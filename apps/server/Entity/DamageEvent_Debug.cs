@@ -56,7 +56,7 @@ public partial class DamageEvent
         info += $"Blocked: {Blocked}\n";
         info += $"PartialEvaded: {PartialEvasion}\n";
 
-        if (!(_attacker is Player))
+        if (_playerAttacker == null)
         {
             if (_attackMotion != null)
             {
