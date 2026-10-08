@@ -58,6 +58,10 @@ A fellowship fights another fellowship of the same size, everyone in each. Only 
 - **In the arena** each fellowship starts together, at a start of its own. Nobody can harm their own side, and teammates can heal and buff each other as usual. A fighter who is defeated while anybody on their side is still standing watches the rest of the duel: once they have finished falling they stand up again where they fell, unseen, as a spectator (see Watching duels), and are told that `/arena leave` takes them back. They are taken home with everyone else when the duel ends. Whoever is defeated last on a side (which ends the duel) is taken home as in any duel. A side is beaten when everyone on it has been defeated, has given up, or has left; then the other side has won. The time limit is the same, and ends in a draw.
 - **Scaled**: scaling works between any two fighters, by their two levels: whoever is the higher of the two fights the other at their level. A heal on a higher-level teammate counts for more, and on a lower-level one for less, as shroud scaling does for Shrouded fellows.
 
+## Chat in the arena
+
+Nobody in a duel's instance, fighters and spectators alike, can talk locally (speech, `/e` emotes and soul emotes) or send to the global channels (general, trade, LFG, roleplay, society, Olthoi). They are told why, and they still hear all of it. Opponents can't send each other tells (by name or to their target) while either of them is in the arena, and a spectator can't send one to a fighter of the duel they watch. Teammates can send each other tells, and fellowship and allegiance chat work as usual. Players outside the arena can still send tells to anyone in it. `ArenaManager.WhyCantChat` and `WhyCantTell` decide; `Player.HandleActionTalk`, `HandleActionEmote`, `HandleActionSoulEmote`, `TurbineChatHandler`, `GameActionTell` and `GameActionTalkDirect` ask them.
+
 ## Watching duels
 
 `/arena watch` lists the duels going on, and `/arena watch <number | name>` takes you in to watch one, from the moment its fighters are on their way in until it ends. You go to the middle of an outdoor arena, or to the first start of an indoor one.
@@ -67,7 +71,7 @@ A fellowship fights another fellowship of the same size, everyone in each. Only 
 - **Leaving.** When the duel ends (or is called off), spectators are told the result and taken back to where they were, as fighters are. `/arena leave` takes them back sooner. Logging out, a recall or a portal works too: they are made visible again wherever they end up, and someone who logs out is saved where they were before they came to watch (`ArenaMatch.GetReturnPosition`). If the server goes down while they watch, they are made visible again as they log in (`PropertyBool.ArenaSpectating`).
 - **Who can watch**: anybody who could go into an instance at all (not from inside one, not dead, not in a player killer battle, not in the training academy), and who is not in a duel or in the queue. A spectator can't be challenged, and can't queue, until they are back.
 - The fighters are told who has come to watch. Spectators hear what the fighters hear about the duel: who has been defeated, the countdown, the end.
-- A spectator can still talk: local chat in the arena reaches the fighters, as fellowship chat from a defeated teammate does.
+- A spectator can't talk to the fighters (see Chat in the arena).
 - `arena_spectating_enabled` turns it off: nobody can come to watch, and defeated fighters in a fellowship duel are taken home as before. Whoever is watching already stays until the duel ends.
 
 ## Kinds of duel
@@ -144,6 +148,7 @@ Every map is registered as an instance template called `arena:<name>`, so an adm
 | `apps/server/Arena/ArenaMatch.cs` | A duel and its fighters. It is the `Owner` of its instance, and says where fighters go when they leave it. |
 | `apps/server/Arena/ArenaManager.Fellowship.cs` | Fellowship challenges, and putting a fellowship in the queue. |
 | `apps/server/Arena/ArenaManager.Spectators.cs` | Watching duels, and defeated fighters watching the rest of a fellowship duel. |
+| `apps/server/Arena/ArenaManager.Chat.cs` | Who can talk, and send tells, in the arena. |
 | `apps/server/Arena/ArenaQueue.cs` | The queue and its pairing rules. An entry is a player, or a fellowship. |
 | `apps/server/Arena/ArenaElo.cs` | Ratings, one against one and for teams. |
 | `apps/server/Arena/ArenaBoards.cs` | The boards (1v1, 2v2 scaled, ...) and where a character's rating and record on each are kept. |
