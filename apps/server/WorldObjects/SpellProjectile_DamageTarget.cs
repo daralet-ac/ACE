@@ -11,7 +11,14 @@ partial class SpellProjectile
     /// <summary>
     /// Called for a spell projectile to damage its target
     /// </summary>
-    private void DamageTarget(Creature target, float damage, bool critical, bool critDefended, bool overpower)
+    private void DamageTarget(
+        Creature target,
+        float damage,
+        bool critical,
+        bool critDefended,
+        bool overpower,
+        PartialEvasion partialEvasion
+    )
     {
         var targetPlayer = target as Player;
 
@@ -185,7 +192,7 @@ partial class SpellProjectile
 
             var chargedMsg = "";
 
-            var resistSome = _partialEvasion == PartialEvasion.Some ? "Partial resist! " : "";
+            var resistSome = partialEvasion == PartialEvasion.Some ? "Partial resist! " : "";
             var strikeThrough = Strikethrough > 0 ? "Strikethrough! " : "";
 
             var nonHealth = Spell.Category is SpellCategory.StaminaLowering or SpellCategory.ManaLowering;

@@ -22,8 +22,6 @@ public partial class SpellProjectile : WorldObject
     public Position SpawnPos { get; set; }
     public uint LifeProjectileDamage { get; set; }
 
-    private PartialEvasion _partialEvasion;
-
     public int Strikethrough;
     public const int StrikethroughLimit = 3;
     private const double StrikethroughChance = 0.5f;
@@ -411,7 +409,8 @@ public partial class SpellProjectile : WorldObject
             ref critical,
             ref critDefended,
             ref overpower,
-            ref resisted
+            ref resisted,
+            out var partialEvasion
         );
 
         if (player is { OverloadStanceIsActive: true } or {BatteryStanceIsActive: true})
@@ -421,9 +420,7 @@ public partial class SpellProjectile : WorldObject
 
         if (targetPlayer != null && damage != null)
         {
-            SigilTrinketSpellDamageReduction = 1.0f;
-
-            targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(this, Spell, (int)damage, Skill.MagicDefense,
+            var sigilDamageReductionMod = targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(this, Spell, (int)damage, Skill.MagicDefense,
                 SigilTrinketMagicDefenseEffect.Absorption);
 
             if (damage < 0 || damage > uint.MaxValue)
@@ -432,7 +429,7 @@ public partial class SpellProjectile : WorldObject
             }
             else
             {
-                damage = Convert.ToUInt32(damage * SigilTrinketSpellDamageReduction);
+                damage = Convert.ToUInt32(damage * sigilDamageReductionMod);
             }
         }
 
@@ -450,7 +447,7 @@ public partial class SpellProjectile : WorldObject
             }
             else
             {
-                DamageTarget(creatureTarget, damage.Value, critical, critDefended, overpower);
+                DamageTarget(creatureTarget, damage.Value, critical, critDefended, overpower, partialEvasion);
             }
 
             Strikethrough++;
@@ -536,6 +533,21 @@ public partial class SpellProjectile : WorldObject
                 sourceCreature.MonsterOnAttackMonster(creatureTarget);
             }
         }
+    }
+
+    /// <summary>
+    /// Sets what the projectile carries from its cast
+    /// </summary>
+    public void SetLaunchParameters(WorldObject source, SpellProjectileLaunch launch)
+    {
+        ProjectileSource = source;
+        ProjectileLauncher = launch.Weapon;
+        IsWeaponSpell = launch.IsWeaponSpell;
+        FromProc = launch.FromProc;
+        LifeProjectileDamage = launch.LifeProjectileDamage;
+        WeaponSpellcraft = launch.WeaponSpellcraft;
+        DamageMultiplier = launch.DamageMultiplier;
+        ReflectedCaster = launch.ReflectedCaster;
     }
 
     /// <summary>

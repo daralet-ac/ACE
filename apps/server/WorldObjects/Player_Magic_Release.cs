@@ -20,9 +20,9 @@ partial class Player
             return;
         }
 
-        var state = MagicState.CastSpellParams;
+        var cast = MagicState.CastSpellParams;
 
-        if (state == null)
+        if (cast == null)
         {
             _log.Warning($"{Name}.DoCastSpell(): null state detected");
 
@@ -32,29 +32,18 @@ partial class Player
             return;
         }
 
-        DoCastSpell(
-            state.Spell,
-            state.CasterItem,
-            state.MagicSkill,
-            state.ManaUsed,
-            state.ManaRefund,
-            state.Target,
-            state.Status,
-            checkAngle
-        );
+        DoCastSpell(cast, checkAngle);
     }
 
-    public void DoCastSpell(
-        Spell spell,
-        WorldObject casterItem,
-        uint magicSkill,
-        uint manaUsed,
-        ManaCastRefund manaRefund,
-        WorldObject target,
-        CastingPreCheckStatus castingPreCheckStatus,
-        bool checkAngle = true
-    )
+    /// <summary>
+    /// Releases the spell when the cast gesture is done, after checking the target still exists,
+    /// turning to face it if needed, and checking it's still in range
+    /// </summary>
+    private void DoCastSpell(CastSpellParams cast, bool checkAngle)
     {
+        var spell = cast.Spell;
+        var target = cast.Target;
+
         if (target != null)
         {
             // verify target still exists
@@ -77,20 +66,7 @@ partial class Player
 
                     var actionChain = new ActionChain();
                     actionChain.AddDelaySeconds(rotateTime);
-                    actionChain.AddAction(
-                        this,
-                        () =>
-                            DoCastSpell(
-                                spell,
-                                casterItem,
-                                magicSkill,
-                                manaUsed,
-                                manaRefund,
-                                target,
-                                castingPreCheckStatus,
-                                false
-                            )
-                    );
+                    actionChain.AddAction(this, () => DoCastSpell(cast, false));
                     actionChain.EnqueueChain();
                 }
                 else
@@ -109,7 +85,7 @@ partial class Player
             }
 
             // verify spell range
-            if (!VerifySpellRange(target, targetCategory, spell, casterItem, magicSkill))
+            if (!VerifySpellRange(target, targetCategory, spell, cast.CasterItem, cast.MagicSkill))
             {
                 FinishCast();
                 return;
@@ -122,26 +98,22 @@ partial class Player
             return;
         }
 
-        DoCastSpell_Inner(
-            spell,
-            casterItem,
-            manaUsed,
-            manaRefund,
-            target,
-            castingPreCheckStatus
-        );
+        DoCastSpell_Inner(cast, target, cast.Status);
     }
 
+    /// <param name="target">The cast's target, looked up again when the spell is released</param>
+    /// <param name="castingPreCheckStatus">The cast's status, or CastFailed for a fizzle</param>
     public void DoCastSpell_Inner(
-        Spell spell,
-        WorldObject casterItem,
-        uint manaUsed,
-        ManaCastRefund manaRefund,
+        CastSpellParams cast,
         WorldObject target,
         CastingPreCheckStatus castingPreCheckStatus,
         bool finishCast = true
     )
     {
+        var spell = cast.Spell;
+        var casterItem = cast.CasterItem;
+        var manaUsed = cast.ManaUsed;
+
         if (RecordCast.Enabled)
         {
             RecordCast.Log($"DoCastSpell_Inner()");
@@ -202,7 +174,7 @@ partial class Player
             itemCaster.ItemCurMana -= (int)manaUsed;
         }
 
-        ApplyManaCastRefund(manaRefund);
+        ApplyManaCastRefund(cast.ManaRefund);
 
         // consume spell components
         if (!isWeaponSpell)
@@ -615,15 +587,7 @@ partial class Player
 
         if (parms != null && tryFizzle)
         {
-            DoCastSpell_Inner(
-                parms.Spell,
-                parms.CasterItem,
-                parms.ManaUsed,
-                parms.ManaRefund,
-                parms.Target,
-                CastingPreCheckStatus.CastFailed,
-                false
-            );
+            DoCastSpell_Inner(parms, parms.Target, CastingPreCheckStatus.CastFailed, false);
 
             werror = WeenieError.YourSpellFizzled;
         }

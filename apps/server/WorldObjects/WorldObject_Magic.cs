@@ -10,8 +10,6 @@ namespace ACE.Server.WorldObjects;
 
 partial class WorldObject
 {
-    public float SigilTrinketSpellDamageReduction;
-    private bool _isSigilTrinketSpell = false;
     private PartialEvasion _partialEvasion;
 
     /// <summary>
@@ -147,8 +145,6 @@ partial class WorldObject
         double damageMultiplier = 1.0
     )
     {
-        _isSigilTrinketSpell = sigilTrinketSpell;
-
         var targetCreature = !spell.IsSelfTargeted || spell.IsFellowshipSpell ? target as Creature : this as Creature;
 
         if (this is Gem || this is Food || this is Hook)
@@ -182,21 +178,21 @@ partial class WorldObject
                 switch (spell.School)
                 {
                     case MagicSchool.LifeMagic:
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastProt, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastVuln, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastItemBuff, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastVitalRate, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, sigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, sigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastProt, null, false, sigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastVuln, null, false, sigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastItemBuff, null, false, sigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastVitalRate, null, false, sigilTrinketSpell);
                         break;
                     case MagicSchool.WarMagic:
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketWarMagicEffect.Duplicate, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, sigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, sigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketWarMagicEffect.Duplicate, null, false, sigilTrinketSpell);
                         break;
                     case MagicSchool.VoidMagic:
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, sigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, sigilTrinketSpell);
                         break;
                 }
             }

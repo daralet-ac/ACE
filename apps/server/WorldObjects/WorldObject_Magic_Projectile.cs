@@ -90,9 +90,11 @@ partial class WorldObject
 
         var projectileSpellType = SpellProjectile.GetProjectileSpellType(spell.Id);
 
+        var launch = new SpellProjectileLaunch(weapon, isWeaponSpell, fromProc, damage, weaponSpellcraft, damageMultiplier, reflectedCaster);
+
         if (projectileSpellType != ProjectileSpellType.Blast)
         {
-            CreateSpellProjectiles(spell, target, weapon, isWeaponSpell, fromProc, damage, false, weaponSpellcraft, damageMultiplier, reflectedCaster);
+            CreateSpellProjectiles(spell, target, launch);
         }
 
         var targetCreature = target as Creature;
@@ -141,7 +143,7 @@ partial class WorldObject
 
             foreach (var blastTarget in blastTargets)
             {
-                CreateSpellProjectiles(spell, blastTarget, weapon, isWeaponSpell, fromProc, damage, false, weaponSpellcraft, damageMultiplier, reflectedCaster);
+                CreateSpellProjectiles(spell, blastTarget, launch);
             }
         }
 
@@ -217,7 +219,7 @@ partial class WorldObject
                 continue;
             }
 
-            CreateSpellProjectiles(spell, cleaveHit, weapon, isWeaponSpell, fromProc, damage);
+            CreateSpellProjectiles(spell, cleaveHit, new SpellProjectileLaunch(weapon, isWeaponSpell, fromProc, damage));
             break;
         }
     }

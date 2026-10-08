@@ -36,6 +36,11 @@ public class SigilTrinketEvent
     public int SpellDamageReceived;
 
     /// <summary>
+    /// The multiplier for the spell damage received, from Sigil Top of Absorption
+    /// </summary>
+    public float SpellDamageReductionMod = 1.0f;
+
+    /// <summary>
     /// Check equipped Sigil Trinket to see if any have a relevant effect for the trigger action
     /// </summary>
     public bool HasReadySigilTrinketEffect(SigilTrinket sigilTrinket)
@@ -272,7 +277,7 @@ public class SigilTrinketEvent
 
                 const float spellDamageReductionMod = 0.5f;
 
-                Target.SigilTrinketSpellDamageReduction = spellDamageReductionMod;
+                SpellDamageReductionMod = spellDamageReductionMod;
 
                 var damageReduced = Convert.ToUInt32(SpellDamageReceived * (1 - spellDamageReductionMod));
                 Player.UpdateVitalDelta(Player.Mana, damageReduced);

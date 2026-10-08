@@ -23,9 +23,12 @@ partial class SpellProjectile
         ref bool criticalHit,
         ref bool critDefended,
         ref bool overpower,
-        ref bool resisted
+        ref bool resisted,
+        out PartialEvasion partialEvasion
     )
     {
+        partialEvasion = PartialEvasion.None;
+
         // COMBAT ABILITY - Reflect: a reflected spell is launched by the reflecting player (source),
         // but its resist check and damage are based on the original caster's stats
         var damageSource = ReflectedCaster ?? source;
@@ -84,8 +87,6 @@ partial class SpellProjectile
         }
 
         // Overpower pierces resists: the spell can't be resisted, fully or partially
-        PartialEvasion partialEvasion;
-
         if (overpower)
         {
             resisted = false;
@@ -119,11 +120,10 @@ partial class SpellProjectile
         }
 
         var resistedMod = 1.0f;
-        _partialEvasion = partialEvasion;
 
         if (!overpower)
         {
-            resistedMod = GetResistedMod(_partialEvasion);
+            resistedMod = GetResistedMod(partialEvasion);
 
             // fully resisted
             if (resistedMod == 0.0f)

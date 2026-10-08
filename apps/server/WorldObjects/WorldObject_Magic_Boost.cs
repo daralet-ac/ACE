@@ -42,6 +42,9 @@ partial class WorldObject
             return;
         }
 
+        // the result of this caster's last resist roll (TryResistSpell)
+        var partialEvasion = _partialEvasion;
+
         // handle negatives?
         var minBoostValue = Math.Min(spell.Boost, spell.MaxBoost);
         var maxBoostValue = Math.Max(spell.Boost, spell.MaxBoost);
@@ -61,7 +64,7 @@ partial class WorldObject
         // A spell that was already reflected can't be reflected again.
         if (
             reflectedCaster == null
-            && CheckForCombatAbilityReflectSpell(_partialEvasion is PartialEvasion.All or PartialEvasion.Some, targetPlayer, creature, spell)
+            && CheckForCombatAbilityReflectSpell(partialEvasion is PartialEvasion.All or PartialEvasion.Some, targetPlayer, creature, spell)
         )
         {
             targetPlayer.CastReflectedSpell(spell, creature, null, damageMultiplier);
@@ -69,7 +72,7 @@ partial class WorldObject
         }
 
         // Resist
-        var resistedMod = GetResistedMod(_partialEvasion);
+        var resistedMod = GetResistedMod(partialEvasion);
 
         var selfTargetProcSpellMod = SelfTargetSpellProcMod(fromProc, spell, weapon, player);
 
@@ -191,7 +194,7 @@ partial class WorldObject
             tryBoost = Convert.ToInt32(tryBoost * wardMod);
 
             // COMBAT ABILITY - Phalanx: health damage taken from full hits reduced by 30%. Partial resists are unaffected.
-            if (spell.VitalDamageType == DamageType.Health && _partialEvasion == PartialEvasion.None)
+            if (spell.VitalDamageType == DamageType.Health && partialEvasion == PartialEvasion.None)
             {
                 tryBoost = Convert.ToInt32(tryBoost * (targetPlayer?.GetPhalanxFullHitDamageMod() ?? 1.0f));
             }
@@ -215,9 +218,8 @@ partial class WorldObject
 
         tryBoost = (int)(tryBoost * scalar);
 
-        SigilTrinketSpellDamageReduction = 1.0f;
-        targetPlayer?.CheckForSigilTrinketOnSpellHitReceivedEffects(this, spell, tryBoost, Skill.MagicDefense, SigilTrinketMagicDefenseEffect.Absorption);
-        tryBoost = Convert.ToInt32(tryBoost * SigilTrinketSpellDamageReduction);
+        var sigilDamageReductionMod = targetPlayer?.CheckForSigilTrinketOnSpellHitReceivedEffects(this, spell, tryBoost, Skill.MagicDefense, SigilTrinketMagicDefenseEffect.Absorption) ?? 1.0f;
+        tryBoost = Convert.ToInt32(tryBoost * sigilDamageReductionMod);
 
         switch (spell.VitalDamageType)
         {
@@ -298,7 +300,7 @@ partial class WorldObject
             HandlePostHealRatingEffects(player, targetPlayer);
         }
 
-        var partialResist = _partialEvasion == PartialEvasion.Some ? "Partial Resist! " : "";
+        var partialResist = partialEvasion == PartialEvasion.Some ? "Partial Resist! " : "";
 
         if (player != null)
         {

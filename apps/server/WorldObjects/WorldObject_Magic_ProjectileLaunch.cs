@@ -23,18 +23,12 @@ partial class WorldObject
     /// <summary>
     /// Creates and launches the projectiles for a spell
     /// </summary>
-    /// <param name="reflectedCaster">COMBAT ABILITY - Reflect: the original caster of a reflected spell</param>
+    /// <param name="castAtTarget">The projectiles start at the target instead of the caster (Sigil Scarab of Detonation)</param>
     protected List<SpellProjectile> CreateSpellProjectiles(
         Spell spell,
         WorldObject target,
-        WorldObject weapon,
-        bool isWeaponSpell = false,
-        bool fromProc = false,
-        uint lifeProjectileDamage = 0,
-        bool castAtTarget = false,
-        int? weaponSpellcraft = null,
-        double damageMultiplier = 1.0,
-        Creature reflectedCaster = null
+        SpellProjectileLaunch launch,
+        bool castAtTarget = false
     )
     {
         if (spell.NumProjectiles == 0)
@@ -55,7 +49,7 @@ partial class WorldObject
             (uint)SpellId.GauntletCriticalDamageBoostI,
             null
         );
-        if (propertiesEnchantmentRegistry != null && spellType == ProjectileSpellType.Blast && reflectedCaster == null)
+        if (propertiesEnchantmentRegistry != null && spellType == ProjectileSpellType.Blast && launch.ReflectedCaster == null)
         {
             EnchantmentManager.Dispel(propertiesEnchantmentRegistry);
             fireAllProjectilesFromCenter = true;
@@ -65,17 +59,11 @@ partial class WorldObject
             spell,
             target,
             spellType,
-            weapon,
-            isWeaponSpell,
-            fromProc,
             origins,
             velocity,
-            lifeProjectileDamage,
+            launch,
             castAtTarget,
-            fireAllProjectilesFromCenter,
-            weaponSpellcraft,
-            damageMultiplier,
-            reflectedCaster
+            fireAllProjectilesFromCenter
         );
     }
 
@@ -392,17 +380,11 @@ partial class WorldObject
         Spell spell,
         WorldObject target,
         ProjectileSpellType spellType,
-        WorldObject weapon,
-        bool isWeaponSpell,
-        bool fromProc,
         List<Vector3> origins,
         Vector3 velocity,
-        uint lifeProjectileDamage = 0,
-        bool castAtTarget = false,
-        bool fireAllProjectilesFromCenter = false,
-        int? weaponSpellcraft = null,
-        double damageMultiplier = 1.0,
-        Creature reflectedCaster = null
+        SpellProjectileLaunch launch,
+        bool castAtTarget,
+        bool fireAllProjectilesFromCenter
     )
     {
         var useGravity = spellType == ProjectileSpellType.Arc;
@@ -463,8 +445,8 @@ partial class WorldObject
             sp.PhysicsObj.Position.Frame.set_vector_heading(dir);
             sp.Location.Rotation = sp.PhysicsObj.Position.Frame.Orientation;
 
-            sp.ProjectileSource = this;
-            sp.FromProc = fromProc;
+            // set before entering the world, a projectile can collide with its target on world entry
+            sp.SetLaunchParameters(this, launch);
 
             // side projectiles always untargeted?
             if (i == 0)
@@ -472,20 +454,8 @@ partial class WorldObject
                 sp.ProjectileTarget = target;
             }
 
-            sp.ProjectileLauncher = weapon;
-            sp.IsWeaponSpell = isWeaponSpell;
-
             sp.SetProjectilePhysicsState(sp.ProjectileTarget, useGravity);
             sp.SpawnPos = new Position(sp.Location);
-
-            sp.LifeProjectileDamage = lifeProjectileDamage;
-
-            sp.WeaponSpellcraft = weaponSpellcraft;
-
-            sp.DamageMultiplier = damageMultiplier;
-
-            // set before entering the world, a projectile can collide with its target on world entry
-            sp.ReflectedCaster = reflectedCaster;
 
             sp.InstanceId = InstanceId;
 

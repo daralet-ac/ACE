@@ -53,6 +53,9 @@ partial class WorldObject
             return;
         }
 
+        // the result of this caster's last resist roll (TryResistSpell)
+        var partialEvasion = _partialEvasion;
+
         // source and destination can be the same creature, or different creatures
         var transferSource = spell.TransferFlags.HasFlag(TransferFlags.CasterSource) ? creature : targetCreature;
         var destination = spell.TransferFlags.HasFlag(TransferFlags.CasterDestination) ? creature : targetCreature;
@@ -135,7 +138,7 @@ partial class WorldObject
                 }
 
                 // COMBAT ABILITY - Phalanx: health drained by a full hit reduced by 30%. Partial resists are unaffected.
-                if (targetPlayer is { PhalanxIsEffective: true } && _partialEvasion == PartialEvasion.None)
+                if (targetPlayer is { PhalanxIsEffective: true } && partialEvasion == PartialEvasion.None)
                 {
                     var phalanxMod = targetPlayer.GetPhalanxFullHitDamageMod();
 
