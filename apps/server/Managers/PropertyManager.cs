@@ -851,6 +851,7 @@ public static class DefaultPropertyManager
         ("rares_max_seconds_between", new Property<long>(5256000, "for rares_real_time: the maximum number of seconds a player can go before a second chance at a rare is allowed on rare eligible creature kills that did not generate a rare")),
         ("summoning_killtask_multicredit_cap", new Property<long>(2, "if allow_summoning_killtask_multicredit is enabled, the maximum # of killtask credits a player can receive from 1 kill")),
         ("teleport_visibility_fix", new Property<long>(0, "Fixes some possible issues with invisible players and mobs. 0 = default / disabled, 1 = players only, 2 = creatures, 3 = all world objects")),
+        ("two_handed_hit_frame", new Property<long>(0, "(non-retail function) two-handed swings play two strikes but deal one hit. 0 = the hit lands on the first strike, 1 = the hit lands on the last strike")),
         ("instance_empty_timeout_minutes", new Property<long>(15, "How long an instance stays open after the last player has left it, in minutes. When it runs out, the instance and everything in it is deleted.")),
         ("max_level", new Property<long>(275, "Set the max character level.")),
         ("soft_level_cap", new Property<long>(50, "Set the 'soft' level cap (current highest possible level of monsters)")),

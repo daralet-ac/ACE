@@ -273,52 +273,7 @@ public static partial class LootGenerationFactory
 
     private static float GetWeaponAttacksPerSecond(WorldObject wo, int tier)
     {
-        if (wo.WeaponTime == null)
-        {
-            return 0.0f;
-        }
-
-        var baseAnimLength = WeaponAnimationLength.GetWeaponAnimLength(wo);
-        int[] avgQuickPerTier = [45, 65, 93, 118, 140, 160, 180, 195];
-        tier = Math.Clamp(tier, 0, avgQuickPerTier.Length - 1);
-        var quick = (float)avgQuickPerTier[tier];
-        var speedMod = 1.0f + (1 - (wo.WeaponTime.Value / 100.0)) + quick / 600;
-
-        if (wo.ItemType == ItemType.MissileWeapon)
-        {
-            float reloadAnimLength;
-            if (wo.WeaponSkill == Skill.Bow)
-            {
-                reloadAnimLength = 0.32f;
-            }
-            else if (wo.WeaponSkill == Skill.Crossbow)
-            {
-                reloadAnimLength = 0.26f;
-            }
-            else
-            {
-                reloadAnimLength = 0.73f;
-            }
-
-            return (float)(1 / (baseAnimLength - reloadAnimLength + (reloadAnimLength / speedMod)));
-        }
-
-        var effectiveAttacksPerSecond = (float)(1 / (baseAnimLength / speedMod));
-        if (wo.IsTwoHanded || wo.W_AttackType == AttackType.DoubleStrike)
-        {
-            effectiveAttacksPerSecond *= 2;
-        }
-        else if (wo.W_AttackType == AttackType.TripleStrike)
-        {
-            effectiveAttacksPerSecond *= 3;
-        }
-        else if (wo.W_WeaponType == WeaponType.Thrown)
-        {
-            const float reloadLength = 0.9777778f;
-            effectiveAttacksPerSecond = (float)(1 / (baseAnimLength - reloadLength + (reloadLength * speedMod)));
-        }
-
-        return effectiveAttacksPerSecond;
+        return (float)GetWeaponHitsPerSecond(wo, tier);
     }
 
     private static int GetWeaponRolledTypeCount(WorldObject wo, bool caster, int tier)

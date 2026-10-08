@@ -1186,9 +1186,9 @@ partial class Creature
         {
             enemyAvgAttackSpeed *= 3.0f;
         }
+        // two-handed weapons deal one hit per swing
         else if (weapon is not null
-                && (weapon.IsTwoHanded
-                    || weapon.W_AttackType.HasFlag(AttackType.DoubleStrike)
+                && (weapon.W_AttackType.HasFlag(AttackType.DoubleStrike)
                     || weapon.W_AttackType.HasFlag(AttackType.DoubleSlash)
                     || weapon.W_AttackType.HasFlag(AttackType.DoubleThrust)
                     || weapon.W_AttackType.HasFlag(AttackType.OffhandDoubleSlash)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Tables;
 using ACE.Server.WorldObjects;
 
@@ -76,6 +77,24 @@ public static partial class LootGenerationFactory
             var rate when (rate > 42 && rate < 79) => CreateMissileWeapon(profile, isMagical),
             _ => CreateCaster(profile, isMagical),
         };
+    }
+
+    private static readonly int[] AvgQuicknessPerTier = [45, 65, 93, 118, 140, 160, 180, 195];
+
+    /// <summary>
+    /// Returns the hits per second of a weapon, for a wielder with the average quickness of the tier (1-8).
+    /// WeaponTime is the time each hit takes, whatever the weapon type.
+    /// </summary>
+    private static double GetWeaponHitsPerSecond(WorldObject wo, int tier)
+    {
+        if (wo.WeaponTime is null or <= 0)
+        {
+            return 0.0;
+        }
+
+        var quickness = AvgQuicknessPerTier[Math.Clamp(tier - 1, 0, AvgQuicknessPerTier.Length - 1)];
+
+        return 1.0 / WeaponSpeed.GetSecondsPerHit(wo.WeaponTime.Value, quickness, wo.IsRanged);
     }
 
     public const float MaxSpeedBonus = 0.1f;

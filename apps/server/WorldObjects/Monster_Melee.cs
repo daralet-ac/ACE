@@ -450,23 +450,9 @@ partial class Creature
 
         //Console.WriteLine($"{maneuver.Style} - {maneuver.Motion} - {maneuver.AttackHeight}");
 
-        var baseSpeed = GetAnimSpeed();
-        var animSpeedMod = 1.0f;
-        if (
-            IsDualWieldAttack
-            && GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized
-        )
-        {
-            animSpeedMod = 1.25f; // dual wield swing animation 25% faster
-        }
-
-        var animSpeed = baseSpeed * animSpeedMod;
-
-        animLength = MotionTable.GetAnimationLength(MotionTableId, CurrentMotionState.Stance, motionCommand, animSpeed);
+        var baseAnimLength = MotionTable.GetAnimationLength(MotionTableId, CurrentMotionState.Stance, motionCommand);
 
         attackFrames = MotionTable.GetAttackFrames(MotionTableId, CurrentMotionState.Stance, motionCommand);
-
-        //Console.WriteLine($"MonsterMelee.DoSwingMotion() - AnimSpeed: {animSpeed} AnimLength: {animLength}");
 
         if (attackFrames.Count == 0)
         {
@@ -481,6 +467,28 @@ partial class Creature
             }
             attackFrames = defaultAttackFrames;
         }
+
+        // two-handed swings play two strikes but deal one hit
+        if (TwoHandedCombat)
+        {
+            attackFrames = WeaponSpeed.GetTwoHandedHitFrames(attackFrames);
+        }
+
+        var baseSpeed = GetAttackAnimSpeed(baseAnimLength, attackFrames.Count);
+        var animSpeedMod = 1.0f;
+        if (
+            IsDualWieldAttack
+            && GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized
+        )
+        {
+            animSpeedMod = 1.25f; // dual wield swing animation 25% faster
+        }
+
+        var animSpeed = baseSpeed * animSpeedMod;
+
+        animLength = baseAnimLength / animSpeed;
+
+        //Console.WriteLine($"MonsterMelee.DoSwingMotion() - AnimSpeed: {animSpeed} AnimLength: {animLength}");
 
         var motion = new ACE.Server.Entity.Motion(this, motionCommand, animSpeed);
         motion.MotionState.TurnSpeed = 2.25f;

@@ -729,9 +729,9 @@ partial class Player
         var currentAnimLength = LastAttackAnimationLength;
         var multistrike = 1;
 
+        // two-handed weapons deal one hit per swing
         if (
-            weapon.IsTwoHanded
-            || weapon.W_AttackType == AttackType.DoubleStrike
+            weapon.W_AttackType == AttackType.DoubleStrike
             || weapon.W_AttackType == AttackType.DoubleSlash
             || weapon.W_AttackType == AttackType.DoubleThrust
             || weapon.W_AttackType == AttackType.OffhandDoubleSlash

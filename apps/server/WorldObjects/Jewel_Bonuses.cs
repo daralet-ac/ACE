@@ -160,11 +160,16 @@ partial class Jewel
             ? playerAttacker.GetEquippedMeleeWeapon()
             : playerAttacker.GetEquippedWeapon();
 
-        var weaponAnimationLength = WeaponAnimationLength.GetWeaponAnimLength(equippedWeapon);
-        var weaponTime = equippedWeapon is null ? 100 : equippedWeapon.WeaponTime ?? 100;
-        var attacksPerSecondScalar = 1 / (weaponAnimationLength / (1.0f + (1 - (weaponTime / 100.0))));
+        // stamps are given on every hit, so they scale with the time each hit takes,
+        // so every weapon builds them at the same rate over time.
+        // Scaled so an average weapon at 200 Quickness gives about as many stamps per hit as before.
+        const float attackTimeScalar = 1.55f;
 
-        return Convert.ToInt32(baseStamps * powerBarScalar * attacksPerSecondScalar);
+        var weaponTime = equippedWeapon?.WeaponTime ?? WeaponSpeed.UnarmedWeaponTime;
+        var isRanged = equippedWeapon?.IsRanged ?? false;
+        var secondsPerHit = WeaponSpeed.GetSecondsPerHit(weaponTime, playerAttacker.Quickness.Current, isRanged);
+
+        return Convert.ToInt32(baseStamps * powerBarScalar * secondsPerHit * attackTimeScalar);
     }
 
     private static int GetCasterScaledStamps(uint spellLevel, ProjectileSpellType projectileSpellType)

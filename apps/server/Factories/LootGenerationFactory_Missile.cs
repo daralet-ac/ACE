@@ -506,27 +506,8 @@ public static partial class LootGenerationFactory
         // target dps per tier
         var targetBaseDps = GetWeaponBaseDps(wo.Tier.Value);
 
-        // animation speed
-        var baseAnimLength = WeaponAnimationLength.GetWeaponAnimLength(wo);
-        float reloadAnimLength;
-
-        if (wo.WeaponSkill == Skill.Bow)
-        {
-            reloadAnimLength = 0.32f;
-        }
-        else if (wo.WeaponSkill == Skill.Crossbow)
-        {
-            reloadAnimLength = 0.26f;
-        }
-        else
-        {
-            reloadAnimLength = 0.73f; // atlatl
-        }
-
-        int[] avgQuickPerTier = { 45, 65, 93, 118, 140, 160, 180, 195 };
-        var quick = (float)avgQuickPerTier[profile.Tier - 1];
-        var speedMod = 1.0f + (1 - (wo.WeaponTime.Value / 100.0)) + (quick / 600);
-        var effectiveAttacksPerSecond = 1 / (baseAnimLength - reloadAnimLength + (reloadAnimLength / speedMod));
+        // attacks per second
+        var effectiveAttacksPerSecond = GetWeaponHitsPerSecond(wo, profile.Tier);
 
         // target weapon hit damage
         var ammoMaxDamage = GetAmmoBaseMaxDamage(wo.WeaponSkill, wo.Tier.Value);

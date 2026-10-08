@@ -22,6 +22,7 @@ public class Salvage : WorldObject
     // Per-tink amounts. Quest item mutation bakes a full set of these into quest gear, which can't be
     // tinkered, so changing one here changes quest gear too.
     public const double IronTinkPercent = 0.075; // of the untinkered Damage or Armor Level
+    public const double IronTinkWeaponTimePercent = 0.05; // of the untinkered WeaponTime
     public const double MahoganyTinkPercent = 0.075; // of the untinkered Damage modifier (GetModTinkBonus)
     public const double GreenGarnetTinkPercent = 0.075; // of the untinkered Elemental Damage modifier
     public const double LavenderJadeTinkPercent = 0.075; // of the untinkered Restoration modifier
@@ -783,15 +784,17 @@ public class Salvage : WorldObject
                     }
                     break;
 
-                // Weapon - 7.5% Damage but +5 WeaponTime | Armor - 7.5% ArmorLevel but -0.25% Stam Penalty
+                // Weapon - 7.5% Damage but +5% WeaponTime | Armor - 7.5% ArmorLevel but -0.25% Stam Penalty
                 case ACE.Entity.Enum.MaterialType.Iron: // Iron
                     if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                     {
                         var damageBonus = (int)(target.BaseDamage * IronTinkPercent) < 1 ? 1 : (int)(target.BaseDamage * IronTinkPercent);
                         target.Damage += damageBonus;
-                        target.WeaponTime += 5;
+                        var baseWeaponTime = target.BaseWeaponTime is > 0 ? target.BaseWeaponTime.Value : target.WeaponTime ?? 0;
+                        var weaponTimePenalty = Math.Max(1, (int)Math.Round(baseWeaponTime * IronTinkWeaponTimePercent));
+                        target.WeaponTime += weaponTimePenalty;
 
-                        successAmount = $"raising its Damage by {damageBonus}, but increasing its Weapon Time by 5";
+                        successAmount = $"raising its Damage by {damageBonus}, but increasing its Weapon Time by {weaponTimePenalty}";
                     }
                     if (target.ItemType == ItemType.Armor)
                     {

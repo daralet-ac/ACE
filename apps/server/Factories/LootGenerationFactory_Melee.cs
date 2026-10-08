@@ -1678,27 +1678,8 @@ public static partial class LootGenerationFactory
         // target dps per tier
         var targetBaseDps = GetWeaponBaseDps(wo.Tier ?? 1);
 
-        // animation speed
-        var baseAnimLength = WeaponAnimationLength.GetWeaponAnimLength(wo);
-
-        int[] avgQuickPerTier = [45, 65, 93, 118, 140, 160, 180, 195];
-        var quick = (float)avgQuickPerTier[profile.Tier - 1];
-        var speedMod = 1.0f + (1 - (wo.WeaponTime.Value / 100.0)) + quick / 600;
-        var effectiveAttacksPerSecond = 1 / (baseAnimLength / speedMod);
-
-        if (wo.IsTwoHanded || wo.W_AttackType == AttackType.DoubleStrike)
-        {
-            effectiveAttacksPerSecond *= 2;
-        }
-        else if (wo.W_AttackType == AttackType.TripleStrike)
-        {
-            effectiveAttacksPerSecond *= 3;
-        }
-        else if (wo.W_WeaponType == WeaponType.Thrown)
-        {
-            const float reloadLength = 0.9777778f;
-            effectiveAttacksPerSecond = 1 / (baseAnimLength - reloadLength + (reloadLength * speedMod));
-        }
+        // hits per second (two-handed weapons deal one hit per swing, multi-strike weapons deal one per strike)
+        var effectiveAttacksPerSecond = GetWeaponHitsPerSecond(wo, profile.Tier);
 
         // target weapon hit damage
         var targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
