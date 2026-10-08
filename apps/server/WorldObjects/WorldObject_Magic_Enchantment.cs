@@ -157,10 +157,8 @@ partial class WorldObject
 
             var wardMod = GetWardMod(caster as Creature, targetPlayer, ignoreWardMod);
 
-            wardMod += (1 - wardMod) * 0.5f;
-
             // ward shortens the debuff, it doesn't weaken it
-            addResult.Enchantment.Duration *= wardMod;
+            addResult.Enchantment.Duration *= MagicFormulas.GetWardDebuffDurationMod(wardMod);
         }
     }
 

@@ -158,13 +158,6 @@ partial class SpellProjectile
             }
         }
 
-        // https://asheron.fandom.com/wiki/Shield
-        // The formula to determine magic absorption for shields is:
-        // Reduction Percent = (cap * specMod * baseSkill * 0.003f) - (cap * specMod * 0.3f)
-        // Cap = Maximum reduction
-        // SpecMod = 1.0 for spec, 0.8 for trained
-        // BaseSkill = 100 to 433 (above 433 base shield you always achieve the maximum %)
-
         var shieldSkill = target.GetCreatureSkill(Skill.Shield);
         // ensure trained?
         if (shieldSkill.AdvancementClass < SkillAdvancementClass.Trained || shieldSkill.Base < 100)
@@ -172,23 +165,13 @@ partial class SpellProjectile
             return 1.0f;
         }
 
-        var baseSkill = Math.Min(shieldSkill.Base, 433);
-        var specMod = shieldSkill.AdvancementClass == SkillAdvancementClass.Specialized ? 1.0f : 0.8f;
         var cap = (float)(shield.GetAbsorbMagicDamage() ?? 0.0f);
 
-        // speced, 100 skill = 0%
-        // trained, 100 skill = 0%
-        // speced, 200 skill = 30%
-        // trained, 200 skill = 24%
-        // speced, 300 skill = 60%
-        // trained, 300 skill = 48%
-        // speced, 433 skill = 100%
-        // trained, 433 skill = 80%
-
-        var reduction = (cap * specMod * baseSkill * 0.003f) - (cap * specMod * 0.3f);
-
-        var shieldMod = Math.Min(1.0f, 1.0f - reduction);
-        return shieldMod;
+        return MagicFormulas.GetShieldMagicAbsorbMod(
+            cap,
+            shieldSkill.Base,
+            shieldSkill.AdvancementClass == SkillAdvancementClass.Specialized
+        );
     }
 
     /// <summary>
@@ -197,21 +180,6 @@ partial class SpellProjectile
     /// </summary>
     private static float AbsorbMagic(Creature target, WorldObject item)
     {
-        // https://asheron.fandom.com/wiki/Category:Magic_Absorbing
-
-        // Tomes and Bows
-        // The formula to determine magic absorption for Tomes and the Fetish of the Dark Idols:
-        // - For a 25% maximum item: (magic absorbing %) = 25 - (0.1 * (319 - base magic defense))
-        // - For a 10% maximum item: (magic absorbing %) = 10 - (0.04 * (319 - base magic defense))
-
-        // wiki currently has what is likely a typo for the 10% formula,
-        // where it has a factor of 0.4 instead of 0.04
-        // with 0.4, the 10% items would not start to become effective until base magic defense 294
-        // with 0.04, both formulas start to become effective at base magic defense 69
-
-        // using an equivalent formula that produces the correct results for 10% and 25%,
-        // and also produces the correct results for any %
-
         var absorbMagicDamage = item.GetAbsorbMagicDamage();
 
         if (absorbMagicDamage == null)
@@ -219,14 +187,6 @@ partial class SpellProjectile
             return 1.0f;
         }
 
-        var maxPercent = absorbMagicDamage.Value;
-
-        var baseCap = 319;
-        var magicDefBase = target.GetCreatureSkill(Skill.MagicDefense).Base;
-        var diff = Math.Max(0, baseCap - magicDefBase);
-
-        var percent = maxPercent - maxPercent * diff * 0.004f;
-
-        return Math.Min(1.0f, 1.0f - (float)percent);
+        return MagicFormulas.GetMagicAbsorbingMod(absorbMagicDamage.Value, target.GetCreatureSkill(Skill.MagicDefense).Base);
     }
 }

@@ -122,7 +122,7 @@ partial class SpellProjectile
 
         if (!overpower)
         {
-            resistedMod = GetResistedMod(partialEvasion);
+            resistedMod = MagicFormulas.GetResistedMod(partialEvasion);
 
             // fully resisted
             if (resistedMod == 0.0f)
@@ -319,9 +319,7 @@ partial class SpellProjectile
         //http://acpedia.org/wiki/Announcements_-_2014/01_-_Forces_of_Nature - Aegis is 72% effective in PvP
         if (hit.IsPvp && (hit.Target.CombatMode == CombatMode.Melee || hit.Target.CombatMode == CombatMode.Missile))
         {
-            absorbMod = 1 - absorbMod;
-            absorbMod *= 0.72f;
-            absorbMod = 1 - absorbMod;
+            absorbMod = MagicFormulas.GetPvpAbsorbMod(absorbMod);
         }
 
         return absorbMod;
@@ -382,7 +380,7 @@ partial class SpellProjectile
             JewelSelfHarm = 1.0f + Jewel.GetJewelEffectMod(hit.SourcePlayer, PropertyInt.GearSelfHarm),
             JewelRedFury = 1.0f + Jewel.GetJewelRedFury(hit.SourcePlayer),
             JewelBlueFury = 1.0f + Jewel.GetJewelBlueFury(hit.SourcePlayer),
-            StrikethroughPenalty = 1.0f / (Strikethrough + 1),
+            StrikethroughPenalty = MagicFormulas.GetStrikethroughPenalty(Strikethrough),
             Archetype = (float)(hit.SourceCreature?.ArchetypeSpellDamageMultiplier ?? 1.0),
             LevelScaling = LevelScaling.GetMonsterHealthDamageScalar(hit.SourceCreature, hit.Target),
             DamageMultiplier = (float)DamageMultiplier,
@@ -404,7 +402,7 @@ partial class SpellProjectile
 
         var spellcraft = hit.Weapon.ItemSpellcraft.Value + (int)CheckForArcaneLoreSpecSpellcraftBonus(hit.SourceCreature);
 
-        return spellcraft * 0.01f;
+        return MagicFormulas.GetProcSpellcraftDamageMod(spellcraft);
     }
 
     private SpellMitigationModifiers GetMitigationModifiers(

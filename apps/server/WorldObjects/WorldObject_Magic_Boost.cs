@@ -271,14 +271,14 @@ partial class WorldObject
         if (cast.FromProc && cast.Weapon?.ItemSpellcraft != null)
         {
             var spellcraft = cast.Weapon.ItemSpellcraft.Value + CheckForArcaneLoreSpecSpellcraftBonus(cast.DamageSource);
-            spellcraftMod = spellcraft * 0.01f;
+            spellcraftMod = MagicFormulas.GetProcSpellcraftDamageMod(spellcraft);
         }
 
         // for traps and creatures the archetype system doesn't scale,
         // make sure they receive multipliers from landblock mods
         var landblockScalingMod = (cast.ReflectedCaster ?? this).GetLandblockLethalitySpellMod();
 
-        var resistedMod = GetResistedMod(cast.PartialEvasion);
+        var resistedMod = MagicFormulas.GetResistedMod(cast.PartialEvasion);
 
         return (int)(tryBoost * overloadMod * batterMod * cast.DamageMultiplier * spellcraftMod * landblockScalingMod * resistedMod);
     }
@@ -549,7 +549,10 @@ partial class WorldObject
         };
     }
 
-    private float SelfTargetSpellProcMod(bool fromProc, Spell spell, WorldObject weapon, Player player)
+    /// <summary>
+    /// A proc spell cast on yourself scales with your magic skill vs the spell's power
+    /// </summary>
+    private static float SelfTargetSpellProcMod(bool fromProc, Spell spell, WorldObject weapon, Player player)
     {
         if (!fromProc || player == null || weapon == null)
         {
@@ -563,15 +566,6 @@ partial class WorldObject
                 ? player.GetModdedWarMagicSkill()
                 : player.GetModdedLifeMagicSkill();
 
-        var procSpellSkill = (int)(playerSpellSkill + spellcraft * 0.1);
-
-        if (spell.Power == 0)
-        {
-            return 1.0f;
-        }
-
-        var mod = (float)procSpellSkill / spell.Power;
-
-        return Math.Clamp(mod, 0.5f, 2.0f);
+        return MagicFormulas.GetSelfTargetProcMod(playerSpellSkill, spellcraft, spell.Power);
     }
 }

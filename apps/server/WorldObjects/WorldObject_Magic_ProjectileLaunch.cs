@@ -154,7 +154,7 @@ partial class WorldObject
 
         baseOffset += heightOffset;
 
-        var anglePerStep = GetSpreadAnglePerStep(spell);
+        var anglePerStep = MagicFormulas.GetSpreadAnglePerStep(spell.SpreadAngle, spell.NumProjectiles);
 
         // TODO: normalize data
         var dims = new Vector3(
@@ -244,27 +244,6 @@ partial class WorldObject
         }
 
         return origins;
-    }
-
-    /// <summary>
-    /// Returns the angle in degrees between projectiles
-    /// for spells with SpreadAngle
-    /// </summary>
-    private static float GetSpreadAnglePerStep(Spell spell)
-    {
-        if (spell.SpreadAngle == 0.0f || spell.NumProjectiles == 1)
-        {
-            return 0.0f;
-        }
-
-        var numProjectiles = spell.NumProjectiles;
-
-        if (numProjectiles % 2 == 1)
-        {
-            numProjectiles--;
-        }
-
-        return spell.SpreadAngle / numProjectiles;
     }
 
     private static readonly Quaternion OneEighty = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, (float)Math.PI);

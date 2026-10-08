@@ -400,14 +400,14 @@ partial class Player
         }
 
         var meter = OverloadStanceIsActive ? ManaChargeMeter : DischargeLevel;
-        var chance = meter * 0.5f;
+        var chance = MagicFormulas.GetOverloadBacklashChance(meter);
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) >= chance)
         {
             return;
         }
 
-        var selfDamage = Convert.ToInt32(0.1f * meter * spell.BaseMana);
+        var selfDamage = MagicFormulas.GetOverloadBacklashDamage(meter, spell.BaseMana);
 
         if (selfDamage <= 0)
         {

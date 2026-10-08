@@ -436,13 +436,10 @@ partial class Creature
             return manaCost;
         }
 
-        const float maxManaReduction = 0.5f;
-
         var manaConModCeiling = SkillCheck.GetSkillChance(manaConv, difficulty);
         var manaConModFloor = manaConModCeiling * 0.5;
         var rawRoll = ThreadSafeRandom.Next((float)manaConModFloor, (float)manaConModCeiling);
-        var reductionRoll = maxManaReduction * rawRoll;
-        var savedMana = (uint)Math.Round(manaCost * reductionRoll);
+        var savedMana = MagicFormulas.GetManaConversionSavings(manaCost, rawRoll, out var reductionRoll);
 
         manaCost -= savedMana;
 
@@ -459,7 +456,7 @@ partial class Creature
         if (caster.GetCreatureSkill(Skill.ManaConversion).AdvancementClass == SkillAdvancementClass.Specialized
             && manaCost <= caster.Mana.Current)
         {
-            var conversionAmount = (int)Math.Round(savedMana * 0.5f);
+            var conversionAmount = MagicFormulas.GetSpecManaConversionRefund(savedMana);
             refund = new ManaCastRefund(refund.Health + conversionAmount, refund.Stamina + conversionAmount);
             if (trace != null)
             {

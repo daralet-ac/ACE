@@ -320,7 +320,7 @@ partial class WorldObject
     /// </summary>
     public static uint GetSpellcraftSkillBonus(int itemSpellcraft, Creature wielder)
     {
-        return (uint)((itemSpellcraft + CheckForArcaneLoreSpecSpellcraftBonus(wielder)) * 0.1);
+        return MagicFormulas.GetSpellcraftSkillBonus(itemSpellcraft, CheckForArcaneLoreSpecSpellcraftBonus(wielder));
     }
 
     /// <summary>
@@ -471,22 +471,5 @@ partial class WorldObject
         }
 
         DoSpellEffects(spell, this, originalCaster);
-    }
-
-    /// <summary>
-    /// If resist succeeded, determine if resist was partial or full.
-    /// </summary>
-    protected static float GetResistedMod(PartialEvasion partialEvasion)
-    {
-        switch (partialEvasion)
-        {
-            case PartialEvasion.None:
-                return 1.0f;
-            case PartialEvasion.Some:
-                return 0.5f;
-            case PartialEvasion.All:
-            default:
-                return 0.0f;
-        }
     }
 }

@@ -104,7 +104,7 @@ partial class Creature
         // This reduces memory consumption by not cloning the spell book every single TryRollSpell()
         foreach (var spell in Biota.PropertiesSpellBook) // Not thread-safe
         {
-            var probability = spell.Value > 2.0f ? spell.Value - 2.0f : spell.Value / 100.0f;
+            var probability = MagicFormulas.GetSpellbookCastChance(spell.Value);
 
             var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
 
@@ -112,13 +112,7 @@ partial class Creature
 
             if (spell.Value == 2.0f)
             {
-                var maxHealth = (float)this.Health.MaxValue;
-                var currentHealth = (float)this.Health.Current;
-
-                var maxProbability = 0.33f;
-                var reciprocal = 1 / maxProbability;
-
-                probability = ((maxHealth - currentHealth) / maxHealth) / reciprocal;
+                probability = MagicFormulas.GetSpellbookHealthCastChance(Health.MaxValue, Health.Current);
             }
 
             if (rng < probability)
