@@ -207,20 +207,12 @@ public class DamageEvent
 
         _damageBeforeMitigation = GetDamageBeforeMitigation(attacker, defender, damageSource);
 
-        if (_generalFailure || Evaded)
+        if (_generalFailure)
         {
             return 0.0f;
         }
 
         var mitigation = GetMitigation(attacker, defender);
-
-        // GetMitigation evades the attack if the defender has no body part to hit
-        if (Evaded)
-        {
-            IsCritical = false;
-            return 0.0f;
-        }
-
         var cleaveMod = cleaveHits ? 0.5f : 1.0f;
 
         Damage = _damageBeforeMitigation * mitigation * cleaveMod;
@@ -234,6 +226,15 @@ public class DamageEvent
         _damageMitigated = _damageBeforeMitigation - Damage;
 
         PostDamageMitigationEffects(attacker, defender, damageSource);
+
+        // Reprisal (during the critical hit) and a missing body part (during the armor lookup) can evade the attack after
+        // its damage is rolled. The on-hit effects above still trigger, but no damage is dealt and no threat is generated.
+        if (Evaded)
+        {
+            Damage = 0.0f;
+            IsCritical = false;
+            return 0.0f;
+        }
 
         //DpsLogging();
 
@@ -601,12 +602,6 @@ public class DamageEvent
             }
         }
 
-        // RATING - Reprisal: the defender may evade the critical hit outright
-        if (CheckForRatingReprisalCriticalDefense(attacker, _playerDefender))
-        {
-            return 0.0f;
-        }
-
         IsCritical = true;
         return GetCriticalDamageBeforeMitigation(attacker, defender);
     }
@@ -914,6 +909,9 @@ public class DamageEvent
         _criticalDamageMod += GetStaffSpecCriticalDamageBonus(playerAttacker);
         _criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBludgeon, "Bludgeon", rampQuestSource: defender);
         _criticalDamageMod *= CriticalDamageBonusFromTrinket;
+
+        // RATING - Reprisal: the defender may evade the critical hit (see DoCalculateDamage)
+        CheckForRatingReprisalCriticalDefense(attacker, _playerDefender);
 
         // _damageRatingMod already includes the PK damage rating (see SetDamageModifiers)
         _criticalDamageRating = Creature.GetPositiveRatingMod(attacker.GetCritDamageRating());
@@ -1249,7 +1247,12 @@ public class DamageEvent
         var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
 
-        CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttacker, playerDefender);
+        // jewel stamps and procs need the attack to land; the rest also trigger on a late evade (see DoCalculateDamage)
+        if (!Evaded)
+        {
+            CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttacker, playerDefender);
+        }
+
         CheckForCombatAbilityFuryBuildUpWhenDamaged(playerDefender);
         CheckForCombatAbilityAegisRestoration(playerDefender);
         CheckForWeaponMasterEffects(playerAttacker, defender);
@@ -1672,26 +1675,25 @@ public class DamageEvent
     /// RATING - Reprisal: Evade an Incoming Crit, auto crit in return
     /// (JEWEL - Black Opal)
     /// </summary>
-    /// <returns>True if the defender evaded the critical hit</returns>
-    private bool CheckForRatingReprisalCriticalDefense(Creature attacker, Player playerDefender)
+    private void CheckForRatingReprisalCriticalDefense(Creature attacker, Player playerDefender)
     {
         if (playerDefender == null)
         {
-            return false;
+            return;
         }
 
         var rating = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal);
 
         if (rating <= 0)
         {
-            return false;
+            return;
         }
 
         var chance = Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearReprisal);
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
-            return false;
+            return;
         }
 
         playerDefender.QuestManager.HandleReprisalQuest();
@@ -1702,8 +1704,6 @@ public class DamageEvent
 
         var msg = $"Reprisal! You evade the attack by {attacker.Name}";
         playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatEnemy));
-
-        return true;
     }
 
     /// <summary>
@@ -1733,7 +1733,7 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// SPEC BONUS - Perception - Up to 50% chance to defend against a critical hit, based on Perception vs the attacker's attack skill
+    /// SPEC BONUS - Perception - Up to 50% chance to defend against a critical hit, based on Perception vs the attacker's effective attack skill
     /// </summary>
     private bool CheckForSpecPerceptionCriticalDefense(Player playerDefender)
     {
@@ -1749,8 +1749,7 @@ public class DamageEvent
         }
 
         // an attack skill of 0 can't beat any Perception, so it gets the full 50%
-        var attackSkill = _attackSkill?.Current ?? 0;
-        var skillCheck = attackSkill > 0 ? perception.Current / (float)attackSkill : 1.0f;
+        var skillCheck = EffectiveAttackSkill > 0 ? playerDefender.GetModdedPerceptionSkill() / (float)EffectiveAttackSkill : 1.0f;
         var criticalDefenseChance = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
 
         return criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f);
