@@ -10,22 +10,46 @@ namespace ACE.Server.WorldObjects;
 
 partial class SpellProjectile
 {
-    private static void ShowInfo(
+    /// <summary>
+    /// Shows a spell projectile's damage calculation to the players debugging its caster (attacker) or target (defender).
+    /// The rating modifiers and final damage are added when the damage is applied (SendRatingDebugInfo).
+    /// </summary>
+    private void ShowDamageDebugInfo(
+        in SpellHit hit,
+        float criticalChance,
+        bool criticalHit,
+        bool critDefended,
+        bool overpower,
+        int baseDamage,
+        float weaponCritDamageMod,
+        float weaponResistanceMod,
+        in SpellDamageModifiers damageMods,
+        in SpellMitigationModifiers mitigation
+    )
+    {
+        if (hit.SourceCreature != null && hit.SourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
+        {
+            AppendDamageDebugInfo(hit.SourceCreature, hit.AttackSkill, criticalChance, criticalHit, critDefended, overpower, baseDamage, weaponCritDamageMod, weaponResistanceMod, damageMods, mitigation);
+        }
+
+        if (hit.Target.DebugDamage.HasFlag(Creature.DebugDamageType.Defender))
+        {
+            AppendDamageDebugInfo(hit.Target, hit.AttackSkill, criticalChance, criticalHit, critDefended, overpower, baseDamage, weaponCritDamageMod, weaponResistanceMod, damageMods, mitigation);
+        }
+    }
+
+    private void AppendDamageDebugInfo(
         Creature observed,
-        Spell spell,
         CreatureSkill skill,
         float criticalChance,
         bool criticalHit,
         bool critDefended,
         bool overpower,
-        float weaponCritDamageMod,
         int baseDamage,
-        float elementalDamageMod,
-        float slayerMod,
+        float weaponCritDamageMod,
         float weaponResistanceMod,
-        float resistanceMod,
-        float absorbMod,
-        float lifeProjectileDamage
+        in SpellDamageModifiers damageMods,
+        in SpellMitigationModifiers mitigation
     )
     {
         var observer = PlayerManager.GetOnlinePlayer(observed.DebugDamageTarget);
@@ -46,21 +70,21 @@ partial class SpellProjectile
 
         info += $"Overpower: {overpower}\n";
 
-        if (spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
+        if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
         {
             // life magic projectile
-            info += $"LifeProjectileDamage: {lifeProjectileDamage}\n";
-            info += $"DamageRatio: {spell.DamageRatio}\n";
+            info += $"LifeProjectileDamage: {(float)LifeProjectileDamage}\n";
+            info += $"DamageRatio: {Spell.DamageRatio}\n";
         }
         else
         {
             // war/void projectile
-            var difficulty = Math.Min(spell.Power, 350);
+            var difficulty = Math.Min(Spell.Power, 350);
             info += $"Difficulty: {difficulty}\n";
 
-            info += $"BaseDamageRange: {spell.MinDamage} - {spell.MaxDamage}\n";
+            info += $"BaseDamageRange: {Spell.MinDamage} - {Spell.MaxDamage}\n";
             info += $"BaseDamage: {baseDamage}\n";
-            info += $"DamageType: {spell.DamageType}\n";
+            info += $"DamageType: {Spell.DamageType}\n";
         }
 
         if (weaponCritDamageMod != 1.0f)
@@ -68,14 +92,14 @@ partial class SpellProjectile
             info += $"WeaponCritDamageMod: {weaponCritDamageMod}\n";
         }
 
-        if (elementalDamageMod != 1.0f)
+        if (damageMods.Elemental != 1.0f)
         {
-            info += $"ElementalDamageMod: {elementalDamageMod}\n";
+            info += $"ElementalDamageMod: {damageMods.Elemental}\n";
         }
 
-        if (slayerMod != 1.0f)
+        if (damageMods.Slayer != 1.0f)
         {
-            info += $"SlayerMod: {slayerMod}\n";
+            info += $"SlayerMod: {damageMods.Slayer}\n";
         }
 
         if (weaponResistanceMod != 1.0f)
@@ -83,31 +107,36 @@ partial class SpellProjectile
             info += $"WeaponResistanceMod: {weaponResistanceMod}\n";
         }
 
-        if (resistanceMod != 1.0f)
+        if (mitigation.Resistance != 1.0f)
         {
-            info += $"ResistanceMod: {resistanceMod}\n";
+            info += $"ResistanceMod: {mitigation.Resistance}\n";
         }
 
-        if (absorbMod != 1.0f)
+        if (mitigation.Absorb != 1.0f)
         {
-            info += $"AbsorbMod: {absorbMod}\n";
+            info += $"AbsorbMod: {mitigation.Absorb}\n";
         }
 
         observer.DebugDamageBuffer += info;
     }
 
-    private static void ShowInfo(
-        Creature observed,
-        float heritageMod,
-        float sneakAttackMod,
-        float damageRatingMod,
-        float damageResistRatingMod,
-        float critDamageRatingMod,
-        float critDamageResistRatingMod,
-        float pkDamageRatingMod,
-        float pkDamageResistRatingMod,
-        float damage
-    )
+    /// <summary>
+    /// Finishes the damage debug output started by ShowDamageDebugInfo: the rating modifiers and the final damage
+    /// </summary>
+    private static void ShowRatingDebugInfo(Creature target, Creature sourceCreature, in SpellRatingModifiers ratings, float damage)
+    {
+        if (sourceCreature != null && sourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
+        {
+            SendRatingDebugInfo(sourceCreature, ratings, damage);
+        }
+
+        if (target.DebugDamage.HasFlag(Creature.DebugDamageType.Defender))
+        {
+            SendRatingDebugInfo(target, ratings, damage);
+        }
+    }
+
+    private static void SendRatingDebugInfo(Creature observed, in SpellRatingModifiers ratings, float damage)
     {
         var observer = PlayerManager.GetOnlinePlayer(observed.DebugDamageTarget);
         if (observer == null)
@@ -117,44 +146,44 @@ partial class SpellProjectile
         }
         var info = "";
 
-        if (heritageMod != 1.0f)
+        if (ratings.Heritage != 1.0f)
         {
-            info += $"HeritageMod: {heritageMod}\n";
+            info += $"HeritageMod: {ratings.Heritage}\n";
         }
 
-        if (sneakAttackMod != 1.0f)
+        if (ratings.SneakAttack != 1.0f)
         {
-            info += $"SneakAttackMod: {sneakAttackMod}\n";
+            info += $"SneakAttackMod: {ratings.SneakAttack}\n";
         }
 
-        if (critDamageRatingMod != 1.0f)
+        if (ratings.CritDamageRating != 1.0f)
         {
-            info += $"CritDamageRatingMod: {critDamageRatingMod}\n";
+            info += $"CritDamageRatingMod: {ratings.CritDamageRating}\n";
         }
 
-        if (pkDamageRatingMod != 1.0f)
+        if (ratings.PkDamageRating != 1.0f)
         {
-            info += $"PkDamageRatingMod: {pkDamageRatingMod}\n";
+            info += $"PkDamageRatingMod: {ratings.PkDamageRating}\n";
         }
 
-        if (damageRatingMod != 1.0f)
+        if (ratings.DamageRating != 1.0f)
         {
-            info += $"DamageRatingMod: {damageRatingMod}\n";
+            info += $"DamageRatingMod: {ratings.DamageRating}\n";
         }
 
-        if (critDamageResistRatingMod != 1.0f)
+        if (ratings.CritDamageResistRating != 1.0f)
         {
-            info += $"CritDamageResistRatingMod: {critDamageResistRatingMod}\n";
+            info += $"CritDamageResistRatingMod: {ratings.CritDamageResistRating}\n";
         }
 
-        if (pkDamageResistRatingMod != 1.0f)
+        if (ratings.PkDamageResistRating != 1.0f)
         {
-            info += $"PkDamageResistRatingMod: {pkDamageResistRatingMod}\n";
+            info += $"PkDamageResistRatingMod: {ratings.PkDamageResistRating}\n";
         }
 
-        if (damageResistRatingMod != 1.0f)
+        if (ratings.DamageResistRating != 1.0f)
         {
-            info += $"DamageResistRatingMod: {damageResistRatingMod}\n";
+            info += $"DamageResistRatingMod: {ratings.DamageResistRating}\n";
         }
 
         info += $"Final damage: {damage}";

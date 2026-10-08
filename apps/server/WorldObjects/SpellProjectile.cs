@@ -324,12 +324,10 @@ public partial class SpellProjectile : WorldObject
 
     public override void OnCollideObject(WorldObject target)
     {
-        if (target != null)
+        // a volley that struck through a target ignores it afterwards
+        if (target != null && _strikethroughTargets.Contains(target.Guid.Full))
         {
-            if (_strikethroughTargets.Contains(target.Guid.Full))
-            {
-                return;
-            }
+            return;
         }
 
         var player = ProjectileSource as Player;
@@ -345,13 +343,7 @@ public partial class SpellProjectile : WorldObject
             player.Session.Network.EnqueueSend(new GameMessageSystemChat(Info.ToString(), ChatMessageType.Broadcast));
         }
 
-        // volleys can strike through targets: they stop at the strikethrough limit, or by chance
-        var spellType = GetProjectileSpellType(Spell.Id);
-        if (
-            spellType != ProjectileSpellType.Volley
-            || Strikethrough == StrikethroughLimit
-            || ThreadSafeRandom.Next(0.0f, 1.0f) < StrikethroughChance
-        )
+        if (ShouldImpact())
         {
             ProjectileImpact();
         }
@@ -376,27 +368,12 @@ public partial class SpellProjectile : WorldObject
         }
 
         // if player target, ensure matching PK status
-        var targetPlayer = creatureTarget as Player;
-
-        var pkError = ProjectileSource?.CheckPKStatusVsTarget(creatureTarget, Spell);
-        if (pkError != null)
+        if (!VerifyPkStatus(creatureTarget))
         {
-            if (player != null)
-            {
-                player.Session.Network.EnqueueSend(
-                    new GameEventWeenieErrorWithString(player.Session, pkError[0], creatureTarget.Name)
-                );
-            }
-
-            if (targetPlayer != null)
-            {
-                targetPlayer.Session.Network.EnqueueSend(
-                    new GameEventWeenieErrorWithString(targetPlayer.Session, pkError[1], ProjectileSource.Name)
-                );
-            }
-
             return;
         }
+
+        var targetPlayer = creatureTarget as Player;
 
         var critical = false;
         var critDefended = false;
@@ -413,6 +390,7 @@ public partial class SpellProjectile : WorldObject
             out var partialEvasion
         );
 
+        // COMBAT ABILITY - Overload/Battery: charges on every hit, even a resisted one
         if (player is { OverloadStanceIsActive: true } or {BatteryStanceIsActive: true})
         {
             player.IncreaseChargedMeter(Spell, FromProc);
@@ -420,100 +398,14 @@ public partial class SpellProjectile : WorldObject
 
         if (targetPlayer != null && damage != null)
         {
-            var sigilDamageReductionMod = targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(this, Spell, (int)damage, Skill.MagicDefense,
-                SigilTrinketMagicDefenseEffect.Absorption);
-
-            if (damage < 0 || damage > uint.MaxValue)
-            {
-                _log.Error("OnCollideObject({Target}) - damage ({Damage}) could not be converted to uint.", target.Name, damage);
-            }
-            else
-            {
-                damage = Convert.ToUInt32(damage * sigilDamageReductionMod);
-            }
+            damage = ApplySigilAbsorption(targetPlayer, target, damage.Value);
         }
 
         creatureTarget.OnAttackReceived(sourceCreature, CombatType.Magic, critical, resisted, (int)Spell.Level);
 
         if (damage != null)
         {
-            if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.EnchantmentProjectile)
-            {
-                // handle EnchantmentProjectile successfully landing on target
-                if (ProjectileSource != null)
-                {
-                    ProjectileSource.CreateEnchantment(creatureTarget, ProjectileSource, ProjectileLauncher, Spell, false, FromProc);
-                }
-            }
-            else
-            {
-                DamageTarget(creatureTarget, damage.Value, critical, critDefended, overpower, partialEvasion);
-            }
-
-            Strikethrough++;
-
-            _strikethroughTargets.Add(creatureTarget.Guid.Full);
-
-            // if this SpellProjectile has a TargetEffect, play it on successful hit
-            DoSpellEffects(Spell, ProjectileSource, creatureTarget, true);
-
-            if (player != null)
-            {
-                Proficiency.OnSuccessUse(player, player.GetCreatureSkill(Spell.School), Spell.PowerMod);
-            }
-
-            // handle target procs
-            // note that for untargeted multi-projectile spells,
-            // ProjectileTarget will be null here, so procs will not apply
-
-            // TODO: instead of ProjectileLauncher is Caster, perhaps a SpellProjectile.CanProc bool that defaults to true,
-            // but is set to false if the source of a spell is from a proc, to prevent multi procs?
-
-            // EMPOWERED SCARAB - Detonation Check for Cast-On-Strike
-            if (player != null && FromProc)
-            {
-                player.CheckForSigilTrinketOnCastEffects(target, Spell, true, Skill.WarMagic, SigilTrinketWarMagicEffect.Detonate, creatureTarget);
-            }
-
-            if (sourceCreature != null && ProjectileTarget != null && !FromProc)
-            {
-                // TODO figure out why cross-landblock group operations are happening here. We shouldn't need this code Mag-nus 2021-02-09
-                var threadSafe = true;
-
-                if (LandblockManager.CurrentlyTickingLandblockGroupsMultiThreaded)
-                {
-                    // Ok... if we got here, we're likely in the parallel landblock physics processing.
-                    if (
-                        sourceCreature.CurrentLandblock == null
-                        || creatureTarget.CurrentLandblock == null
-                        || sourceCreature.CurrentLandblock.CurrentLandblockGroup
-                            != creatureTarget.CurrentLandblock.CurrentLandblockGroup
-                    )
-                    {
-                        threadSafe = false;
-                    }
-                }
-
-                if (threadSafe)
-                {
-                    // This can result in spell projectiles being added to either sourceCreature or creatureTargets landblock.
-                    sourceCreature.TryProcEquippedItems(sourceCreature, creatureTarget, false, ProjectileLauncher);
-
-                    // EMPOWERED SCARAB - Detonate
-                    if (player != null)
-                    {
-                        player.CheckForSigilTrinketOnCastEffects(target, Spell, false, Skill.WarMagic, SigilTrinketWarMagicEffect.Detonate, creatureTarget);
-                    }
-                }
-                else
-                {
-                    // sourceCreature and creatureTarget are now in different landblock groups.
-                    // What has likely happened is that sourceCreature sent a projectile toward creatureTarget. Before impact, sourceCreature was teleported away.
-                    // To perform this fully thread safe, we would enqueue the work onto worldManager.
-                    // WorldManager.EnqueueAction(new ActionEventDelegate(() => sourceCreature.TryProcEquippedItems(creatureTarget, false)));
-                    // But, to keep it simple, we will just ignore it and not bother with TryProcEquippedItems for this particular impact.
-                }
-            }
+            OnSuccessfulHit(target, creatureTarget, damage.Value, critical, critDefended, overpower, partialEvasion);
         }
 
         // also called on resist
@@ -531,6 +423,157 @@ public partial class SpellProjectile : WorldObject
             )
             {
                 sourceCreature.MonsterOnAttackMonster(creatureTarget);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Volleys can strike through targets: they stop at the strikethrough limit, or by chance.
+    /// Every other projectile stops at the first thing it hits.
+    /// </summary>
+    private bool ShouldImpact()
+    {
+        return GetProjectileSpellType(Spell.Id) != ProjectileSpellType.Volley
+            || Strikethrough == StrikethroughLimit
+            || ThreadSafeRandom.Next(0.0f, 1.0f) < StrikethroughChance;
+    }
+
+    /// <summary>
+    /// A player target must have a PK status the caster can attack. If not, tells both players and returns FALSE.
+    /// </summary>
+    private bool VerifyPkStatus(Creature creatureTarget)
+    {
+        var pkError = ProjectileSource?.CheckPKStatusVsTarget(creatureTarget, Spell);
+        if (pkError == null)
+        {
+            return true;
+        }
+
+        if (ProjectileSource is Player player)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameEventWeenieErrorWithString(player.Session, pkError[0], creatureTarget.Name)
+            );
+        }
+
+        if (creatureTarget is Player targetPlayer)
+        {
+            targetPlayer.Session.Network.EnqueueSend(
+                new GameEventWeenieErrorWithString(targetPlayer.Session, pkError[1], ProjectileSource.Name)
+            );
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// SIGIL TRINKET - Top of Absorption: the target player may convert part of the spell's damage into mana
+    /// </summary>
+    private float ApplySigilAbsorption(Player targetPlayer, WorldObject target, float damage)
+    {
+        var sigilDamageReductionMod = targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(this, Spell, (int)damage, Skill.MagicDefense,
+            SigilTrinketMagicDefenseEffect.Absorption);
+
+        if (damage < 0 || damage > uint.MaxValue)
+        {
+            _log.Error("OnCollideObject({Target}) - damage ({Damage}) could not be converted to uint.", target.Name, damage);
+            return damage;
+        }
+
+        return Convert.ToUInt32(damage * sigilDamageReductionMod);
+    }
+
+    /// <summary>
+    /// The spell landed on its target: applies its enchantment or damage, then proficiency and on-hit procs
+    /// </summary>
+    private void OnSuccessfulHit(
+        WorldObject target,
+        Creature creatureTarget,
+        float damage,
+        bool critical,
+        bool critDefended,
+        bool overpower,
+        PartialEvasion partialEvasion
+    )
+    {
+        var player = ProjectileSource as Player;
+        var sourceCreature = ProjectileSource as Creature;
+
+        if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.EnchantmentProjectile)
+        {
+            // handle EnchantmentProjectile successfully landing on target
+            if (ProjectileSource != null)
+            {
+                ProjectileSource.CreateEnchantment(creatureTarget, ProjectileSource, ProjectileLauncher, Spell, false, FromProc);
+            }
+        }
+        else
+        {
+            DamageTarget(creatureTarget, damage, critical, critDefended, overpower, partialEvasion);
+        }
+
+        Strikethrough++;
+
+        _strikethroughTargets.Add(creatureTarget.Guid.Full);
+
+        // if this SpellProjectile has a TargetEffect, play it on successful hit
+        DoSpellEffects(Spell, ProjectileSource, creatureTarget, true);
+
+        if (player != null)
+        {
+            Proficiency.OnSuccessUse(player, player.GetCreatureSkill(Spell.School), Spell.PowerMod);
+        }
+
+        // handle target procs
+        // note that for untargeted multi-projectile spells,
+        // ProjectileTarget will be null here, so procs will not apply
+
+        // TODO: instead of ProjectileLauncher is Caster, perhaps a SpellProjectile.CanProc bool that defaults to true,
+        // but is set to false if the source of a spell is from a proc, to prevent multi procs?
+
+        // EMPOWERED SCARAB - Detonation Check for Cast-On-Strike
+        if (player != null && FromProc)
+        {
+            player.CheckForSigilTrinketOnCastEffects(target, Spell, true, Skill.WarMagic, SigilTrinketWarMagicEffect.Detonate, creatureTarget);
+        }
+
+        if (sourceCreature != null && ProjectileTarget != null && !FromProc)
+        {
+            // TODO figure out why cross-landblock group operations are happening here. We shouldn't need this code Mag-nus 2021-02-09
+            var threadSafe = true;
+
+            if (LandblockManager.CurrentlyTickingLandblockGroupsMultiThreaded)
+            {
+                // Ok... if we got here, we're likely in the parallel landblock physics processing.
+                if (
+                    sourceCreature.CurrentLandblock == null
+                    || creatureTarget.CurrentLandblock == null
+                    || sourceCreature.CurrentLandblock.CurrentLandblockGroup
+                        != creatureTarget.CurrentLandblock.CurrentLandblockGroup
+                )
+                {
+                    threadSafe = false;
+                }
+            }
+
+            if (threadSafe)
+            {
+                // This can result in spell projectiles being added to either sourceCreature or creatureTargets landblock.
+                sourceCreature.TryProcEquippedItems(sourceCreature, creatureTarget, false, ProjectileLauncher);
+
+                // EMPOWERED SCARAB - Detonate
+                if (player != null)
+                {
+                    player.CheckForSigilTrinketOnCastEffects(target, Spell, false, Skill.WarMagic, SigilTrinketWarMagicEffect.Detonate, creatureTarget);
+                }
+            }
+            else
+            {
+                // sourceCreature and creatureTarget are now in different landblock groups.
+                // What has likely happened is that sourceCreature sent a projectile toward creatureTarget. Before impact, sourceCreature was teleported away.
+                // To perform this fully thread safe, we would enqueue the work onto worldManager.
+                // WorldManager.EnqueueAction(new ActionEventDelegate(() => sourceCreature.TryProcEquippedItems(creatureTarget, false)));
+                // But, to keep it simple, we will just ignore it and not bother with TryProcEquippedItems for this particular impact.
             }
         }
     }
