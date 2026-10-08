@@ -10,6 +10,59 @@ namespace ACE.Server.WorldObjects;
 partial class WorldObject
 {
     /// <summary>
+    /// Who and what is involved in casting a boost spell (heal / harm) on a target
+    /// </summary>
+    private readonly struct BoostCast
+    {
+        public readonly Spell Spell;
+        public readonly Creature Target;
+        public readonly Player TargetPlayer;
+        public readonly WorldObject Weapon;
+        public readonly bool FromProc;
+        public readonly double DamageMultiplier;
+
+        /// <summary>
+        /// COMBAT ABILITY - Reflect: the original caster of a reflected spell
+        /// </summary>
+        public readonly Creature ReflectedCaster;
+
+        /// <summary>
+        /// The creature whose stats are used for damage: the original caster of a reflected spell, otherwise the caster
+        /// </summary>
+        public readonly Creature DamageSource;
+
+        public readonly Player DamageSourcePlayer;
+
+        /// <summary>
+        /// The result of the caster's last resist roll (TryResistSpell)
+        /// </summary>
+        public readonly PartialEvasion PartialEvasion;
+
+        public BoostCast(
+            WorldObject caster,
+            Spell spell,
+            Creature target,
+            WorldObject weapon,
+            bool fromProc,
+            double damageMultiplier,
+            Creature reflectedCaster,
+            PartialEvasion partialEvasion
+        )
+        {
+            Spell = spell;
+            Target = target;
+            TargetPlayer = target as Player;
+            Weapon = weapon;
+            FromProc = fromProc;
+            DamageMultiplier = damageMultiplier;
+            ReflectedCaster = reflectedCaster;
+            DamageSource = reflectedCaster ?? caster as Creature;
+            DamageSourcePlayer = DamageSource as Player;
+            PartialEvasion = partialEvasion;
+        }
+    }
+
+    /// <summary>
     /// Handles casting SpellType.Boost / FellowBoost spells
     /// typically for Life Magic, ie. Heal, Harm
     /// </summary>
@@ -29,11 +82,6 @@ partial class WorldObject
     {
         var player = this as Player;
         var creature = this as Creature;
-        var targetPlayer = targetCreature as Player;
-
-        // the creature whose stats are used for damage
-        var damageSource = reflectedCaster ?? creature;
-        var damageSourcePlayer = damageSource as Player;
 
         // prevent double deaths from indirect casts
         // caster is already checked in player/monster, and re-checking caster here would break death emotes such as bunny smite
@@ -42,46 +90,112 @@ partial class WorldObject
             return;
         }
 
-        // the result of this caster's last resist roll (TryResistSpell)
-        var partialEvasion = _partialEvasion;
-
-        // handle negatives?
-        var minBoostValue = Math.Min(spell.Boost, spell.MaxBoost);
-        var maxBoostValue = Math.Max(spell.Boost, spell.MaxBoost);
-
-        var resistanceType =
-            minBoostValue > 0
-                ? GetBoostResistanceType(spell.VitalDamageType)
-                : GetDrainResistanceType(spell.VitalDamageType);
-
-        double? weaponRestorationMod = 1.0;
-        if (weapon is { WeaponRestorationSpellsMod: > 1 })
-        {
-            weaponRestorationMod = weapon.WeaponRestorationSpellsMod;
-        }
+        var cast = new BoostCast(this, spell, targetCreature, weapon, fromProc, damageMultiplier, reflectedCaster, _partialEvasion);
 
         // COMBAT ABILITY - Reflect: a reflected spell never damages the reflecting player.
         // A spell that was already reflected can't be reflected again.
         if (
             reflectedCaster == null
-            && CheckForCombatAbilityReflectSpell(partialEvasion is PartialEvasion.All or PartialEvasion.Some, targetPlayer, creature, spell)
+            && CheckForCombatAbilityReflectSpell(cast.PartialEvasion is PartialEvasion.All or PartialEvasion.Some, cast.TargetPlayer, creature, spell)
         )
         {
-            targetPlayer.CastReflectedSpell(spell, creature, null, damageMultiplier);
+            cast.TargetPlayer.CastReflectedSpell(spell, creature, null, damageMultiplier);
             return;
         }
 
-        // Resist
-        var resistedMod = GetResistedMod(partialEvasion);
+        var tryBoost = RollBoostAmount(cast);
 
-        var selfTargetProcSpellMod = SelfTargetSpellProcMod(fromProc, spell, weapon, player);
+        var critical = TryBoostCritical(weapon, ref tryBoost);
 
-        var tryBoost = (int)(
+        // damage rating, for harming others
+        if (targetCreature != this && tryBoost < 0)
+        {
+            var damageRating = cast.DamageSource?.GetDamageRating() ?? 0;
+            var damageRatingMod = Creature.AdditiveCombine(Creature.GetPositiveRatingMod(damageRating));
+
+            tryBoost = (int)(tryBoost * damageRatingMod);
+        }
+
+        if (targetCreature == null)
+        {
+            return;
+        }
+
+        tryBoost = (int)Math.Round(tryBoost * targetCreature.GetResistanceMod(GetBoostSpellResistanceType(spell)));
+
+        var equippedCloak = targetCreature.EquippedCloak;
+
+        tryBoost = ApplyCloakDamageProc(cast, equippedCloak, tryBoost);
+        tryBoost = ApplyBoostSpellMods(cast, tryBoost);
+        tryBoost = tryBoost > 0 ? ApplyHealRatingMods(cast, tryBoost) : ApplyHarmMods(cast, tryBoost);
+
+        ResetRatingElementalistQuestStamps(player);
+
+        tryBoost = ApplyArchetypeAndLevelScaling(cast, tryBoost);
+
+        // SIGIL TRINKET - Top of Absorption: the target player may convert part of the damage into mana
+        var sigilDamageReductionMod = cast.TargetPlayer?.CheckForSigilTrinketOnSpellHitReceivedEffects(this, spell, tryBoost, Skill.MagicDefense, SigilTrinketMagicDefenseEffect.Absorption) ?? 1.0f;
+        tryBoost = Convert.ToInt32(tryBoost * sigilDamageReductionMod);
+
+        var boost = ApplyBoostToVital(cast, tryBoost, out var srcVital);
+
+        if (boost < 0)
+        {
+            HandlePostDamageRatingEffects(
+                targetCreature,
+                -boost,
+                player,
+                cast.TargetPlayer,
+                creature,
+                spell,
+                ProjectileSpellType.Undef
+            );
+        }
+        else if (boost > 0)
+        {
+            HandlePostHealRatingEffects(player, cast.TargetPlayer);
+        }
+
+        SendBoostMessages(cast, boost, srcVital, critical, showMsg);
+
+        if (targetCreature.IsAlive && spell.VitalDamageType == DamageType.Health &&
+            boost < 0)
+        {
+            var damagePercent = (float)-boost / targetCreature.Health.MaxValue;
+            ScheduleSpellDamageReactions(targetCreature, creature, equippedCloak, damagePercent);
+        }
+
+        HandleBoostTransferDeath(creature, targetCreature);
+    }
+
+    /// <summary>
+    /// Rolls the spell's boost range (negative for harm spells),
+    /// with the weapon's restoration mod and the self-target proc mod
+    /// </summary>
+    private int RollBoostAmount(in BoostCast cast)
+    {
+        // handle negatives?
+        var minBoostValue = Math.Min(cast.Spell.Boost, cast.Spell.MaxBoost);
+        var maxBoostValue = Math.Max(cast.Spell.Boost, cast.Spell.MaxBoost);
+
+        double? weaponRestorationMod = 1.0;
+        if (cast.Weapon is { WeaponRestorationSpellsMod: > 1 })
+        {
+            weaponRestorationMod = cast.Weapon.WeaponRestorationSpellsMod;
+        }
+
+        var selfTargetProcSpellMod = SelfTargetSpellProcMod(cast.FromProc, cast.Spell, cast.Weapon, this as Player);
+
+        return (int)(
             ThreadSafeRandom.Next(minBoostValue, maxBoostValue) * weaponRestorationMod * selfTargetProcSpellMod
         );
+    }
 
-        // Boost Crits
-        var critMessage = "";
+    /// <summary>
+    /// Boost spells crit 10% of the time (plus the weapon's crit frequency) for x1.5 (plus the weapon's crit multiplier / 1.5)
+    /// </summary>
+    private static bool TryBoostCritical(WorldObject weapon, ref int tryBoost)
+    {
         var critChance = 0.1;
         if (weapon != null && weapon.CriticalFrequency != null)
         {
@@ -100,126 +214,164 @@ partial class WorldObject
         if (critChance > roll)
         {
             tryBoost = (int)(tryBoost * critMultiplier);
-            critMessage = "Critical! ";
+            return true;
         }
 
-        if (targetCreature != this && tryBoost < 0)
+        return false;
+    }
+
+    /// <summary>
+    /// A boost spell is resisted with the vital's boost resistance, a harm spell with its drain resistance
+    /// </summary>
+    private static ResistanceType GetBoostSpellResistanceType(Spell spell)
+    {
+        // handle negatives?
+        var minBoostValue = Math.Min(spell.Boost, spell.MaxBoost);
+
+        return minBoostValue > 0
+            ? GetBoostResistanceType(spell.VitalDamageType)
+            : GetDrainResistanceType(spell.VitalDamageType);
+    }
+
+    /// <summary>
+    /// The target's cloak may proc to reduce the health damage of another's harm spell
+    /// </summary>
+    private int ApplyCloakDamageProc(in BoostCast cast, WorldObject equippedCloak, int tryBoost)
+    {
+        if (cast.Target == this || cast.Spell.VitalDamageType != DamageType.Health || tryBoost >= 0)
         {
-            var damageRating = damageSource?.GetDamageRating() ?? 0;
-            var damageRatingMod = Creature.AdditiveCombine(Creature.GetPositiveRatingMod(damageRating));
-
-            tryBoost = (int)(tryBoost * damageRatingMod);
+            return tryBoost;
         }
 
-        if (targetCreature == null)
+        var percent = (float)-tryBoost / cast.Target.Health.MaxValue;
+
+        if (equippedCloak == null || !Cloak.HasDamageProc(equippedCloak) || !Cloak.RollProc(equippedCloak, percent))
         {
-            return;
+            return tryBoost;
         }
 
-        tryBoost = (int)Math.Round(tryBoost * targetCreature.GetResistanceMod(resistanceType));
+        var reduced = -Cloak.GetReducedAmount(this, -tryBoost);
 
-        int boost;
+        Cloak.ShowMessage(cast.Target, this, -tryBoost, -reduced);
 
-        // handle cloak damage proc for harm other
-        var equippedCloak = targetCreature.EquippedCloak;
+        return reduced;
+    }
 
-        if (targetCreature != this && spell.VitalDamageType == DamageType.Health && tryBoost < 0)
-        {
-            var percent = (float)-tryBoost / targetCreature.Health.MaxValue;
-
-            if (equippedCloak != null && Cloak.HasDamageProc(equippedCloak) &&
-                Cloak.RollProc(equippedCloak, percent))
-            {
-                var reduced = -Cloak.GetReducedAmount(this, -tryBoost);
-
-                Cloak.ShowMessage(targetCreature, this, -tryBoost, -reduced);
-
-                tryBoost = reduced;
-            }
-        }
-
-        var overloadMod = CheckForCombatAbilityOverloadDamageMod(damageSourcePlayer);
-        var batterMod = CheckForCombatAbilityBatteryDamageMod(damageSourcePlayer);
+    /// <summary>
+    /// The multipliers for both heals and harms: COMBAT ABILITY - Overload/Battery, the damage multiplier,
+    /// the proc spellcraft mod, the dungeon mod and a partial resist
+    /// </summary>
+    private int ApplyBoostSpellMods(in BoostCast cast, int tryBoost)
+    {
+        var overloadMod = CheckForCombatAbilityOverloadDamageMod(cast.DamageSourcePlayer);
+        var batterMod = CheckForCombatAbilityBatteryDamageMod(cast.DamageSourcePlayer);
 
         // proc spells receive 1% of spellcraft as a damage multiplier (300 spellcraft = x3), same as spell projectiles
         var spellcraftMod = 1.0f;
-        if (fromProc && weapon?.ItemSpellcraft != null)
+        if (cast.FromProc && cast.Weapon?.ItemSpellcraft != null)
         {
-            var spellcraft = weapon.ItemSpellcraft.Value + CheckForArcaneLoreSpecSpellcraftBonus(damageSource);
+            var spellcraft = cast.Weapon.ItemSpellcraft.Value + CheckForArcaneLoreSpecSpellcraftBonus(cast.DamageSource);
             spellcraftMod = spellcraft * 0.01f;
         }
 
         // for traps and creatures the archetype system doesn't scale,
         // make sure they receive multipliers from landblock mods
-        var landblockScalingMod = (reflectedCaster ?? this).GetLandblockLethalitySpellMod();
+        var landblockScalingMod = (cast.ReflectedCaster ?? this).GetLandblockLethalitySpellMod();
 
-        tryBoost = (int)(tryBoost * overloadMod * batterMod * damageMultiplier * spellcraftMod * landblockScalingMod * resistedMod);
+        var resistedMod = GetResistedMod(cast.PartialEvasion);
 
-        string srcVital;
+        return (int)(tryBoost * overloadMod * batterMod * cast.DamageMultiplier * spellcraftMod * landblockScalingMod * resistedMod);
+    }
 
-        if (tryBoost > 0) // heal
+    /// <summary>
+    /// RATING - Selflessness, Heal Bubble and Vitals Transfer (jewels), for a heal
+    /// </summary>
+    private int ApplyHealRatingMods(in BoostCast cast, int tryBoost)
+    {
+        var player = this as Player;
+
+        // increases
+        // Selfless Spirit (Lavender Jade): full bonus when restoring others, an equivalent
+        // penalty when restoring yourself, and no effect when restoring a pet/monster.
+        var selflessnessMod = Jewel.GetJewelEffectMod(player, PropertyInt.GearSelflessness);
+        if (selflessnessMod > 0.0f && !cast.Target.IsMonster)
         {
-            // increases
-            // Selfless Spirit (Lavender Jade): full bonus when restoring others, an equivalent
-            // penalty when restoring yourself, and no effect when restoring a pet/monster.
-            var selflessnessMod = Jewel.GetJewelEffectMod(player, PropertyInt.GearSelflessness);
-            if (selflessnessMod > 0.0f && !targetCreature.IsMonster)
-            {
-                var selflessnessFactor = targetCreature == this ? 1.0f - selflessnessMod : 1.0f + selflessnessMod;
-                tryBoost = Convert.ToInt32(tryBoost * selflessnessFactor);
-            }
-
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearHealBubble)));
-
-            // reductions
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearVitalsTransfer)));
-        }
-        else // harm
-        {
-            // increases
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelRedFury(damageSourcePlayer)));
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelBlueFury(damageSourcePlayer)));
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(damageSourcePlayer, PropertyInt.GearSelfHarm)));
-
-            var attributeMod = damageSource?.GetAttributeMod(weapon, true) ?? 1.0f;
-            tryBoost = Convert.ToInt32(tryBoost * attributeMod);
-
-            // reductions
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearNullification,"Nullification")));
-
-            // ward
-            var ignoreWardMod = 1.0f - Jewel.GetJewelEffectMod(damageSourcePlayer, PropertyInt.GearWardPen, "WardPen");
-            var wardMod = GetWardMod(damageSource, targetCreature, ignoreWardMod);
-
-            tryBoost = Convert.ToInt32(tryBoost * wardMod);
-
-            // COMBAT ABILITY - Phalanx: health damage taken from full hits reduced by 30%. Partial resists are unaffected.
-            if (spell.VitalDamageType == DamageType.Health && partialEvasion == PartialEvasion.None)
-            {
-                tryBoost = Convert.ToInt32(tryBoost * (targetPlayer?.GetPhalanxFullHitDamageMod() ?? 1.0f));
-            }
+            var selflessnessFactor = cast.Target == this ? 1.0f - selflessnessMod : 1.0f + selflessnessMod;
+            tryBoost = Convert.ToInt32(tryBoost * selflessnessFactor);
         }
 
-        ResetRatingElementalistQuestStamps(player);
+        tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearHealBubble)));
 
-        if (damageSource is not null)
+        // reductions
+        return Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearVitalsTransfer)));
+    }
+
+    /// <summary>
+    /// For a harm: the caster's jewels and attribute mod, then the target's Nullification, ward and COMBAT ABILITY - Phalanx
+    /// </summary>
+    private int ApplyHarmMods(in BoostCast cast, int tryBoost)
+    {
+        // increases
+        tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelRedFury(cast.DamageSourcePlayer)));
+        tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelBlueFury(cast.DamageSourcePlayer)));
+        tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(cast.DamageSourcePlayer, PropertyInt.GearSelfHarm)));
+
+        var attributeMod = cast.DamageSource?.GetAttributeMod(cast.Weapon, true) ?? 1.0f;
+        tryBoost = Convert.ToInt32(tryBoost * attributeMod);
+
+        // reductions
+        tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(cast.TargetPlayer, PropertyInt.GearNullification,"Nullification")));
+
+        // ward
+        var ignoreWardMod = 1.0f - Jewel.GetJewelEffectMod(cast.DamageSourcePlayer, PropertyInt.GearWardPen, "WardPen");
+        var wardMod = GetWardMod(cast.DamageSource, cast.Target, ignoreWardMod);
+
+        tryBoost = Convert.ToInt32(tryBoost * wardMod);
+
+        // COMBAT ABILITY - Phalanx: health damage taken from full hits reduced by 30%. Partial resists are unaffected.
+        if (cast.Spell.VitalDamageType == DamageType.Health && cast.PartialEvasion == PartialEvasion.None)
         {
-            var archetypeSpellDamageMod = (float)(damageSource.ArchetypeSpellDamageMultiplier ?? 1.0);
+            tryBoost = Convert.ToInt32(tryBoost * (cast.TargetPlayer?.GetPhalanxFullHitDamageMod() ?? 1.0f));
+        }
+
+        return tryBoost;
+    }
+
+    private int ApplyArchetypeAndLevelScaling(in BoostCast cast, int tryBoost)
+    {
+        var player = this as Player;
+
+        if (cast.DamageSource is not null)
+        {
+            var archetypeSpellDamageMod = (float)(cast.DamageSource.ArchetypeSpellDamageMultiplier ?? 1.0);
             tryBoost = Convert.ToInt32(tryBoost * archetypeSpellDamageMod);
         }
 
         // LEVEL SCALING - Reduces harms against enemies, and restoration for players.
         // Also scales up healing on higher level player targets when both players are Shrouded (excluding self heals).
-        var scalar = LevelScaling.GetPlayerBoostSpellScalar(damageSourcePlayer, targetCreature);
-        if (tryBoost > 0 && player != null && targetPlayer != null && targetPlayer != player)
+        var scalar = LevelScaling.GetPlayerBoostSpellScalar(cast.DamageSourcePlayer, cast.Target);
+        if (tryBoost > 0 && player != null && cast.TargetPlayer != null && cast.TargetPlayer != player)
         {
-            scalar *= LevelScaling.GetPlayerBoostHealScalarShroudedUpward(player, targetPlayer);
+            scalar *= LevelScaling.GetPlayerBoostHealScalarShroudedUpward(player, cast.TargetPlayer);
         }
 
-        tryBoost = (int)(tryBoost * scalar);
+        return (int)(tryBoost * scalar);
+    }
 
-        var sigilDamageReductionMod = targetPlayer?.CheckForSigilTrinketOnSpellHitReceivedEffects(this, spell, tryBoost, Skill.MagicDefense, SigilTrinketMagicDefenseEffect.Absorption) ?? 1.0f;
-        tryBoost = Convert.ToInt32(tryBoost * sigilDamageReductionMod);
+    /// <summary>
+    /// Applies the boost to the target's vital, returning the amount it actually changed.
+    /// For health: records the heal or damage, and adds threat and charge.
+    /// </summary>
+    private int ApplyBoostToVital(in BoostCast cast, int tryBoost, out string srcVital)
+    {
+        var player = this as Player;
+        var creature = this as Creature;
+        var spell = cast.Spell;
+        var targetCreature = cast.Target;
+        var targetPlayer = cast.TargetPlayer;
+        var fromProc = cast.FromProc;
+
+        int boost;
 
         switch (spell.VitalDamageType)
         {
@@ -283,24 +435,22 @@ partial class WorldObject
                 break;
         }
 
-        if (boost < 0)
-        {
-            HandlePostDamageRatingEffects(
-                targetCreature,
-                -boost,
-                player,
-                targetPlayer,
-                creature,
-                spell,
-                ProjectileSpellType.Undef
-            );
-        }
-        else if (boost > 0)
-        {
-            HandlePostHealRatingEffects(player, targetPlayer);
-        }
+        return boost;
+    }
 
-        var partialResist = partialEvasion == PartialEvasion.Some ? "Partial Resist! " : "";
+    /// <summary>
+    /// Tells the caster and the target how much the spell restored or drained
+    /// </summary>
+    private void SendBoostMessages(in BoostCast cast, int boost, string srcVital, bool critical, bool showMsg)
+    {
+        var player = this as Player;
+        var creature = this as Creature;
+        var spell = cast.Spell;
+        var targetCreature = cast.Target;
+        var targetPlayer = cast.TargetPlayer;
+
+        var critMessage = critical ? "Critical! " : "";
+        var partialResist = cast.PartialEvasion == PartialEvasion.Some ? "Partial Resist! " : "";
 
         if (player != null)
         {
@@ -355,15 +505,6 @@ partial class WorldObject
                 targetPlayer.SendChatMessage(player, targetMessage, ChatMessageType.Magic);
             }
         }
-
-        if (targetCreature.IsAlive && spell.VitalDamageType == DamageType.Health &&
-            boost < 0)
-        {
-            var damagePercent = (float)-boost / targetCreature.Health.MaxValue;
-            ScheduleSpellDamageReactions(targetCreature, creature, equippedCloak, damagePercent);
-        }
-
-        HandleBoostTransferDeath(creature, targetCreature);
     }
 
     /// <summary>
