@@ -67,34 +67,17 @@ public partial class DamageEvent
 
         // Roll combat hit chance
         var attackRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-        if (attackRoll > GetEvadeChance())
+        if (attackRoll > DamageFormulas.GetEvadeChance(_effectiveDefenseSkill, EffectiveAttackSkill, _playerDefender is { SmokescreenIsActive: true }))
         {
             return;
         }
 
         // Roll evade type (33% for each evade type)
-        const float fullEvadeChance = 1.0f / 3.0f;
-        const float partialEvadeChance = fullEvadeChance * 2;
-
         var partialEvadeRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
-        switch (partialEvadeRoll)
-        {
-            case < fullEvadeChance:
-                PartialEvasion = PartialEvasion.All;
-                Evaded = true;
-                break;
-            case < partialEvadeChance:
-                _evasionMod = 0.5f;
-                PartialEvasion = PartialEvasion.Some; // glancing blow
-                Evaded = false;
-                break;
-            default:
-                _evasionMod = 1.0f;
-                PartialEvasion = PartialEvasion.None;
-                Evaded = false;
-                break;
-        }
+        PartialEvasion = DamageFormulas.GetEvasionType(partialEvadeRoll);
+        Evaded = PartialEvasion == PartialEvasion.All;
+        _evasionMod = PartialEvasion == PartialEvasion.Some ? DamageFormulas.GlancingBlowMod : 1.0f;
 
         if (_playerDefender is not null && PartialEvasion == PartialEvasion.Some)
         {
@@ -183,28 +166,14 @@ public partial class DamageEvent
             return;
         }
 
-        // base block/parry chance is 5%
-        // Blocks (shields) can have up to +5% additional base chance, depending on Shield Level vs Attacker Skill
-        // Parry base chance is always 5%
-        const float minBlockChance = 0.05f;
-
-        var blockChanceShieldBonus = GetBlockChanceShieldLevelBonus(equippedShield.ArmorLevel ?? 1);
-        var baseBlockChance = minBlockChance * blockChanceShieldBonus;
-
-        // other bonuses are additive then multiplied against base block chance
-        // Spec Phys Def = up to 50%, Jewels = 10% + ratings, Riposte = 100%
-        var specPhysicalDefenseBlockChanceBonus = GetSpecPhysicalDefenseBlockChanceBonus();
-        var jewelBlockChanceBonus = Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearBlock);
-        var riposteBlockChanceBonus = 0.0f;
-        if (_playerDefender is { RiposteIsActive: true })
-        {
-            riposteBlockChanceBonus = 1.0f;
-        }
-
-        var blockChance = baseBlockChance * (1.0f + specPhysicalDefenseBlockChanceBonus + jewelBlockChanceBonus + riposteBlockChanceBonus);
-
-        // COMBAT ABILITY - Phalanx: block chance increased by 25-50%, based on shield size
-        blockChance *= _playerDefender?.GetPhalanxBlockParryMod() ?? 1.0f;
+        var blockChance = DamageFormulas.GetBlockChance(
+            (uint)_defender.GetSkillModifiedShieldLevel(equippedShield.ArmorLevel ?? 1),
+            EffectiveAttackSkill,
+            GetSpecPhysicalDefenseBlockChanceBonus(),
+            Jewel.GetJewelEffectMod(_playerDefender, PropertyInt.GearBlock), // 10% + ratings
+            _playerDefender is { RiposteIsActive: true } ? 1.0f : 0.0f,
+            _playerDefender?.GetPhalanxBlockParryMod() ?? 1.0f // COMBAT ABILITY - Phalanx: 25-50%, based on shield size
+        );
 
         if ((ThreadSafeRandom.Next(0f, 1f) > blockChance))
         {
@@ -247,19 +216,13 @@ public partial class DamageEvent
             ? _defender.GetModdedTwohandedCombatSkill()
             : _defender.GetModdedDualWieldSkill();
 
-        var parryMod = SkillCheck.GetSkillChance((uint)(parrySkillUsed * 1.5), EffectiveAttackSkill);
-
-        // parry chance is up to 10%, based on Two-hand or Dual-wield skill levels vs Attack Skill
-        var maxBaseParryChance = 0.1f * parryMod;
-
-        // other bonuses are additive then multiplied against base parry chance
-        // Spec Phys Def = up to 50%, Riposte = 100%
-        var specPhysicalDefenseParryChanceBonus = GetSpecPhysicalDefenseBlockChanceBonus();
-        var riposteActivatedBonus = _playerDefender is { RiposteIsActive: true } ? 1.0f : 0.0f;
-        var parryChance = maxBaseParryChance * (1.0 + specPhysicalDefenseParryChanceBonus + riposteActivatedBonus);
-
-        // COMBAT ABILITY - Phalanx: parry chance increased by 25% with two-handed weapons
-        parryChance *= _playerDefender?.GetPhalanxBlockParryMod() ?? 1.0f;
+        var parryChance = DamageFormulas.GetParryChance(
+            parrySkillUsed,
+            EffectiveAttackSkill,
+            GetSpecPhysicalDefenseBlockChanceBonus(),
+            _playerDefender is { RiposteIsActive: true } ? 1.0f : 0.0f,
+            _playerDefender?.GetPhalanxBlockParryMod() ?? 1.0f // COMBAT ABILITY - Phalanx
+        );
 
         if ((ThreadSafeRandom.Next(0f, 1f) > parryChance))
         {
@@ -267,13 +230,6 @@ public partial class DamageEvent
         }
 
         Parried = true;
-    }
-
-    private double GetBlockChanceShieldLevelBonus(int shieldLevel)
-    {
-        var effectiveShieldLevel = (uint)_defender.GetSkillModifiedShieldLevel(shieldLevel);
-
-        return 1.0 + SkillCheck.GetSkillChance(effectiveShieldLevel, EffectiveAttackSkill);
     }
 
     /// <summary>
@@ -296,39 +252,6 @@ public partial class DamageEvent
 
         // level scaling goes last, so the bonuses above are worth the same at every level (see GetScaledPlayerDefenseSkill)
         _effectiveDefenseSkill = LevelScaling.GetScaledPlayerDefenseSkill(_effectiveDefenseSkill, _playerDefender, _attacker);
-    }
-
-    /// <summary>
-    /// Returns the chance for the defender to evade the attack
-    /// </summary>
-    private float GetEvadeChance()
-    {
-        var evadeChance = SkillCheck.GetSkillChance(_effectiveDefenseSkill, EffectiveAttackSkill);
-        evadeChance = CheckForCombatAbilitySmokescreenEvadeChanceBonus(evadeChance, _playerDefender);
-
-        if (evadeChance < 0)
-        {
-            evadeChance = 0;
-        }
-
-        return (float)Math.Min(evadeChance, 1.0f);
-    }
-
-    /// <summary>
-    /// COMBAT Ability - Smokescreen: 10% increased chance to evade attacks
-    /// </summary>
-    private static double CheckForCombatAbilitySmokescreenEvadeChanceBonus(double evadeChance, Player playerDefender)
-    {
-        if (playerDefender is not { SmokescreenIsActive: true })
-        {
-            return evadeChance;
-        }
-
-        var remainingChance = 1.0f - evadeChance;
-        var bonus = remainingChance * 0.1f;
-
-        return evadeChance + bonus;
-
     }
 
     /// <summary>

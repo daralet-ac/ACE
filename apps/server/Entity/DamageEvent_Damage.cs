@@ -125,14 +125,7 @@ public partial class DamageEvent
             return 1.0f;
         }
 
-        var moddedDualWieldCombatSkill = (uint)(playerAttacker.GetModdedDualWieldSkill() * 1.5f);
-        var defenderPhysicalDefense = defender.GetModdedPhysicalDefSkill();
-
-        var damageMod = 0.5f * SkillCheck.GetSkillChance(moddedDualWieldCombatSkill, defenderPhysicalDefense);
-
-        var finalDamageMod = 1.0f + (float)damageMod;
-
-        return finalDamageMod;
+        return DamageFormulas.GetCombatSkillDamageBonus(playerAttacker.GetModdedDualWieldSkill(), defender.GetModdedPhysicalDefSkill());
     }
 
     /// <summary>
@@ -147,14 +140,7 @@ public partial class DamageEvent
             return 1.0f;
         }
 
-        var moddedTwohandedCombatSkill = (uint)(playerAttacker.GetModdedTwohandedCombatSkill() * 1.5f);
-        var defenderPhysicalDefense = defender.GetModdedPhysicalDefSkill();
-
-        var damageMod = 0.5f * SkillCheck.GetSkillChance(moddedTwohandedCombatSkill, defenderPhysicalDefense);
-
-        var finalDamageMod = 1.0f + (float)damageMod;
-
-        return finalDamageMod;
+        return DamageFormulas.GetCombatSkillDamageBonus(playerAttacker.GetModdedTwohandedCombatSkill(), defender.GetModdedPhysicalDefSkill());
     }
 
     /// <summary>
@@ -404,9 +390,7 @@ public partial class DamageEvent
             return false;
         }
 
-        // an attack skill of 0 can't beat any Perception, so it gets the full 50%
-        var skillCheck = EffectiveAttackSkill > 0 ? _playerDefender.GetModdedPerceptionSkill() / (float)EffectiveAttackSkill : 1.0f;
-        var criticalDefenseChance = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
+        var criticalDefenseChance = SkillCheck.GetSkillRatioChance(_playerDefender.GetModdedPerceptionSkill(), EffectiveAttackSkill);
 
         return criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f);
     }

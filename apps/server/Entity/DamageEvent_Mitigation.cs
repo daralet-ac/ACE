@@ -101,17 +101,9 @@ public partial class DamageEvent
         return _mitigationModifiers.Product();
     }
 
-    private const float ImbuedArmorPhysicalDamageReductionPerPiece = 0.01f;
-    private const float ImbuedArmorCritDamageReductionPerPiece = 0.01f;
-
     private static float GetImbuedArmorPhysicalDamageMod(Creature defender)
     {
-        var count = defender.GetArmorDefenseImbues(ImbuedEffectType.ReducedPhysicalDamageTaken);
-        if (count > 0)
-        {
-            return Math.Max(0.5f, 1.0f - count * ImbuedArmorPhysicalDamageReductionPerPiece);
-        }
-        return 1.0f;
+        return DamageFormulas.GetImbuedArmorMod(defender.GetArmorDefenseImbues(ImbuedEffectType.ReducedPhysicalDamageTaken));
     }
 
     private float GetImbuedArmorCritDamageMod()
@@ -120,12 +112,8 @@ public partial class DamageEvent
         {
             return 1.0f;
         }
-        var count = _defender.GetArmorDefenseImbues(ImbuedEffectType.ReducedCriticalDamageTaken);
-        if (count > 0)
-        {
-            return Math.Max(0.5f, 1.0f - count * ImbuedArmorCritDamageReductionPerPiece);
-        }
-        return 1.0f;
+
+        return DamageFormulas.GetImbuedArmorMod(_defender.GetArmorDefenseImbues(ImbuedEffectType.ReducedCriticalDamageTaken));
     }
 
     /// <summary>
@@ -140,27 +128,12 @@ public partial class DamageEvent
     /// as the number of nearby enemies increases.</returns>
     private static float GetSwarmedMod(Player playerDefender)
     {
-        var swarmedMod = 1.0f;
-
         if (playerDefender is null || playerDefender.GetEquippedMeleeWeapon() is null)
         {
-            return swarmedMod;
+            return 1.0f;
         }
 
-        var numNearbyEnemies = playerDefender.GetNearbyMonsters(3).Count;
-
-        if (numNearbyEnemies <= 1)
-        {
-            return swarmedMod;
-        }
-
-        // start loop at 1 to only count mobs beyond the first
-        for (var i = 1; i < numNearbyEnemies; i++)
-        {
-            swarmedMod *= 0.9f;
-        }
-
-        return swarmedMod;
+        return DamageFormulas.GetSwarmedMod(playerDefender.GetNearbyMonsters(3).Count);
     }
 
     private float GetIgnoreArmorMod()
@@ -285,9 +258,7 @@ public partial class DamageEvent
             playerDefender,
             attacker
         );
-        var bonusAmount = Math.Min(playerDefenderPhysicalDefense, 500) / 50;
-
-        return 0.9f - bonusAmount * 0.01f;
+        return DamageFormulas.GetSpecDefenseMod(playerDefenderPhysicalDefense);
     }
 
     /// <summary>
@@ -321,21 +292,21 @@ public partial class DamageEvent
     {
         _damageResistanceRatingBaseMod = _defender.GetDamageResistRatingMod(CombatType);
 
-        var damageResistRatingMod = _damageResistanceRatingBaseMod;
-
         if (IsCritical)
         {
             _criticalDamageResistanceRatingMod = Creature.GetNegativeRatingMod(_defender.GetCritDamageResistRating());
-            damageResistRatingMod = Creature.AdditiveCombine(damageResistRatingMod, _criticalDamageResistanceRatingMod);
         }
 
         if (_pkBattle)
         {
             _pkDamageResistanceMod = Creature.GetNegativeRatingMod(_defender.GetPKDamageResistRating());
-            damageResistRatingMod = Creature.AdditiveCombine(damageResistRatingMod, _pkDamageResistanceMod);
         }
 
-        return damageResistRatingMod;
+        return DamageFormulas.CombineDamageResistRatings(
+            _damageResistanceRatingBaseMod,
+            IsCritical ? _criticalDamageResistanceRatingMod : null,
+            _pkBattle ? _pkDamageResistanceMod : null
+        );
     }
 
     private static Quadrant GetQuadrant(

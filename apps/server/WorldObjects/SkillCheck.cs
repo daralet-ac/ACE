@@ -20,4 +20,15 @@ public static class SkillCheck
     {
         return GetSkillChance(skill, difficulty, 0.07f);
     }
+
+    /// <summary>
+    /// Returns a chance that grows with skill / opposingSkill, up to maxChance once skill matches opposingSkill.
+    /// An opposing skill of 0 can't resist at all, so it gives maxChance.
+    /// </summary>
+    public static float GetSkillRatioChance(uint skill, uint opposingSkill, float maxChance = 0.5f)
+    {
+        var ratio = opposingSkill > 0 ? skill / (float)opposingSkill : 1.0f;
+
+        return ratio > 1f ? maxChance : ratio * maxChance;
+    }
 }

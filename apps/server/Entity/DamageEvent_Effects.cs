@@ -59,7 +59,7 @@ public partial class DamageEvent
             return;
         }
 
-        var weaponTier = Math.Clamp((Weapon.Tier ?? 1) - 1, 1, 7);
+        var weaponTier = DamageFormulas.GetWeaponMasterTier(Weapon.Tier);
 
         switch (Weapon.WeaponSkill)
         {
@@ -165,7 +165,7 @@ public partial class DamageEvent
     /// </summary>
     private void ApplyWeaponMasterDebuff(SpellId spellId, PlayScript playScript, string message, int weaponTier, float powerLevel)
     {
-        var tierMod = GetWeaponMasterTierMod(weaponTier);
+        var tierMod = DamageFormulas.GetWeaponMasterTierMod(weaponTier);
 
         var debuffSpell = new Spell(spellId);
 
@@ -186,24 +186,6 @@ public partial class DamageEvent
     }
 
     /// <summary>
-    /// Weapon Master debuff strength multiplier for a weapon tier (1-7, see CheckForWeaponMasterEffects)
-    /// </summary>
-    private static float GetWeaponMasterTierMod(int weaponTier)
-    {
-        return weaponTier switch
-        {
-            1 => 1.0f,
-            2 => 3.0f,
-            3 => 4.0f,
-            4 => 5.0f,
-            5 => 6.0f,
-            6 => 8.0f,
-            7 => 10.0f,
-            _ => throw new ArgumentOutOfRangeException(nameof(weaponTier), weaponTier, null)
-        };
-    }
-
-    /// <summary>
     /// Triggers a bleed damage DoT on the target.
     /// Base damage of Bleed spell is 500. Damage is reduced depending on weapon damage roll
     /// and power bar level setting.
@@ -215,16 +197,7 @@ public partial class DamageEvent
             return;
         }
 
-        // todo: use each weapon's subtype for its damage range once all lootgen weapons have one
-
-        (int Min, int Max)? weaponTypeDamageRange = Weapon.WeaponSkill switch
-        {
-            Skill.Axe => (9, 132),
-            Skill.Dagger => (4, 95),
-            Skill.ThrownWeapon => (10, 296),
-            Skill.TwoHandedCombat => (5, 107),
-            _ => null
-        };
+        var weaponTypeDamageRange = DamageFormulas.GetBleedWeaponDamageRange(Weapon.WeaponSkill);
 
         if (weaponTypeDamageRange is null)
         {
@@ -237,13 +210,7 @@ public partial class DamageEvent
             return;
         }
 
-        var (weaponTypeMinDamage, weaponTypeMaxDamage) = weaponTypeDamageRange.Value;
-
-        var damageRange = weaponTypeMaxDamage - weaponTypeMinDamage;
-        var weaponDamageRoll = Weapon.Damage.Value - weaponTypeMinDamage;
-
-        // weapons outside the expected range for their type still bleed for between 0% and 100%
-        var weaponDamageRollPercentile = Math.Clamp((float)weaponDamageRoll / damageRange, 0.0f, 1.0f);
+        var weaponDamageRollPercentile = DamageFormulas.GetBleedDamagePercentile(Weapon.Damage.Value, weaponTypeDamageRange.Value);
 
         var spell = new Spell(SpellId.Bleed);
 
