@@ -59,11 +59,11 @@ public partial class DamageEvent
 
     public bool Blocked { get; private set; }
     public bool Parried { get; private set; }
-    public float CriticalDamageBonusFromTrinket { get; set; }
-    public bool CriticalOverridedByTrinket { get; set; }
-    public bool Evaded { get; set; }
+    public float CriticalDamageBonusFromTrinket { get; private set; }
+    public bool CriticalOverridedByTrinket { get; private set; }
+    public bool Evaded { get; private set; }
     public bool LifestoneProtection { get; private set; }
-    public PartialEvasion PartialEvasion { get; set; }
+    public PartialEvasion PartialEvasion { get; private set; }
     public uint EffectiveAttackSkill { get; private set; }
     public float SneakAttackMod => _damageModifiers.SneakAttack;
     public bool IsCritical { get; private set; }
@@ -105,6 +105,31 @@ public partial class DamageEvent
 
             return attackConditions;
         }
+    }
+
+    /// <summary>
+    /// Sigil Compass of Might: turns an attack that wasn't going to be a critical hit into one
+    /// </summary>
+    public void ForceCriticalFromTrinket()
+    {
+        CriticalOverridedByTrinket = true;
+    }
+
+    /// <summary>
+    /// Sigil Puzzle Box of Treachery: adds to a critical hit's damage multiplier (1.0 adds +100%)
+    /// </summary>
+    public void AddTrinketCriticalDamageBonus(float bonus)
+    {
+        CriticalDamageBonusFromTrinket += bonus;
+    }
+
+    /// <summary>
+    /// Sigil Pocket Watch of Evasion: turns a glancing blow into a full evade
+    /// </summary>
+    public void ConvertGlancingBlowToFullEvade()
+    {
+        PartialEvasion = PartialEvasion.All;
+        Evaded = true;
     }
 
     public static DamageEvent CalculateDamage(

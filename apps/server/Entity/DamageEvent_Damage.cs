@@ -533,7 +533,7 @@ public partial class DamageEvent
         DamageType = _attacker.GetDamageType(_attackPart.Value, CombatType);
     }
 
-    public static float GetAmmoEffectMod(WorldObject weapon, Player player)
+    private static float GetAmmoEffectMod(WorldObject weapon, Player player)
     {
         if (weapon is {IsAmmoLauncher: not true} || player is null)
         {
