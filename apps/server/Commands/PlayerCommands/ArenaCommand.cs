@@ -33,8 +33,9 @@ public class ArenaCommand
     private const string StaffUsage = "\nStaff: arena list | arena cancel <duel>";
 
     private const string RankingUsage =
-        "\nAdmin: arena reset <name> [2v2] [scaled] | arena unrank <name> | arena rerank <name>\n"
+        "\nAdmin: arena reset <name> [2v2] [scaled] | arena restore <name> | arena unrank <name> | arena rerank <name>\n"
         + "  reset <name>: puts a character's rating back to the start and clears their record, on every board, or only on the one named\n"
+        + "  restore <name>: gives back what the last resets took, if one was a mistake\n"
         + "  unrank <name>: takes a character off /arena top (their rating and record are kept)\n"
         + "  rerank <name>: puts them back on it";
 
@@ -107,6 +108,10 @@ public class ArenaCommand
 
             case "reset" when admin:
                 Reset(player, rest);
+                break;
+
+            case "restore" when admin:
+                Restore(player, rest);
                 break;
 
             case "unrank" when admin:
@@ -376,9 +381,11 @@ public class ArenaCommand
                 return;
             }
 
-            ArenaBoards.Reset(character, board.Value);
+            var changed = ArenaBoards.Reset(character, board.Value);
             admin.SendMessage(
-                $"{character.Name}'s {board.Value.Name} arena rating is back to {ArenaElo.StartingRating}, with no record.",
+                changed
+                    ? $"{character.Name}'s {board.Value.Name} arena rating is back to {ArenaElo.StartingRating}, with no record. /arena restore {character.Name} undoes it."
+                    : $"{character.Name} has nothing to reset on {board.Value.Name}.",
                 ChatMessageType.System
             );
             return;
@@ -394,7 +401,33 @@ public class ArenaCommand
         admin.SendMessage(
             boards.Count == 0
                 ? $"{character.Name} has no arena record to reset."
-                : $"{character.Name}'s arena ratings are back to {ArenaElo.StartingRating} on {string.Join(", ", boards.Select(b => b.Board.Name))}, with no records.",
+                : $"{character.Name}'s arena ratings are back to {ArenaElo.StartingRating} on {string.Join(", ", boards.Select(b => b.Board.Name))}, with no records. /arena restore {character.Name} undoes it.",
+            ChatMessageType.System
+        );
+    }
+
+    private static void Restore(Player admin, string name)
+    {
+        if (name.Length == 0)
+        {
+            admin.SendMessage("/arena restore <name>: gives back the arena ratings and records the last /arena reset took.");
+            return;
+        }
+
+        var character = PlayerManager.FindByName(name);
+
+        if (character == null)
+        {
+            admin.SendMessage($"There is no character called {name}.");
+            return;
+        }
+
+        var restored = ArenaBoards.Restore(character);
+
+        admin.SendMessage(
+            restored.Count == 0
+                ? $"There is nothing to restore for {character.Name}."
+                : $"{character.Name}'s arena ratings and records are back on {string.Join(", ", restored.Select(b => b.Name))}.",
             ChatMessageType.System
         );
     }

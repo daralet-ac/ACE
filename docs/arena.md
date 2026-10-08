@@ -15,6 +15,7 @@ Duels are one against one, or a whole fellowship against another of the same siz
 | `/arena stats [name]` | Your arena ratings and records on every board you have fought a rated duel on, or someone else's. |
 | `/arena top [2v2] [scaled]` | The ten best ratings on a board: `1v1` (the default), `2v2`, `3v3`... raw (the default) or `scaled`. |
 | `/arena reset <name> [2v2] [scaled]` | (Admin) Puts a character's rating back to 1400 and clears their record, on every board they have fought on, or only on the one named. Works on offline characters. |
+| `/arena restore <name>` | (Admin) Gives back what `/arena reset` took (kept in `PropertyString.ArenaResetBackup`), replacing whatever the character has on those boards now. A second reset of a board that is already at the start keeps the first backup. |
 | `/arena unrank <name>` | (Admin) Takes a character off `/arena top`. Their ratings and records are kept, and they can still duel. |
 | `/arena rerank <name>` | (Admin) Puts them back on it. |
 | `/arena maps` | The arenas duels are fought in. |

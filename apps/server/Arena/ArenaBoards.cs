@@ -125,11 +125,45 @@ public static class ArenaBoards
     }
 
     /// <summary>
-    /// Takes a character back to where they started on a board: the starting rating and no record
+    /// Takes a character back to where they started on a board: the starting rating and no record.
+    /// What they had is kept (ArenaResetBackup) for Restore. Returns false, doing nothing, if there was nothing to reset.
     /// </summary>
-    public static void Reset(IPlayer player, ArenaBoard board)
+    public static bool Reset(IPlayer player, ArenaBoard board)
     {
+        var standing = Get(player, board);
+
+        if (standing.Duels == 0 && standing.Rating == ArenaElo.StartingRating)
+        {
+            return false;
+        }
+
+        var backup = ParseTeamBoards(player.GetProperty(PropertyString.ArenaResetBackup));
+        backup[board.Name] = standing;
+        player.SetProperty(PropertyString.ArenaResetBackup, WriteTeamBoards(backup));
+
         Set(player, board, new ArenaStanding());
+        return true;
+    }
+
+    /// <summary>
+    /// Gives back what the last resets took, replacing whatever the character has on those boards now. Returns the boards restored.
+    /// </summary>
+    public static List<ArenaBoard> Restore(IPlayer player)
+    {
+        var restored = new List<ArenaBoard>();
+
+        foreach (var (name, standing) in ParseTeamBoards(player.GetProperty(PropertyString.ArenaResetBackup)))
+        {
+            if (TryParseName(name, out var board))
+            {
+                Set(player, board, standing);
+                restored.Add(board);
+            }
+        }
+
+        player.RemoveProperty(PropertyString.ArenaResetBackup);
+
+        return restored.OrderBy(b => b.Size).ThenBy(b => b.Scaled).ToList();
     }
 
     /// <summary>
