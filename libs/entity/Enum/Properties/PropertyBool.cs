@@ -388,6 +388,11 @@ public enum PropertyBool : ushort
     /// </summary>
     HotspotCollidesFromCenter = 9015,
     AccountAttuned = 9016,
+
+    /// <summary>
+    /// The character has been taken off the arena rankings by an admin: /arena top does not list them. Their ratings and records are kept.
+    /// </summary>
+    ArenaRankingExcluded = 9017,
 }
 
 public static class PropertyBoolExtensions

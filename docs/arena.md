@@ -14,6 +14,9 @@ Duels are one against one, or a whole fellowship against another of the same siz
 | `/arena leave` | Leaves the queue (anyone in a waiting fellowship takes the whole fellowship out), calls off a duel that has not begun, or gives up the one you are fighting. |
 | `/arena stats [name]` | Your arena ratings and records on every board you have fought a rated duel on, or someone else's. |
 | `/arena top [2v2] [scaled]` | The ten best ratings on a board: `1v1` (the default), `2v2`, `3v3`... raw (the default) or `scaled`. |
+| `/arena reset <name> [2v2] [scaled]` | (Admin) Puts a character's rating back to 1400 and clears their record, on every board they have fought on, or only on the one named. Works on offline characters. |
+| `/arena unrank <name>` | (Admin) Takes a character off `/arena top`. Their ratings and records are kept, and they can still duel. |
+| `/arena rerank <name>` | (Admin) Puts them back on it. |
 | `/arena maps` | The arenas duels are fought in. |
 | `/arena list` | (Sentinel and up) The duels going on, and who is in the queue. |
 | `/arena cancel <duel>` | (Sentinel and up) Calls a duel off. Fighters who are in the arena are taken home. |

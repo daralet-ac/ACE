@@ -125,6 +125,31 @@ public static class ArenaBoards
     }
 
     /// <summary>
+    /// Takes a character back to where they started on a board: the starting rating and no record
+    /// </summary>
+    public static void Reset(IPlayer player, ArenaBoard board)
+    {
+        Set(player, board, new ArenaStanding());
+    }
+
+    /// <summary>
+    /// Whether an admin has taken the character off the rankings (/arena top)
+    /// </summary>
+    public static bool IsExcluded(IPlayer player) => player.GetProperty(PropertyBool.ArenaRankingExcluded) ?? false;
+
+    public static void SetExcluded(IPlayer player, bool excluded)
+    {
+        if (excluded)
+        {
+            player.SetProperty(PropertyBool.ArenaRankingExcluded, true);
+        }
+        else
+        {
+            player.RemoveProperty(PropertyBool.ArenaRankingExcluded);
+        }
+    }
+
+    /// <summary>
     /// Every board a character has fought a rated duel on, smallest first and raw before scaled
     /// </summary>
     public static List<(ArenaBoard Board, ArenaStanding Standing)> All(IPlayer player)

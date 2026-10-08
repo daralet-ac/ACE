@@ -32,6 +32,12 @@ public class ArenaCommand
 
     private const string StaffUsage = "\nStaff: arena list | arena cancel <duel>";
 
+    private const string RankingUsage =
+        "\nAdmin: arena reset <name> [2v2] [scaled] | arena unrank <name> | arena rerank <name>\n"
+        + "  reset <name>: puts a character's rating back to the start and clears their record, on every board, or only on the one named\n"
+        + "  unrank <name>: takes a character off /arena top (their rating and record are kept)\n"
+        + "  rerank <name>: puts them back on it";
+
     private const string AdminUsage =
         "\nAdmin: /modifybool arena_dueling_enabled false turns the whole arena off at once (true turns it back on). "
         + "/modifylong arena_dueling_minimum_level <level> sets the lowest level that can duel. /showprops lists the other arena_ settings.";
@@ -99,9 +105,21 @@ public class ArenaCommand
                 }
                 break;
 
+            case "reset" when admin:
+                Reset(player, rest);
+                break;
+
+            case "unrank" when admin:
+                SetExcluded(player, rest, true);
+                break;
+
+            case "rerank" when admin:
+                SetExcluded(player, rest, false);
+                break;
+
             default:
                 player.SendMessage(
-                    $"Usage: {Usage}{(staff ? StaffUsage : "")}{(admin ? AdminUsage : "")}",
+                    $"Usage: {Usage}{(staff ? StaffUsage : "")}{(admin ? AdminUsage + RankingUsage : "")}",
                     ChatMessageType.System
                 );
 
@@ -293,7 +311,7 @@ public class ArenaCommand
         var best = PlayerManager
             .GetAllPlayers()
             .Select(p => (Character: p, Standing: ArenaBoards.Get(p, board)))
-            .Where(p => p.Standing.Duels > 0)
+            .Where(p => p.Standing.Duels > 0 && !ArenaBoards.IsExcluded(p.Character))
             .OrderByDescending(p => p.Standing.Rating)
             .ThenBy(p => p.Character.Name, StringComparer.OrdinalIgnoreCase)
             .Take(10)
@@ -316,6 +334,103 @@ public class ArenaCommand
                 ChatMessageType.System
             );
         }
+    }
+
+    /// <summary>
+    /// /arena reset &lt;name&gt; [board]: the board is the last words, as in /arena top. Without one, every board is reset.
+    /// </summary>
+    private static void Reset(Player admin, string text)
+    {
+        var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+        var boardWords = new List<string>();
+
+        while (words.Count > 1 && ParseBoard(words[^1]) != null)
+        {
+            boardWords.Insert(0, words[^1]);
+            words.RemoveAt(words.Count - 1);
+        }
+
+        var name = string.Join(" ", words);
+
+        if (name.Length == 0)
+        {
+            admin.SendMessage("/arena reset <name> [2v2] [scaled]: puts a character's arena rating and record back to the start.");
+            return;
+        }
+
+        var character = PlayerManager.FindByName(name);
+
+        if (character == null)
+        {
+            admin.SendMessage($"There is no character called {name}.");
+            return;
+        }
+
+        if (boardWords.Count > 0)
+        {
+            var board = ParseBoard(string.Join(" ", boardWords));
+
+            if (board == null)
+            {
+                admin.SendMessage("That is not a board. Try 2v2, scaled or 3v3 scaled.");
+                return;
+            }
+
+            ArenaBoards.Reset(character, board.Value);
+            admin.SendMessage(
+                $"{character.Name}'s {board.Value.Name} arena rating is back to {ArenaElo.StartingRating}, with no record.",
+                ChatMessageType.System
+            );
+            return;
+        }
+
+        var boards = ArenaBoards.All(character);
+
+        foreach (var (board, _) in boards)
+        {
+            ArenaBoards.Reset(character, board);
+        }
+
+        admin.SendMessage(
+            boards.Count == 0
+                ? $"{character.Name} has no arena record to reset."
+                : $"{character.Name}'s arena ratings are back to {ArenaElo.StartingRating} on {string.Join(", ", boards.Select(b => b.Board.Name))}, with no records.",
+            ChatMessageType.System
+        );
+    }
+
+    private static void SetExcluded(Player admin, string name, bool excluded)
+    {
+        var verb = excluded ? "unrank" : "rerank";
+
+        if (name.Length == 0)
+        {
+            admin.SendMessage($"/arena {verb} <name>");
+            return;
+        }
+
+        var character = PlayerManager.FindByName(name);
+
+        if (character == null)
+        {
+            admin.SendMessage($"There is no character called {name}.");
+            return;
+        }
+
+        if (ArenaBoards.IsExcluded(character) == excluded)
+        {
+            admin.SendMessage(
+                $"{character.Name} is already {(excluded ? "off" : "on")} the arena rankings.",
+                ChatMessageType.System
+            );
+            return;
+        }
+
+        ArenaBoards.SetExcluded(character, excluded);
+        admin.SendMessage(
+            $"{character.Name} is {(excluded ? "off" : "back on")} the arena rankings.",
+            ChatMessageType.System
+        );
     }
 
     private static void Maps(Player player)
