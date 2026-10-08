@@ -14,7 +14,9 @@ partial class SpellProjectile
     /// </summary>
     private static float GetImbuedArmorSpellDamageMod(Creature target)
     {
-        return DamageFormulas.GetImbuedArmorMod(target.GetArmorDefenseImbues(ImbuedEffectType.ReducedMagicalDamageTaken));
+        return DamageFormulas.GetImbuedArmorMod(
+            target.GetArmorDefenseImbues(ImbuedEffectType.ReducedMagicalDamageTaken)
+        );
     }
 
     /// <summary>
@@ -22,7 +24,9 @@ partial class SpellProjectile
     /// </summary>
     private static float GetImbuedArmorCritSpellDamageMod(Creature target)
     {
-        return DamageFormulas.GetImbuedArmorMod(target.GetArmorDefenseImbues(ImbuedEffectType.ReducedCriticalDamageTaken));
+        return DamageFormulas.GetImbuedArmorMod(
+            target.GetArmorDefenseImbues(ImbuedEffectType.ReducedCriticalDamageTaken)
+        );
     }
 
     /// <summary>
@@ -30,13 +34,21 @@ partial class SpellProjectile
     /// </summary>
     private static float CheckForMagicDefenseSpecDefenseMod(Player targetPlayer, Creature sourceCreature)
     {
-        if (targetPlayer == null || targetPlayer.GetCreatureSkill(Skill.MagicDefense).AdvancementClass != SkillAdvancementClass.Specialized)
+        if (
+            targetPlayer == null
+            || targetPlayer.GetCreatureSkill(Skill.MagicDefense).AdvancementClass != SkillAdvancementClass.Specialized
+        )
         {
             return 1.0f;
         }
 
         // float, so the division below isn't integer division
-        var magicDefenseSkill = (float)LevelScaling.GetScaledPlayerDefenseSkill(targetPlayer.GetModdedMagicDefSkill(), targetPlayer, sourceCreature);
+        var magicDefenseSkill = (float)
+            LevelScaling.GetScaledPlayerDefenseSkill(
+                targetPlayer.GetModdedMagicDefSkill(),
+                targetPlayer,
+                sourceCreature
+            );
 
         return DamageFormulas.GetSpecDefenseMod(magicDefenseSkill);
     }
@@ -76,7 +88,12 @@ partial class SpellProjectile
     /// RATING - Reprisal: Crit resist.
     /// (JEWEL - Black Opal)
     /// </summary>
-    private bool CheckForRatingReprisalCritResist(bool criticalHit, ref bool resisted, Player targetPlayer, Creature sourceCreature)
+    private bool CheckForRatingReprisalCritResist(
+        bool criticalHit,
+        ref bool resisted,
+        Player targetPlayer,
+        Creature sourceCreature
+    )
     {
         if (!criticalHit || targetPlayer is null || sourceCreature is null)
         {
@@ -187,6 +204,9 @@ partial class SpellProjectile
             return 1.0f;
         }
 
-        return MagicFormulas.GetMagicAbsorbingMod(absorbMagicDamage.Value, target.GetCreatureSkill(Skill.MagicDefense).Base);
+        return MagicFormulas.GetMagicAbsorbingMod(
+            absorbMagicDamage.Value,
+            target.GetCreatureSkill(Skill.MagicDefense).Base
+        );
     }
 }

@@ -194,31 +194,34 @@ partial class Creature
     {
         var playerCaster = this as Player;
 
-        if (playerCaster is {OverloadStanceIsActive: true})
+        if (playerCaster is { OverloadStanceIsActive: true })
         {
             var manaCostPenalty = (1.0f + playerCaster.ManaChargeMeter);
             baseCost = (uint)(baseCost * manaCostPenalty);
             if (debugTrace != null)
             {
-                debugTrace.StanceInfo = $"Overload stance, ManaChargeMeter={playerCaster.ManaChargeMeter:F3}, x{manaCostPenalty:F3}";
+                debugTrace.StanceInfo =
+                    $"Overload stance, ManaChargeMeter={playerCaster.ManaChargeMeter:F3}, x{manaCostPenalty:F3}";
             }
         }
-        else if (playerCaster is {BatteryStanceIsActive: true})
+        else if (playerCaster is { BatteryStanceIsActive: true })
         {
             var manaCostReduction = (1.0f - playerCaster.ManaChargeMeter * 0.5f);
             baseCost = (uint)(baseCost * manaCostReduction);
             if (debugTrace != null)
             {
-                debugTrace.StanceInfo = $"Battery stance, ManaChargeMeter={playerCaster.ManaChargeMeter:F3}, x{manaCostReduction:F3}";
+                debugTrace.StanceInfo =
+                    $"Battery stance, ManaChargeMeter={playerCaster.ManaChargeMeter:F3}, x{manaCostReduction:F3}";
             }
         }
-        else if (playerCaster is {BatteryDischargeIsActive: true})
+        else if (playerCaster is { BatteryDischargeIsActive: true })
         {
             var manaCostReduction = (1.0f - playerCaster.DischargeLevel);
             baseCost = (uint)(baseCost * manaCostReduction);
             if (debugTrace != null)
             {
-                debugTrace.StanceInfo = $"Battery DISCHARGE, DischargeLevel={playerCaster.DischargeLevel:F3}, x{manaCostReduction:F3}";
+                debugTrace.StanceInfo =
+                    $"Battery DISCHARGE, DischargeLevel={playerCaster.DischargeLevel:F3}, x{manaCostReduction:F3}";
             }
         }
 
@@ -330,25 +333,25 @@ partial class Creature
         {
             lines.Add(
                 $"[ManaDbg] {spell.Name} L{spell.Level} pow{t.Difficulty}: base {t.SpellBaseMana}"
-                + $" -> stance {t.CostAfterStance} -> MC SKIPPED ({t.ManaConversionSkipReason})"
-                + $" -> x{t.ManaCostMultiplier:F3} = {t.FinalManaCost}  (saved {totalSaved}, {totalPct:F0}%)"
+                    + $" -> stance {t.CostAfterStance} -> MC SKIPPED ({t.ManaConversionSkipReason})"
+                    + $" -> x{t.ManaCostMultiplier:F3} = {t.FinalManaCost}  (saved {totalSaved}, {totalPct:F0}%)"
             );
         }
         else
         {
             lines.Add(
                 $"[ManaDbg] {spell.Name} L{spell.Level} pow{t.Difficulty}: base {t.SpellBaseMana}"
-                + $" -> res/item {t.CostAfterResourceAndItem} -> +adds {t.CostAfterSpecialAdds}"
-                + $" -> stance {t.CostAfterStance} -> conv {t.CostAfterConversion}"
-                + $" -> x{t.ManaCostMultiplier:F3} = {t.FinalManaCost}  (saved {totalSaved}, {totalPct:F0}%)"
+                    + $" -> res/item {t.CostAfterResourceAndItem} -> +adds {t.CostAfterSpecialAdds}"
+                    + $" -> stance {t.CostAfterStance} -> conv {t.CostAfterConversion}"
+                    + $" -> x{t.ManaCostMultiplier:F3} = {t.FinalManaCost}  (saved {totalSaved}, {totalPct:F0}%)"
             );
 
             var gap = (long)t.EffectiveManaConversionSkill - t.Difficulty;
             lines.Add(
                 $"[ManaDbg]  MC {t.ManaConversionCurrent} x(wpn {t.WeaponManaConversionMod:F3} + robe {t.RobeManaConversionMod:F3})"
-                + $" = eff {t.EffectiveManaConversionSkill} vs {t.Difficulty}  gap {gap}"
-                + $"  c {t.SkillChanceCeiling:F3} roll {t.RawRoll:F3} in[{t.RollFloor:F3},{t.SkillChanceCeiling:F3}]"
-                + $" frac {t.ReductionFraction:F3}  saved {t.SavedMana}/{t.CostBeforeConversion}"
+                    + $" = eff {t.EffectiveManaConversionSkill} vs {t.Difficulty}  gap {gap}"
+                    + $"  c {t.SkillChanceCeiling:F3} roll {t.RawRoll:F3} in[{t.RollFloor:F3},{t.SkillChanceCeiling:F3}]"
+                    + $" frac {t.ReductionFraction:F3}  saved {t.SavedMana}/{t.CostBeforeConversion}"
             );
         }
 
@@ -453,8 +456,10 @@ partial class Creature
         }
 
         // SPEC BONUS - Mana Conversion: half of the saved mana is returned as health and stamina
-        if (caster.GetCreatureSkill(Skill.ManaConversion).AdvancementClass == SkillAdvancementClass.Specialized
-            && manaCost <= caster.Mana.Current)
+        if (
+            caster.GetCreatureSkill(Skill.ManaConversion).AdvancementClass == SkillAdvancementClass.Specialized
+            && manaCost <= caster.Mana.Current
+        )
         {
             var conversionAmount = MagicFormulas.GetSpecManaConversionRefund(savedMana);
             refund = new ManaCastRefund(refund.Health + conversionAmount, refund.Stamina + conversionAmount);

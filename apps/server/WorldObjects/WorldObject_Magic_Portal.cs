@@ -170,7 +170,12 @@ partial class WorldObject
     /// or a portal (recallDid) for portal and portal tie recalls.
     /// Returns PositionType.Undef, and tells the target, when they haven't linked the destination.
     /// </summary>
-    private static PositionType GetRecallDestination(Spell spell, Player player, Player targetPlayer, out uint? recallDid)
+    private static PositionType GetRecallDestination(
+        Spell spell,
+        Player player,
+        Player targetPlayer,
+        out uint? recallDid
+    )
     {
         var recall = PositionType.Undef;
         recallDid = null;
@@ -275,10 +280,13 @@ partial class WorldObject
     private static void TeleportToRecallPosition(Player targetPlayer, PositionType recall)
     {
         var lifestoneRecall = new ActionChain();
-        lifestoneRecall.AddAction(targetPlayer, () =>
-        {
-            targetPlayer?.DoPreTeleportHide();
-        });
+        lifestoneRecall.AddAction(
+            targetPlayer,
+            () =>
+            {
+                targetPlayer?.DoPreTeleportHide();
+            }
+        );
         lifestoneRecall.AddDelaySeconds(2.0f); // 2 second delay
         lifestoneRecall.AddAction(targetPlayer, () => targetPlayer?.TeleToPosition(recall));
         lifestoneRecall.EnqueueChain();

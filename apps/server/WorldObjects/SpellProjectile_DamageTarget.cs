@@ -109,7 +109,16 @@ partial class SpellProjectile
 
         if (target.IsAlive)
         {
-            SendHitMessages(target, amount, percent, critical, critDefended, overpower, partialEvasion, ratings.SneakAttack);
+            SendHitMessages(
+                target,
+                amount,
+                percent,
+                critical,
+                critDefended,
+                overpower,
+                partialEvasion,
+                ratings.SneakAttack
+            );
 
             if (!drainsVital)
             {
@@ -262,7 +271,9 @@ partial class SpellProjectile
             plural = null;
         Strings.GetAttackVerb(Spell.DamageType, percent, ref verb, ref plural);
 
-        var elementalistRating = Math.Round(Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearElementalist, "Elementalist") * 100);
+        var elementalistRating = Math.Round(
+            Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearElementalist, "Elementalist") * 100
+        );
         var elementalistMsg = elementalistRating > 0.0f ? $"Elementalist {elementalistRating}%! " : "";
 
         var critMsg = critical ? "Critical hit! " : "";
@@ -281,7 +292,8 @@ partial class SpellProjectile
 
             var chargedMsg = sourcePlayer.GetChargedMessage();
 
-            var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{chargedMsg}{sneakMsg}{elementalistMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
+            var attackerMsg =
+                $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{chargedMsg}{sneakMsg}{elementalistMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
             // could these crit / sneak attack?
             if (drainsVital)
@@ -291,9 +303,7 @@ partial class SpellProjectile
 
             if (!sourcePlayer.SquelchManager.Squelches.Contains(target, ChatMessageType.Magic))
             {
-                sourcePlayer.Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(attackerMsg, ChatMessageType.Magic)
-                );
+                sourcePlayer.Session.Network.EnqueueSend(new GameMessageSystemChat(attackerMsg, ChatMessageType.Magic));
             }
         }
 
@@ -306,15 +316,12 @@ partial class SpellProjectile
 
             if (drainsVital)
             {
-                defenderMsg =
-                    $"{ProjectileSource.Name} casts {Spell.Name} and drains {amount} points of your {vital}.";
+                defenderMsg = $"{ProjectileSource.Name} casts {Spell.Name} and drains {amount} points of your {vital}.";
             }
 
             if (!targetPlayer.SquelchManager.Squelches.Contains(ProjectileSource, ChatMessageType.Magic))
             {
-                targetPlayer.Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(defenderMsg, ChatMessageType.Magic)
-                );
+                targetPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat(defenderMsg, ChatMessageType.Magic));
             }
 
             if (sourceCreature != null)

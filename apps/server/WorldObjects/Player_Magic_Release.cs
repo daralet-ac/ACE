@@ -226,9 +226,10 @@ partial class Player
     /// </summary>
     private uint ApplySigilScarabManaReduction(Spell spell, uint manaUsed)
     {
-        var manaModifier = spell.School == MagicSchool.LifeMagic
-            ? GetSigilTrinketManaReductionMod(spell, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Reduction)
-            : GetSigilTrinketManaReductionMod(spell, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Reduction);
+        var manaModifier =
+            spell.School == MagicSchool.LifeMagic
+                ? GetSigilTrinketManaReductionMod(spell, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Reduction)
+                : GetSigilTrinketManaReductionMod(spell, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Reduction);
 
         var before = manaUsed;
         manaUsed = (uint)(manaUsed * manaModifier);
@@ -371,7 +372,10 @@ partial class Player
             return;
         }
 
-        if (spell.School != restrictedSchool && spell.School is MagicSchool.WarMagic or MagicSchool.LifeMagic or MagicSchool.PortalMagic)
+        if (
+            spell.School != restrictedSchool
+            && spell.School is MagicSchool.WarMagic or MagicSchool.LifeMagic or MagicSchool.PortalMagic
+        )
         {
             var schoolName = restrictedSchool switch
             {
@@ -474,7 +478,6 @@ partial class Player
                     {
                         HandleCastQueue();
                     }
-
                 }
             );
             actionChain.EnqueueChain();

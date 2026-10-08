@@ -97,7 +97,13 @@ partial class WorldObject
     /// Handles casting SpellType.Transfer spells
     /// usually for Life Magic, ie. Stamina to Mana, Drain
     /// </summary>
-    private void HandleCastSpell_Transfer(Spell spell, Creature targetCreature, bool showMsg = true, WorldObject weapon = null, bool fromProc = false)
+    private void HandleCastSpell_Transfer(
+        Spell spell,
+        Creature targetCreature,
+        bool showMsg = true,
+        WorldObject weapon = null,
+        bool fromProc = false
+    )
     {
         var creature = this as Creature;
 
@@ -145,7 +151,15 @@ partial class WorldObject
 
         if (cast.Source != player && srcVitalChange > 0)
         {
-            HandlePostDamageRatingEffects(cast.Source, srcVitalChange, player, cast.TargetPlayer, creature, spell, ProjectileSpellType.Undef);
+            HandlePostDamageRatingEffects(
+                cast.Source,
+                srcVitalChange,
+                player,
+                cast.TargetPlayer,
+                creature,
+                spell,
+                ProjectileSpellType.Undef
+            );
         }
         else if (cast.TargetPlayer == player)
         {
@@ -176,7 +190,9 @@ partial class WorldObject
         // Drain Resistances - allows one to partially resist drain health/stamina/mana and harm attacks (not including other life transfer spells).
         if (cast.Source != null)
         {
-            var drainMod = cast.IsDrain ? (float)cast.Source.GetResistanceMod(GetDrainResistanceType(GetVitalDamageType(spell.Source))) : 1.0f;
+            var drainMod = cast.IsDrain
+                ? (float)cast.Source.GetResistanceMod(GetDrainResistanceType(GetVitalDamageType(spell.Source)))
+                : 1.0f;
 
             srcVitalChange = (uint)
                 Math.Round(cast.Source.GetCreatureVital(spell.Source).Current * spell.Proportion * drainMod);
@@ -204,7 +220,9 @@ partial class WorldObject
         var destination = cast.Destination;
 
         // should healing resistances be applied here?
-        boostMod = cast.IsDrain ? (float)destination.GetResistanceMod(GetBoostResistanceType(GetVitalDamageType(spell.Destination))) : 1.0f;
+        boostMod = cast.IsDrain
+            ? (float)destination.GetResistanceMod(GetBoostResistanceType(GetVitalDamageType(spell.Destination)))
+            : 1.0f;
 
         var destVitalChange = (uint)Math.Round(srcVitalChange * (1.0f - spell.LossPercent) * boostMod);
 
@@ -242,7 +260,9 @@ partial class WorldObject
         ResetRatingElementalistQuestStamps(player);
 
         // RATING - Nullification only reduces spell damage taken, so it doesn't apply to beneficial transfers
-        var nullificationRatingBonus = cast.IsDrain ? CheckForRatingNullificationBoostDefenseBonus(cast.TargetPlayer) : 1.0f;
+        var nullificationRatingBonus = cast.IsDrain
+            ? CheckForRatingNullificationBoostDefenseBonus(cast.TargetPlayer)
+            : 1.0f;
         srcVitalChange = Convert.ToUInt32(srcVitalChange * nullificationRatingBonus);
         destVitalChange = Convert.ToUInt32(destVitalChange * nullificationRatingBonus);
     }
@@ -337,7 +357,12 @@ partial class WorldObject
     /// Takes the amount from the source, returning what was actually taken.
     /// Health taken by a drain is damage: COMBAT ABILITY - Mana Barrier may take part of it as mana.
     /// </summary>
-    private uint TakeFromTransferSource(in TransferCast cast, uint srcVitalChange, uint destVitalChange, out string srcVital)
+    private uint TakeFromTransferSource(
+        in TransferCast cast,
+        uint srcVitalChange,
+        uint destVitalChange,
+        out string srcVital
+    )
     {
         var player = this as Player;
         var transferSource = cast.Source;
@@ -358,11 +383,17 @@ partial class WorldObject
                 // COMBAT ABILITY - Mana Barrier: part of the drained health is taken as mana instead
                 if (cast.IsDrain && transferSource is Player { ManaBarrierIsActive: true } barrierPlayer)
                 {
-                    srcVitalChange = Player.CombatAbilityManaBarrier(barrierPlayer, srcVitalChange, this, DamageType.Health);
+                    srcVitalChange = Player.CombatAbilityManaBarrier(
+                        barrierPlayer,
+                        srcVitalChange,
+                        this,
+                        DamageType.Health
+                    );
                 }
                 else
                 {
-                    srcVitalChange = (uint)-transferSource.UpdateVitalDelta(transferSource.Health, -(int)srcVitalChange);
+                    srcVitalChange = (uint)
+                        -transferSource.UpdateVitalDelta(transferSource.Health, -(int)srcVitalChange);
 
                     transferSource.DamageHistory.Add(this, DamageType.Health, srcVitalChange);
                 }
@@ -371,14 +402,9 @@ partial class WorldObject
 
         // Determine if this drain/infuse should increase the charge meter. Self-transfer does not increase charge.
         var shouldIncreaseCharge =
-            destVitalChange > 0 &&
-            (
-                transferSource is not Player ||
-                cast.Destination != transferSource
-            );
+            destVitalChange > 0 && (transferSource is not Player || cast.Destination != transferSource);
 
-        if (shouldIncreaseCharge &&
-            player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true })
+        if (shouldIncreaseCharge && player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true })
         {
             player.IncreaseChargedMeter(cast.Spell, cast.FromProc);
         }
@@ -446,13 +472,15 @@ partial class WorldObject
         var playerSource = transferSource as Player;
         var playerDestination = destination as Player;
 
-        string sourceMsg = null, targetMsg = null;
+        string sourceMsg = null,
+            targetMsg = null;
 
         var chargedMsg = player?.GetChargedMessage() ?? "";
 
         if (playerSource != null && playerDestination != null && transferSource.Guid == destination.Guid)
         {
-            sourceMsg = $"{chargedMsg}You cast {spell.Name} on yourself and lose {srcVitalChange} points of {srcVital} and also gain {destVitalChange} points of {destVital}";
+            sourceMsg =
+                $"{chargedMsg}You cast {spell.Name} on yourself and lose {srcVitalChange} points of {srcVital} and also gain {destVitalChange} points of {destVital}";
         }
         else
         {
@@ -460,11 +488,13 @@ partial class WorldObject
             {
                 if (transferSource == this)
                 {
-                    sourceMsg = $"{chargedMsg}You lose {srcVitalChange} points of {srcVital} due to casting {spell.Name} on {cast.Target.Name}";
+                    sourceMsg =
+                        $"{chargedMsg}You lose {srcVitalChange} points of {srcVital} due to casting {spell.Name} on {cast.Target.Name}";
                 }
                 else
                 {
-                    targetMsg = $"{chargedMsg}You lose {srcVitalChange} points of {srcVital} due to {creature.Name} casting {spell.Name} on you";
+                    targetMsg =
+                        $"{chargedMsg}You lose {srcVitalChange} points of {srcVital} due to {creature.Name} casting {spell.Name} on you";
                 }
 
                 if (destination != null)
@@ -477,11 +507,13 @@ partial class WorldObject
             {
                 if (destination == this)
                 {
-                    sourceMsg = $"{chargedMsg}You gain {destVitalChange} points of {destVital} due to casting {spell.Name} on {cast.Target.Name}";
+                    sourceMsg =
+                        $"{chargedMsg}You gain {destVitalChange} points of {destVital} due to casting {spell.Name} on {cast.Target.Name}";
                 }
                 else
                 {
-                    targetMsg = $"{chargedMsg}You gain {destVitalChange} points of {destVital} due to {creature.Name} casting {spell.Name} on you";
+                    targetMsg =
+                        $"{chargedMsg}You gain {destVitalChange} points of {destVital} due to {creature.Name} casting {spell.Name} on you";
                 }
             }
         }

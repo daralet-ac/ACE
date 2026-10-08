@@ -76,9 +76,10 @@ partial class Player
     {
         if (CombatMode != CombatMode.Magic)
         {
-            var request = castType == CastQueueType.Targeted
-                ? $"HandleActionCastTargetedSpell({targetGuid:X8}, {spellId}, {casterItem?.Name})"
-                : $"HandleActionMagicCastUnTargetedSpell({spellId})";
+            var request =
+                castType == CastQueueType.Targeted
+                    ? $"HandleActionCastTargetedSpell({targetGuid:X8}, {spellId}, {casterItem?.Name})"
+                    : $"HandleActionMagicCastUnTargetedSpell({spellId})";
 
             _log.Error($"{Name}.{request} - CombatMode mismatch {CombatMode}, LastCombatMode: {LastCombatMode}");
 

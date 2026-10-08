@@ -100,7 +100,12 @@ partial class Spell
     /// </summary>
     public float GetMaxCastRange(uint magicSkill)
     {
-        return MagicFormulas.GetMaxCastRange(BaseRangeConstant, BaseRangeMod, magicSkill, Player.MaxRadarRange_Outdoors);
+        return MagicFormulas.GetMaxCastRange(
+            BaseRangeConstant,
+            BaseRangeMod,
+            magicSkill,
+            Player.MaxRadarRange_Outdoors
+        );
     }
 
     /// <summary>

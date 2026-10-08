@@ -11,7 +11,12 @@ partial class WorldObject
     /// After a spell damages a creature's health: the target's cloak may proc its spell, and the target's damage emotes run.
     /// Both wait a tick, so they come after the damage messages.
     /// </summary>
-    private void ScheduleSpellDamageReactions(Creature targetCreature, Creature attacker, WorldObject equippedCloak, float damagePercent)
+    private void ScheduleSpellDamageReactions(
+        Creature targetCreature,
+        Creature attacker,
+        WorldObject equippedCloak,
+        float damagePercent
+    )
     {
         if (equippedCloak != null && Cloak.HasProcSpell(equippedCloak))
         {
@@ -27,7 +32,15 @@ partial class WorldObject
         emoteChain.EnqueueChain();
     }
 
-    protected static void HandlePostDamageRatingEffects(Creature target, float damage, Player sourcePlayer, Player targetPlayer, Creature sourceCreature, Spell spell, ProjectileSpellType projectileSpellType)
+    protected static void HandlePostDamageRatingEffects(
+        Creature target,
+        float damage,
+        Player sourcePlayer,
+        Player targetPlayer,
+        Creature sourceCreature,
+        Spell spell,
+        ProjectileSpellType projectileSpellType
+    )
     {
         if (sourcePlayer != null)
         {
@@ -46,7 +59,7 @@ partial class WorldObject
     {
         if (sourcePlayer != null && targetPlayer != null)
         {
-             Jewel.HandlePlayerHealerBonuses(sourcePlayer, targetPlayer);
+            Jewel.HandlePlayerHealerBonuses(sourcePlayer, targetPlayer);
         }
     }
 

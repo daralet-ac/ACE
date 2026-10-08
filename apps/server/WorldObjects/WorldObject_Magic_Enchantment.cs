@@ -100,7 +100,13 @@ partial class WorldObject
     /// <summary>
     /// An Aetheria or cloak proc is cast by the item's wielder (this), instead of the item
     /// </summary>
-    private void ResolveProcCaster(Spell spell, bool fromProc, ref WorldObject caster, out bool aetheriaProc, out bool cloakProc)
+    private void ResolveProcCaster(
+        Spell spell,
+        bool fromProc,
+        ref WorldObject caster,
+        out bool aetheriaProc,
+        out bool cloakProc
+    )
     {
         aetheriaProc = false;
         cloakProc = false;
@@ -133,7 +139,12 @@ partial class WorldObject
     /// A player's ward shortens a debuff on them: halfway to the ward's full mitigation,
     /// after the caster's ward rending and ward penetration
     /// </summary>
-    private void ApplyWardToDebuff(Player targetPlayer, WorldObject caster, WorldObject weapon, AddEnchantmentResult addResult)
+    private void ApplyWardToDebuff(
+        Player targetPlayer,
+        WorldObject caster,
+        WorldObject weapon,
+        AddEnchantmentResult addResult
+    )
     {
         var wardBuffDebuffMod = targetPlayer.EnchantmentManager.GetWardMultiplicativeMod();
 
@@ -176,7 +187,14 @@ partial class WorldObject
         };
     }
 
-    private void SendEnchantmentCasterMessage(Player player, WorldObject target, WorldObject caster, Spell spell, string suffix, bool showMsg)
+    private void SendEnchantmentCasterMessage(
+        Player player,
+        WorldObject target,
+        WorldObject caster,
+        Spell spell,
+        string suffix,
+        bool showMsg
+    )
     {
         // TODO: replace with some kind of 'rootOwner unless equip' concept?
         // for item casters where the message should be 'You cast', we still need pass the caster as item
@@ -213,11 +231,11 @@ partial class WorldObject
     /// </summary>
     /// <param name="spell">A spell with a DotDuration</param>
     public float CalculateDotEnchantment_StatModValue(
-    Spell spell,
-    WorldObject target,
-    WorldObject weapon,
-    float statModVal
-)
+        Spell spell,
+        WorldObject target,
+        WorldObject weapon,
+        float statModVal
+    )
     {
         if (spell.DotDuration == 0)
         {
@@ -446,7 +464,10 @@ partial class WorldObject
     private void SendFailsToAffectMessages(Spell spell, Creature targetCreature, Player player, Player targetPlayer)
     {
         player?.Session.Network.EnqueueSend(
-            new GameMessageSystemChat($"You fail to affect {targetCreature.Name} with {spell.Name}", ChatMessageType.Magic)
+            new GameMessageSystemChat(
+                $"You fail to affect {targetCreature.Name} with {spell.Name}",
+                ChatMessageType.Magic
+            )
         );
 
         if (targetPlayer != null && !targetPlayer.SquelchManager.Squelches.Contains(this, ChatMessageType.Magic))
@@ -461,11 +482,11 @@ partial class WorldObject
     /// Spells that are excluded from ward level debuff duration reduction
     /// </summary>
     private static readonly HashSet<SpellId> WardExcludedSpells = new HashSet<SpellId>()
-{
-    SpellId.Vitae,
-    SpellId.RestorationResonance,
-    SpellId.VoidRestorationPenalty
-};
+    {
+        SpellId.Vitae,
+        SpellId.RestorationResonance,
+        SpellId.VoidRestorationPenalty
+    };
 
     /// <summary>
     /// Checks if a spell should be excluded from ward level debuff duration reduction

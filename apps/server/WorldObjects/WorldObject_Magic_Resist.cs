@@ -180,7 +180,18 @@ partial class WorldObject
         difficulty = Convert.ToUInt32(difficulty * (1.0f + CheckForCombatAbilityReflectMagicDefBonus(targetPlayer)));
         // Familiar Foe (Fire Opal): the ramp stamps live on the casting creature's QuestManager,
         // keyed by the defending player's name (accrued while that player attacked this creature).
-        difficulty = Convert.ToUInt32(difficulty * (1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearFamiliarity, "Familiarity", rampQuestSource: casterCreature)));
+        difficulty = Convert.ToUInt32(
+            difficulty
+                * (
+                    1.0f
+                    + Jewel.GetJewelEffectMod(
+                        targetPlayer,
+                        PropertyInt.GearFamiliarity,
+                        "Familiarity",
+                        rampQuestSource: casterCreature
+                    )
+                )
+        );
 
         // level scaling goes last, so the bonuses above are worth the same at every level (see LevelScaling.GetScaledPlayerDefenseSkill)
         return LevelScaling.GetScaledPlayerDefenseSkill(difficulty, targetCreature, casterCreature);
@@ -196,11 +207,7 @@ partial class WorldObject
 
         if (this is Player player)
         {
-            player.SendChatMessage(
-                targetCreature,
-                $"{targetCreature.Name} resists your spell",
-                ChatMessageType.Magic
-            );
+            player.SendChatMessage(targetCreature, $"{targetCreature.Name} resists your spell", ChatMessageType.Magic);
 
             player.Session.Network.EnqueueSend(new GameMessageSound(player.Guid, Sound.ResistSpell));
         }
@@ -218,9 +225,7 @@ partial class WorldObject
             }
             targetPlayer.SendChatMessage(this, $"You resist the spell cast by {Name}", ChatMessageType.Magic);
 
-            targetPlayer.Session.Network.EnqueueSend(
-                new GameMessageSound(targetPlayer.Guid, Sound.ResistSpell)
-            );
+            targetPlayer.Session.Network.EnqueueSend(new GameMessageSound(targetPlayer.Guid, Sound.ResistSpell));
 
             if (casterCreature != null)
             {
@@ -392,9 +397,19 @@ partial class WorldObject
     /// During the guaranteed window, or by consuming a guaranteed charge, spells that were not resisted are reflected as well.
     /// </summary>
     /// <returns>TRUE if the spell is reflected. A reflected spell must not damage the reflecting player.</returns>
-    protected static bool CheckForCombatAbilityReflectSpell(bool resisted, Player targetPlayer, Creature sourceCreature, Spell spell)
+    protected static bool CheckForCombatAbilityReflectSpell(
+        bool resisted,
+        Player targetPlayer,
+        Creature sourceCreature,
+        Spell spell
+    )
     {
-        if (targetPlayer is not { ReflectIsActive: true } || sourceCreature == null || targetPlayer == sourceCreature || spell.IsBeneficial)
+        if (
+            targetPlayer is not { ReflectIsActive: true }
+            || sourceCreature == null
+            || targetPlayer == sourceCreature
+            || spell.IsBeneficial
+        )
         {
             return false;
         }
@@ -427,7 +442,12 @@ partial class WorldObject
     /// but its resist check and damage are based on the original caster's stats.
     /// </summary>
     /// <param name="originalProjectile">For projectile spells, the incoming projectile that was reflected</param>
-    public void CastReflectedSpell(Spell spell, Creature originalCaster, SpellProjectile originalProjectile, double damageMultiplier = 1.0)
+    public void CastReflectedSpell(
+        Spell spell,
+        Creature originalCaster,
+        SpellProjectile originalProjectile,
+        double damageMultiplier = 1.0
+    )
     {
         if (originalCaster == null || !originalCaster.IsAlive)
         {

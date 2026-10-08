@@ -147,9 +147,22 @@ partial class SpellProjectile
             }
 
             // EMPOWERED SCARAB - Crushing
-            if (criticalHit && hit.SourcePlayer != null && ReflectedCaster == null && Spell.School == MagicSchool.WarMagic)
+            if (
+                criticalHit
+                && hit.SourcePlayer != null
+                && ReflectedCaster == null
+                && Spell.School == MagicSchool.WarMagic
+            )
             {
-                hit.SourcePlayer.CheckForSigilTrinketOnCastEffects(target, Spell, false, Skill.WarMagic, SigilTrinketWarMagicEffect.Crushing, null, true);
+                hit.SourcePlayer.CheckForSigilTrinketOnCastEffects(
+                    target,
+                    Spell,
+                    false,
+                    Skill.WarMagic,
+                    SigilTrinketWarMagicEffect.Crushing,
+                    null,
+                    true
+                );
             }
         }
 
@@ -171,7 +184,18 @@ partial class SpellProjectile
 
         finalDamage = ApplyPostMitigationMods(hit, finalDamage, criticalHit, resistedMod);
 
-        ShowDamageDebugInfo(hit, criticalChance, criticalHit, critDefended, overpower, baseDamage, weaponCritDamageMod, weaponResistanceMod, damageMods, mitigation);
+        ShowDamageDebugInfo(
+            hit,
+            criticalChance,
+            criticalHit,
+            critDefended,
+            overpower,
+            baseDamage,
+            weaponCritDamageMod,
+            weaponResistanceMod,
+            damageMods,
+            mitigation
+        );
 
         return finalDamage;
     }
@@ -233,7 +257,12 @@ partial class SpellProjectile
     {
         if (
             ReflectedCaster != null
-            || !CheckForCombatAbilityReflectSpell(!overpower && partialEvasion is PartialEvasion.All or PartialEvasion.Some, hit.TargetPlayer, hit.SourceCreature, Spell)
+            || !CheckForCombatAbilityReflectSpell(
+                !overpower && partialEvasion is PartialEvasion.All or PartialEvasion.Some,
+                hit.TargetPlayer,
+                hit.SourceCreature,
+                Spell
+            )
         )
         {
             return false;
@@ -280,7 +309,13 @@ partial class SpellProjectile
             && hit.TargetPlayer != null
             && CheckForPerceptionSpecCriticalDefense(
                 hit.TargetPlayer,
-                hit.Source.GetEffectiveMagicSkill(hit.Target, Spell, hit.ResistSource, WeaponSpellcraft, hit.WeaponAttackMod)
+                hit.Source.GetEffectiveMagicSkill(
+                    hit.Target,
+                    Spell,
+                    hit.ResistSource,
+                    WeaponSpellcraft,
+                    hit.WeaponAttackMod
+                )
             );
     }
 
@@ -331,7 +366,12 @@ partial class SpellProjectile
     /// War/void projectiles roll their damage range, or use their max damage on a critical hit
     /// (monster spell crits are based on median damage instead of max).
     /// </summary>
-    private int GetBaseDamage(in SpellHit hit, bool criticalHit, out float criticalDamageMod, out float weaponCritDamageMod)
+    private int GetBaseDamage(
+        in SpellHit hit,
+        bool criticalHit,
+        out float criticalDamageMod,
+        out float weaponCritDamageMod
+    )
     {
         criticalDamageMod = 1.0f;
         weaponCritDamageMod = 1.0f;
@@ -340,7 +380,12 @@ partial class SpellProjectile
         {
             if (criticalHit)
             {
-                weaponCritDamageMod = GetWeaponCritDamageMod(hit.Weapon, hit.SourceCreature, hit.AttackSkill, hit.Target);
+                weaponCritDamageMod = GetWeaponCritDamageMod(
+                    hit.Weapon,
+                    hit.SourceCreature,
+                    hit.AttackSkill,
+                    hit.Target
+                );
                 criticalDamageMod = 1.0f + weaponCritDamageMod;
             }
 
@@ -355,14 +400,19 @@ partial class SpellProjectile
         weaponCritDamageMod = GetWeaponCritDamageMod(hit.Weapon, hit.SourceCreature, hit.AttackSkill, hit.Target);
         weaponCritDamageMod += CheckForWarMagicSpecCriticalDamageBonus(hit.SourcePlayer, hit.Weapon);
 
-        var jewelBludgeCritDamageMod = 1.0f + Jewel.GetJewelEffectMod(hit.SourcePlayer, PropertyInt.GearBludgeon, "Bludgeon");
+        var jewelBludgeCritDamageMod =
+            1.0f + Jewel.GetJewelEffectMod(hit.SourcePlayer, PropertyInt.GearBludgeon, "Bludgeon");
 
         criticalDamageMod = (1.0f + weaponCritDamageMod) * jewelBludgeCritDamageMod;
 
         return hit.SourceCreature is Player ? Spell.MaxDamage : Spell.MedianDamage;
     }
 
-    private SpellDamageModifiers GetDamageModifiers(in SpellHit hit, float criticalDamageMod, float backstabDamageMultiplier)
+    private SpellDamageModifiers GetDamageModifiers(
+        in SpellHit hit,
+        float criticalDamageMod,
+        float backstabDamageMultiplier
+    )
     {
         return new SpellDamageModifiers
         {
@@ -375,7 +425,8 @@ partial class SpellProjectile
 
             Overload = CheckForCombatAbilityOverloadDamageMod(hit.SourcePlayer),
             Battery = CheckForCombatAbilityBatteryDamageMod(hit.SourcePlayer),
-            JewelElementalist = 1.0f + Jewel.GetJewelEffectMod(hit.SourcePlayer, PropertyInt.GearElementalist, "Elementalist"),
+            JewelElementalist =
+                1.0f + Jewel.GetJewelEffectMod(hit.SourcePlayer, PropertyInt.GearElementalist, "Elementalist"),
             JewelElemental = Jewel.HandleElementalBonuses(hit.SourcePlayer, Spell.DamageType),
             JewelSelfHarm = 1.0f + Jewel.GetJewelEffectMod(hit.SourcePlayer, PropertyInt.GearSelfHarm),
             JewelRedFury = 1.0f + Jewel.GetJewelRedFury(hit.SourcePlayer),
@@ -400,7 +451,8 @@ partial class SpellProjectile
             return 1.0f;
         }
 
-        var spellcraft = hit.Weapon.ItemSpellcraft.Value + (int)CheckForArcaneLoreSpecSpellcraftBonus(hit.SourceCreature);
+        var spellcraft =
+            hit.Weapon.ItemSpellcraft.Value + (int)CheckForArcaneLoreSpecSpellcraftBonus(hit.SourceCreature);
 
         return MagicFormulas.GetProcSpellcraftDamageMod(spellcraft);
     }
@@ -413,7 +465,13 @@ partial class SpellProjectile
         out float weaponResistanceMod
     )
     {
-        weaponResistanceMod = GetWeaponResistanceModifier(hit.Weapon, hit.SourceCreature, hit.AttackSkill, Spell.DamageType, hit.Target);
+        weaponResistanceMod = GetWeaponResistanceModifier(
+            hit.Weapon,
+            hit.SourceCreature,
+            hit.AttackSkill,
+            Spell.DamageType,
+            hit.Target
+        );
 
         return new SpellMitigationModifiers
         {
@@ -424,8 +482,10 @@ partial class SpellProjectile
             SpecDefense = CheckForMagicDefenseSpecDefenseMod(hit.TargetPlayer, hit.SourceCreature),
             DamageTypeWard = Spell.DamageType switch
             {
-                var dt when (dt & DamageType.Physical) != 0 => 1.0f - Jewel.GetJewelEffectMod(hit.TargetPlayer, PropertyInt.GearPhysicalWard),
-                var dt when (dt & DamageType.Elemental) != 0 => 1.0f - Jewel.GetJewelEffectMod(hit.TargetPlayer, PropertyInt.GearElementalWard),
+                var dt when (dt & DamageType.Physical) != 0
+                    => 1.0f - Jewel.GetJewelEffectMod(hit.TargetPlayer, PropertyInt.GearPhysicalWard),
+                var dt when (dt & DamageType.Elemental) != 0
+                    => 1.0f - Jewel.GetJewelEffectMod(hit.TargetPlayer, PropertyInt.GearElementalWard),
                 _ => 1.0f
             },
         };
@@ -440,7 +500,8 @@ partial class SpellProjectile
         // only pass if SpellProjectile has it directly, such as 2637 - Invoking Aun Tanua
         var resistanceType = Creature.GetResistanceType(Spell.DamageType);
 
-        var resistanceMod = (float)Math.Max(0.0f, hit.Target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
+        var resistanceMod = (float)
+            Math.Max(0.0f, hit.Target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
 
         if (hit.SourcePlayer != null && hit.TargetPlayer != null && Spell.DamageType == DamageType.Nether)
         {

@@ -117,14 +117,32 @@ partial class WorldObject
             {
                 foreach (var itemTarget in targets)
                 {
-                    TryCastSpell(spell, itemTarget, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, damageMultiplier: damageMultiplier);
+                    TryCastSpell(
+                        spell,
+                        itemTarget,
+                        itemCaster,
+                        weapon,
+                        isWeaponSpell,
+                        fromProc,
+                        tryResist,
+                        damageMultiplier: damageMultiplier
+                    );
                 }
 
                 return targets.Count > 0;
             }
         }
 
-        TryCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, damageMultiplier: damageMultiplier);
+        TryCastSpell(
+            spell,
+            target,
+            itemCaster,
+            weapon,
+            isWeaponSpell,
+            fromProc,
+            tryResist,
+            damageMultiplier: damageMultiplier
+        );
 
         return true;
     }
@@ -204,7 +222,16 @@ partial class WorldObject
             case SpellType.LifeProjectile:
             case SpellType.EnchantmentProjectile:
 
-                HandleCastSpell_Projectile(spell, targetCreature, itemCaster, weapon, isWeaponSpell, fromProc, weaponSpellcraft, damageMultiplier);
+                HandleCastSpell_Projectile(
+                    spell,
+                    targetCreature,
+                    itemCaster,
+                    weapon,
+                    isWeaponSpell,
+                    fromProc,
+                    weaponSpellcraft,
+                    damageMultiplier
+                );
                 break;
 
             case SpellType.PortalLink:
@@ -264,37 +291,40 @@ partial class WorldObject
     /// <summary>
     /// The Sigil Scarab effects a player's cast can trigger, by spell school, in the order they're checked
     /// </summary>
-    private static readonly Dictionary<MagicSchool, (Skill Skill, Enum[] Effects)> SigilTrinketOnCastEffects = new()
-    {
-        [MagicSchool.LifeMagic] = (
-            Skill.LifeMagic,
-            [
-                SigilTrinketLifeWarMagicEffect.Intensity,
-                SigilTrinketLifeWarMagicEffect.Shielding,
-                SigilTrinketLifeMagicEffect.CastProt,
-                SigilTrinketLifeMagicEffect.CastVuln,
-                SigilTrinketLifeMagicEffect.CastItemBuff,
-                SigilTrinketLifeMagicEffect.CastVitalRate,
-            ]
-        ),
-        [MagicSchool.WarMagic] = (
-            Skill.WarMagic,
-            [
-                SigilTrinketLifeWarMagicEffect.Intensity,
-                SigilTrinketLifeWarMagicEffect.Shielding,
-                SigilTrinketWarMagicEffect.Duplicate,
-            ]
-        ),
-        [MagicSchool.VoidMagic] = (
-            Skill.VoidMagic,
-            [
-                SigilTrinketLifeWarMagicEffect.Intensity,
-                SigilTrinketLifeWarMagicEffect.Shielding,
-            ]
-        ),
-    };
+    private static readonly Dictionary<MagicSchool, (Skill Skill, Enum[] Effects)> SigilTrinketOnCastEffects =
+        new()
+        {
+            [MagicSchool.LifeMagic] = (
+                Skill.LifeMagic,
+                [
+                    SigilTrinketLifeWarMagicEffect.Intensity,
+                    SigilTrinketLifeWarMagicEffect.Shielding,
+                    SigilTrinketLifeMagicEffect.CastProt,
+                    SigilTrinketLifeMagicEffect.CastVuln,
+                    SigilTrinketLifeMagicEffect.CastItemBuff,
+                    SigilTrinketLifeMagicEffect.CastVitalRate,
+                ]
+            ),
+            [MagicSchool.WarMagic] = (
+                Skill.WarMagic,
+                [
+                    SigilTrinketLifeWarMagicEffect.Intensity,
+                    SigilTrinketLifeWarMagicEffect.Shielding,
+                    SigilTrinketWarMagicEffect.Duplicate,
+                ]
+            ),
+            [MagicSchool.VoidMagic] = (
+                Skill.VoidMagic,
+                [SigilTrinketLifeWarMagicEffect.Intensity, SigilTrinketLifeWarMagicEffect.Shielding,]
+            ),
+        };
 
-    private static void TriggerSigilTrinketOnCastEffects(Player player, Creature targetCreature, Spell spell, bool sigilTrinketSpell)
+    private static void TriggerSigilTrinketOnCastEffects(
+        Player player,
+        Creature targetCreature,
+        Spell spell,
+        bool sigilTrinketSpell
+    )
     {
         if (!SigilTrinketOnCastEffects.TryGetValue(spell.School, out var onCast))
         {
@@ -335,9 +365,11 @@ partial class WorldObject
         var playerCaster = this as Player;
 
         // COMBAT ABILITY - Overload/Battery: void enchantments on others charge the meter
-        if (playerCaster is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true } &&
-            spell.School is MagicSchool.VoidMagic &&
-            targetCreature != playerCaster)
+        if (
+            playerCaster is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true }
+            && spell.School is MagicSchool.VoidMagic
+            && targetCreature != playerCaster
+        )
         {
             playerCaster.IncreaseChargedMeter(spell, fromProc);
         }
@@ -356,7 +388,12 @@ partial class WorldObject
     /// <summary>
     /// Plays the caster/target effects for a spell
     /// </summary>
-    protected static void DoSpellEffects(Spell spell, WorldObject caster, WorldObject target, bool projectileHit = false)
+    protected static void DoSpellEffects(
+        Spell spell,
+        WorldObject caster,
+        WorldObject target,
+        bool projectileHit = false
+    )
     {
         if (spell.CasterEffect != 0 && (!spell.IsProjectile || !projectileHit))
         {
@@ -374,15 +411,18 @@ partial class WorldObject
         }
         else if (target == null)
         {
-            _log.Warning("DoSpellEffects(spell = {Spell}, caster = {Caster}, target = null, projectileHit = {ProjectileHit}) - Target is null.", spell, caster, projectileHit);
+            _log.Warning(
+                "DoSpellEffects(spell = {Spell}, caster = {Caster}, target = null, projectileHit = {ProjectileHit}) - Target is null.",
+                spell,
+                caster,
+                projectileHit
+            );
             return;
         }
 
         var targetBroadcaster = target.Wielder ?? target;
 
-        targetBroadcaster.EnqueueBroadcast(
-            new GameMessageScript(target.Guid, spell.TargetEffect, spell.Formula.Scale)
-        );
+        targetBroadcaster.EnqueueBroadcast(new GameMessageScript(target.Guid, spell.TargetEffect, spell.Formula.Scale));
     }
 
     /// <summary>

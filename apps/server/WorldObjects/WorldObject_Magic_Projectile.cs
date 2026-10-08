@@ -82,7 +82,7 @@ partial class WorldObject
                 return;
             }
 
-            if (caster is Player playerCaster and ({ OverloadStanceIsActive: true } or {BatteryStanceIsActive: true}))
+            if (caster is Player playerCaster and ({ OverloadStanceIsActive: true } or { BatteryStanceIsActive: true }))
             {
                 playerCaster.IncreaseChargedMeter(spell, fromProc);
             }
@@ -90,7 +90,15 @@ partial class WorldObject
 
         var projectileSpellType = SpellProjectile.GetProjectileSpellType(spell.Id);
 
-        var launch = new SpellProjectileLaunch(weapon, isWeaponSpell, fromProc, damage, weaponSpellcraft, damageMultiplier, reflectedCaster);
+        var launch = new SpellProjectileLaunch(
+            weapon,
+            isWeaponSpell,
+            fromProc,
+            damage,
+            weaponSpellcraft,
+            damageMultiplier,
+            reflectedCaster
+        );
 
         if (projectileSpellType != ProjectileSpellType.Blast)
         {
@@ -103,7 +111,10 @@ partial class WorldObject
         {
             var blastRadius = spell.Id == (uint)SpellId.OlthoiQueenAcidSpray ? 1000 : 10;
             List<Creature> nearbyTargets;
-            nearbyTargets = this is Player ? targetCreature.GetNearbyMonsters(blastRadius) : targetCreature.GetNearbyPlayers(blastRadius);
+            nearbyTargets =
+                this is Player
+                    ? targetCreature.GetNearbyMonsters(blastRadius)
+                    : targetCreature.GetNearbyPlayers(blastRadius);
 
             var blastTargets = new List<Creature> { targetCreature };
 
@@ -171,8 +182,15 @@ partial class WorldObject
     /// RATING - Slash: Chance for bonus cleave target with slashing damage.
     /// (JEWEL - Imperial Topaz)
     /// </summary>
-    private void CheckForRatingSlashCleaveBonus(Spell spell, WorldObject weapon, bool isWeaponSpell, bool fromProc,
-        Creature caster, Creature targetCreature, uint damage)
+    private void CheckForRatingSlashCleaveBonus(
+        Spell spell,
+        WorldObject weapon,
+        bool isWeaponSpell,
+        bool fromProc,
+        Creature caster,
+        Creature targetCreature,
+        uint damage
+    )
     {
         // JEWEL - Imperial Topaz - Bonus cleave chance
         if (caster is not Player playerCaster || targetCreature == null)
@@ -219,7 +237,11 @@ partial class WorldObject
                 continue;
             }
 
-            CreateSpellProjectiles(spell, cleaveHit, new SpellProjectileLaunch(weapon, isWeaponSpell, fromProc, damage));
+            CreateSpellProjectiles(
+                spell,
+                cleaveHit,
+                new SpellProjectileLaunch(weapon, isWeaponSpell, fromProc, damage)
+            );
             break;
         }
     }

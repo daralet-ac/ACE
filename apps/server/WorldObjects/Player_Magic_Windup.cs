@@ -103,7 +103,6 @@ partial class Player
             {
                 EnqueueMotionMagic(castChain, windupGesture, CastSpeed);
             }
-
         }
 
         if (FastTick)
@@ -118,7 +117,7 @@ partial class Player
 
         if (casterItem != null)
         {
-                if (casterItem.UseUserAnimation != 0)
+            if (casterItem.UseUserAnimation != 0)
             {
                 MagicState.CastGesture = casterItem.UseUserAnimation;
             }
@@ -172,7 +171,6 @@ partial class Player
         {
             EnqueueMotionMagic(castChain, MagicState.CastGesture, CastSpeed);
         }
-
     }
 
     /// <summary>

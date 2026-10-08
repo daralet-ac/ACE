@@ -1934,7 +1934,9 @@ partial class Player
         {
             { OverloadDischargeIsActive: true } => "Overload Discharge! ",
             { BatteryDischargeIsActive: true } => "Battery Discharge! ",
-            { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true } => $"{Math.Round(ManaChargeMeter * 100)}% Charged! ",
+            { OverloadStanceIsActive: true }
+            or { BatteryStanceIsActive: true }
+                => $"{Math.Round(ManaChargeMeter * 100)}% Charged! ",
             _ => "",
         };
     }

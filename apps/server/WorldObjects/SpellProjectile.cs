@@ -471,12 +471,21 @@ public partial class SpellProjectile : WorldObject
     /// </summary>
     private float ApplySigilAbsorption(Player targetPlayer, WorldObject target, float damage)
     {
-        var sigilDamageReductionMod = targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(this, Spell, (int)damage, Skill.MagicDefense,
-            SigilTrinketMagicDefenseEffect.Absorption);
+        var sigilDamageReductionMod = targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(
+            this,
+            Spell,
+            (int)damage,
+            Skill.MagicDefense,
+            SigilTrinketMagicDefenseEffect.Absorption
+        );
 
         if (damage < 0 || damage > uint.MaxValue)
         {
-            _log.Error("OnCollideObject({Target}) - damage ({Damage}) could not be converted to uint.", target.Name, damage);
+            _log.Error(
+                "OnCollideObject({Target}) - damage ({Damage}) could not be converted to uint.",
+                target.Name,
+                damage
+            );
             return damage;
         }
 
@@ -504,7 +513,14 @@ public partial class SpellProjectile : WorldObject
             // handle EnchantmentProjectile successfully landing on target
             if (ProjectileSource != null)
             {
-                ProjectileSource.CreateEnchantment(creatureTarget, ProjectileSource, ProjectileLauncher, Spell, false, FromProc);
+                ProjectileSource.CreateEnchantment(
+                    creatureTarget,
+                    ProjectileSource,
+                    ProjectileLauncher,
+                    Spell,
+                    false,
+                    FromProc
+                );
             }
         }
         else
@@ -534,7 +550,14 @@ public partial class SpellProjectile : WorldObject
         // EMPOWERED SCARAB - Detonation Check for Cast-On-Strike
         if (player != null && FromProc)
         {
-            player.CheckForSigilTrinketOnCastEffects(target, Spell, true, Skill.WarMagic, SigilTrinketWarMagicEffect.Detonate, creatureTarget);
+            player.CheckForSigilTrinketOnCastEffects(
+                target,
+                Spell,
+                true,
+                Skill.WarMagic,
+                SigilTrinketWarMagicEffect.Detonate,
+                creatureTarget
+            );
         }
 
         if (sourceCreature != null && ProjectileTarget != null && !FromProc)
@@ -564,7 +587,14 @@ public partial class SpellProjectile : WorldObject
                 // EMPOWERED SCARAB - Detonate
                 if (player != null)
                 {
-                    player.CheckForSigilTrinketOnCastEffects(target, Spell, false, Skill.WarMagic, SigilTrinketWarMagicEffect.Detonate, creatureTarget);
+                    player.CheckForSigilTrinketOnCastEffects(
+                        target,
+                        Spell,
+                        false,
+                        Skill.WarMagic,
+                        SigilTrinketWarMagicEffect.Detonate,
+                        creatureTarget
+                    );
                 }
             }
             else

@@ -8,7 +8,6 @@ namespace ACE.Server.WorldObjects;
 
 partial class Player
 {
-
     private bool IsWithinAngle(WorldObject target)
     {
         // TODO: investigate this more, difference for GetAngle() between ACE and ac physics engine

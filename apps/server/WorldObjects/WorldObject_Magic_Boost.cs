@@ -90,13 +90,27 @@ partial class WorldObject
             return;
         }
 
-        var cast = new BoostCast(this, spell, targetCreature, weapon, fromProc, damageMultiplier, reflectedCaster, _partialEvasion);
+        var cast = new BoostCast(
+            this,
+            spell,
+            targetCreature,
+            weapon,
+            fromProc,
+            damageMultiplier,
+            reflectedCaster,
+            _partialEvasion
+        );
 
         // COMBAT ABILITY - Reflect: a reflected spell never damages the reflecting player.
         // A spell that was already reflected can't be reflected again.
         if (
             reflectedCaster == null
-            && CheckForCombatAbilityReflectSpell(cast.PartialEvasion is PartialEvasion.All or PartialEvasion.Some, cast.TargetPlayer, creature, spell)
+            && CheckForCombatAbilityReflectSpell(
+                cast.PartialEvasion is PartialEvasion.All or PartialEvasion.Some,
+                cast.TargetPlayer,
+                creature,
+                spell
+            )
         )
         {
             cast.TargetPlayer.CastReflectedSpell(spell, creature, null, damageMultiplier);
@@ -134,7 +148,14 @@ partial class WorldObject
         tryBoost = ApplyArchetypeAndLevelScaling(cast, tryBoost);
 
         // SIGIL TRINKET - Top of Absorption: the target player may convert part of the damage into mana
-        var sigilDamageReductionMod = cast.TargetPlayer?.CheckForSigilTrinketOnSpellHitReceivedEffects(this, spell, tryBoost, Skill.MagicDefense, SigilTrinketMagicDefenseEffect.Absorption) ?? 1.0f;
+        var sigilDamageReductionMod =
+            cast.TargetPlayer?.CheckForSigilTrinketOnSpellHitReceivedEffects(
+                this,
+                spell,
+                tryBoost,
+                Skill.MagicDefense,
+                SigilTrinketMagicDefenseEffect.Absorption
+            ) ?? 1.0f;
         tryBoost = Convert.ToInt32(tryBoost * sigilDamageReductionMod);
 
         var boost = ApplyBoostToVital(cast, tryBoost, out var srcVital);
@@ -158,8 +179,7 @@ partial class WorldObject
 
         SendBoostMessages(cast, boost, srcVital, critical, showMsg);
 
-        if (targetCreature.IsAlive && spell.VitalDamageType == DamageType.Health &&
-            boost < 0)
+        if (targetCreature.IsAlive && spell.VitalDamageType == DamageType.Health && boost < 0)
         {
             var damagePercent = (float)-boost / targetCreature.Health.MaxValue;
             ScheduleSpellDamageReactions(targetCreature, creature, equippedCloak, damagePercent);
@@ -270,7 +290,8 @@ partial class WorldObject
         var spellcraftMod = 1.0f;
         if (cast.FromProc && cast.Weapon?.ItemSpellcraft != null)
         {
-            var spellcraft = cast.Weapon.ItemSpellcraft.Value + CheckForArcaneLoreSpecSpellcraftBonus(cast.DamageSource);
+            var spellcraft =
+                cast.Weapon.ItemSpellcraft.Value + CheckForArcaneLoreSpecSpellcraftBonus(cast.DamageSource);
             spellcraftMod = MagicFormulas.GetProcSpellcraftDamageMod(spellcraft);
         }
 
@@ -280,7 +301,15 @@ partial class WorldObject
 
         var resistedMod = MagicFormulas.GetResistedMod(cast.PartialEvasion);
 
-        return (int)(tryBoost * overloadMod * batterMod * cast.DamageMultiplier * spellcraftMod * landblockScalingMod * resistedMod);
+        return (int)(
+            tryBoost
+            * overloadMod
+            * batterMod
+            * cast.DamageMultiplier
+            * spellcraftMod
+            * landblockScalingMod
+            * resistedMod
+        );
     }
 
     /// <summary>
@@ -314,13 +343,18 @@ partial class WorldObject
         // increases
         tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelRedFury(cast.DamageSourcePlayer)));
         tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelBlueFury(cast.DamageSourcePlayer)));
-        tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(cast.DamageSourcePlayer, PropertyInt.GearSelfHarm)));
+        tryBoost = Convert.ToInt32(
+            tryBoost * (1.0f + Jewel.GetJewelEffectMod(cast.DamageSourcePlayer, PropertyInt.GearSelfHarm))
+        );
 
         var attributeMod = cast.DamageSource?.GetAttributeMod(cast.Weapon, true) ?? 1.0f;
         tryBoost = Convert.ToInt32(tryBoost * attributeMod);
 
         // reductions
-        tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(cast.TargetPlayer, PropertyInt.GearNullification,"Nullification")));
+        tryBoost = Convert.ToInt32(
+            tryBoost
+                * (1.0f - Jewel.GetJewelEffectMod(cast.TargetPlayer, PropertyInt.GearNullification, "Nullification"))
+        );
 
         // ward
         var ignoreWardMod = 1.0f - Jewel.GetJewelEffectMod(cast.DamageSourcePlayer, PropertyInt.GearWardPen, "WardPen");
@@ -391,7 +425,8 @@ partial class WorldObject
 
                 if (manaBarrier)
                 {
-                    boost = -(int)Player.CombatAbilityManaBarrier(targetPlayer, (uint)-tryBoost, this, DamageType.Health);
+                    boost = -(int)
+                        Player.CombatAbilityManaBarrier(targetPlayer, (uint)-tryBoost, this, DamageType.Health);
                 }
                 else
                 {
@@ -462,18 +497,21 @@ partial class WorldObject
             {
                 if (spell.IsBeneficial)
                 {
-                    casterMessage = $"{partialResist}{chargedMsg}{critMessage}With {spell.Name} you restore {boost} points of {srcVital} to {targetCreature.Name}.";
+                    casterMessage =
+                        $"{partialResist}{chargedMsg}{critMessage}With {spell.Name} you restore {boost} points of {srcVital} to {targetCreature.Name}.";
                 }
                 else
                 {
-                    casterMessage = $"{partialResist}{chargedMsg}{critMessage}With {spell.Name} you drain {Math.Abs(boost)} points of {srcVital} from {targetCreature.Name}.";
+                    casterMessage =
+                        $"{partialResist}{chargedMsg}{critMessage}With {spell.Name} you drain {Math.Abs(boost)} points of {srcVital} from {targetCreature.Name}.";
                 }
             }
             else
             {
                 var verb = spell.IsBeneficial ? "restore" : "drain";
 
-                casterMessage = $"{partialResist}{chargedMsg}{critMessage}You cast {spell.Name} and {verb} {Math.Abs(boost)} points of your {srcVital}.";
+                casterMessage =
+                    $"{partialResist}{chargedMsg}{critMessage}You cast {spell.Name} and {verb} {Math.Abs(boost)} points of your {srcVital}.";
             }
 
             if (showMsg)
@@ -488,11 +526,13 @@ partial class WorldObject
 
             if (spell.IsBeneficial)
             {
-                targetMessage = $"{partialResist}{critMessage}{Name} casts {spell.Name} and restores {boost} points of your {srcVital}.";
+                targetMessage =
+                    $"{partialResist}{critMessage}{Name} casts {spell.Name} and restores {boost} points of your {srcVital}.";
             }
             else
             {
-                targetMessage = $"{partialResist}{critMessage}{Name} casts {spell.Name} and drains {Math.Abs(boost)} points of your {srcVital}.";
+                targetMessage =
+                    $"{partialResist}{critMessage}{Name} casts {spell.Name} and drains {Math.Abs(boost)} points of your {srcVital}.";
 
                 if (creature != null)
                 {
@@ -562,9 +602,7 @@ partial class WorldObject
         var spellcraft = (uint)(weapon.ItemSpellcraft ?? 1) + CheckForArcaneLoreSpecSpellcraftBonus(player);
 
         var playerSpellSkill =
-            spell.School == MagicSchool.WarMagic
-                ? player.GetModdedWarMagicSkill()
-                : player.GetModdedLifeMagicSkill();
+            spell.School == MagicSchool.WarMagic ? player.GetModdedWarMagicSkill() : player.GetModdedLifeMagicSkill();
 
         return MagicFormulas.GetSelfTargetProcMod(playerSpellSkill, spellcraft, spell.Power);
     }

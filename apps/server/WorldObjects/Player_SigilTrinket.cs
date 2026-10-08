@@ -333,7 +333,14 @@ partial class Player
     /// <param name="skill"></param>
     /// <param name="effectId"></param>
     /// <returns>The multiplier for the spell damage received (Sigil Top of Absorption), 1.0 if none</returns>
-    public float CheckForSigilTrinketOnSpellHitReceivedEffects(WorldObject spellSource, Spell spell, int damage, Skill skill, Enum effectId, bool onCrit = false)
+    public float CheckForSigilTrinketOnSpellHitReceivedEffects(
+        WorldObject spellSource,
+        Spell spell,
+        int damage,
+        Skill skill,
+        Enum effectId,
+        bool onCrit = false
+    )
     {
         var equippedSigilTrinkets = GetEquippedSigilTrinkets();
         if (equippedSigilTrinkets.Count == 0)

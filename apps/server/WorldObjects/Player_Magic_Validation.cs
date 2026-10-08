@@ -271,7 +271,10 @@ partial class Player
         // portal spells never fizzle
         if (spell.School == MagicSchool.PortalMagic)
         {
-            castingPreCheckStatus = GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.PortalMagic, ItemCurMana: 0 } ? CastingPreCheckStatus.CastFailed : CastingPreCheckStatus.Success;
+            castingPreCheckStatus = GetEquippedWand()
+                is { NoCompsRequiredForMagicSchool: (int)MagicSchool.PortalMagic, ItemCurMana: 0 }
+                ? CastingPreCheckStatus.CastFailed
+                : CastingPreCheckStatus.Success;
         }
 
         // a caster that can only cast one school always fizzles the other schools
@@ -287,7 +290,10 @@ partial class Player
         }
 
         // Check for Nether Dampening preventing Restoration Resonance spells
-        if (EnchantmentManager.HasSpell((uint)SpellId.VoidRestorationPenalty) && IsRestorationResonanceSpell(spell.Category))
+        if (
+            EnchantmentManager.HasSpell((uint)SpellId.VoidRestorationPenalty)
+            && IsRestorationResonanceSpell(spell.Category)
+        )
         {
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(

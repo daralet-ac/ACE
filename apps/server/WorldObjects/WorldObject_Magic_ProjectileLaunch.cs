@@ -33,7 +33,9 @@ partial class WorldObject
     {
         if (spell.NumProjectiles == 0)
         {
-            _log.Error($"{Name} ({Guid}).CreateSpellProjectiles({spell.Id} - {spell.Name}) - spell.NumProjectiles == 0");
+            _log.Error(
+                $"{Name} ({Guid}).CreateSpellProjectiles({spell.Id} - {spell.Name}) - spell.NumProjectiles == 0"
+            );
             return new List<SpellProjectile>();
         }
         var spellType = SpellProjectile.GetProjectileSpellType(spell.Id);
@@ -49,7 +51,11 @@ partial class WorldObject
             (uint)SpellId.GauntletCriticalDamageBoostI,
             null
         );
-        if (propertiesEnchantmentRegistry != null && spellType == ProjectileSpellType.Blast && launch.ReflectedCaster == null)
+        if (
+            propertiesEnchantmentRegistry != null
+            && spellType == ProjectileSpellType.Blast
+            && launch.ReflectedCaster == null
+        )
         {
             EnchantmentManager.Dispel(propertiesEnchantmentRegistry);
             fireAllProjectilesFromCenter = true;
@@ -112,11 +118,7 @@ partial class WorldObject
     /// Returns a list of positions to spawn projectiles for a spell,
     /// in local space relative to the caster
     /// </summary>
-    private List<Vector3> CalculateProjectileOrigins(
-        Spell spell,
-        ProjectileSpellType spellType,
-        WorldObject target
-    )
+    private List<Vector3> CalculateProjectileOrigins(Spell spell, ProjectileSpellType spellType, WorldObject target)
     {
         var numProjectiles = spell.NumProjectiles;
         if (spellType == ProjectileSpellType.Blast)
@@ -498,9 +500,7 @@ partial class WorldObject
 
         if (!weenie.PropertiesDID.TryGetValue(PropertyDataId.Setup, out var setupId))
         {
-            _log.Error(
-                $"GetProjectileRadius(): couldn't find SetupId for {weenie.WeenieClassId} - {weenie.ClassName}"
-            );
+            _log.Error($"GetProjectileRadius(): couldn't find SetupId for {weenie.WeenieClassId} - {weenie.ClassName}");
             return 0.0f;
         }
 

@@ -29,12 +29,36 @@ partial class SpellProjectile
     {
         if (hit.SourceCreature != null && hit.SourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
         {
-            AppendDamageDebugInfo(hit.SourceCreature, hit.AttackSkill, criticalChance, criticalHit, critDefended, overpower, baseDamage, weaponCritDamageMod, weaponResistanceMod, damageMods, mitigation);
+            AppendDamageDebugInfo(
+                hit.SourceCreature,
+                hit.AttackSkill,
+                criticalChance,
+                criticalHit,
+                critDefended,
+                overpower,
+                baseDamage,
+                weaponCritDamageMod,
+                weaponResistanceMod,
+                damageMods,
+                mitigation
+            );
         }
 
         if (hit.Target.DebugDamage.HasFlag(Creature.DebugDamageType.Defender))
         {
-            AppendDamageDebugInfo(hit.Target, hit.AttackSkill, criticalChance, criticalHit, critDefended, overpower, baseDamage, weaponCritDamageMod, weaponResistanceMod, damageMods, mitigation);
+            AppendDamageDebugInfo(
+                hit.Target,
+                hit.AttackSkill,
+                criticalChance,
+                criticalHit,
+                critDefended,
+                overpower,
+                baseDamage,
+                weaponCritDamageMod,
+                weaponResistanceMod,
+                damageMods,
+                mitigation
+            );
         }
     }
 
@@ -123,7 +147,12 @@ partial class SpellProjectile
     /// <summary>
     /// Finishes the damage debug output started by ShowDamageDebugInfo: the rating modifiers and the final damage
     /// </summary>
-    private static void ShowRatingDebugInfo(Creature target, Creature sourceCreature, in SpellRatingModifiers ratings, float damage)
+    private static void ShowRatingDebugInfo(
+        Creature target,
+        Creature sourceCreature,
+        in SpellRatingModifiers ratings,
+        float damage
+    )
     {
         if (sourceCreature != null && sourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
         {
