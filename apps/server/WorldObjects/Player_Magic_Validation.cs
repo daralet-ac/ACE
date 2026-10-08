@@ -16,7 +16,7 @@ partial class Player
     /// or in the weapon's spellbook in the case of built-in spells
     /// </summary>
     /// <param name="casterItem">The casting item, when casting one of its built-in spells</param>
-    public bool VerifySpell(uint spellId, WorldObject casterItem = null)
+    private bool VerifySpell(uint spellId, WorldObject casterItem = null)
     {
         if (casterItem != null)
         {
@@ -46,7 +46,7 @@ partial class Player
     /// Returns TRUE if the currently equipped casting implement
     /// has a built-in spell
     /// </summary>
-    public bool IsWeaponSpell(uint spellId, WorldObject casterItem)
+    private bool IsWeaponSpell(uint spellId, WorldObject casterItem)
     {
         var caster = casterItem;
 
@@ -58,7 +58,7 @@ partial class Player
         return caster.SpellDID == spellId;
     }
 
-    public bool VerifyBusy()
+    private bool VerifyBusy()
     {
         if (IsBusy || Teleporting || suicideInProgress)
         {
@@ -68,7 +68,7 @@ partial class Player
         return true;
     }
 
-    public Spell ValidateSpell(uint spellId, bool isWeaponSpell = false)
+    private Spell ValidateSpell(uint spellId, bool isWeaponSpell = false)
     {
         var spell = new Spell(spellId);
 
@@ -99,7 +99,7 @@ partial class Player
         return spell;
     }
 
-    public bool VerifySpellTarget(Spell spell, WorldObject target)
+    private bool VerifySpellTarget(Spell spell, WorldObject target)
     {
         if (IsInvalidTarget(spell, target))
         {
@@ -193,7 +193,7 @@ partial class Player
         return false;
     }
 
-    public bool VerifySpellRange(
+    private bool VerifySpellRange(
         WorldObject target,
         TargetCategory targetCategory,
         Spell spell,
@@ -252,7 +252,7 @@ partial class Player
         return true;
     }
 
-    public CastingPreCheckStatus GetCastingPreCheckStatus(Spell spell, uint magicSkill, bool isWeaponSpell)
+    private CastingPreCheckStatus GetCastingPreCheckStatus(Spell spell, uint magicSkill, bool isWeaponSpell)
     {
         var difficulty = spell.Power;
 
@@ -313,7 +313,7 @@ partial class Player
         return castingPreCheckStatus;
     }
 
-    public bool VerifyNonComponentTargetType(Spell spell, WorldObject target)
+    private bool VerifyNonComponentTargetType(Spell spell, WorldObject target)
     {
         // untargeted spell projectiles
         if (target == null)

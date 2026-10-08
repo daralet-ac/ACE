@@ -16,46 +16,46 @@ namespace ACE.Server.WorldObjects;
 
 public partial class SpellProjectile : WorldObject
 {
-    public Spell Spell;
-    public ProjectileSpellType SpellType { get; set; }
+    public Spell Spell { get; private set; }
+    public ProjectileSpellType SpellType { get; private set; }
 
-    public Position SpawnPos { get; set; }
-    public uint LifeProjectileDamage { get; set; }
+    public Position SpawnPos { get; private set; }
+    public uint LifeProjectileDamage { get; private set; }
 
-    public int Strikethrough;
+    public int Strikethrough { get; private set; }
     public const int StrikethroughLimit = 3;
     private const double StrikethroughChance = 0.5f;
 
     private readonly List<uint> _strikethroughTargets = [];
 
-    public int? WeaponSpellcraft;
+    public int? WeaponSpellcraft { get; private set; }
 
     public SpellProjectileInfo Info { get; set; }
 
     /// <summary>
     /// Only set to true when this spell was launched by using the built-in spell on a caster
     /// </summary>
-    public bool IsWeaponSpell { get; set; }
+    public bool IsWeaponSpell { get; private set; }
 
     /// <summary>
     /// If a spell projectile is from a proc source,
     /// make sure there is no attempt to re-proc again when the spell projectile hits
     /// </summary>
-    public bool FromProc { get; set; }
+    public bool FromProc { get; private set; }
 
     public int DebugVelocity;
 
     /// <summary>
     /// Assigned from emote CastSpellInstant/CastSpell (emote.Percent)
     /// </summary>
-    public double DamageMultiplier = 1.0;
+    public double DamageMultiplier { get; private set; } = 1.0;
 
     /// <summary>
     /// COMBAT ABILITY - Reflect: the original caster of a reflected spell.
     /// The projectile is launched by the reflecting player (ProjectileSource),
     /// but its resist check and damage are based on this creature's stats.
     /// </summary>
-    public Creature ReflectedCaster;
+    public Creature ReflectedCaster { get; private set; }
 
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
@@ -268,7 +268,7 @@ public partial class SpellProjectile : WorldObject
         }
     }
 
-    public bool WorldEntryCollision { get; set; }
+    public bool WorldEntryCollision { get; private set; }
 
     public void ProjectileImpact()
     {
@@ -622,5 +622,7 @@ public partial class SpellProjectile : WorldObject
         }
 
         PhysicsObj.set_active(true);
+
+        SpawnPos = new Position(Location);
     }
 }

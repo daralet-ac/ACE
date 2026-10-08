@@ -117,14 +117,14 @@ partial class WorldObject
             {
                 foreach (var itemTarget in targets)
                 {
-                    TryCastSpell(spell, itemTarget, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, true, null, damageMultiplier);
+                    TryCastSpell(spell, itemTarget, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, damageMultiplier: damageMultiplier);
                 }
 
                 return targets.Count > 0;
             }
         }
 
-        TryCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, true, null, damageMultiplier);
+        TryCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, damageMultiplier: damageMultiplier);
 
         return true;
     }

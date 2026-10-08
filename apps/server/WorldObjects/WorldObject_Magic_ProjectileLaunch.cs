@@ -455,7 +455,6 @@ partial class WorldObject
             }
 
             sp.SetProjectilePhysicsState(sp.ProjectileTarget, useGravity);
-            sp.SpawnPos = new Position(sp.Location);
 
             sp.InstanceId = InstanceId;
 

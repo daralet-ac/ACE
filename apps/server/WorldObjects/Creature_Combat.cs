@@ -1580,22 +1580,22 @@ partial class Creature
 
         if (spell.NonComponentTargetType == ItemType.None)
         {
-            TryCastSpell(spell, null, this, null, false, false, false, false);
+            TryCastSpell(spell, null, itemCaster: this, tryResist: false, showMsg: false);
         }
         else
         {
-            TryCastSpell(spell, target, this, null, false, false, false, false);
+            TryCastSpell(spell, target, itemCaster: this, tryResist: false, showMsg: false);
         }
 
         if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
         {
             if (spell.NonComponentTargetType == ItemType.None)
             {
-                TryCastSpell(spellSpec, null, this, null, false, false, false, false);
+                TryCastSpell(spellSpec, null, itemCaster: this, tryResist: false, showMsg: false);
             }
             else
             {
-                TryCastSpell(spellSpec, target, this, null, false, false, false, false);
+                TryCastSpell(spellSpec, target, itemCaster: this, tryResist: false, showMsg: false);
             }
         }
     }

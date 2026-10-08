@@ -44,7 +44,7 @@ partial class Player
     /// Returns the magic skill associated with the magic school
     /// for the last collided spell projectile
     /// </summary>
-    public Skill GetCurrentMagicSkill()
+    private Skill GetCurrentMagicSkill()
     {
         if (LastHitSpellProjectile == null)
         {
@@ -217,7 +217,7 @@ partial class Player
         }
     }
 
-    public TargetCategory GetTargetCategory(uint targetGuid, uint spellId, out WorldObject target)
+    private TargetCategory GetTargetCategory(uint targetGuid, uint spellId, out WorldObject target)
     {
         // fellowship spell
         var spell = new Spell(spellId);
@@ -315,11 +315,11 @@ partial class Player
         Success
     }
 
-    public static float Windup_MaxMove = 6.0f;
+    private const float Windup_MaxMove = 6.0f;
 
     public Physics.Common.Position StartPos { get; set; }
 
-    public void HandleCastQueue()
+    private void HandleCastQueue()
     {
         MagicState.CanQueue = false;
 

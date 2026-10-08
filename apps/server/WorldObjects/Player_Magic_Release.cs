@@ -13,7 +13,7 @@ namespace ACE.Server.WorldObjects;
 
 partial class Player
 {
-    public void DoCastSpell(bool checkAngle = true)
+    private void DoCastSpell(bool checkAngle = true)
     {
         if (!MagicState.IsCasting)
         {
@@ -106,7 +106,7 @@ partial class Player
     /// </summary>
     /// <param name="target">The cast's target, looked up again when the spell is released</param>
     /// <param name="castingPreCheckStatus">The cast's status, or CastFailed for a fizzle</param>
-    public void DoCastSpell_Inner(
+    private void DoCastSpell_Inner(
         CastSpellParams cast,
         WorldObject target,
         CastingPreCheckStatus castingPreCheckStatus,
@@ -306,7 +306,7 @@ partial class Player
                     return false;
                 }
 
-                HandleCastSpell(spell, target, itemCaster, caster, isWeaponSpell);
+                HandleCastSpell(spell, target, itemCaster, weapon: caster, isWeaponSpell);
                 return true;
 
             default:
@@ -433,7 +433,7 @@ partial class Player
         Die();
     }
 
-    public void FinishCast()
+    private void FinishCast()
     {
         var hasWindupGestures = MagicState.CastSpellParams?.HasWindupGestures ?? true;
         var castGesture = MagicState.CastGesture;
@@ -506,7 +506,7 @@ partial class Player
         }
     }
 
-    public List<Player> GetFellowshipTargets()
+    private List<Player> GetFellowshipTargets()
     {
         if (Fellowship != null)
         {

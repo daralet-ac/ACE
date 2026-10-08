@@ -9,7 +9,7 @@ namespace ACE.Server.WorldObjects;
 partial class Player
 {
 
-    public bool IsWithinAngle(WorldObject target)
+    private bool IsWithinAngle(WorldObject target)
     {
         // TODO: investigate this more, difference for GetAngle() between ACE and ac physics engine
         var angle = 0.0f;
@@ -46,7 +46,7 @@ partial class Player
 
     public WorldObject TurnTarget;
 
-    public void TurnTo_Magic(WorldObject target)
+    private void TurnTo_Magic(WorldObject target)
     {
         TurnTarget = target;
 
@@ -172,7 +172,7 @@ partial class Player
         }
     }
 
-    public bool VerifyCastRadius()
+    private bool VerifyCastRadius()
     {
         if (MagicState.CastGestureStartTime != DateTime.MinValue)
         {
@@ -187,7 +187,7 @@ partial class Player
         return true;
     }
 
-    public void CheckTurn()
+    private void CheckTurn()
     {
         // verify cast radius while manually moving after windup
         if (!VerifyCastRadius())

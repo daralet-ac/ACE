@@ -377,7 +377,7 @@ partial class Creature
 
             case MagicSchool.LifeMagic:
 
-                HandleCastSpell(spell, target, null, caster);
+                HandleCastSpell(spell, target, weapon: caster);
 
                 if (spell.MetaSpellType != SpellType.LifeProjectile)
                 {
@@ -390,7 +390,7 @@ partial class Creature
             case MagicSchool.WarMagic:
             case MagicSchool.VoidMagic:
 
-                HandleCastSpell(spell, target, null, caster);
+                HandleCastSpell(spell, target, weapon: caster);
                 break;
         }
     }

@@ -8,7 +8,7 @@ namespace ACE.Server.WorldObjects;
 
 partial class Player
 {
-    public bool CalculateManaUsage(
+    private bool CalculateManaUsage(
         CastingPreCheckStatus castingPreCheckStatus,
         Spell spell,
         WorldObject target,
@@ -45,7 +45,7 @@ partial class Player
         return true;
     }
 
-    public void TryBurnComponents(Spell spell)
+    private void TryBurnComponents(Spell spell)
     {
         if (SafeSpellComponents || PropertyManager.GetBool("safe_spell_comps").Item)
         {
@@ -105,7 +105,7 @@ partial class Player
     /// <summary>
     /// Returns TRUE if the player has the required number of components to cast spell
     /// </summary>
-    public bool HasComponentsForSpell(Spell spell)
+    private bool HasComponentsForSpell(Spell spell)
     {
         spell.Formula.GetPlayerFormula(this);
 

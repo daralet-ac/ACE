@@ -9,7 +9,7 @@ namespace ACE.Server.WorldObjects;
 
 partial class Player
 {
-    public void DoWindup(WindupParams windupParams, bool checkAngle)
+    private void DoWindup(WindupParams windupParams, bool checkAngle)
     {
         // ensure target still exists
         var targetCategory = GetTargetCategory(windupParams.TargetGuid, windupParams.SpellId, out var target);
@@ -42,7 +42,7 @@ partial class Player
         }
     }
 
-    public void DoSpellWords(Spell spell, bool isWeaponSpell)
+    private void DoSpellWords(Spell spell, bool isWeaponSpell)
     {
         spell.Formula.GetPlayerFormula(this);
 
@@ -56,9 +56,9 @@ partial class Player
         }
     }
 
-    public static float CastSpeed = 2.0f; // from retail pcaps, player animation speed for windup / first half of cast gesture
+    private const float CastSpeed = 2.0f; // from retail pcaps, player animation speed for windup / first half of cast gesture
 
-    public void DoWindupGestures(Spell spell, bool isWeaponSpell, ActionChain castChain)
+    private void DoWindupGestures(Spell spell, bool isWeaponSpell, ActionChain castChain)
     {
         if (spell.Flags.HasFlag(SpellFlags.FastCast) || isWeaponSpell)
         {
@@ -112,7 +112,7 @@ partial class Player
         }
     }
 
-    public void DoCastGesture(Spell spell, WorldObject casterItem, ActionChain castChain)
+    private void DoCastGesture(Spell spell, WorldObject casterItem, ActionChain castChain)
     {
         MagicState.CastGesture = spell.Formula.CastGesture;
 
@@ -179,7 +179,7 @@ partial class Player
     /// Method used for handling player targeted spell casts
     /// </summary>
     /// <param name="casterItem">The casting item, when casting one of its built-in spells</param>
-    public bool CreatePlayerSpell(
+    private bool CreatePlayerSpell(
         WorldObject target,
         TargetCategory targetCategory,
         uint spellId,
@@ -228,7 +228,7 @@ partial class Player
     /// <summary>
     /// Method used for handling player untargeted spell casts
     /// </summary>
-    public bool CreatePlayerSpell(uint spellId)
+    private bool CreatePlayerSpell(uint spellId)
     {
         var spell = ValidateSpell(spellId);
         if (spell == null)
