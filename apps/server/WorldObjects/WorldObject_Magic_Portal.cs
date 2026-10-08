@@ -474,29 +474,12 @@ partial class WorldObject
     {
         if (targetCreature is Player targetPlayer)
         {
-            if (targetPlayer.PKTimerActive)
+            if (IsBlockedByPkTimer(targetPlayer))
             {
-                targetPlayer.Session.Network.EnqueueSend(
-                    new GameEventWeenieError(targetPlayer.Session, WeenieError.YouHaveBeenInPKBattleTooRecently)
-                );
                 return;
             }
 
-            var portalSendingChain = new ActionChain();
-            portalSendingChain.AddAction(targetPlayer, () => targetPlayer.DoPreTeleportHide());
-            portalSendingChain.AddAction(
-                targetPlayer,
-                () =>
-                {
-                    var teleportDest = new Position(spell.Position);
-                    AdjustDungeon(teleportDest);
-
-                    targetPlayer.Teleport(teleportDest);
-
-                    targetPlayer.SendTeleportedViaMagicMessage(itemCaster, spell);
-                }
-            );
-            portalSendingChain.EnqueueChain();
+            SendToSpellPosition(targetPlayer, spell, itemCaster);
         }
         else if (targetCreature != null)
         {
@@ -521,11 +504,8 @@ partial class WorldObject
             return;
         }
 
-        if (targetPlayer.PKTimerActive)
+        if (IsBlockedByPkTimer(targetPlayer))
         {
-            targetPlayer.Session.Network.EnqueueSend(
-                new GameEventWeenieError(targetPlayer.Session, WeenieError.YouHaveBeenInPKBattleTooRecently)
-            );
             return;
         }
 
@@ -547,6 +527,30 @@ partial class WorldObject
             }
         }
 
+        SendToSpellPosition(targetPlayer, spell, itemCaster);
+    }
+
+    /// <summary>
+    /// Returns TRUE (and tells the player) if a recent PK battle keeps them from being portal sent
+    /// </summary>
+    private static bool IsBlockedByPkTimer(Player targetPlayer)
+    {
+        if (!targetPlayer.PKTimerActive)
+        {
+            return false;
+        }
+
+        targetPlayer.Session.Network.EnqueueSend(
+            new GameEventWeenieError(targetPlayer.Session, WeenieError.YouHaveBeenInPKBattleTooRecently)
+        );
+        return true;
+    }
+
+    /// <summary>
+    /// Teleports a player to a portal sending spell's destination
+    /// </summary>
+    private static void SendToSpellPosition(Player targetPlayer, Spell spell, WorldObject itemCaster)
+    {
         var portalSendingChain = new ActionChain();
         portalSendingChain.AddAction(targetPlayer, () => targetPlayer.DoPreTeleportHide());
         portalSendingChain.AddAction(

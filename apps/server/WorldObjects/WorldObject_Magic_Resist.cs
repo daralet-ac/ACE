@@ -38,21 +38,9 @@ partial class WorldObject
 
         if (resistRoll < chance)
         {
-            var partialResistRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-
-            // Roll resist type (33% for each resist type)
-            const float fullResistChance = 1.0f / 3.0f;
-            const float partialResistChance = fullResistChance * 2;
-
-            switch (partialResistRoll)
-            {
-                case < fullResistChance:
-                    partialResist = PartialEvasion.All;
-                    return true;
-                case < partialResistChance:
-                    partialResist = PartialEvasion.Some;
-                    return false;
-            }
+            // a full resist, a partial resist or a full hit, with an equal chance of each
+            partialResist = DamageFormulas.GetEvasionType(ThreadSafeRandom.Next(0.0f, 1.0f));
+            return partialResist == PartialEvasion.All;
         }
 
         partialResist = PartialEvasion.None;
@@ -231,21 +219,7 @@ partial class WorldObject
 
         if (caster is Creature casterCreature)
         {
-            // Retrieve caster's skill level in the Magic School
-            var magicSchool = spell.School;
-
-            if (magicSchool is MagicSchool.VoidMagic)
-            {
-                magicSchool = MagicSchool.LifeMagic;
-            }
-
-            // Retrieve the casters Magic mods from worn armor
-            magicSkill = magicSchool switch
-            {
-                MagicSchool.WarMagic => casterCreature.GetModdedWarMagicSkill(),
-                MagicSchool.LifeMagic => casterCreature.GetModdedLifeMagicSkill(),
-                _ => casterCreature.GetCreatureSkill(magicSchool)?.Current ?? 0,
-            };
+            magicSkill = casterCreature.GetModdedMagicSkill(spell.School);
 
             // Retrieve caster's secondary attribute mod (1% per 20 attributes)
             var secondaryAttributeMod = casterCreature.Focus.Current * 0.0005 + 1;
@@ -253,11 +227,7 @@ partial class WorldObject
             // if proc spell or enchanted blade spell
             if (weaponSpellcraft is not null)
             {
-                weaponSpellcraft += (int)CheckForArcaneLoreSpecSpellcraftBonus(casterCreature);
-
-                var spellcraftBonus = (uint)(weaponSpellcraft * 0.1);
-
-                magicSkill += spellcraftBonus;
+                magicSkill += GetSpellcraftSkillBonus(weaponSpellcraft.Value, casterCreature);
             }
 
             if (weaponAttackMod is not null)
@@ -279,10 +249,7 @@ partial class WorldObject
         }
         else if (caster.ItemSpellcraft != null)
         {
-            // Retrieve casting item's spellcraft
-            var spellcraft = (uint)caster.ItemSpellcraft.Value;
-
-            // When an item with spellcraft casts a spell while being wielded by a creature, average the spellcraft and wielder's magic skill
+            // When an item with spellcraft casts a spell while being wielded by a creature, the wielder's magic skill gets the spellcraft bonus
             if (caster.Wielder is Creature wielder)
             {
                 var casterMagicSkill =
@@ -290,11 +257,7 @@ partial class WorldObject
                         ? wielder.GetModdedWarMagicSkill()
                         : wielder.GetModdedLifeMagicSkill();
 
-                spellcraft += CheckForArcaneLoreSpecSpellcraftBonus(wielder);
-
-                var spellcraftBonus = (uint)(spellcraft * 0.1);
-
-                magicSkill = casterMagicSkill + spellcraftBonus;
+                magicSkill = casterMagicSkill + GetSpellcraftSkillBonus(caster.ItemSpellcraft.Value, wielder);
             }
         }
         else if (caster.Wielder is Creature wielder)
@@ -312,6 +275,15 @@ partial class WorldObject
     private static float CheckForCombatAbilityReflectMagicDefBonus(Player targetPlayer)
     {
         return targetPlayer is { ReflectIsActive: true } ? 0.5f : 0.0f;
+    }
+
+    /// <summary>
+    /// The magic skill bonus from an item's spellcraft: 10% of the spellcraft,
+    /// including the wielder's Arcane Lore spec bonus
+    /// </summary>
+    public static uint GetSpellcraftSkillBonus(int itemSpellcraft, Creature wielder)
+    {
+        return (uint)((itemSpellcraft + CheckForArcaneLoreSpecSpellcraftBonus(wielder)) * 0.1);
     }
 
     /// <summary>
@@ -467,7 +439,7 @@ partial class WorldObject
     /// <summary>
     /// If resist succeeded, determine if resist was partial or full.
     /// </summary>
-    private float GetResistedMod(PartialEvasion partialEvasion)
+    protected static float GetResistedMod(PartialEvasion partialEvasion)
     {
         switch (partialEvasion)
         {

@@ -71,7 +71,7 @@ partial class Creature
             if (this is Player { Fellowship: not null } player)
             {
                 var magicSkill = GetCreatureSkill(spell.School).Current;
-                var maxRange = Math.Min(spell.BaseRangeConstant + magicSkill * spell.BaseRangeMod, Player.MaxRadarRange_Outdoors);
+                var maxRange = spell.GetMaxCastRange(magicSkill);
 
                 foreach (var fellowshipMember in player.Fellowship.GetFellowshipMembers().Values)
                 {

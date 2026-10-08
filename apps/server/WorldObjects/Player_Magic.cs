@@ -68,16 +68,19 @@ partial class Player
     }
 
     /// <summary>
-    /// Handles player targeted casting message
+    /// The checks every cast request goes through first: magic combat mode, magic stance, jumping, PK logout and busy.
+    /// A request made while busy with a cast may be queued instead.
+    /// Returns FALSE if the cast can't start now.
     /// </summary>
-    /// <param name="casterItem">The casting item, when casting one of its built-in spells</param>
-    public void HandleActionCastTargetedSpell(uint targetGuid, uint spellId, WorldObject casterItem = null)
+    private bool TryAcceptCastRequest(CastQueueType castType, uint targetGuid, uint spellId, WorldObject casterItem)
     {
         if (CombatMode != CombatMode.Magic)
         {
-            _log.Error(
-                $"{Name}.HandleActionCastTargetedSpell({targetGuid:X8}, {spellId}, {casterItem?.Name}) - CombatMode mismatch {CombatMode}, LastCombatMode: {LastCombatMode}"
-            );
+            var request = castType == CastQueueType.Targeted
+                ? $"HandleActionCastTargetedSpell({targetGuid:X8}, {spellId}, {casterItem?.Name})"
+                : $"HandleActionMagicCastUnTargetedSpell({spellId})";
+
+            _log.Error($"{Name}.{request} - CombatMode mismatch {CombatMode}, LastCombatMode: {LastCombatMode}");
 
             if (LastCombatMode == CombatMode.Magic)
             {
@@ -86,7 +89,7 @@ partial class Player
             else
             {
                 SendUseDoneEvent();
-                return;
+                return false;
             }
         }
 
@@ -100,29 +103,38 @@ partial class Player
             );
             ApplyPhysicsMotion(new Motion(MotionStance.Magic));
             SendUseDoneEvent(WeenieError.YoureTooBusy);
-            return;
+            return false;
         }
 
         if (IsJumping)
         {
             SendUseDoneEvent(WeenieError.YouCantDoThatWhileInTheAir);
-            return;
+            return false;
         }
 
         if (PKLogout)
         {
             SendUseDoneEvent(WeenieError.YouHaveBeenInPKBattleTooRecently);
-            return;
+            return false;
         }
 
         if (IsBusy && MagicState.CanQueue)
         {
-            MagicState.CastQueue = new CastQueue(CastQueueType.Targeted, targetGuid, spellId, casterItem);
+            MagicState.CastQueue = new CastQueue(castType, targetGuid, spellId, casterItem);
             MagicState.CanQueue = false;
-            return;
+            return false;
         }
 
-        if (!VerifyBusy())
+        return VerifyBusy();
+    }
+
+    /// <summary>
+    /// Handles player targeted casting message
+    /// </summary>
+    /// <param name="casterItem">The casting item, when casting one of its built-in spells</param>
+    public void HandleActionCastTargetedSpell(uint targetGuid, uint spellId, WorldObject casterItem = null)
+    {
+        if (!TryAcceptCastRequest(CastQueueType.Targeted, targetGuid, spellId, casterItem))
         {
             return;
         }
@@ -269,56 +281,7 @@ partial class Player
     /// </summary>
     public void HandleActionMagicCastUnTargetedSpell(uint spellId)
     {
-        if (CombatMode != CombatMode.Magic)
-        {
-            _log.Error(
-                $"{Name}.HandleActionMagicCastUnTargetedSpell({spellId}) - CombatMode mismatch {CombatMode}, LastCombatMode {LastCombatMode}"
-            );
-
-            if (LastCombatMode == CombatMode.Magic)
-            {
-                CombatMode = CombatMode.Magic;
-            }
-            else
-            {
-                SendUseDoneEvent();
-                return;
-            }
-        }
-
-        if (
-            FastTick
-            && PhysicsObj.MovementManager.MotionInterpreter.InterpretedState.CurrentStyle != (uint)MotionStance.Magic
-        )
-        {
-            _log.Warning(
-                $"{Name} CombatMode: {CombatMode}, CurrentMotionState: {CurrentMotionState.Stance}.{CurrentMotionState.MotionState.ForwardCommand}, Physics: {(MotionStance)PhysicsObj.MovementManager.MotionInterpreter.InterpretedState.CurrentStyle}.{(MotionCommand)PhysicsObj.MovementManager.MotionInterpreter.InterpretedState.ForwardCommand}"
-            );
-            ApplyPhysicsMotion(new Motion(MotionStance.Magic));
-            SendUseDoneEvent(WeenieError.YoureTooBusy);
-            return;
-        }
-
-        if (IsJumping)
-        {
-            SendUseDoneEvent(WeenieError.YouCantDoThatWhileInTheAir);
-            return;
-        }
-
-        if (PKLogout)
-        {
-            SendUseDoneEvent(WeenieError.YouHaveBeenInPKBattleTooRecently);
-            return;
-        }
-
-        if (IsBusy && MagicState.CanQueue)
-        {
-            MagicState.CastQueue = new CastQueue(CastQueueType.Untargeted, 0, spellId, null);
-            MagicState.CanQueue = false;
-            return;
-        }
-
-        if (!VerifyBusy())
+        if (!TryAcceptCastRequest(CastQueueType.Untargeted, 0, spellId, null))
         {
             return;
         }

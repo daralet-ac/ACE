@@ -4,6 +4,7 @@ using System.Numerics;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Entity;
 
@@ -92,6 +93,14 @@ partial class Spell
     public float BaseRangeMod
     {
         get => _spellBase.BaseRangeMod;
+    }
+
+    /// <summary>
+    /// The maximum distance a caster with this magic skill can cast the spell, up to the outdoor radar range
+    /// </summary>
+    public float GetMaxCastRange(uint magicSkill)
+    {
+        return Math.Min(BaseRangeConstant + magicSkill * BaseRangeMod, Player.MaxRadarRange_Outdoors);
     }
 
     /// <summary>

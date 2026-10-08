@@ -29,6 +29,20 @@ partial class Player
     }
 
     /// <summary>
+    /// The only school a casting item can cast (War, Life or Portal Magic), or null if it isn't restricted
+    /// </summary>
+    private static MagicSchool? GetRestrictedSchool(WorldObject caster)
+    {
+        return caster?.NoCompsRequiredForMagicSchool switch
+        {
+            (int)MagicSchool.WarMagic => MagicSchool.WarMagic,
+            (int)MagicSchool.LifeMagic => MagicSchool.LifeMagic,
+            (int)MagicSchool.PortalMagic => MagicSchool.PortalMagic,
+            _ => null,
+        };
+    }
+
+    /// <summary>
     /// Returns TRUE if the currently equipped casting implement
     /// has a built-in spell
     /// </summary>
@@ -210,7 +224,7 @@ partial class Player
             magicSkill = playerSkill.Current;
         }
 
-        var maxRange = Math.Min(spell.BaseRangeConstant + magicSkill * spell.BaseRangeMod, MaxRadarRange_Outdoors);
+        var maxRange = spell.GetMaxCastRange(magicSkill);
 
         if (distanceTo > maxRange)
         {
@@ -260,10 +274,8 @@ partial class Player
             castingPreCheckStatus = GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.PortalMagic, ItemCurMana: 0 } ? CastingPreCheckStatus.CastFailed : CastingPreCheckStatus.Success;
         }
 
-        // casting non-portal spells with a NoCompsForPortalSpells caster will always fizzle
-        if (spell.School is not MagicSchool.WarMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.WarMagic}
-            || spell.School is not MagicSchool.LifeMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.LifeMagic }
-            || spell.School is not MagicSchool.PortalMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.PortalMagic})
+        // a caster that can only cast one school always fizzles the other schools
+        if (GetRestrictedSchool(GetEquippedWand()) is { } restrictedSchool && spell.School != restrictedSchool)
         {
             castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
         }

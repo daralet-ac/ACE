@@ -1925,6 +1925,20 @@ partial class Player
         return true;
     }
 
+    /// <summary>
+    /// COMBAT ABILITY - Overload/Battery: the spell message prefix showing the charge ("50% Charged! ") or discharge
+    /// </summary>
+    public string GetChargedMessage()
+    {
+        return this switch
+        {
+            { OverloadDischargeIsActive: true } => "Overload Discharge! ",
+            { BatteryDischargeIsActive: true } => "Battery Discharge! ",
+            { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true } => $"{Math.Round(ManaChargeMeter * 100)}% Charged! ",
+            _ => "",
+        };
+    }
+
     public void IncreaseChargedMeter(Spell spell, bool fromProc = false)
     {
         if (fromProc)

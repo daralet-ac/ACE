@@ -137,10 +137,7 @@ partial class Creature
     {
         var skill = GetMagicSkillForRangeCheck();
 
-        var maxRange = Math.Min(
-            CurrentSpell.BaseRangeConstant + skill * CurrentSpell.BaseRangeMod,
-            Player.MaxRadarRange_Outdoors
-        );
+        var maxRange = CurrentSpell.GetMaxCastRange(skill);
 
         if (maxRange == 0.0f)
         {

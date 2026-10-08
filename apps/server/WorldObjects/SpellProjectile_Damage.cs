@@ -123,7 +123,10 @@ partial class SpellProjectile
 
         if (!overpower)
         {
-            if (GetResistedMod(out resistedMod))
+            resistedMod = GetResistedMod(_partialEvasion);
+
+            // fully resisted
+            if (resistedMod == 0.0f)
             {
                 return null;
             }
@@ -241,7 +244,7 @@ partial class SpellProjectile
         var jewelBlueFury = 1.0f + Jewel.GetJewelBlueFury(sourcePlayer);
         var jewelSelfHarm = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearSelfHarm);
 
-        var levelScalingMod = GetLevelScalingMod(sourceCreature, target, targetPlayer);
+        var levelScalingMod = LevelScaling.GetMonsterHealthDamageScalar(sourceCreature, target);
 
         var damageMultiplier = (float)DamageMultiplier;
 
@@ -440,15 +443,6 @@ partial class SpellProjectile
         return finalDamage;
     }
 
-    private static float GetLevelScalingMod(Creature attacker, Creature defender, Player playerDefender)
-    {
-        var monsterHealthScalingMod = playerDefender != null
-            ? LevelScaling.GetMonsterDamageDealtHealthScalar(playerDefender, attacker)
-            : LevelScaling.GetMonsterDamageTakenHealthScalar(attacker, defender);
-
-        return monsterHealthScalingMod;
-    }
-
     /// <summary>
     /// SPEC BONUS - War Magic (Wand/Baton): +50% crit damage (additively)
     /// </summary>
@@ -469,27 +463,6 @@ partial class SpellProjectile
         }
 
         return 0.0f;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Overload: Increased effectiveness up to 20% with Overload Charged stacks, by up to 100% with Overload Discharge
-    /// </summary>
-    private static float CheckForCombatAbilityOverloadDamageMod(Player sourcePlayer)
-    {
-        return sourcePlayer switch
-        {
-            { OverloadDischargeIsActive: true } => 1.0f + sourcePlayer.DischargeLevel,
-            { OverloadStanceIsActive: true } => 1.0f + sourcePlayer.ManaChargeMeter * 0.2f,
-            _ => 1.0f
-        };
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Battery: Reduced effectiveness up to 10% with Battery Charged stacks
-    /// </summary>
-    private static float CheckForCombatAbilityBatteryDamageMod(Player sourcePlayer)
-    {
-        return sourcePlayer is { BatteryStanceIsActive: true } ? 1.0f - sourcePlayer.ManaChargeMeter * 0.1f : 1.0f;
     }
 
     /// <summary>

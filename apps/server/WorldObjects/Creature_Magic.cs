@@ -8,6 +8,20 @@ namespace ACE.Server.WorldObjects;
 partial class Creature
 {
     /// <summary>
+    /// The creature's magic skill in a spell school, with gear mods for War and Life Magic.
+    /// Void Magic uses Life Magic.
+    /// </summary>
+    public uint GetModdedMagicSkill(MagicSchool school)
+    {
+        return school switch
+        {
+            MagicSchool.WarMagic => GetModdedWarMagicSkill(),
+            MagicSchool.LifeMagic or MagicSchool.VoidMagic => GetModdedLifeMagicSkill(),
+            _ => GetCreatureSkill(school)?.Current ?? 0,
+        };
+    }
+
+    /// <summary>
     /// Handles equipping an item casting a spell on player or creature
     /// </summary>
     public bool CreateItemSpell(WorldObject item, uint spellID)

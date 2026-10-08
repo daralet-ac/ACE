@@ -1,12 +1,33 @@
 using System;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
+using ACE.Server.Entity.Actions;
 
 namespace ACE.Server.WorldObjects;
 
 partial class WorldObject
 {
-    private static void HandlePostDamageRatingEffects(Creature target, float damage, Player sourcePlayer, Player targetPlayer, Creature sourceCreature, Spell spell, ProjectileSpellType projectileSpellType)
+    /// <summary>
+    /// After a spell damages a creature's health: the target's cloak may proc its spell, and the target's damage emotes run.
+    /// Both wait a tick, so they come after the damage messages.
+    /// </summary>
+    private void ScheduleSpellDamageReactions(Creature targetCreature, Creature attacker, WorldObject equippedCloak, float damagePercent)
+    {
+        if (equippedCloak != null && Cloak.HasProcSpell(equippedCloak))
+        {
+            var actionChain = new ActionChain();
+            actionChain.AddDelayForOneTick();
+            actionChain.AddAction(this, () => Cloak.TryProcSpell(targetCreature, this, equippedCloak, damagePercent));
+            actionChain.EnqueueChain();
+        }
+
+        var emoteChain = new ActionChain();
+        emoteChain.AddDelayForOneTick();
+        emoteChain.AddAction(targetCreature, () => targetCreature.EmoteManager.OnDamage(attacker));
+        emoteChain.EnqueueChain();
+    }
+
+    protected static void HandlePostDamageRatingEffects(Creature target, float damage, Player sourcePlayer, Player targetPlayer, Creature sourceCreature, Spell spell, ProjectileSpellType projectileSpellType)
     {
         if (sourcePlayer != null)
         {
@@ -42,9 +63,9 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Overload: Increased effectiveness up to 20% with Overload Charged stacks
+    /// COMBAT ABILITY - Overload: Increased effectiveness up to 20% with Overload Charged stacks, by up to 100% with Overload Discharge
     /// </summary>
-    private static float CheckForCombatAbilityOverloadDamageBonus(Player player)
+    internal static float CheckForCombatAbilityOverloadDamageMod(Player player)
     {
         return player switch
         {
@@ -57,7 +78,7 @@ partial class WorldObject
     /// <summary>
     /// COMBAT ABILITY - Battery: Reduced effectiveness up to 10% with Battery Charged stacks
     /// </summary>
-    private static float CheckForCombatAbilityBatteryDamagePenalty(Player player)
+    internal static float CheckForCombatAbilityBatteryDamageMod(Player player)
     {
         return player is { BatteryStanceIsActive: true } ? 1.0f - player.ManaChargeMeter * 0.1f : 1.0f;
     }

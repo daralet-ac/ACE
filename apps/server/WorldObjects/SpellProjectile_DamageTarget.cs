@@ -194,18 +194,7 @@ partial class SpellProjectile
             {
                 var critProt = critDefended ? " Your critical hit was avoided with their augmentation!" : "";
 
-                if (sourcePlayer is {OverloadStanceIsActive: true} or {BatteryStanceIsActive: true})
-                {
-                    var chargedPercent = Math.Round(sourcePlayer.ManaChargeMeter * 100);
-                    chargedMsg = $"{chargedPercent}% Charged! ";
-                }
-
-                chargedMsg = sourcePlayer switch
-                {
-                    { OverloadDischargeIsActive: true } => "Overload Discharge! ",
-                    { BatteryDischargeIsActive: true } => "Battery Discharge! ",
-                    _ => chargedMsg
-                };
+                chargedMsg = sourcePlayer.GetChargedMessage();
 
                 var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{chargedMsg}{sneakMsg}{elementalistMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
@@ -281,20 +270,5 @@ partial class SpellProjectile
         }
 
         HandlePostDamageRatingEffects(target, damage, sourcePlayer, targetPlayer, sourceCreature, Spell, SpellType); // (jewel effects)
-    }
-
-    private static void HandlePostDamageRatingEffects(Creature target, float damage, Player sourcePlayer, Player targetPlayer, Creature sourceCreature, Spell spell, ProjectileSpellType projectileSpellType)
-    {
-        if (sourcePlayer != null)
-        {
-            Jewel.HandleCasterAttackerRampingQuestStamps(sourcePlayer, target, spell, projectileSpellType);
-            Jewel.HandlePlayerAttackerBonuses(sourcePlayer, target, damage, spell.DamageType);
-        }
-
-        if (targetPlayer != null)
-        {
-            Jewel.HandleCasterDefenderRampingQuestStamps(targetPlayer, sourceCreature);
-            Jewel.HandlePlayerDefenderBonuses(targetPlayer, sourceCreature, damage);
-        }
     }
 }

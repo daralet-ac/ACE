@@ -525,10 +525,16 @@ partial class WorldObject
     protected static readonly ConcurrentDictionary<uint, float> ProjectileRadiusCache =
         new ConcurrentDictionary<uint, float>();
 
-    private float GetProjectileRadius(Spell spell)
+    private static float GetProjectileRadius(Spell spell)
     {
-        var projectileWcid = spell.WeenieClassId;
+        return GetProjectileRadius(spell.WeenieClassId);
+    }
 
+    /// <summary>
+    /// Returns the cached physics radius for a projectile wcid (spell projectiles and missiles)
+    /// </summary>
+    protected static float GetProjectileRadius(uint projectileWcid)
+    {
         if (ProjectileRadiusCache.TryGetValue(projectileWcid, out var radius))
         {
             return radius;
@@ -538,16 +544,14 @@ partial class WorldObject
 
         if (weenie == null)
         {
-            _log.Error(
-                $"{Name} ({Guid}).GetSetupRadius({spell.Id} - {spell.Name}): couldn't find weenie {projectileWcid}"
-            );
+            _log.Error($"GetProjectileRadius(): couldn't find projectile weenie {projectileWcid}");
             return 0.0f;
         }
 
         if (!weenie.PropertiesDID.TryGetValue(PropertyDataId.Setup, out var setupId))
         {
             _log.Error(
-                $"{Name} ({Guid}).GetSetupRadius({spell.Id} - {spell.Name}): couldn't find setup ID for {weenie.WeenieClassId} - {weenie.ClassName}"
+                $"GetProjectileRadius(): couldn't find SetupId for {weenie.WeenieClassId} - {weenie.ClassName}"
             );
             return 0.0f;
         }

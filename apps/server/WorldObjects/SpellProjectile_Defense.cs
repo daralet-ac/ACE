@@ -12,24 +12,17 @@ partial class SpellProjectile
     /// <summary>
     /// Armor imbued with Reduced Magical Damage Taken: -1% magic damage per imbue, down to 50%
     /// </summary>
-    private float GetImbuedArmorSpellDamageMod(Creature target)
+    private static float GetImbuedArmorSpellDamageMod(Creature target)
     {
-        var count = target.GetArmorDefenseImbues(ImbuedEffectType.ReducedMagicalDamageTaken);
-        if (count > 0)
-        {
-            return Math.Max(0.5f, 1.0f - count * 0.01f);
-        }
-        return 1.0f;
+        return DamageFormulas.GetImbuedArmorMod(target.GetArmorDefenseImbues(ImbuedEffectType.ReducedMagicalDamageTaken));
     }
 
-    private float GetImbuedArmorCritSpellDamageMod(Creature target)
+    /// <summary>
+    /// Armor imbued with Reduced Critical Damage Taken: -1% critical damage per imbue, down to 50%
+    /// </summary>
+    private static float GetImbuedArmorCritSpellDamageMod(Creature target)
     {
-        var count = target.GetArmorDefenseImbues(ImbuedEffectType.ReducedCriticalDamageTaken);
-        if (count > 0)
-        {
-            return Math.Max(0.5f, 1.0f - count * 0.01f);
-        }
-        return 1.0f;
+        return DamageFormulas.GetImbuedArmorMod(target.GetArmorDefenseImbues(ImbuedEffectType.ReducedCriticalDamageTaken));
     }
 
     /// <summary>
@@ -45,10 +38,7 @@ partial class SpellProjectile
         // float, so the division below isn't integer division
         var magicDefenseSkill = (float)LevelScaling.GetScaledPlayerDefenseSkill(targetPlayer.GetModdedMagicDefSkill(), targetPlayer, sourceCreature);
 
-        var bonusAmount = Math.Min(magicDefenseSkill, 500) / 50;
-
-        return 0.9f - bonusAmount * 0.01f;
-
+        return DamageFormulas.GetSpecDefenseMod(magicDefenseSkill);
     }
 
     /// <summary>
@@ -238,25 +228,5 @@ partial class SpellProjectile
         var percent = maxPercent - maxPercent * diff * 0.004f;
 
         return Math.Min(1.0f, 1.0f - (float)percent);
-    }
-
-    /// <summary>
-    /// If resist succeeded, determine if resist was partial or full.
-    /// </summary>
-    private bool GetResistedMod(out float resistedMod)
-    {
-        switch (_partialEvasion)
-        {
-            case PartialEvasion.None:
-                resistedMod = 1.0f;
-                return false;
-            case PartialEvasion.Some:
-                resistedMod = 0.5f;
-                return false;
-            case PartialEvasion.All:
-            default:
-                resistedMod = 0.0f;
-                return true;
-        }
     }
 }

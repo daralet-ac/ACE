@@ -127,15 +127,7 @@ partial class WorldObject
 
             if (casterCheck || target == this || caster != target)
             {
-                var chargedPercent = Math.Round(player.ManaChargeMeter * 100);
-                var chargedMsg = player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true } ? $"{chargedPercent}% Charged! " : "";
-
-                chargedMsg = player switch
-                {
-                    { OverloadDischargeIsActive: true } => "Overload Discharge! ",
-                    { BatteryDischargeIsActive: true } => "Battery Discharge! ",
-                    _ => chargedMsg
-                };
+                var chargedMsg = player.GetChargedMessage();
 
                 var casterName = casterCheck ? "You" : caster.Name;
                 var targetName = target.Name;
@@ -385,26 +377,7 @@ partial class WorldObject
                     }
                     else
                     {
-                        // 'fails to affect'?
-                        player?.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"You fail to affect {targetCreature.Name} with {spell.Name}",
-                                ChatMessageType.Magic
-                            )
-                        );
-
-                        if (
-                            targetPlayer != null
-                            && !targetPlayer.SquelchManager.Squelches.Contains(this, ChatMessageType.Magic)
-                        )
-                        {
-                            targetPlayer.Session.Network.EnqueueSend(
-                                new GameMessageSystemChat(
-                                    $"{Name} fails to affect you with {spell.Name}",
-                                    ChatMessageType.Magic
-                                )
-                            );
-                        }
+                        SendFailsToAffectMessages(spell, targetCreature, player, targetPlayer);
                     }
                 }
             }
@@ -436,29 +409,7 @@ partial class WorldObject
                 }
                 else
                 {
-                    // 'fails to affect'?
-                    if (player != null)
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"You fail to affect {targetCreature.Name} with {spell.Name}",
-                                ChatMessageType.Magic
-                            )
-                        );
-                    }
-
-                    if (
-                        targetPlayer != null
-                        && !targetPlayer.SquelchManager.Squelches.Contains(this, ChatMessageType.Magic)
-                    )
-                    {
-                        targetPlayer.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"{Name} fails to affect you with {spell.Name}",
-                                ChatMessageType.Magic
-                            )
-                        );
-                    }
+                    SendFailsToAffectMessages(spell, targetCreature, player, targetPlayer);
                 }
             }
         }
@@ -466,6 +417,23 @@ partial class WorldObject
         {
             // all other item spells, cast directly on target
             HandleCastSpell(spell, target);
+        }
+    }
+
+    /// <summary>
+    /// Tells the caster and the target that an item spell had no item on the target to affect
+    /// </summary>
+    private void SendFailsToAffectMessages(Spell spell, Creature targetCreature, Player player, Player targetPlayer)
+    {
+        player?.Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You fail to affect {targetCreature.Name} with {spell.Name}", ChatMessageType.Magic)
+        );
+
+        if (targetPlayer != null && !targetPlayer.SquelchManager.Squelches.Contains(this, ChatMessageType.Magic))
+        {
+            targetPlayer.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{Name} fails to affect you with {spell.Name}", ChatMessageType.Magic)
+            );
         }
     }
 

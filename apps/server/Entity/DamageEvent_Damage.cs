@@ -115,7 +115,7 @@ public partial class DamageEvent
         _damageModifiers.AttackHeight = GetHighAttackHeightBonus();
         _damageModifiers.ElementalRating = Jewel.HandleElementalBonuses(_playerAttacker, DamageType);
         _damageModifiers.PierceRating = GetRatingPierceResistanceBonus();
-        _damageModifiers.LevelScaling = GetLevelScalingMod(_attacker, _defender, _playerDefender);
+        _damageModifiers.LevelScaling = LevelScaling.GetMonsterHealthDamageScalar(_attacker, _defender);
         _damageModifiers.Ammo = GetAmmoEffectMod(Weapon, _playerAttacker);
 
         if (!_pkBattle)
@@ -234,16 +234,6 @@ public partial class DamageEvent
         }
 
         return 1.0f;
-    }
-
-    private static float GetLevelScalingMod(Creature attacker, Creature defender, Player playerDefender)
-    {
-        var monsterHealthScalingMod =
-            playerDefender != null
-                ? LevelScaling.GetMonsterDamageDealtHealthScalar(playerDefender, attacker)
-                : LevelScaling.GetMonsterDamageTakenHealthScalar(attacker, defender);
-
-        return monsterHealthScalingMod;
     }
 
     private float GetCriticalChance()

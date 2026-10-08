@@ -266,7 +266,7 @@ partial class Player
 
                         // Fellowship spells only affect targets in range
                         var magicSkill = GetCreatureSkill(spell.School).Current;
-                        var maxRange = Math.Min(spell.BaseRangeConstant + magicSkill * spell.BaseRangeMod, MaxRadarRange_Outdoors);
+                        var maxRange = spell.GetMaxCastRange(magicSkill);
 
                         if (GetDistance(fellow) > maxRange)
                         {
@@ -299,48 +299,7 @@ partial class Player
                 EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.Fizzle, 0.5f));
                 SendWeenieError(WeenieError.YourSpellFizzled);
 
-                if (caster is not null)
-                {
-                    switch (caster.NoCompsRequiredForMagicSchool)
-                    {
-                        case (int)MagicSchool.WarMagic:
-                            if (spell.School is MagicSchool.LifeMagic or MagicSchool.PortalMagic)
-                            {
-                                SendMessage($"{caster.Name} can only cast War Magic spells.");
-                            }
-
-                            if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.WarMagic)
-                            {
-                                SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
-                            }
-
-                            break;
-                        case (int)MagicSchool.LifeMagic:
-                            if (spell.School is MagicSchool.WarMagic or MagicSchool.PortalMagic)
-                            {
-                                SendMessage($"{caster.Name} can only cast Life Magic spells.");
-                            }
-
-                            if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.LifeMagic)
-                            {
-                                SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
-                            }
-
-                            break;
-                        case (int)MagicSchool.PortalMagic:
-                            if (spell.School is MagicSchool.LifeMagic or MagicSchool.WarMagic)
-                            {
-                                SendMessage($"{caster.Name} can only cast Portal Magic spells.");
-                            }
-
-                            if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.PortalMagic)
-                            {
-                                SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
-                            }
-
-                            break;
-                    }
-                }
+                SendRestrictedCasterFizzleMessages(caster, spell);
 
                 break;
         }
@@ -365,6 +324,34 @@ partial class Player
         if (spellReleased)
         {
             CheckForCombatAbilityOverloadBacklash(spell);
+        }
+    }
+
+    /// <summary>
+    /// After a fizzle, explains it when the caster is an item restricted to one school (or out of mana)
+    /// </summary>
+    private void SendRestrictedCasterFizzleMessages(WorldObject caster, Spell spell)
+    {
+        if (GetRestrictedSchool(caster) is not { } restrictedSchool)
+        {
+            return;
+        }
+
+        if (spell.School != restrictedSchool && spell.School is MagicSchool.WarMagic or MagicSchool.LifeMagic or MagicSchool.PortalMagic)
+        {
+            var schoolName = restrictedSchool switch
+            {
+                MagicSchool.WarMagic => "War Magic",
+                MagicSchool.LifeMagic => "Life Magic",
+                _ => "Portal Magic",
+            };
+
+            SendMessage($"{caster.Name} can only cast {schoolName} spells.");
+        }
+
+        if (caster.ItemCurMana == 0 && spell.School == restrictedSchool)
+        {
+            SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
         }
     }
 

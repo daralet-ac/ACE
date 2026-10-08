@@ -135,8 +135,8 @@ partial class WorldObject
             }
         }
 
-        var overloadMod = CheckForCombatAbilityOverloadDamageBonus(damageSourcePlayer);
-        var batterMod = CheckForCombatAbilityBatteryDamagePenalty(damageSourcePlayer);
+        var overloadMod = CheckForCombatAbilityOverloadDamageMod(damageSourcePlayer);
+        var batterMod = CheckForCombatAbilityBatteryDamageMod(damageSourcePlayer);
 
         // proc spells receive 1% of spellcraft as a damage multiplier (300 spellcraft = x3), same as spell projectiles
         var spellcraftMod = 1.0f;
@@ -304,15 +304,7 @@ partial class WorldObject
         {
             string casterMessage;
 
-            var chargedPercent = Math.Round(player.ManaChargeMeter * 100);
-            var chargedMsg = player is {OverloadStanceIsActive: true} or {BatteryStanceIsActive: true} ? $"{chargedPercent}% Charged! " : "";
-
-            chargedMsg = player switch
-            {
-                { OverloadDischargeIsActive: true } => "Overload Discharge! ",
-                { BatteryDischargeIsActive: true } => "Battery Discharge! ",
-                _ => chargedMsg
-            };
+            var chargedMsg = player.GetChargedMessage();
 
             if (player != targetCreature)
             {
@@ -365,23 +357,8 @@ partial class WorldObject
         if (targetCreature.IsAlive && spell.VitalDamageType == DamageType.Health &&
             boost < 0)
         {
-            // handle cloak spell proc
-            if (equippedCloak != null && Cloak.HasProcSpell(equippedCloak))
-            {
-                var pct = (float)-boost / targetCreature.Health.MaxValue;
-
-                // ensure message is sent after enchantment.Message
-                var actionChain = new ActionChain();
-                actionChain.AddDelayForOneTick();
-                actionChain.AddAction(this, () => Cloak.TryProcSpell(targetCreature, this, equippedCloak, pct));
-                actionChain.EnqueueChain();
-            }
-
-            // ensure emote process occurs after damage msg
-            var emoteChain = new ActionChain();
-            emoteChain.AddDelayForOneTick();
-            emoteChain.AddAction(targetCreature, () => targetCreature.EmoteManager.OnDamage(creature));
-            emoteChain.EnqueueChain();
+            var damagePercent = (float)-boost / targetCreature.Health.MaxValue;
+            ScheduleSpellDamageReactions(targetCreature, creature, equippedCloak, damagePercent);
         }
 
         HandleBoostTransferDeath(creature, targetCreature);
@@ -392,17 +369,13 @@ partial class WorldObject
     /// </summary>
     private static ResistanceType GetBoostResistanceType(DamageType damageType)
     {
-        switch (damageType)
+        return damageType switch
         {
-            case DamageType.Health:
-                return ResistanceType.HealthBoost;
-            case DamageType.Stamina:
-                return ResistanceType.StaminaBoost;
-            case DamageType.Mana:
-                return ResistanceType.ManaBoost;
-            default:
-                return ResistanceType.Undef;
-        }
+            DamageType.Health => ResistanceType.HealthBoost,
+            DamageType.Stamina => ResistanceType.StaminaBoost,
+            DamageType.Mana => ResistanceType.ManaBoost,
+            _ => ResistanceType.Undef,
+        };
     }
 
     /// <summary>
@@ -410,17 +383,27 @@ partial class WorldObject
     /// </summary>
     private static ResistanceType GetDrainResistanceType(DamageType damageType)
     {
-        switch (damageType)
+        return damageType switch
         {
-            case DamageType.Health:
-                return ResistanceType.HealthDrain;
-            case DamageType.Stamina:
-                return ResistanceType.StaminaDrain;
-            case DamageType.Mana:
-                return ResistanceType.ManaDrain;
-            default:
-                return ResistanceType.Undef;
-        }
+            DamageType.Health => ResistanceType.HealthDrain,
+            DamageType.Stamina => ResistanceType.StaminaDrain,
+            DamageType.Mana => ResistanceType.ManaDrain,
+            _ => ResistanceType.Undef,
+        };
+    }
+
+    /// <summary>
+    /// The damage type for a vital, so transfer spells can share the boost spell lookups
+    /// </summary>
+    private static DamageType GetVitalDamageType(PropertyAttribute2nd vital)
+    {
+        return vital switch
+        {
+            PropertyAttribute2nd.Health => DamageType.Health,
+            PropertyAttribute2nd.Stamina => DamageType.Stamina,
+            PropertyAttribute2nd.Mana => DamageType.Mana,
+            _ => DamageType.Undef,
+        };
     }
 
     private float SelfTargetSpellProcMod(bool fromProc, Spell spell, WorldObject weapon, Player player)

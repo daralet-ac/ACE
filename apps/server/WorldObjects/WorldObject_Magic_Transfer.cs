@@ -36,42 +36,6 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// Returns the boost resistance type for a vital
-    /// </summary>
-    private static ResistanceType GetBoostResistanceType(PropertyAttribute2nd vital)
-    {
-        switch (vital)
-        {
-            case PropertyAttribute2nd.Health:
-                return ResistanceType.HealthBoost;
-            case PropertyAttribute2nd.Stamina:
-                return ResistanceType.StaminaBoost;
-            case PropertyAttribute2nd.Mana:
-                return ResistanceType.ManaBoost;
-            default:
-                return ResistanceType.Undef;
-        }
-    }
-
-    /// <summary>
-    /// Returns the drain resistance type for a vital
-    /// </summary>
-    private static ResistanceType GetDrainResistanceType(PropertyAttribute2nd vital)
-    {
-        switch (vital)
-        {
-            case PropertyAttribute2nd.Health:
-                return ResistanceType.HealthDrain;
-            case PropertyAttribute2nd.Stamina:
-                return ResistanceType.StaminaDrain;
-            case PropertyAttribute2nd.Mana:
-                return ResistanceType.ManaDrain;
-            default:
-                return ResistanceType.Undef;
-        }
-    }
-
-    /// <summary>
     /// Handles casting SpellType.Transfer spells
     /// usually for Life Magic, ie. Stamina to Mana, Drain
     /// </summary>
@@ -90,9 +54,8 @@ partial class WorldObject
         }
 
         // source and destination can be the same creature, or different creatures
-        var caster = this as Creature;
-        var transferSource = spell.TransferFlags.HasFlag(TransferFlags.CasterSource) ? caster : targetCreature;
-        var destination = spell.TransferFlags.HasFlag(TransferFlags.CasterDestination) ? caster : targetCreature;
+        var transferSource = spell.TransferFlags.HasFlag(TransferFlags.CasterSource) ? creature : targetCreature;
+        var destination = spell.TransferFlags.HasFlag(TransferFlags.CasterDestination) ? creature : targetCreature;
 
         // Calculate vital changes
         uint srcVitalChange = 0,
@@ -102,7 +65,7 @@ partial class WorldObject
         var isDrain = spell.TransferFlags.HasFlag(TransferFlags.TargetSource | TransferFlags.CasterDestination);
         if (transferSource != null)
         {
-            var drainMod = isDrain ? (float)transferSource.GetResistanceMod(GetDrainResistanceType(spell.Source)) : 1.0f;
+            var drainMod = isDrain ? (float)transferSource.GetResistanceMod(GetDrainResistanceType(GetVitalDamageType(spell.Source))) : 1.0f;
 
             srcVitalChange = (uint)
                 Math.Round(transferSource.GetCreatureVital(spell.Source).Current * spell.Proportion * drainMod);
@@ -119,7 +82,7 @@ partial class WorldObject
         // should healing resistances be applied here?
         if (destination != null)
         {
-            var boostMod = isDrain ? (float)destination.GetResistanceMod(GetBoostResistanceType(spell.Destination)) : 1.0f;
+            var boostMod = isDrain ? (float)destination.GetResistanceMod(GetBoostResistanceType(GetVitalDamageType(spell.Destination))) : 1.0f;
 
             destVitalChange = (uint)Math.Round(srcVitalChange * (1.0f - spell.LossPercent) * boostMod);
 
@@ -194,8 +157,8 @@ partial class WorldObject
             // COMBAT ABILITIES: Spell Effectiveness Mods
             if (player != null)
             {
-                var overloadMod = CheckForCombatAbilityOverloadDamageBonus(player);
-                var batterMod = CheckForCombatAbilityBatteryDamagePenalty(player);
+                var overloadMod = CheckForCombatAbilityOverloadDamageMod(player);
+                var batterMod = CheckForCombatAbilityBatteryDamageMod(player);
 
                 destVitalChange = (uint)(destVitalChange * overloadMod * batterMod);
             }
@@ -208,7 +171,7 @@ partial class WorldObject
             }
 
             // LEVEL SCALING - Reduce Drain effectiveness vs. monsters, and increase vs. player
-            if (spell.TransferFlags.HasFlag(TransferFlags.TargetSource | TransferFlags.CasterDestination))
+            if (isDrain)
             {
                 var levelScalingMod = LevelScaling.GetPlayerBoostSpellScalar(player, targetCreature);
 
@@ -309,20 +272,7 @@ partial class WorldObject
 
             string sourceMsg = null, targetMsg = null;
 
-            var chargedMsg = "";
-
-            if (player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true })
-            {
-                var chargedPercent = Math.Round(player.ManaChargeMeter * 100);
-                chargedMsg = $"{chargedPercent}% Charged! ";
-            }
-
-            chargedMsg = player switch
-            {
-                { OverloadDischargeIsActive: true } => "Overload Discharge! ",
-                { BatteryDischargeIsActive: true } => "Battery Discharge! ",
-                _ => chargedMsg
-            };
+            var chargedMsg = player?.GetChargedMessage() ?? "";
 
             if (playerSource != null && playerDestination != null && transferSource.Guid == destination.Guid)
             {
@@ -338,7 +288,7 @@ partial class WorldObject
                     }
                     else
                     {
-                        targetMsg = $"{chargedMsg}You lose {srcVitalChange} points of {srcVital} due to {caster.Name} casting {spell.Name} on you";
+                        targetMsg = $"{chargedMsg}You lose {srcVitalChange} points of {srcVital} due to {creature.Name} casting {spell.Name} on you";
                     }
 
                     if (destination != null)
@@ -355,7 +305,7 @@ partial class WorldObject
                     }
                     else
                     {
-                        targetMsg = $"{chargedMsg}You gain {destVitalChange} points of {destVital} due to {caster.Name} casting {spell.Name} on you";
+                        targetMsg = $"{chargedMsg}You gain {destVitalChange} points of {destVital} due to {creature.Name} casting {spell.Name} on you";
                     }
                 }
             }
@@ -367,28 +317,13 @@ partial class WorldObject
 
             if (targetPlayer != null && targetMsg != null && showMsg)
             {
-                targetPlayer.SendChatMessage(caster, targetMsg, ChatMessageType.Magic);
+                targetPlayer.SendChatMessage(creature, targetMsg, ChatMessageType.Magic);
             }
 
             if (isDrain && targetCreature.IsAlive && spell.Source == PropertyAttribute2nd.Health)
             {
-                // handle cloak spell proc
-                if (equippedCloak != null && Cloak.HasProcSpell(equippedCloak))
-                {
-                    var pct = (float)srcVitalChange / targetCreature.Health.MaxValue;
-
-                    // ensure message is sent after enchantment.Message
-                    var actionChain = new ActionChain();
-                    actionChain.AddDelayForOneTick();
-                    actionChain.AddAction(this, () => Cloak.TryProcSpell(targetCreature, this, equippedCloak, pct));
-                    actionChain.EnqueueChain();
-                }
-
-                // ensure emote process occurs after damage msg
-                var emoteChain = new ActionChain();
-                emoteChain.AddDelayForOneTick();
-                emoteChain.AddAction(targetCreature, () => targetCreature.EmoteManager.OnDamage(creature));
-                emoteChain.EnqueueChain();
+                var damagePercent = (float)srcVitalChange / targetCreature.Health.MaxValue;
+                ScheduleSpellDamageReactions(targetCreature, creature, equippedCloak, damagePercent);
             }
         }
 

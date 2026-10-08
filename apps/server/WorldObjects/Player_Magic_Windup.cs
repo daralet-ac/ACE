@@ -197,30 +197,14 @@ partial class Player
             return false;
         }
 
-        // if casting implement has spell built in,
-        // use spellcraft from the item, instead of player's magic skill?
-        var caster = casterItem ?? GetEquippedWand();
         var isWeaponSpell = casterItem != null && IsWeaponSpell(spell.Id, casterItem);
 
-        // Grab player's skill level in the spell's Magic School
-        uint magicSkill;
-        if (spell.School == MagicSchool.WarMagic)
-        {
-            magicSkill = GetModdedWarMagicSkill();
-        }
-        else if (spell.School is MagicSchool.LifeMagic or MagicSchool.VoidMagic)
-        {
-            magicSkill = GetModdedLifeMagicSkill();
-        }
-        else
-        {
-            magicSkill = GetCreatureSkill(spell.School).Current;
-        }
+        var magicSkill = GetModdedMagicSkill(spell.School);
 
-        if (isWeaponSpell && caster.ItemSpellcraft != null)
+        // a built-in spell adds its item's spellcraft bonus
+        if (isWeaponSpell && casterItem.ItemSpellcraft != null)
         {
-            var spellcraft = caster.ItemSpellcraft.Value + CheckForArcaneLoreSpecSpellcraftBonus(this);
-            magicSkill += (uint)(spellcraft * 0.1);
+            magicSkill += GetSpellcraftSkillBonus(casterItem.ItemSpellcraft.Value, this);
         }
 
         // SPEC BONUS - War/Life Magic: verify advanced spell
@@ -238,33 +222,7 @@ partial class Player
         // get casting pre-check status
         var castingPreCheckStatus = GetCastingPreCheckStatus(spell, magicSkill, isWeaponSpell);
 
-        // calculate mana usage
-        if (!CalculateManaUsage(castingPreCheckStatus, spell, target, casterItem, out var manaUsed, out var manaRefund))
-        {
-            return false;
-        }
-
-        // spell words
-        DoSpellWords(spell, isWeaponSpell);
-
-        var spellChain = new ActionChain();
-
-        // do wind-up gestures: fastcast has no windup (creature enchantments)
-        DoWindupGestures(spell, isWeaponSpell, spellChain);
-
-        // cast spell
-        DoCastGesture(spell, casterItem, spellChain);
-
-        MagicState.SetCastParams(spell, casterItem, magicSkill, manaUsed, manaRefund, target, castingPreCheckStatus);
-
-        if (!FastTick)
-        {
-            spellChain.AddAction(this, () => DoCastSpell());
-        }
-
-        spellChain.EnqueueChain();
-
-        return true;
+        return StartCastSequence(spell, casterItem, isWeaponSpell, magicSkill, target, castingPreCheckStatus);
     }
 
     /// <summary>
@@ -283,27 +241,40 @@ partial class Player
 
         var castingPreCheckStatus = GetCastingPreCheckStatus(spell, magicSkill, false);
 
-        // calculate mana usage
-        if (!CalculateManaUsage(castingPreCheckStatus, spell, null, null, out var manaUsed, out var manaRefund))
+        return StartCastSequence(spell, null, false, magicSkill, null, castingPreCheckStatus);
+    }
+
+    /// <summary>
+    /// Works out the spell's mana cost, then starts the spell words, windup gestures and cast gesture.
+    /// The spell is released when the cast gesture completes (DoCastSpell).
+    /// Returns FALSE if the player doesn't have the mana for it.
+    /// </summary>
+    private bool StartCastSequence(
+        Spell spell,
+        WorldObject casterItem,
+        bool isWeaponSpell,
+        uint magicSkill,
+        WorldObject target,
+        CastingPreCheckStatus castingPreCheckStatus
+    )
+    {
+        if (!CalculateManaUsage(castingPreCheckStatus, spell, target, casterItem, out var manaUsed, out var manaRefund))
         {
             return false;
         }
 
-        // begin spellcasting
-        DoSpellWords(spell, false);
+        DoSpellWords(spell, isWeaponSpell);
 
         var spellChain = new ActionChain();
 
-
         // do wind-up gestures: fastcast has no windup (creature enchantments)
-        DoWindupGestures(spell, false, spellChain);
+        DoWindupGestures(spell, isWeaponSpell, spellChain);
 
-        // do cast gesture
-        DoCastGesture(spell, null, spellChain);
+        DoCastGesture(spell, casterItem, spellChain);
 
-        // cast untargeted spell
-        MagicState.SetCastParams(spell, null, magicSkill, manaUsed, manaRefund, null, castingPreCheckStatus);
+        MagicState.SetCastParams(spell, casterItem, magicSkill, manaUsed, manaRefund, target, castingPreCheckStatus);
 
+        // with FastTick, the spell is released when the cast gesture's motion is done (HandleMotionDone_Magic)
         if (!FastTick)
         {
             spellChain.AddAction(this, () => DoCastSpell());
