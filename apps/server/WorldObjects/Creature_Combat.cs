@@ -1172,10 +1172,7 @@ partial class Creature
         var deception = GetCreatureSkill(Skill.Deception);
         if (deception.AdvancementClass == SkillAdvancementClass.Specialized)
         {
-            // an attack skill of 0 can't beat any Deception, so it gets the full 50%
-            var effectiveAttackSkill = GetEffectiveAttackSkill();
-            var skillChance = effectiveAttackSkill > 0 ? (float)GetModdedDeceptionSkill() / effectiveAttackSkill : 1.0f;
-            var chance = skillChance > 1f ? 0.5f : skillChance * 0.5f;
+            var chance = SkillCheck.GetSkillRatioChance(GetModdedDeceptionSkill(), GetEffectiveAttackSkill());
 
             if (chance >= ThreadSafeRandom.Next(0f, 1f))
             {
