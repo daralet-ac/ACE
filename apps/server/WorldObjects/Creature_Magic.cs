@@ -12,8 +12,14 @@ namespace ACE.Server.WorldObjects;
 
 partial class Creature
 {
-    public uint CalculateManaUsage(Creature caster, Spell spell, WorldObject target = null)
+    /// <summary>
+    /// Returns the mana cost of a spell. Any health/stamina the cost earns back is returned in <paramref name="refund"/>,
+    /// to be granted with <see cref="ApplyManaCastRefund"/> once the mana is actually spent.
+    /// </summary>
+    public uint CalculateManaUsage(Creature caster, Spell spell, WorldObject target, out ManaCastRefund refund)
     {
+        refund = ManaCastRefund.None;
+
         var debugTrace = (caster as Player)?.DebugSpellcasting == true ? new ManaUsageTrace() : null;
 
         var baseCost = spell.BaseMana;
@@ -219,7 +225,7 @@ partial class Creature
         }
 
         // Final Calculation
-        var manaCost = GetManaCost(caster, difficulty, baseCost, mana_conversion_skill, out var savedMana, debugTrace);
+        var manaCost = GetManaCost(caster, difficulty, baseCost, mana_conversion_skill, out refund, debugTrace);
 
         var finalManaCost = Convert.ToUInt32(manaCost * manaCostMultiplier);
 
@@ -340,15 +346,33 @@ partial class Creature
         }
     }
 
+    /// <summary>
+    /// Grants the health/stamina earned by a spell's mana cost. Call only when that mana has actually been spent.
+    /// </summary>
+    public void ApplyManaCastRefund(ManaCastRefund refund)
+    {
+        if (refund.Health != 0)
+        {
+            UpdateVitalDelta(Health, refund.Health);
+        }
+
+        if (refund.Stamina != 0)
+        {
+            UpdateVitalDelta(Stamina, refund.Stamina);
+        }
+    }
+
     private static uint GetManaCost(
         Creature caster,
         uint difficulty,
         uint manaCost,
         uint manaConv,
-        out uint savedMana,
+        out ManaCastRefund refund,
         ManaUsageTrace trace = null
     )
     {
+        refund = ManaCastRefund.None;
+
         if (trace != null)
         {
             trace.CostBeforeConversion = manaCost;
@@ -356,7 +380,6 @@ partial class Creature
 
         if (manaConv == 0 || manaCost <= 1)
         {
-            savedMana = 0;
             if (trace != null)
             {
                 trace.ManaConversionApplied = false;
@@ -374,7 +397,7 @@ partial class Creature
         var manaConModFloor = manaConModCeiling * 0.5;
         var rawRoll = ThreadSafeRandom.Next((float)manaConModFloor, (float)manaConModCeiling);
         var reductionRoll = maxManaReduction * rawRoll;
-        savedMana = (uint)Math.Round(manaCost * reductionRoll);
+        var savedMana = (uint)Math.Round(manaCost * reductionRoll);
 
         manaCost -= savedMana;
 
@@ -387,12 +410,12 @@ partial class Creature
             trace.SavedMana = savedMana;
         }
 
+        // SPEC BONUS - Mana Conversion: half of the saved mana is returned as health and stamina
         if (caster.GetCreatureSkill(Skill.ManaConversion).AdvancementClass == SkillAdvancementClass.Specialized
             && manaCost <= caster.Mana.Current)
         {
             var conversionAmount = (int)Math.Round(savedMana * 0.5f);
-            caster.UpdateVitalDelta(caster.Health, conversionAmount);
-            caster.UpdateVitalDelta(caster.Stamina, conversionAmount);
+            refund = new ManaCastRefund(refund.Health + conversionAmount, refund.Stamina + conversionAmount);
             if (trace != null)
             {
                 trace.SpecConversionApplied = true;
@@ -400,9 +423,10 @@ partial class Creature
             }
         }
 
+        // COMBAT ABILITY - Evasive Stance: the mana cost is also returned as stamina
         if (caster is Player { EvasiveStanceIsActive: true })
         {
-            caster.UpdateVitalDelta(caster.Stamina, manaCost);
+            refund = refund with { Stamina = refund.Stamina + (int)manaCost };
             if (trace != null)
             {
                 trace.EvasiveStaminaRefundApplied = true;

@@ -245,82 +245,13 @@ partial class WorldObject
             return false;
         }
 
-        uint magicSkill = 0;
-
         var caster = itemCaster ?? this;
 
         var casterCreature = caster as Creature;
         var player = this as Player;
         var targetPlayer = target as Player;
 
-        if (casterCreature != null)
-        {
-            // Retrieve caster's skill level in the Magic School
-            var magicSchool = spell.School;
-
-            if (magicSchool is MagicSchool.VoidMagic)
-            {
-                magicSchool = MagicSchool.LifeMagic;
-            }
-
-            // Retrieve the casters Magic mods from worn armor
-            if (magicSchool is MagicSchool.WarMagic or MagicSchool.LifeMagic)
-            {
-                magicSkill = magicSchool == MagicSchool.WarMagic
-                        ? casterCreature.GetModdedWarMagicSkill()
-                        : casterCreature.GetModdedLifeMagicSkill();
-            }
-
-            // Retrieve caster's secondary attribute mod (1% per 20 attributes)
-            var secondaryAttributeMod = casterCreature.Focus.Current * 0.0005 + 1;
-
-            // if proc spell or enchanted blade spell
-            if (weaponSpellcraft is not null)
-            {
-                weaponSpellcraft += (int)CheckForArcaneLoreSpecSpellcraftBonus(casterCreature);
-
-                var spellcraftBonus = (uint)(weaponSpellcraft * 0.1);
-
-                magicSkill += spellcraftBonus;
-            }
-
-            if (weaponAttackMod is not null)
-            {
-                magicSkill = (uint)(magicSkill * weaponAttackMod);
-            }
-
-            if (casterCreature is Player { OverloadDischargeIsActive: true } casterPlayer)
-            {
-                magicSkill *= (uint)(casterPlayer.ManaChargeMeter + 1.0f);
-            }
-
-            magicSkill = (uint)(magicSkill * secondaryAttributeMod * LevelScaling.GetPlayerAttackSkillScalar(casterCreature, target as Creature));
-        }
-        else if (caster.ItemSpellcraft != null)
-        {
-            // Retrieve casting item's spellcraft
-            var spellcraft = (uint)caster.ItemSpellcraft.Value;
-
-            // When an item with spellcraft casts a spell while being wielded by a creature, average the spellcraft and wielder's magic skill
-            if (caster.Wielder is Creature wielder)
-            {
-                var casterMagicSkill =
-                    spell.School == MagicSchool.WarMagic
-                        ? wielder.GetModdedWarMagicSkill()
-                        : wielder.GetModdedLifeMagicSkill();
-
-                spellcraft += CheckForArcaneLoreSpecSpellcraftBonus(wielder);
-
-                var spellcraftBonus = (uint)(spellcraft * 0.1);
-
-                magicSkill = casterMagicSkill + spellcraftBonus;
-            }
-        }
-        else if (caster.Wielder is Creature wielder)
-        {
-            // Receive wielder's skill level in the Magic School?
-            magicSkill = wielder.GetCreatureSkill(spell.School).Current;
-        }
+        var magicSkill = GetEffectiveMagicSkill(target, spell, itemCaster, weaponSpellcraft, weaponAttackMod);
 
         // only creatures can resist spells?
         if (target is not Creature targetCreature)
@@ -417,6 +348,101 @@ partial class WorldObject
         }
 
         return resisted;
+    }
+
+    /// <summary>
+    /// Returns the caster's effective magic skill for a spell, as used to resist it:
+    /// the caster's magic skill for the spell's school (with armor mods), plus proc or weapon spellcraft,
+    /// the weapon's attack mod, Overload Discharge, Focus and level scaling.
+    /// An item that casts on its own uses its spellcraft, averaged in with its wielder's skill when wielded.
+    /// </summary>
+    public uint GetEffectiveMagicSkill(
+        WorldObject target,
+        Spell spell,
+        WorldObject itemCaster = null,
+        int? weaponSpellcraft = null,
+        double? weaponAttackMod = null
+    )
+    {
+        uint magicSkill = 0;
+
+        var caster = itemCaster ?? this;
+
+        if (caster is Creature casterCreature)
+        {
+            // Retrieve caster's skill level in the Magic School
+            var magicSchool = spell.School;
+
+            if (magicSchool is MagicSchool.VoidMagic)
+            {
+                magicSchool = MagicSchool.LifeMagic;
+            }
+
+            // Retrieve the casters Magic mods from worn armor
+            magicSkill = magicSchool switch
+            {
+                MagicSchool.WarMagic => casterCreature.GetModdedWarMagicSkill(),
+                MagicSchool.LifeMagic => casterCreature.GetModdedLifeMagicSkill(),
+                _ => casterCreature.GetCreatureSkill(magicSchool)?.Current ?? 0,
+            };
+
+            // Retrieve caster's secondary attribute mod (1% per 20 attributes)
+            var secondaryAttributeMod = casterCreature.Focus.Current * 0.0005 + 1;
+
+            // if proc spell or enchanted blade spell
+            if (weaponSpellcraft is not null)
+            {
+                weaponSpellcraft += (int)CheckForArcaneLoreSpecSpellcraftBonus(casterCreature);
+
+                var spellcraftBonus = (uint)(weaponSpellcraft * 0.1);
+
+                magicSkill += spellcraftBonus;
+            }
+
+            if (weaponAttackMod is not null)
+            {
+                magicSkill = (uint)(magicSkill * weaponAttackMod);
+            }
+
+            // COMBAT ABILITY - Overload Discharge: magic skill increased by the discharged charge (up to 100%)
+            if (casterCreature is Player { OverloadDischargeIsActive: true } casterPlayer)
+            {
+                magicSkill = (uint)(magicSkill * (1.0f + casterPlayer.DischargeLevel));
+            }
+
+            magicSkill = (uint)(
+                magicSkill
+                * secondaryAttributeMod
+                * LevelScaling.GetPlayerAttackSkillScalar(casterCreature, target as Creature)
+            );
+        }
+        else if (caster.ItemSpellcraft != null)
+        {
+            // Retrieve casting item's spellcraft
+            var spellcraft = (uint)caster.ItemSpellcraft.Value;
+
+            // When an item with spellcraft casts a spell while being wielded by a creature, average the spellcraft and wielder's magic skill
+            if (caster.Wielder is Creature wielder)
+            {
+                var casterMagicSkill =
+                    spell.School == MagicSchool.WarMagic
+                        ? wielder.GetModdedWarMagicSkill()
+                        : wielder.GetModdedLifeMagicSkill();
+
+                spellcraft += CheckForArcaneLoreSpecSpellcraftBonus(wielder);
+
+                var spellcraftBonus = (uint)(spellcraft * 0.1);
+
+                magicSkill = casterMagicSkill + spellcraftBonus;
+            }
+        }
+        else if (caster.Wielder is Creature wielder)
+        {
+            // Receive wielder's skill level in the Magic School?
+            magicSkill = wielder.GetCreatureSkill(spell.School).Current;
+        }
+
+        return magicSkill;
     }
 
     /// <summary>
@@ -759,7 +785,7 @@ partial class WorldObject
             //Console.WriteLine("enchantment target player: " + target.Name);
             var targetPlayer = target as Player;
 
-            var wardBuffDebuffMod = EnchantmentManager.GetWardMultiplicativeMod();
+            var wardBuffDebuffMod = targetPlayer.EnchantmentManager.GetWardMultiplicativeMod();
 
             var targetPlayerWard = targetPlayer.GetWardLevel() * wardBuffDebuffMod;
 
@@ -1026,11 +1052,12 @@ partial class WorldObject
         var overloadMod = CheckForCombatAbilityOverloadDamageBonus(damageSourcePlayer);
         var batterMod = CheckForCombatAbilityBatteryDamagePenalty(damageSourcePlayer);
 
+        // proc spells receive 1% of spellcraft as a damage multiplier (300 spellcraft = x3), same as spell projectiles
         var spellcraftMod = 1.0f;
         if (fromProc && weapon?.ItemSpellcraft != null)
         {
-            var spellcraft = weapon.ItemSpellcraft.Value + CheckForArcaneLoreSpecSpellcraftBonus(player);
-            spellcraftMod += spellcraft * 0.01f;
+            var spellcraft = weapon.ItemSpellcraft.Value + CheckForArcaneLoreSpecSpellcraftBonus(damageSource);
+            spellcraftMod = spellcraft * 0.01f;
         }
 
         // for traps and creatures the archetype system doesn't scale,
@@ -1073,7 +1100,7 @@ partial class WorldObject
 
             // ward
             var ignoreWardMod = 1.0f - Jewel.GetJewelEffectMod(damageSourcePlayer, PropertyInt.GearWardPen, "WardPen");
-            var wardMod = GetWardMod(damageSourcePlayer, targetCreature, ignoreWardMod);
+            var wardMod = GetWardMod(damageSource, targetCreature, ignoreWardMod);
 
             tryBoost = Convert.ToInt32(tryBoost * wardMod);
 
@@ -1117,8 +1144,12 @@ partial class WorldObject
                 srcVital = "stamina";
                 break;
             default: // Health
-                // COMBAT ABILITY - Mana Barrier: part of the health damage is taken as mana instead
-                if (tryBoost < 0 && targetCreature != this && targetPlayer is { ManaBarrierIsActive: true })
+                // COMBAT ABILITY - Mana Barrier: part of the health damage is taken as mana instead.
+                // It records the damage in the target's damage history itself.
+                var manaBarrier =
+                    tryBoost < 0 && targetCreature != this && targetPlayer is { ManaBarrierIsActive: true };
+
+                if (manaBarrier)
                 {
                     boost = -(int)Player.CombatAbilityManaBarrier(targetPlayer, (uint)-tryBoost, this, DamageType.Health);
                 }
@@ -1129,26 +1160,36 @@ partial class WorldObject
 
                 srcVital = "health";
 
-                if (boost >= 0 && !targetCreature.IsMonster)
+                if (tryBoost >= 0)
                 {
-                    targetCreature.DamageHistory.OnHeal((uint)boost);
-                    GenerateSupportSpellThreat(spell, targetCreature, boost);
-
-                    if (player is { OverloadStanceIsActive: true } or {BatteryStanceIsActive: true} && boost > 0)
+                    if (!targetCreature.IsMonster)
                     {
-                        player.IncreaseChargedMeter(spell, fromProc);
+                        targetCreature.DamageHistory.OnHeal((uint)boost);
+                        GenerateSupportSpellThreat(spell, targetCreature, boost);
+
+                        if (player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true } && boost > 0)
+                        {
+                            player.IncreaseChargedMeter(spell, fromProc);
+                        }
                     }
                 }
-                else if (creature is { IsMonster: false } && targetCreature.IsMonster)
+                else
                 {
-                    targetCreature.DamageHistory.Add(this, DamageType.Health, (uint)-boost);
-
-                    var percentOfTargetMaxHealth = -boost / (float)targetCreature.Health.MaxValue;
-                    targetCreature.IncreaseTargetThreatLevel(player, (int)(percentOfTargetMaxHealth * 1000));
-
-                    if (player is { OverloadStanceIsActive: true } or {BatteryStanceIsActive: true} && boost < 0)
+                    // credits the caster with the damage, for kill credit and death messages
+                    if (!manaBarrier)
                     {
-                        player.IncreaseChargedMeter(spell, fromProc);
+                        targetCreature.DamageHistory.Add(this, DamageType.Health, (uint)-boost);
+                    }
+
+                    if (creature is { IsMonster: false } && targetCreature.IsMonster)
+                    {
+                        var percentOfTargetMaxHealth = -boost / (float)targetCreature.Health.MaxValue;
+                        targetCreature.IncreaseTargetThreatLevel(player, (int)(percentOfTargetMaxHealth * 1000));
+
+                        if (player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true } && boost < 0)
+                        {
+                            player.IncreaseChargedMeter(spell, fromProc);
+                        }
                     }
                 }
                 break;
@@ -1156,7 +1197,15 @@ partial class WorldObject
 
         if (boost < 0)
         {
-            HandlePostDamageRatingEffects(targetCreature, boost, player, targetPlayer, creature, spell, ProjectileSpellType.Undef);
+            HandlePostDamageRatingEffects(
+                targetCreature,
+                -boost,
+                player,
+                targetPlayer,
+                creature,
+                spell,
+                ProjectileSpellType.Undef
+            );
         }
         else if (boost > 0)
         {
@@ -1649,7 +1698,8 @@ partial class WorldObject
 
             ResetRatingElementalistQuestStamps(player);
 
-            var nullificationRatingBonus = CheckForRatingNullificationBoostDefenseBonus(targetPlayer);
+            // RATING - Nullification only reduces spell damage taken, so it doesn't apply to beneficial transfers
+            var nullificationRatingBonus = isDrain ? CheckForRatingNullificationBoostDefenseBonus(targetPlayer) : 1.0f;
             srcVitalChange = Convert.ToUInt32(srcVitalChange * nullificationRatingBonus);
             destVitalChange = Convert.ToUInt32(destVitalChange * nullificationRatingBonus);
 
@@ -2148,21 +2198,20 @@ partial class WorldObject
 
         var cleave = targetCreature.GetNearbyMonsters(10);
 
+        // the nearest visible monster in front of the caster, other than the target
         foreach (var cleaveHit in cleave)
         {
-            if (cleaveHit.Translucency == 1 || cleaveHit.Visibility)
+            if (cleaveHit == targetCreature || cleaveHit.Translucency == 1 || cleaveHit.Visibility)
             {
                 continue;
             }
 
-            var angle = caster.GetAngle(cleaveHit);
-            var angleWrong = Math.Abs(angle) > 90.0f;
-
-            if (!angleWrong)
+            if (Math.Abs(caster.GetAngle(cleaveHit)) > 90.0f)
             {
-                CreateSpellProjectiles(spell, cleaveHit, weapon, isWeaponSpell, fromProc, damage);
+                continue;
             }
 
+            CreateSpellProjectiles(spell, cleaveHit, weapon, isWeaponSpell, fromProc, damage);
             break;
         }
     }
@@ -2546,7 +2595,7 @@ partial class WorldObject
         {
             if (itemCaster.PortalSummonLoc != null)
             {
-                summonLoc = new Position(PortalSummonLoc);
+                summonLoc = new Position(itemCaster.PortalSummonLoc);
             }
             else
             {
@@ -3890,7 +3939,13 @@ partial class WorldObject
                 : player.GetModdedLifeMagicSkill();
 
         var procSpellSkill = (int)(playerSpellSkill + spellcraft * 0.1);
-        var mod = procSpellSkill / spell.Power;
+
+        if (spell.Power == 0)
+        {
+            return 1.0f;
+        }
+
+        var mod = (float)procSpellSkill / spell.Power;
 
         return Math.Clamp(mod, 0.5f, 2.0f);
     }
@@ -3898,6 +3953,7 @@ partial class WorldObject
     public float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
     {
         var wardLevel = target.GetWardLevel();
+        wardLevel += target.EnchantmentManager.GetWardAdditiveMod();
 
         if (caster is Player)
         {

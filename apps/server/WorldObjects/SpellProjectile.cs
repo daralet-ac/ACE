@@ -361,14 +361,11 @@ public class SpellProjectile : WorldObject
             player.Session.Network.EnqueueSend(new GameMessageSystemChat(Info.ToString(), ChatMessageType.Broadcast));
         }
 
+        // volleys can strike through targets: they stop at the strikethrough limit, or by chance
         var spellType = GetProjectileSpellType(Spell.Id);
-        if (spellType != ProjectileSpellType.Volley)
-        {
-            ProjectileImpact();
-        }
-
         if (
-            spellType == ProjectileSpellType.Volley && Strikethrough == StrikethroughLimit
+            spellType != ProjectileSpellType.Volley
+            || Strikethrough == StrikethroughLimit
             || ThreadSafeRandom.Next(0.0f, 1.0f) < StrikethroughChance
         )
         {
@@ -631,7 +628,27 @@ public class SpellProjectile : WorldObject
             weaponAttackMod = sourcePlayer.GetEquippedWeapon().WeaponOffense ?? 1.0;
         }
 
-        resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true, WeaponSpellcraft, weaponAttackMod, ReflectedCaster != null);
+        // Overpower pierces resists: the spell can't be resisted, fully or partially
+        PartialEvasion partialEvasion;
+
+        if (overpower)
+        {
+            resisted = false;
+            partialEvasion = PartialEvasion.None;
+        }
+        else
+        {
+            resisted = source.TryResistSpell(
+                target,
+                Spell,
+                out partialEvasion,
+                resistSource,
+                true,
+                WeaponSpellcraft,
+                weaponAttackMod,
+                ReflectedCaster != null
+            );
+        }
 
         // COMBAT ABILITY - Reflect: a reflected spell never damages the reflecting player.
         // Overpower pierces a regular resist, and a spell that was already reflected can't be reflected again.
@@ -685,9 +702,16 @@ public class SpellProjectile : WorldObject
                 }
             }
 
-            var perceptionDefended = CheckForPerceptionSpecCriticalDefense(targetPlayer, attackSkill);
+            var perceptionDefended =
+                !critDefended
+                && sourceCreature != null
+                && targetPlayer != null
+                && CheckForPerceptionSpecCriticalDefense(
+                    targetPlayer,
+                    source.GetEffectiveMagicSkill(target, Spell, resistSource, WeaponSpellcraft, weaponAttackMod)
+                );
 
-            if (!critDefended && perceptionDefended == false)
+            if (!critDefended && !perceptionDefended)
             {
                 criticalHit = true;
             }
@@ -1096,23 +1120,20 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
-    /// SPEC BONUS - Perception: Up to 50% chance to prevent a critical hit
+    /// SPEC BONUS - Perception: Up to 50% chance to prevent a critical hit, based on Perception vs the caster's effective magic skill
     /// </summary>
-    private static bool CheckForPerceptionSpecCriticalDefense(Player targetPlayer, CreatureSkill attackSkill)
+    private static bool CheckForPerceptionSpecCriticalDefense(Player targetPlayer, uint effectiveMagicSkill)
     {
-        if (targetPlayer == null || attackSkill == null)
-        {
-            return false;
-        }
-
         var perception = targetPlayer.GetCreatureSkill(Skill.Perception);
         if (perception.AdvancementClass != SkillAdvancementClass.Specialized)
         {
             return false;
         }
 
-        var skillCheck = (float)targetPlayer.GetModdedPerceptionSkill() / attackSkill.Current;
-        var criticalDefenseChance = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
+        var criticalDefenseChance = SkillCheck.GetSkillRatioChance(
+            targetPlayer.GetModdedPerceptionSkill(),
+            effectiveMagicSkill
+        );
 
         if (!(criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f)))
         {
@@ -1195,7 +1216,6 @@ public class SpellProjectile : WorldObject
         targetPlayer.QuestManager.Stamp($"{sourceCreature.Guid}/Reprisal");
 
         resisted = true;
-        targetPlayer.Reprisal = true;
         _partialEvasion = PartialEvasion.All;
 
         var msg = $"Reprisal! You resist the spell cast by {sourceCreature.Name}";
@@ -1267,30 +1287,6 @@ public class SpellProjectile : WorldObject
                 break;
         }
         return 1.0f;
-    }
-
-    private float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
-    {
-        var wardLevel = target.GetWardLevel();
-        wardLevel += target.EnchantmentManager.GetWardAdditiveMod();
-
-        if (caster is Player)
-        {
-            wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetMonsterArmorWardScalar(caster, target));
-        }
-
-        var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
-
-        var wardMod = SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
-
-        // level scaling scales the mitigation, not the ward level -- see LevelScaling.GetPlayerArmorWardModScalar().
-        // A player caster only scales it in a scaled arena duel, where the higher fighter's ward counts as at the other's level
-        if (target is Player && (caster is not Player || LevelScaling.IsScaledDuel(target, caster)))
-        {
-            wardMod *= LevelScaling.GetPlayerArmorWardModScalar(target, caster);
-        }
-
-        return wardMod;
     }
 
     /// <summary>
@@ -1447,7 +1443,7 @@ public class SpellProjectile : WorldObject
                 heritageMod = sourcePlayer.GetHeritageBonus(sourcePlayer.GetEquippedWand()) ? 1.05f : 1.0f;
             }
             // Calc sneak bonus for monsters
-            if (targetPlayer != null && sourceCreature != null && ReflectedCaster == null)
+            else if (targetPlayer != null && sourceCreature != null && ReflectedCaster == null)
             {
                 sneakAttackMod = sourceCreature.GetSneakAttackMod(targetPlayer);
             }
@@ -1463,8 +1459,11 @@ public class SpellProjectile : WorldObject
 
             if (critical)
             {
-                damageRatingMod = Creature.GetPositiveRatingMod(damageSource?.GetCritDamageRating() ?? 0);
-                damageResistRatingMod = Creature.GetNegativeRatingMod(target.GetCritDamageResistRating());
+                critDamageRatingMod = Creature.GetPositiveRatingMod(damageSource?.GetCritDamageRating() ?? 0);
+                critDamageResistRatingMod = Creature.GetNegativeRatingMod(target.GetCritDamageResistRating());
+
+                damageRatingMod = Creature.AdditiveCombine(damageRatingMod, critDamageRatingMod);
+                damageResistRatingMod = Creature.AdditiveCombine(damageResistRatingMod, critDamageResistRatingMod);
             }
             if (pkBattle)
             {
@@ -1498,7 +1497,7 @@ public class SpellProjectile : WorldObject
 
             if (targetPlayer is {ManaBarrierIsActive: true})
             {
-                amount = Player.CombatAbilityManaBarrier(targetPlayer, amount, targetPlayer, Spell.DamageType);
+                amount = Player.CombatAbilityManaBarrier(targetPlayer, amount, ProjectileSource, Spell.DamageType);
             }
             else
             {
