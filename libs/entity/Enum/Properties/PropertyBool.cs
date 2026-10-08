@@ -360,6 +360,17 @@ public enum PropertyBool : ushort
     /// </summary>
     Invulnerable = 184,
 
+    /// <summary>
+    /// The character has been taken off the arena rankings by an admin: /arena top does not list them. Their ratings and records are kept.
+    /// </summary>
+    ArenaRankingExcluded = 185,
+
+    /// <summary>
+    /// The character is watching a duel in the arena, unseen. Set while they are, so that a character saved that way
+    /// (the server went down while they watched) is made visible again when they log in.
+    /// </summary>
+    ArenaSpectating = 186,
+
     /* custom */
     LinkedPortalOneSummon = 9001,
     LinkedPortalTwoSummon = 9002,

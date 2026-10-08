@@ -145,6 +145,12 @@ public enum PropertyString : ushort
     /// The 1v1 boards have properties of their own (PropertyInt.ArenaRating, ...).
     /// </summary>
     ArenaTeamBoards = 9015,
+
+    /// <summary>
+    /// What /arena reset took from the character, as JSON keyed by the board's name (as ArenaTeamBoards, but for every board),
+    /// so that /arena restore can give it back.
+    /// </summary>
+    ArenaResetBackup = 9016,
     
 
 

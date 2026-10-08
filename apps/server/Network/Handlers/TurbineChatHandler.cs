@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ACE.Common;
 using ACE.Entity.Enum;
+using ACE.Server.Arena;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
@@ -161,6 +162,29 @@ public static class TurbineChatHandler
                 senderID,
                 adjustedchatType
             );
+
+            // nobody in the arena can send to the global channels (allegiance chat is not one of them)
+            if (!(adjustedChannelID > TurbineChatChannel.Olthoi || adjustedChannelID == TurbineChatChannel.Allegiance))
+            {
+                var arenaRefusal = ArenaManager.WhyCantChat(session.Player);
+
+                if (arenaRefusal != null)
+                {
+                    session.Player.SendMessage(arenaRefusal);
+                    session.Network.EnqueueSend(
+                        new GameMessageTurbineChat(
+                            ChatNetworkBlobType.NETBLOB_RESPONSE_BINARY,
+                            ChatNetworkBlobDispatchType.ASYNCMETHOD_SENDTOROOMBYNAME,
+                            contextId,
+                            null,
+                            null,
+                            0,
+                            chatType
+                        )
+                    );
+                    return;
+                }
+            }
 
             if (adjustedChannelID > TurbineChatChannel.Olthoi || adjustedChannelID == TurbineChatChannel.Allegiance) // Channel must be an allegiance channel
             {
