@@ -166,7 +166,8 @@ partial class Jewel
         const float attackTimeScalar = 1.55f;
 
         var weaponTime = equippedWeapon?.WeaponTime ?? WeaponSpeed.UnarmedWeaponTime;
-        var secondsPerHit = WeaponSpeed.GetSecondsPerHit(weaponTime, playerAttacker.Quickness.Current);
+        var isRanged = equippedWeapon?.IsRanged ?? false;
+        var secondsPerHit = WeaponSpeed.GetSecondsPerHit(weaponTime, playerAttacker.Quickness.Current, isRanged);
 
         return Convert.ToInt32(baseStamps * powerBarScalar * secondsPerHit * attackTimeScalar);
     }

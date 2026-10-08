@@ -765,11 +765,11 @@ partial class Creature
     /// Returns the seconds each hit takes for this player's current weapon,
     /// based on its WeaponTime (with enchantments) and the player's quickness
     /// </summary>
-    public float GetSecondsPerHit(Creature target = null)
+    public float GetSecondsPerHit(Creature target = null, bool isRanged = false)
     {
         var quickness = Quickness.Current * LevelScaling.GetPlayerAttributeScalar(this, target);
 
-        return WeaponSpeed.GetSecondsPerHit(GetWeaponSpeed(this), quickness);
+        return WeaponSpeed.GetSecondsPerHit(GetWeaponSpeed(this), quickness, isRanged);
     }
 
     /// <summary>
@@ -805,7 +805,7 @@ partial class Creature
         var reloadLength = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload);
         var linkLength = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready);
 
-        var attackTime = GetSecondsPerHit(target);
+        var attackTime = GetSecondsPerHit(target, true);
 
         return WeaponSpeed.GetAnimSpeed(launchLength + reloadLength, attackTime - linkLength);
     }

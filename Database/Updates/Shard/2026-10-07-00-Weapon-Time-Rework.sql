@@ -2,8 +2,9 @@
  * Weapon Time rework.
  *
  * WeaponTime (PropertyInt 49) is now the time each hit takes, in 1/60ths of a second, for a wielder with
- * 200 Quickness. Swing animations are sped up or slowed down to match it, so a lower WeaponTime is always
- * a faster weapon. Every weapon keeps its old attack speed at 200 Quickness.
+ * 100 Quickness. Swing animations are sped up or slowed down to match it, so a lower WeaponTime is always
+ * a faster weapon. Every weapon keeps its old attack speed at 200 Quickness (missile weapons gain less from
+ * Quickness than melee, so their WeaponTime is converted with their own Quickness curve).
  *
  * Two-handed weapons now deal one hit per swing (their animation still strikes twice), so their Damage
  * and BaseDamage are doubled.
@@ -36,6 +37,7 @@ CREATE TEMPORARY TABLE weapon_time_rework (
     kind VARCHAR(8) NULL,
     anim DOUBLE NULL,
     reload_or_hits DOUBLE NULL,
+    quickness_scale DOUBLE NULL,
     new_weapon_time INT NULL,
     new_base_weapon_time INT NULL
 );
@@ -138,16 +140,25 @@ WHERE r.kind = 'melee';
 /*
  * old attack speed: animSpeed = clamp(1 + (1 - WeaponTime / 100) + 200 / 600, 1, 2.5)
  * launchers and thrown weapons only sped up their reload animation; melee sped up the whole swing
- * new WeaponTime = seconds per hit x 60, rounded half up
+ * new WeaponTime = seconds per hit at 100 Quickness x 60, rounded half up
+ * (seconds per hit at 200 Quickness x quickness mod at 200 / quickness mod at 100, where the quickness mod is
+ *  1 + Q / 600 for melee and 1 + 0.13 x Q / 600 for missile weapons)
  */
 UPDATE weapon_time_rework r SET
-    r.new_weapon_time = GREATEST(1, FLOOR(60 * CASE
+    r.quickness_scale = CASE WHEN r.kind IN ('bow', 'crossbow', 'atlatl', 'thrown')
+        THEN (1 + 0.13e0 * 200e0 / 600e0) / (1 + 0.13e0 * 100e0 / 600e0)
+        ELSE (1 + 200e0 / 600e0) / (1 + 100e0 / 600e0)
+    END
+WHERE r.anim IS NOT NULL;
+
+UPDATE weapon_time_rework r SET
+    r.new_weapon_time = GREATEST(1, FLOOR(60 * r.quickness_scale * CASE
         WHEN r.kind IN ('bow', 'crossbow', 'atlatl', 'thrown')
             THEN r.anim - r.reload_or_hits + r.reload_or_hits / LEAST(GREATEST(1 + (1 - r.weapon_time / 100e0) + 200e0 / 600e0, 1), 2.5)
         ELSE r.anim / LEAST(GREATEST(1 + (1 - r.weapon_time / 100e0) + 200e0 / 600e0, 1), 2.5) / r.reload_or_hits
     END + 0.5e0)),
     r.new_base_weapon_time = CASE WHEN r.base_weapon_time IS NULL OR r.base_weapon_time = 0 THEN r.base_weapon_time
-        ELSE GREATEST(1, FLOOR(60 * CASE
+        ELSE GREATEST(1, FLOOR(60 * r.quickness_scale * CASE
             WHEN r.kind IN ('bow', 'crossbow', 'atlatl', 'thrown')
                 THEN r.anim - r.reload_or_hits + r.reload_or_hits / LEAST(GREATEST(1 + (1 - r.base_weapon_time / 100e0) + 200e0 / 600e0, 1), 2.5)
             ELSE r.anim / LEAST(GREATEST(1 + (1 - r.base_weapon_time / 100e0) + 200e0 / 600e0, 1), 2.5) / r.reload_or_hits

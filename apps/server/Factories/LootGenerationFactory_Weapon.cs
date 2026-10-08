@@ -94,7 +94,7 @@ public static partial class LootGenerationFactory
 
         var quickness = AvgQuicknessPerTier[Math.Clamp(tier - 1, 0, AvgQuicknessPerTier.Length - 1)];
 
-        return 1.0 / WeaponSpeed.GetSecondsPerHit(wo.WeaponTime.Value, quickness);
+        return 1.0 / WeaponSpeed.GetSecondsPerHit(wo.WeaponTime.Value, quickness, wo.IsRanged);
     }
 
     public const float MaxSpeedBonus = 0.1f;

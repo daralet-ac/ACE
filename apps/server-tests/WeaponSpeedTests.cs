@@ -22,8 +22,19 @@ public class WeaponSpeedTests
 
         Assert.IsTrue(low > reference);
         Assert.IsTrue(high < reference);
-        // 1 + 200/600 over 1 + 400/600
-        Assert.AreEqual(0.8f, high, 0.0001f);
+        // 1 + 100/600 over 1 + 400/600
+        Assert.AreEqual(0.7f, high, 0.0001f);
+    }
+
+    [TestMethod]
+    public void QuicknessHelpsMissileWeaponsLess()
+    {
+        var melee = WeaponSpeed.GetSecondsPerHit(60, 400);
+        var missile = WeaponSpeed.GetSecondsPerHit(60, 400, true);
+
+        Assert.AreEqual(1.0f, WeaponSpeed.GetSecondsPerHit(60, WeaponSpeed.ReferenceQuickness, true), 0.0001f);
+        Assert.IsTrue(missile < 1.0f);
+        Assert.IsTrue(missile > melee);
     }
 
     [TestMethod]

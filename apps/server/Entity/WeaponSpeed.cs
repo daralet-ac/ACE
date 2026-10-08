@@ -8,19 +8,19 @@ using ACE.Server.WorldObjects;
 namespace ACE.Server.Entity;
 
 /// <summary>
-/// WeaponTime is the time each hit takes, in 1/60ths of a second, for a wielder with 200 Quickness.
+/// WeaponTime is the time each hit takes, in 1/60ths of a second, for a wielder with 100 Quickness.
 /// Swing animations are sped up or slowed down to match it, so a lower WeaponTime is always a faster weapon,
 /// whatever its animation.
 /// </summary>
 public static class WeaponSpeed
 {
     public const float TicksPerSecond = 60.0f;
-    public const float ReferenceQuickness = 200.0f;
+    public const float ReferenceQuickness = 100.0f;
 
     /// <summary>
     /// The WeaponTime used when nothing is wielded (a punch at the old default speed of 40)
     /// </summary>
-    public const int UnarmedWeaponTime = 34;
+    public const int UnarmedWeaponTime = 39;
 
     /// <summary>
     /// The highest WeaponTime sent to the client for display
@@ -31,22 +31,33 @@ public static class WeaponSpeed
     public const float MaxAnimSpeed = 2.5f;
 
     /// <summary>
+    /// How much of the melee Quickness bonus missile weapons get.
+    /// Missile attacks used to only speed up their reload with Quickness, and this keeps them on that curve.
+    /// </summary>
+    public const float MissileQuicknessEffect = 0.13f;
+
+    /// <summary>
     /// WeaponTime enchantments (Swift Killer, Leaden Weapon, auras) are percentages of the weapon's WeaponTime.
     /// They can make a weapon at most this much faster.
     /// </summary>
     private const int MaxSpeedBonusPercent = 75;
 
-    public static float GetQuicknessMod(float quickness)
+    public static float GetQuicknessMod(float quickness, bool isRanged = false)
     {
-        return 1.0f + Math.Max(0.0f, quickness) / 600.0f;
+        var effect = isRanged ? MissileQuicknessEffect : 1.0f;
+
+        return 1.0f + effect * Math.Max(0.0f, quickness) / 600.0f;
     }
 
     /// <summary>
-    /// Returns the seconds each hit takes with this WeaponTime at this Quickness
+    /// Returns the seconds each hit (or shot) takes with this WeaponTime at this Quickness
     /// </summary>
-    public static float GetSecondsPerHit(float weaponTime, float quickness = ReferenceQuickness)
+    public static float GetSecondsPerHit(float weaponTime, float quickness = ReferenceQuickness, bool isRanged = false)
     {
-        return weaponTime / TicksPerSecond * GetQuicknessMod(ReferenceQuickness) / GetQuicknessMod(quickness);
+        return weaponTime
+            / TicksPerSecond
+            * GetQuicknessMod(ReferenceQuickness, isRanged)
+            / GetQuicknessMod(quickness, isRanged);
     }
 
     /// <summary>

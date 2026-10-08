@@ -1956,7 +1956,7 @@ partial class Player
     {
         var weaponTime = weapon?.WeaponTime ?? WeaponSpeed.UnarmedWeaponTime;
 
-        return WeaponSpeed.GetSecondsPerHit(weaponTime) * AdrenalineAttackTimeScale;
+        return WeaponSpeed.GetSecondsPerHit(weaponTime, 200, weapon?.IsRanged ?? false) * AdrenalineAttackTimeScale;
     }
 
     public void IncreaseRelentlessAdrenalineMeter(WorldObject weapon)
