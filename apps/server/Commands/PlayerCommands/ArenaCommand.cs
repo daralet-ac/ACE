@@ -17,13 +17,14 @@ namespace ACE.Server.Commands.PlayerCommands;
 public class ArenaCommand
 {
     private const string Usage =
-        "arena [queue [levels] [scaled] [unrated] [fellowship] | challenge <name> [scaled] [unrated] [fellowship] | leave | stats [name] | top [2v2] [scaled] | maps]\n"
+        "arena [queue [levels] [scaled] [unrated] [fellowship] | challenge <name> [scaled] [unrated] [fellowship] | leave | watch [duel | name] | stats [name] | top [2v2] [scaled] | maps]\n"
         + "  queue [levels]: waits for an opponent. Give a number of levels to only be matched with someone within that many levels of you\n"
         + "  challenge <name>: asks a player to a duel\n"
         + "  scaled: a scaled duel, in which the higher-level fighter fights at the other one's level (level 10 and up). Without it, a raw duel at your own levels\n"
         + "  unrated: a duel that changes no rating and no record. The queue only pairs you with someone who asked for the same kind of duel\n"
         + "  fellowship: (fellowship leaders) your whole fellowship, against a fellowship of the same size: the one <name> is in, or one from the queue. Everyone on both sides is asked\n"
-        + "  leave: leaves the queue (with your fellowship, if it is waiting), calls off a duel that has not begun, or gives up the one you are fighting\n"
+        + "  leave: leaves the queue (with your fellowship, if it is waiting), calls off a duel that has not begun, gives up the one you are fighting, or stops watching one\n"
+        + "  watch [duel | name]: lists the duels going on, or takes you to watch one (by its number, or the name of someone fighting in it). Nobody can see you there\n"
         + "  stats [name]: your arena ratings and records, on every board you have fought on, or someone else's\n"
         + "  top [2v2] [scaled]: the best arena ratings on a board: 1v1, 2v2, 3v3... raw or scaled (1v1 raw if you say nothing)\n"
         + "  maps: the arenas duels are fought in\n"
@@ -87,6 +88,11 @@ public class ArenaCommand
 
             case "maps":
                 Maps(player);
+                break;
+
+            case "watch":
+            case "spectate":
+                Watch(player, rest);
                 break;
 
             case "list" when staff:
@@ -464,6 +470,30 @@ public class ArenaCommand
             $"{character.Name} is {(excluded ? "off" : "back on")} the arena rankings.",
             ChatMessageType.System
         );
+    }
+
+    private static void Watch(Player player, string which)
+    {
+        if (which.Length > 0)
+        {
+            ArenaManager.Watch(player, which);
+            return;
+        }
+
+        var duels = ArenaManager.DescribeWatchable();
+
+        if (duels.Count == 0)
+        {
+            player.SendMessage("There are no duels going on to watch.");
+            return;
+        }
+
+        player.SendMessage("Duels going on (/arena watch <number> to watch one):", ChatMessageType.System);
+
+        foreach (var line in duels)
+        {
+            player.SendMessage(line, ChatMessageType.System);
+        }
     }
 
     private static void Maps(Player player)

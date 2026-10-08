@@ -234,6 +234,9 @@ public static class WorldManager
 
         InstanceManager.OnPlayerLogin(player);
 
+        // saved while watching a duel (the server went down): they can be seen again
+        player.StopArenaSpectating(reveal: false);
+
         if (stripAdminProperties) // continue stripping properties
         {
             player.CloakStatus = CloakStatus.Undef;

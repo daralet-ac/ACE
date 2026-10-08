@@ -11,7 +11,8 @@ Duels are one against one, or a whole fellowship against another of the same siz
 | `/arena` | How to use it, and where you stand (in the queue, or in a duel). |
 | `/arena challenge <name> [scaled] [unrated] [fellowship]` | Asks a player to a duel (raw and rated unless asked otherwise, see below). With `fellowship`, your fellowship challenges the one `<name>` is in (see Fellowship duels). They get a yes/no question. Someone who says no can't be challenged by the same player again for a minute. A player who has squelched you can't be challenged by you. |
 | `/arena queue [levels] [scaled] [unrated] [fellowship]` | Waits for an opponent (with `fellowship`, your whole fellowship waits for another of its size). The queue pairs players in the order they came, and only with someone who asked for the same kind of duel (scaled or raw, rated or unrated). With a number, you are only matched with someone within that many levels of you (and you are only matched with someone whose own band you are within). Without one, the server's `arena_queue_level_band` (0, any level, by default). Using it again changes your band and keeps your place. |
-| `/arena leave` | Leaves the queue (anyone in a waiting fellowship takes the whole fellowship out), calls off a duel that has not begun, or gives up the one you are fighting. |
+| `/arena leave` | Leaves the queue (anyone in a waiting fellowship takes the whole fellowship out), calls off a duel that has not begun, gives up the one you are fighting, or stops watching one. |
+| `/arena watch [duel \| name]` | Lists the duels going on (fighters, map, how long they have been fighting, how many are watching), or takes you to watch one, by its number or the name of someone fighting in it (see Watching duels). |
 | `/arena stats [name]` | Your arena ratings and records on every board you have fought a rated duel on, or someone else's. |
 | `/arena top [2v2] [scaled]` | The ten best ratings on a board: `1v1` (the default), `2v2`, `3v3`... raw (the default) or `scaled`. |
 | `/arena reset <name> [2v2] [scaled]` | (Admin) Puts a character's rating back to 1400 and clears their record, on every board they have fought on, or only on the one named. Works on offline characters. |
@@ -54,8 +55,20 @@ A fellowship fights another fellowship of the same size, everyone in each. Only 
 - **Challenge**: `/arena challenge <name> fellowship` (with `scaled` and `unrated` as for any duel). `<name>` is anybody in the other fellowship. Both fellowships have to be the same size, and everyone in them has to be able to duel. Everyone on both sides is asked, the challenger's own fellowship too, and the duel is off if anybody says no.
 - **Queue**: `/arena queue fellowship [levels]`. The fellowship waits as one, and is only paired with a fellowship of the same size that asked for the same kind of duel. A level band compares the highest level on each side. Anyone in it who was waiting on their own now waits with it. Everyone is asked when opponents are found. If someone says no, their fellowship leaves the queue and the other goes back to its place. A fellowship that changes while it waits (someone leaves or joins it, or logs out) is taken out of the queue, and its leader can put it back. `/arena leave` by anybody in it takes the whole fellowship out.
 - Someone who waits in the queue with their fellowship can't be challenged into another duel (on their own or with another fellowship) until it leaves the queue.
-- **In the arena** each fellowship starts together, at a start of its own. Nobody can harm their own side, and teammates can heal and buff each other as usual. A fighter who is defeated is taken home straight away, as in any duel; their side fights on. A side is beaten when everyone on it has been defeated, has given up, or has left; then the other side has won. The time limit is the same, and ends in a draw.
+- **In the arena** each fellowship starts together, at a start of its own. Nobody can harm their own side, and teammates can heal and buff each other as usual. A fighter who is defeated while anybody on their side is still standing watches the rest of the duel: once they have finished falling they stand up again where they fell, unseen, as a spectator (see Watching duels), and are told that `/arena leave` takes them back. They are taken home with everyone else when the duel ends. Whoever is defeated last on a side (which ends the duel) is taken home as in any duel. A side is beaten when everyone on it has been defeated, has given up, or has left; then the other side has won. The time limit is the same, and ends in a draw.
 - **Scaled**: scaling works between any two fighters, by their two levels: whoever is the higher of the two fights the other at their level. A heal on a higher-level teammate counts for more, and on a lower-level one for less, as shroud scaling does for Shrouded fellows.
+
+## Watching duels
+
+`/arena watch` lists the duels going on, and `/arena watch <number | name>` takes you in to watch one, from the moment its fighters are on their way in until it ends. You go to the middle of an outdoor arena, or to the first start of an indoor one.
+
+- **Nobody can see you.** Spectators are cloaked as admins are (`Player.StartArenaSpectating`: cloaked, not drawn, ethereal, and server side only, so the fighters' clients are never told about them). They pass through everything, so they never get in the fighters' way.
+- **Nobody can do anything to you, and you can't do anything to anyone**: the arena refuses anything between anyone in its instance who is not a fighter and anyone else, harmful or not (`CheckPlayerVsPlayer`). They keep their own player killer status.
+- **Leaving.** When the duel ends (or is called off), spectators are told the result and taken back to where they were, as fighters are. `/arena leave` takes them back sooner. Logging out, a recall or a portal works too: they are made visible again wherever they end up, and someone who logs out is saved where they were before they came to watch (`ArenaMatch.GetReturnPosition`). If the server goes down while they watch, they are made visible again as they log in (`PropertyBool.ArenaSpectating`).
+- **Who can watch**: anybody who could go into an instance at all (not from inside one, not dead, not in a player killer battle, not in the training academy), and who is not in a duel or in the queue. A spectator can't be challenged, and can't queue, until they are back.
+- The fighters are told who has come to watch. Spectators hear what the fighters hear about the duel: who has been defeated, the countdown, the end.
+- A spectator can still talk: local chat in the arena reaches the fighters, as fellowship chat from a defeated teammate does.
+- `arena_spectating_enabled` turns it off: nobody can come to watch, and defeated fighters in a fellowship duel are taken home as before. Whoever is watching already stays until the duel ends.
 
 ## Kinds of duel
 
@@ -121,6 +134,7 @@ Every map is registered as an instance template called `arena:<name>`, so an adm
 | `arena_queue_level_band` | 0 | The level band of players who don't ask for one. 0 is any level. |
 | `arena_block_same_ip` | true | The queue doesn't pair players from the same IP address, and duels between them are not rated. |
 | `arena_rated_challenges` | true | Whether challenges are rated (the queue's duels always are). |
+| `arena_spectating_enabled` | true | Whether duels can be watched (`/arena watch`), and whether a fighter who is defeated in a fellowship duel watches the rest of it. |
 
 ## Code
 
@@ -129,13 +143,14 @@ Every map is registered as an instance template called `arena:<name>`, so an adm
 | `apps/server/Arena/ArenaManager.cs` | Everything a duel does, from the question to the end, and the hooks the rest of the server calls. One lock. Whatever is done to a player is queued on the player. |
 | `apps/server/Arena/ArenaMatch.cs` | A duel and its fighters. It is the `Owner` of its instance, and says where fighters go when they leave it. |
 | `apps/server/Arena/ArenaManager.Fellowship.cs` | Fellowship challenges, and putting a fellowship in the queue. |
+| `apps/server/Arena/ArenaManager.Spectators.cs` | Watching duels, and defeated fighters watching the rest of a fellowship duel. |
 | `apps/server/Arena/ArenaQueue.cs` | The queue and its pairing rules. An entry is a player, or a fellowship. |
 | `apps/server/Arena/ArenaElo.cs` | Ratings, one against one and for teams. |
 | `apps/server/Arena/ArenaBoards.cs` | The boards (1v1, 2v2 scaled, ...) and where a character's rating and record on each are kept. |
 | `apps/server/Arena/ArenaMap.cs`, `ArenaMapConfig.cs`, `ArenaMaps.cs` | Maps, reading `arenas.json`, and the maps that are loaded. |
 | `apps/server/Arena/ArenaConfirmation.cs` | A yes/no question that also says when the answer is no. |
 | `apps/server/Entity/LevelScaling.cs` | Scaled duels: `CanScalePlayer` asks `ArenaManager.IsScaledDuel`, and `GetDuelDamageScalar` replaces the monster health and armor tables between two fighters. |
-| `apps/server/WorldObjects/Player_Arena.cs` | What a duel does to a player: getting ready, beginning, being defeated, going home. |
+| `apps/server/WorldObjects/Player_Arena.cs` | What a duel does to a player: getting ready, beginning, being defeated, watching unseen, going home. |
 | `apps/server/Commands/PlayerCommands/ArenaCommand.cs` | `/arena`. |
 
 The hooks into the rest of the server: `Player.CheckPKStatusVsTarget` and `Healer` (who may harm or help whom), `Player.OnDeath` and `Player.Die` (defeat instead of death), `Player.FinalizeLogout` (logging out in a duel), `InstanceManager.GetReturnPosition` (`IInstanceReturnPositions`), `WorldManager` (the tick, every 250 ms) and `Program` (loading the maps). `ConfirmationManager.EnqueueAbort` can close a question without saying the player took too long.
@@ -179,7 +194,10 @@ To decide before it is built (what we would do first):
 - **Their own boards?** Yes, "3v3 solo" next to "3v3": if the two never meet, one board would rank two pools of players that never fought each other.
 - **Fellowships with room left, filled up with players on their own** (a fellowship of two and one other player against three)? Not in phase 4. Most of the difficulty of Shoff's team queue is there, which is why his is greedy.
 
+### Watching duels
+
+Done (see Watching duels). To test on a live server: `/arena watch` during the countdown and during a fight, of a 1v1 and of a fellowship duel, and check that the fighters can't see a spectator (or target them, or hit them with anything that hits everyone around), that spectators can't heal, buff or harm anyone, and that they go home when the duel ends, is called off, or they `/arena leave`. Then a spectator who recalls, goes through a portal, or logs out while watching (they must be visible to everyone afterwards), and a 2v2 and a 3v3 in which fighters are defeated one at a time: each stands up unseen where they fell, can `/arena leave`, and is taken home with everyone at the end. Also `/die` as a spectator, and a duel that ends while a defeated fighter is still falling. Not done: a duel that is watchable only if its fighters allow it.
+
 ### Later (not designed yet)
 
 - **Weekly rewards and rating resets.** Once a week: the top of each board is rewarded (items, titles, luminance, to be decided), the board's standings are kept as history (last week's winners), and ratings go back to the start (or part way back toward it, so the best players don't start from nothing). Needs a scheduled job (the server has event and timer infrastructure to hang it on), a record of each week's results, and rewards that reach players who are offline (given at their next login). Watch for farming: rewards make the same-IP rule and rated-challenge abuse (two friends trading wins) matter much more, so a reward may need a minimum number of duels against different opponents.
-- **Watching duels.** `/arena watch` lists the duels going on (fighters, map, how long it has been running), and `/arena watch <number | name>` takes you in as a spectator. Spectators are invisible (cloaked, as admins are, so fighters can't see or target them and they don't get in the way), can't harm or help anyone (the arena already refuses that between fighters and anyone else in the instance), keep their own status, and are taken back to where they were when the duel ends or they `/arena leave`, the same way fighters are (`IInstanceReturnPositions`). A duel might be watchable only if its fighters allow it, or only when it is rated.
