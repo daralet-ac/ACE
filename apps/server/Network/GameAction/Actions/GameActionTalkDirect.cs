@@ -1,5 +1,6 @@
 using ACE.Common.Extensions;
 using ACE.Entity.Enum;
+using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
@@ -47,6 +48,13 @@ public static class GameActionTalkDirect
                     )
                 );
                 // _log.Warning($"Tell from {session.Player.Name} (0x{session.Player.Guid.ToString()}) to {targetPlayer.Name} (0x{targetPlayer.Guid.ToString()}) blocked due to squelch");
+                PlayerManager.LogPlayerChat(
+                    "chat_log_tell",
+                    "TELL",
+                    session.Player.Name,
+                    $"tells {targetPlayer.Name} (squelched, not delivered)",
+                    message
+                );
                 return;
             }
 
@@ -59,9 +67,25 @@ public static class GameActionTalkDirect
                 ChatMessageType.Tell
             );
             targetPlayer.Session.Network.EnqueueSend(tell);
+
+            PlayerManager.LogPlayerChat(
+                "chat_log_tell",
+                "TELL",
+                session.Player.Name,
+                $"tells {targetPlayer.Name}",
+                message
+            );
         }
         else
         {
+            PlayerManager.LogPlayerChat(
+                "chat_log_tell",
+                "TELL",
+                session.Player.Name,
+                $"tells {creature.Name}",
+                message
+            );
+
             creature.EmoteManager.OnTalkDirect(session.Player, message);
         }
     }

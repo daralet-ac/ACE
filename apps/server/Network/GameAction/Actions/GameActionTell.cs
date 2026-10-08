@@ -50,6 +50,13 @@ public static class GameActionTell
                 )
             );
             // _log.Warning($"Tell from {session.Player.Name} (0x{session.Player.Guid.ToString()}) to {targetPlayer.Name} (0x{targetPlayer.Guid.ToString()}) blocked due to squelch");
+            PlayerManager.LogPlayerChat(
+                "chat_log_tell",
+                "TELL",
+                session.Player.Name,
+                $"tells {targetPlayer.Name} (squelched, not delivered)",
+                message
+            );
             return;
         }
 
@@ -79,5 +86,7 @@ public static class GameActionTell
             ChatMessageType.Tell
         );
         targetPlayer.Session.Network.EnqueueSend(tell);
+
+        PlayerManager.LogPlayerChat("chat_log_tell", "TELL", session.Player.Name, $"tells {targetPlayer.Name}", message);
     }
 }

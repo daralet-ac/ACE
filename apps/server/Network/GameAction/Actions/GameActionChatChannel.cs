@@ -100,6 +100,8 @@ public static class GameActionChatChannel
                         break;
                     }
 
+                    PlayerManager.LogBroadcastChat(groupChatType, session.Player, message);
+
                     var fellowshipMembers = session.Player.Fellowship.GetFellowshipMembers();
 
                     foreach (var fellowmember in fellowshipMembers.Values)
@@ -146,6 +148,8 @@ public static class GameActionChatChannel
                         break;
                     }
 
+                    PlayerManager.LogBroadcastChat(groupChatType, session.Player, message);
+
                     foreach (var vassalGuid in session.Player.AllegianceNode.Vassals.Keys)
                     {
                         var vassalPlayer = PlayerManager.GetOnlinePlayer(vassalGuid);
@@ -187,6 +191,8 @@ public static class GameActionChatChannel
                         break;
                     }
 
+                    PlayerManager.LogBroadcastChat(groupChatType, session.Player, message);
+
                     var patronPlayer = PlayerManager.GetOnlinePlayer(session.Player.AllegianceNode.Patron.PlayerGuid);
 
                     if (
@@ -223,7 +229,9 @@ public static class GameActionChatChannel
                         break;
                     }
 
-                    var monarchPlayer = PlayerManager.GetOnlinePlayer(session.Player.AllegianceNode.Monarch.PlayerGuid);
+                    PlayerManager.LogBroadcastChat(groupChatType, session.Player, message);
+
+                    var monarchPlayer =PlayerManager.GetOnlinePlayer(session.Player.AllegianceNode.Monarch.PlayerGuid);
 
                     if (
                         monarchPlayer != null
@@ -258,6 +266,8 @@ public static class GameActionChatChannel
                         session.Network.EnqueueSend(statusMessage);
                         break;
                     }
+
+                    PlayerManager.LogBroadcastChat(groupChatType, session.Player, message);
 
                     var patronPlayer = PlayerManager.GetOnlinePlayer(session.Player.AllegianceNode.Patron.PlayerGuid);
 
@@ -329,6 +339,8 @@ public static class GameActionChatChannel
                         );
                         break;
                     }
+
+                    PlayerManager.LogBroadcastChat(groupChatType, player, message);
 
                     // iterate through all allegiance members
                     foreach (var member in player.Allegiance.Members.Keys)
