@@ -20,7 +20,15 @@ public class ClientPacketFragment : PacketFragment
             return false;
         }
 
-        Data = payload.ReadBytes(Header.Size - PacketFragmentHeader.HeaderSize);
+        var dataSize = Header.Size - PacketFragmentHeader.HeaderSize;
+
+        // a fragment can't hold more than is left of the packet
+        if (dataSize > payload.BaseStream.Length - payload.BaseStream.Position)
+        {
+            return false;
+        }
+
+        Data = payload.ReadBytes(dataSize);
         return true;
     }
 

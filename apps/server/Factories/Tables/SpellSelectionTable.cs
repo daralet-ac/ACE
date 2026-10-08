@@ -364,14 +364,24 @@ public static class SpellSelectionTable
         spellSelectionGroup18,
         spellSelectionGroup19,
         spellSelectionGroup20,
+        spellSelectionGroup21,
     };
 
     /// <summary>
     /// Rolls for a creature / life spell for an item
     /// </summary>
     /// <param name="spellCode">the SpellCode from WorldObject</param>
+    /// <returns>Undef for item types with no spells</returns>
     public static SpellId Roll(int spellCode)
     {
-        return spellSelectionGroup[spellCode - 1].Roll();
+        var group = spellSelectionGroup[spellCode - 1];
+
+        // clothing (12) and dinnerware (16) have none
+        if (group.Count == 0)
+        {
+            return SpellId.Undef;
+        }
+
+        return group.Roll();
     }
 }

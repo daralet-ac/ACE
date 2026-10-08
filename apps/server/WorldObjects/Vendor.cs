@@ -1363,6 +1363,48 @@ public class Vendor : Creature
         return results;
     }
 
+    internal enum BuyRequestError
+    {
+        None,
+        InvalidAmount,
+        DuplicateItem,
+    }
+
+    /// <summary>
+    /// Checks one item of a buy request on its own, before the vendor's stock and the buyer's packs are:
+    /// the amount is valid, the item isn't asked for twice, and a service is bought one at a time
+    /// </summary>
+    /// <param name="requestedGuids">the items asked for so far in this request, which this one is added to</param>
+    /// <param name="defaultItemForSale">the vendor's default item with this guid, if it has one</param>
+    internal static BuyRequestError CheckBuyRequestItem(
+        ItemProfile itemProfile,
+        HashSet<uint> requestedGuids,
+        WorldObject defaultItemForSale
+    )
+    {
+        if (!itemProfile.IsValidAmount)
+        {
+            return BuyRequestError.InvalidAmount;
+        }
+
+        if (!requestedGuids.Add(itemProfile.ObjectGuid))
+        {
+            return BuyRequestError.DuplicateItem;
+        }
+
+        // services are not limited by pack space, so only allow one per request
+        if (
+            defaultItemForSale != null
+            && itemProfile.Amount > 1
+            && (defaultItemForSale.GetProperty(PropertyBool.VendorService) ?? false)
+        )
+        {
+            return BuyRequestError.InvalidAmount;
+        }
+
+        return BuyRequestError.None;
+    }
+
     /// <summary>
     /// Handles validation for player buying items from vendor
     /// </summary>
@@ -1383,34 +1425,28 @@ public class Vendor : Creature
         // find item profiles in default and unique items
         foreach (var itemProfile in itemProfiles)
         {
-            if (!itemProfile.IsValidAmount)
-            {
-                // reject entire transaction immediately
-                player.SendTransientError($"Invalid amount");
-                return false;
-            }
-
-            if (!requestedGuids.Add(itemProfile.ObjectGuid))
-            {
-                _log.Warning(
-                    $"[VENDOR] {player.Name} tried to buy duplicate item {itemProfile.ObjectGuid:X8} from {Name}"
-                );
-                player.SendTransientError($"Invalid item");
-                return false;
-            }
-
             var itemGuid = new ObjectGuid(itemProfile.ObjectGuid);
 
-            // check default items
-            if (DefaultItemsForSale.TryGetValue(itemGuid, out var defaultItemForSale))
+            DefaultItemsForSale.TryGetValue(itemGuid, out var defaultItemForSale);
+
+            // reject entire transaction immediately
+            switch (CheckBuyRequestItem(itemProfile, requestedGuids, defaultItemForSale))
             {
-                // services are not limited by pack space, so only allow one per request
-                if (itemProfile.Amount > 1 && (defaultItemForSale.GetProperty(PropertyBool.VendorService) ?? false))
-                {
+                case BuyRequestError.InvalidAmount:
                     player.SendTransientError($"Invalid amount");
                     return false;
-                }
 
+                case BuyRequestError.DuplicateItem:
+                    _log.Warning(
+                        $"[VENDOR] {player.Name} tried to buy duplicate item {itemProfile.ObjectGuid:X8} from {Name}"
+                    );
+                    player.SendTransientError($"Invalid item");
+                    return false;
+            }
+
+            // check default items
+            if (defaultItemForSale != null)
+            {
                 itemProfile.WeenieClassId = defaultItemForSale.WeenieClassId;
                 itemProfile.Palette = defaultItemForSale.PaletteTemplate;
                 itemProfile.Shade = defaultItemForSale.Shade;

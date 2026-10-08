@@ -1546,206 +1546,7 @@ public class Salvage : WorldObject
     {
         if (target.NumTimesTinkered >= 0)
         {
-            if (target.WardLevel != null)
-            {
-                target.WardLevel = target.BaseWard == 0 ? null : target.BaseWard;
-            }
-
-            if (target.ArmorLevel != null)
-            {
-                if (target.ArmorPatchAmount != null)
-                {
-                    target.ArmorLevel = target.BaseArmor + target.ArmorPatchAmount;
-                }
-                else
-                {
-                    target.ArmorLevel = target.BaseArmor == 0 ? null : target.BaseArmor;
-                }
-            }
-
-            if (target.Damage != null)
-            {
-                target.Damage = target.BaseDamage == 0 ? null : target.BaseDamage;
-            }
-
-            if (target.WeaponTime != null)
-            {
-                target.WeaponTime = target.BaseWeaponTime == 0 ? null : target.BaseWeaponTime;
-            }
-
-            if (target.ArmorWarMagicMod != null)
-            {
-                target.ArmorWarMagicMod = target.BaseArmorWarMagicMod == 0 ? null : target.BaseArmorWarMagicMod;
-            }
-
-            if (target.ArmorLifeMagicMod != null)
-            {
-                target.ArmorLifeMagicMod = target.BaseArmorLifeMagicMod == 0 ? null : target.BaseArmorLifeMagicMod;
-            }
-
-            if (target.ArmorMagicDefMod != null)
-            {
-                target.ArmorMagicDefMod = target.BaseArmorMagicDefMod == 0 ? null : target.BaseArmorMagicDefMod;
-            }
-
-            if (target.ArmorPhysicalDefMod != null)
-            {
-                target.ArmorPhysicalDefMod =
-                    target.BaseArmorPhysicalDefMod == 0 ? null : target.BaseArmorPhysicalDefMod;
-            }
-
-            if (target.ArmorMissileDefMod != null)
-            {
-                target.ArmorMissileDefMod = target.BaseArmorMissileDefMod == 0 ? null : target.BaseArmorMissileDefMod;
-            }
-
-            if (target.ArmorDualWieldMod != null)
-            {
-                target.ArmorDualWieldMod = target.BaseArmorDualWieldMod == 0 ? null : target.BaseArmorDualWieldMod;
-            }
-
-            if (target.ArmorRunMod != null)
-            {
-                target.ArmorRunMod = target.BaseArmorRunMod == 0 ? null : target.BaseArmorRunMod;
-            }
-
-            if (target.ArmorAttackMod != null)
-            {
-                target.ArmorAttackMod = target.BaseArmorAttackMod == 0 ? null : target.BaseArmorAttackMod;
-            }
-
-            if (target.ArmorHealthRegenMod != null)
-            {
-                target.ArmorHealthRegenMod =
-                    target.BaseArmorHealthRegenMod == 0 ? null : target.BaseArmorHealthRegenMod;
-            }
-
-            if (target.ArmorStaminaRegenMod != null)
-            {
-                target.ArmorStaminaRegenMod =
-                    target.BaseArmorStaminaRegenMod == 0 ? null : target.BaseArmorStaminaRegenMod;
-            }
-
-            if (target.ArmorManaRegenMod != null)
-            {
-                target.ArmorManaRegenMod = target.BaseArmorManaRegenMod == 0 ? null : target.BaseArmorManaRegenMod;
-            }
-
-            if (target.ArmorShieldMod != null)
-            {
-                target.ArmorShieldMod = target.BaseArmorShieldMod == 0 ? null : target.BaseArmorShieldMod;
-            }
-
-            if (target.ArmorPerceptionMod != null)
-            {
-                target.ArmorPerceptionMod = target.BaseArmorPerceptionMod == 0 ? null : target.BaseArmorPerceptionMod;
-            }
-
-            if (target.ArmorThieveryMod != null)
-            {
-                target.ArmorThieveryMod = target.BaseArmorThieveryMod == 0 ? null : target.BaseArmorThieveryMod;
-            }
-
-            if (target.WeaponWarMagicMod != null)
-            {
-                target.WeaponWarMagicMod = target.BaseWeaponWarMagicMod == 0 ? null : target.BaseWeaponWarMagicMod;
-            }
-
-            if (target.WeaponLifeMagicMod != null)
-            {
-                target.WeaponLifeMagicMod = target.BaseWeaponLifeMagicMod == 0 ? null : target.BaseWeaponLifeMagicMod;
-            }
-
-            if (target.WeaponRestorationSpellsMod != null)
-            {
-                target.WeaponRestorationSpellsMod =
-                    target.BaseWeaponRestorationSpellsMod == 0 ? null : target.BaseWeaponRestorationSpellsMod;
-            }
-
-            if (target.ArmorHealthMod != null)
-            {
-                target.ArmorHealthMod = target.BaseArmorHealthMod == 0 ? null : target.BaseArmorHealthMod;
-            }
-
-            if (target.ArmorStaminaMod != null)
-            {
-                target.ArmorStaminaMod = target.BaseArmorStaminaMod == 0 ? null : target.BaseArmorStaminaMod;
-            }
-
-            if (target.ArmorManaMod != null)
-            {
-                target.ArmorManaMod = target.BaseArmorManaMod == 0 ? null : target.BaseArmorManaMod;
-            }
-
-            if (target.ArmorResourcePenalty != null)
-            {
-                target.ArmorResourcePenalty =
-                    target.BaseArmorResourcePenalty == 0 ? null : target.BaseArmorResourcePenalty;
-            }
-
-            if (target.ArmorDeceptionMod != null)
-            {
-                target.ArmorDeceptionMod = target.BaseArmorDeceptionMod == 0 ? null : target.BaseArmorDeceptionMod;
-            }
-
-            if (target.ArmorTwohandedCombatMod != null)
-            {
-                target.ArmorTwohandedCombatMod =
-                    target.BaseArmorTwohandedCombatMod == 0 ? null : target.BaseArmorTwohandedCombatMod;
-            }
-
-            if (target.WeaponPhysicalDefense != null)
-            {
-                target.WeaponPhysicalDefense =
-                    target.BaseWeaponPhysicalDefense == 0 ? null : target.BaseWeaponPhysicalDefense;
-            }
-
-            if (target.WeaponMagicalDefense != null)
-            {
-                target.WeaponMagicalDefense =
-                    target.BaseWeaponMagicalDefense == 0 ? null : target.BaseWeaponMagicalDefense;
-            }
-
-            if (target.WeaponOffense != null)
-            {
-                target.WeaponOffense = target.BaseWeaponOffense == 0 ? null : target.BaseWeaponOffense;
-            }
-
-            if (target.DamageMod != null)
-            {
-                target.DamageMod = target.BaseDamageMod == 0 ? null : target.BaseDamageMod;
-            }
-
-            if (target.ElementalDamageMod != null)
-            {
-                target.ElementalDamageMod = target.BaseElementalDamageMod == 0 ? null : target.BaseElementalDamageMod;
-            }
-
-            if (target.ManaConversionMod != null)
-            {
-                target.ManaConversionMod = target.BaseManaConversionMod == 0 ? null : target.BaseManaConversionMod;
-            }
-
-            if (target.ImbuedEffect > 0)
-            {
-                target.ImbuedEffect = 0;
-            }
-
-            if (target.IconUnderlayId != null)
-            {
-                target.IconUnderlayId = null;
-            }
-
-            if (target.AllowedWielder != null)
-            {
-                target.AllowedWielder = null;
-                target.CraftsmanName = null;
-                target.RemoveProperty(PropertyBool.AccountAttuned);
-            }
-
-            target.NumTimesTinkered = 0;
-            target.TinkerLog = "";
-            target.LongDesc = $"{target.Name}";
+            RevertTinkeredStats(target);
 
             UpdateObj(player, target);
 
@@ -1756,6 +1557,213 @@ public class Salvage : WorldObject
                 )
             );
         }
+    }
+
+    /// <summary>
+    /// Puts back every stat tinkering changes, as the item had them before it was tinkered
+    /// </summary>
+    internal static void RevertTinkeredStats(WorldObject target)
+    {
+        if (target.WardLevel != null)
+        {
+            target.WardLevel = target.BaseWard == 0 ? null : target.BaseWard;
+        }
+
+        if (target.ArmorLevel != null)
+        {
+            if (target.ArmorPatchAmount != null)
+            {
+                target.ArmorLevel = target.BaseArmor + target.ArmorPatchAmount;
+            }
+            else
+            {
+                target.ArmorLevel = target.BaseArmor == 0 ? null : target.BaseArmor;
+            }
+        }
+
+        if (target.Damage != null)
+        {
+            target.Damage = target.BaseDamage == 0 ? null : target.BaseDamage;
+        }
+
+        if (target.WeaponTime != null)
+        {
+            target.WeaponTime = target.BaseWeaponTime == 0 ? null : target.BaseWeaponTime;
+        }
+
+        if (target.ArmorWarMagicMod != null)
+        {
+            target.ArmorWarMagicMod = target.BaseArmorWarMagicMod == 0 ? null : target.BaseArmorWarMagicMod;
+        }
+
+        if (target.ArmorLifeMagicMod != null)
+        {
+            target.ArmorLifeMagicMod = target.BaseArmorLifeMagicMod == 0 ? null : target.BaseArmorLifeMagicMod;
+        }
+
+        if (target.ArmorMagicDefMod != null)
+        {
+            target.ArmorMagicDefMod = target.BaseArmorMagicDefMod == 0 ? null : target.BaseArmorMagicDefMod;
+        }
+
+        if (target.ArmorPhysicalDefMod != null)
+        {
+            target.ArmorPhysicalDefMod =
+                target.BaseArmorPhysicalDefMod == 0 ? null : target.BaseArmorPhysicalDefMod;
+        }
+
+        if (target.ArmorMissileDefMod != null)
+        {
+            target.ArmorMissileDefMod = target.BaseArmorMissileDefMod == 0 ? null : target.BaseArmorMissileDefMod;
+        }
+
+        if (target.ArmorDualWieldMod != null)
+        {
+            target.ArmorDualWieldMod = target.BaseArmorDualWieldMod == 0 ? null : target.BaseArmorDualWieldMod;
+        }
+
+        if (target.ArmorRunMod != null)
+        {
+            target.ArmorRunMod = target.BaseArmorRunMod == 0 ? null : target.BaseArmorRunMod;
+        }
+
+        if (target.ArmorAttackMod != null)
+        {
+            target.ArmorAttackMod = target.BaseArmorAttackMod == 0 ? null : target.BaseArmorAttackMod;
+        }
+
+        if (target.ArmorHealthRegenMod != null)
+        {
+            target.ArmorHealthRegenMod =
+                target.BaseArmorHealthRegenMod == 0 ? null : target.BaseArmorHealthRegenMod;
+        }
+
+        if (target.ArmorStaminaRegenMod != null)
+        {
+            target.ArmorStaminaRegenMod =
+                target.BaseArmorStaminaRegenMod == 0 ? null : target.BaseArmorStaminaRegenMod;
+        }
+
+        if (target.ArmorManaRegenMod != null)
+        {
+            target.ArmorManaRegenMod = target.BaseArmorManaRegenMod == 0 ? null : target.BaseArmorManaRegenMod;
+        }
+
+        if (target.ArmorShieldMod != null)
+        {
+            target.ArmorShieldMod = target.BaseArmorShieldMod == 0 ? null : target.BaseArmorShieldMod;
+        }
+
+        if (target.ArmorPerceptionMod != null)
+        {
+            target.ArmorPerceptionMod = target.BaseArmorPerceptionMod == 0 ? null : target.BaseArmorPerceptionMod;
+        }
+
+        if (target.ArmorThieveryMod != null)
+        {
+            target.ArmorThieveryMod = target.BaseArmorThieveryMod == 0 ? null : target.BaseArmorThieveryMod;
+        }
+
+        if (target.WeaponWarMagicMod != null)
+        {
+            target.WeaponWarMagicMod = target.BaseWeaponWarMagicMod == 0 ? null : target.BaseWeaponWarMagicMod;
+        }
+
+        if (target.WeaponLifeMagicMod != null)
+        {
+            target.WeaponLifeMagicMod = target.BaseWeaponLifeMagicMod == 0 ? null : target.BaseWeaponLifeMagicMod;
+        }
+
+        if (target.WeaponRestorationSpellsMod != null)
+        {
+            target.WeaponRestorationSpellsMod =
+                target.BaseWeaponRestorationSpellsMod == 0 ? null : target.BaseWeaponRestorationSpellsMod;
+        }
+
+        if (target.ArmorHealthMod != null)
+        {
+            target.ArmorHealthMod = target.BaseArmorHealthMod == 0 ? null : target.BaseArmorHealthMod;
+        }
+
+        if (target.ArmorStaminaMod != null)
+        {
+            target.ArmorStaminaMod = target.BaseArmorStaminaMod == 0 ? null : target.BaseArmorStaminaMod;
+        }
+
+        if (target.ArmorManaMod != null)
+        {
+            target.ArmorManaMod = target.BaseArmorManaMod == 0 ? null : target.BaseArmorManaMod;
+        }
+
+        if (target.ArmorResourcePenalty != null)
+        {
+            target.ArmorResourcePenalty =
+                target.BaseArmorResourcePenalty == 0 ? null : target.BaseArmorResourcePenalty;
+        }
+
+        if (target.ArmorDeceptionMod != null)
+        {
+            target.ArmorDeceptionMod = target.BaseArmorDeceptionMod == 0 ? null : target.BaseArmorDeceptionMod;
+        }
+
+        if (target.ArmorTwohandedCombatMod != null)
+        {
+            target.ArmorTwohandedCombatMod =
+                target.BaseArmorTwohandedCombatMod == 0 ? null : target.BaseArmorTwohandedCombatMod;
+        }
+
+        if (target.WeaponPhysicalDefense != null)
+        {
+            target.WeaponPhysicalDefense =
+                target.BaseWeaponPhysicalDefense == 0 ? null : target.BaseWeaponPhysicalDefense;
+        }
+
+        if (target.WeaponMagicalDefense != null)
+        {
+            target.WeaponMagicalDefense =
+                target.BaseWeaponMagicalDefense == 0 ? null : target.BaseWeaponMagicalDefense;
+        }
+
+        if (target.WeaponOffense != null)
+        {
+            target.WeaponOffense = target.BaseWeaponOffense == 0 ? null : target.BaseWeaponOffense;
+        }
+
+        if (target.DamageMod != null)
+        {
+            target.DamageMod = target.BaseDamageMod == 0 ? null : target.BaseDamageMod;
+        }
+
+        if (target.ElementalDamageMod != null)
+        {
+            target.ElementalDamageMod = target.BaseElementalDamageMod == 0 ? null : target.BaseElementalDamageMod;
+        }
+
+        if (target.ManaConversionMod != null)
+        {
+            target.ManaConversionMod = target.BaseManaConversionMod == 0 ? null : target.BaseManaConversionMod;
+        }
+
+        if (target.ImbuedEffect > 0)
+        {
+            target.ImbuedEffect = 0;
+        }
+
+        if (target.IconUnderlayId != null)
+        {
+            target.IconUnderlayId = null;
+        }
+
+        if (target.AllowedWielder != null)
+        {
+            target.AllowedWielder = null;
+            target.CraftsmanName = null;
+            target.RemoveProperty(PropertyBool.AccountAttuned);
+        }
+
+        target.NumTimesTinkered = 0;
+        target.TinkerLog = "";
+        target.LongDesc = $"{target.Name}";
     }
 
     public static List<string> WorkmanshipNames = new List<string>()

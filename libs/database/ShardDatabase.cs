@@ -854,29 +854,42 @@ LEFT JOIN biota_properties_int tq
     {
         using (var context = new ShardDbContext())
         {
-            var existingBiota = GetBiota(context, biota.Id, doNotAddToCache);
-
-            rwLock.EnterReadLock();
-            try
-            {
-                if (existingBiota == null)
-                {
-                    existingBiota = Adapter.BiotaConverter.ConvertFromEntityBiota(biota);
-
-                    context.Biota.Add(existingBiota);
-                }
-                else
-                {
-                    Adapter.BiotaUpdater.UpdateDatabaseBiota(context, biota, existingBiota);
-                }
-            }
-            finally
-            {
-                rwLock.ExitReadLock();
-            }
-
-            return DoSaveBiota(context, existingBiota);
+            return SaveBiota(context, biota, rwLock, doNotAddToCache);
         }
+    }
+
+    /// <summary>
+    /// Adds the biota if it hasn't been saved before, or updates the saved one to match it
+    /// </summary>
+    public bool SaveBiota(
+        ShardDbContext context,
+        ACE.Entity.Models.Biota biota,
+        ReaderWriterLockSlim rwLock,
+        bool doNotAddToCache = false
+    )
+    {
+        var existingBiota = GetBiota(context, biota.Id, doNotAddToCache);
+
+        rwLock.EnterReadLock();
+        try
+        {
+            if (existingBiota == null)
+            {
+                existingBiota = Adapter.BiotaConverter.ConvertFromEntityBiota(biota);
+
+                context.Biota.Add(existingBiota);
+            }
+            else
+            {
+                Adapter.BiotaUpdater.UpdateDatabaseBiota(context, biota, existingBiota);
+            }
+        }
+        finally
+        {
+            rwLock.ExitReadLock();
+        }
+
+        return DoSaveBiota(context, existingBiota);
     }
 
     public bool SaveBiotasInParallel(

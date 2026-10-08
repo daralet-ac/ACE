@@ -38,8 +38,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Tests ItemSetupToggle, which #1272 removed in favor of ItemStyleToggle (see ItemStyleToggleTests). Left out so the project builds. -->
+    <Compile Remove="ItemSetupToggleTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- The instances.json that comes with the server, for the test that checks it. The copy next to the server is not used: that one gets edited. -->
     <None Include="..\server\instances.json" Link="instances.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\server\starterGear.json" Link="starterGear.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
     <ItemGroup>

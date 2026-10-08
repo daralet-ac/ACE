@@ -1707,14 +1707,8 @@ public static partial class LootGenerationFactory
         var weaponVariance = wo.DamageVariance.Value;
         var averageBaseMaxDamage = targetAverageHitDamage / ((((1 - weaponVariance) + 1) / 2 * 0.9) + 0.2);
 
-        // get low-end and high-end max damage range
-        const double damageRangePerTier = 0.25;
-        var maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + (1 - damageRangePerTier));
-        var minimumBaseMaxDamage = maximumBaseMaxDamage * (1 - damageRangePerTier);
-
-        // roll and assign weapon damage
-        var diminishedRoll = (maximumBaseMaxDamage - minimumBaseMaxDamage) * GetDiminishingRoll(profile);
-        var finalMaxDamage = minimumBaseMaxDamage + diminishedRoll;
+        // roll and assign weapon damage, within the tier's range around that average
+        var finalMaxDamage = RollTierDamage(averageBaseMaxDamage, GetDiminishingRoll(profile));
         wo.Damage = (int)Math.Round(finalMaxDamage);
 
         // debug
@@ -1741,7 +1735,6 @@ public static partial class LootGenerationFactory
 
         targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
         averageBaseMaxDamage = targetAverageHitDamage / ((((1 - weaponVariance) + 1) / 2 * 0.9) + 0.2);
-        maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + (1 - damageRangePerTier));
-        maxPossibleDamage = (int)maximumBaseMaxDamage;
+        maxPossibleDamage = (int)GetTierDamageRange(averageBaseMaxDamage).Maximum;
     }
 }

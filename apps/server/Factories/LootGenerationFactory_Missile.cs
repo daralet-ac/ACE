@@ -538,14 +538,8 @@ public static partial class LootGenerationFactory
         // find average damage mod, considering ammo and critical strikes
         var averageBaseDamageMod = targetAvgHitDamage / ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2));
 
-        // get low-end and high-end max damage range
-        var damageRangePerTier = 0.25;
-        var maximumBaseMaxDamageMod = (averageBaseDamageMod * 2) / (1.0 + (1 - damageRangePerTier));
-
-        // roll and assign weapon damage
-        var minimumBaseMaxDamageMod = maximumBaseMaxDamageMod * (1 - damageRangePerTier);
-        var diminishedRoll = (maximumBaseMaxDamageMod - minimumBaseMaxDamageMod) * GetDiminishingRoll(profile);
-        var finalMaxDamageMod = minimumBaseMaxDamageMod + diminishedRoll;
+        // roll and assign weapon damage, within the tier's range around that average
+        var finalMaxDamageMod = RollTierDamage(averageBaseDamageMod, GetDiminishingRoll(profile));
         wo.DamageMod = finalMaxDamageMod;
 
         // debug
@@ -575,7 +569,7 @@ public static partial class LootGenerationFactory
         ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
         targetAvgHitDamage = targetBaseDps / effectiveAttacksPerSecond;
         averageBaseDamageMod = targetAvgHitDamage / ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2));
-        maximumBaseMaxDamageMod = (averageBaseDamageMod * 2) / (1.0 + (1 - damageRangePerTier));
+        var maximumBaseMaxDamageMod = GetTierDamageRange(averageBaseDamageMod).Maximum;
 
         damageModPercentile = (finalMaxDamageMod - 1) / (maximumBaseMaxDamageMod - 1);
         //Console.WriteLine($"damMod: {wo.DamageMod - 1} maxDamMod: {maxPossibleDamageMod} damModPercentile: {damageModPercentile}");

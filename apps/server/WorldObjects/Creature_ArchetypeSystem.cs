@@ -28,7 +28,7 @@ partial class Creature
     private static readonly int[] avgPlayerHealth = { 75, 110, 170, 200, 230, 260, 300, 350, 400 };
     private static readonly float[] avgPlayerArmorReduction = { 0.6667f, 0.5000f, 0.3333f, 0.2500f, 0.2000f, 0.1667f, 0.1429f, 0.1250f, 0.1111f };
     private static readonly float[] avgPlayerLifeProtReduction = { 1.0f, 1.0f, 0.9f, 0.9f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f };
-    private static readonly int[] avgPlayerPhysicalMagicDefense = { 10, 60, 90, 120, 150, 180, 225, 300, 500 };
+    internal static readonly int[] avgPlayerPhysicalMagicDefense = { 10, 60, 90, 120, 150, 180, 225, 300, 500 };
 
     // Monster attack and defense are a flat EnemySkillGap above the average player's skill, which is the same for attack and
     // defense (avgPlayerPhysicalMagicDefense, and LevelScaling's AvgPlayerAttackSkillPerTier/AvgPlayerDefenseSkillPerTier).

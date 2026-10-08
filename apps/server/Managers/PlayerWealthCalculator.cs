@@ -184,7 +184,7 @@ public static class PlayerWealthCalculator
         }
     }
 
-    private static (long rawPyrealCurrency, long trophyValue) GetBiotaWealth(ACE.Entity.Models.Biota biota)
+    internal static (long rawPyrealCurrency, long trophyValue) GetBiotaWealth(ACE.Entity.Models.Biota biota)
     {
         if (biota == null)
         {

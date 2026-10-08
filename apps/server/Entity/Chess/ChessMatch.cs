@@ -519,14 +519,16 @@ public class ChessMatch
 
         if (MoveResult == ChessMoveResult.NoMoveResult)
         {
-            var color = Chess.InverseColor(Logic.Turn);
+            // the AI made no move, so it is still its turn
+            var color = Logic.Turn;
+            var opColor = Chess.InverseColor(color);
             var side = Sides[(int)color];
-            var opSide = Sides[(int)Logic.Turn];
+            var opSide = Sides[(int)opColor];
 
             // checkmate
             if (Logic.InCheckmate(color, true))
             {
-                Finish((int)Logic.Turn);
+                Finish((int)opColor);
             }
             // stalemate
             else
