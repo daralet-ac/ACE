@@ -53,6 +53,9 @@ public partial class DamageEvent
 
                 return GetNonCriticalDamageBeforeMitigation();
             }
+
+            // the Sigil Compass of Might forced the critical hit, so the critical defense augmentation didn't prevent it
+            _criticalDefendedFromAug = false;
         }
 
         IsCritical = true;
@@ -227,7 +230,7 @@ public partial class DamageEvent
     {
         if (_playerAttacker is { AttackHeight: AttackHeight.High })
         {
-            return WeaponIsSpecialized() ? 1.2f : 1.10f;
+            return IsWeaponSpecialized(_playerAttacker, Weapon) ? 1.2f : 1.10f;
         }
 
         return 1.0f;

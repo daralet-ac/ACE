@@ -229,6 +229,12 @@ public partial class DamageEvent
 
     private void HandleLogging(Creature attacker, Creature defender)
     {
+        // the attack was skipped before its combat sources were set (a Placeholder defender), so there's nothing to show
+        if (_attacker is null)
+        {
+            return;
+        }
+
         if (attacker != null && (attacker.DebugDamage & Creature.DebugDamageType.Attacker) != 0)
         {
             ShowInfo(attacker);
