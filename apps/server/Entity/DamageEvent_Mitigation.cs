@@ -300,21 +300,14 @@ public partial class DamageEvent
     {
         _damageResistanceRatingBaseMod = _defender.GetDamageResistRatingMod(CombatType);
 
-        if (IsCritical)
-        {
-            _criticalDamageResistanceRatingMod = Creature.GetNegativeRatingMod(_defender.GetCritDamageResistRating());
-        }
+        float? criticalMod = IsCritical ? Creature.GetNegativeRatingMod(_defender.GetCritDamageResistRating()) : null;
+        float? pkMod = _pkBattle ? Creature.GetNegativeRatingMod(_defender.GetPKDamageResistRating()) : null;
 
-        if (_pkBattle)
-        {
-            _pkDamageResistanceMod = Creature.GetNegativeRatingMod(_defender.GetPKDamageResistRating());
-        }
+        // for the debug output; 0 when the rating doesn't apply
+        _criticalDamageResistanceRatingMod = criticalMod ?? 0.0f;
+        _pkDamageResistanceMod = pkMod ?? 0.0f;
 
-        return DamageFormulas.CombineDamageResistRatings(
-            _damageResistanceRatingBaseMod,
-            IsCritical ? _criticalDamageResistanceRatingMod : null,
-            _pkBattle ? _pkDamageResistanceMod : null
-        );
+        return DamageFormulas.CombineDamageResistRatings(_damageResistanceRatingBaseMod, criticalMod, pkMod);
     }
 
     private static Quadrant GetQuadrant(

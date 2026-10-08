@@ -3,6 +3,7 @@ namespace ACE.Server.Entity;
 /// <summary>
 /// The multipliers applied to an attack's base damage, before the defender's mitigation (see MitigationModifiers).
 /// Each one is 1.0 when it has no effect.
+/// Every field starts at 0 and must be set in DamageEvent.SetDamageModifiers, or the attack deals no damage.
 /// </summary>
 internal struct DamageModifiers
 {

@@ -165,7 +165,8 @@ public partial class DamageEvent
     /// hit, the defender's critical defense augmentation and Perception, the Sigil Compass of Might (which can force the
     /// critical hit) and the Sigil Puzzle Box of Treachery (critical damage), and then the defender's Reprisal.</item>
     /// <item>Mitigation rolls the body part that's hit.</item>
-    /// <item>On-hit effects see the final damage.</item>
+    /// <item>On-hit effects see the hit's damage, including on a late evade (Reprisal, or no body part to hit), which then
+    /// sets the damage to 0.</item>
     /// </list>
     /// </summary>
     private void DoCalculateDamage(
