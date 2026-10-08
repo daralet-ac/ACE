@@ -95,7 +95,13 @@ public class PacketHeaderOptional
                 return;
             }
             var loginBytes = new byte[length];
-            reader.BaseStream.Read(loginBytes, (int)position, (int)length);
+            // the offset parameter is into loginBytes, not the stream, which is already at position
+            var bytesRead = reader.BaseStream.Read(loginBytes, 0, (int)length);
+            if (bytesRead != length)
+            {
+                IsValid = false;
+                return;
+            }
             writer.Write(loginBytes);
             reader.BaseStream.Position = position;
         }

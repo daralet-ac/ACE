@@ -268,6 +268,13 @@ public class LandCell : SortCell
 
     public static void add_outside_cell(CellArray cellArray, float _x, float _y)
     {
+        // off the west / south edge of the map. this used to be caught by the uint casts below wrapping negative values
+        // to huge ones, but since .NET 9 float to uint casts saturate, which would turn them into column / row 0
+        if (_x <= -1.0f || _y <= -1.0f)
+        {
+            return;
+        }
+
         var x = (uint)_x;
         var y = (uint)_y;
 

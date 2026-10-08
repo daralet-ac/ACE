@@ -285,7 +285,8 @@ public class NetworkSession
     {
         lastCachedPacketPruneTime = DateTime.UtcNow;
 
-        var currentTime = (ushort)Timers.PortalYearTicks;
+        // cast through long so the time wraps every 18.2 hours: since .NET 9 a double cast straight to ushort saturates at 65535
+        var currentTime = (ushort)(long)Timers.PortalYearTicks;
 
         // Make sure our comparison still works when ushort wraps every 18.2 hours.
         var removalList = cachedPackets.Values.Where(x =>
@@ -919,7 +920,7 @@ public class NetworkSession
 
             packet.Header.Id = ServerId;
             packet.Header.Iteration = 0x01;
-            packet.Header.Time = (ushort)Timers.PortalYearTicks;
+            packet.Header.Time = (ushort)(long)Timers.PortalYearTicks; // wraps, see PruneCachedPackets
 
             if (packet.Header.Sequence >= 2u && !isNak)
             {

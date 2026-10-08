@@ -344,6 +344,13 @@ public class Position
         northSouth = (northSouth - 0.5f) * 10.0f;
         eastWest = (eastWest - 0.5f) * 10.0f;
 
+        // since .NET 9 float to uint casts saturate, so coordinates off the west / south edge have to be checked
+        // before the cast. they used to wrap to huge values and fail the check below
+        if (eastWest + 0x400 <= -1.0f || northSouth + 0x400 <= -1.0f)
+        {
+            throw new Exception("Bad coordinates");
+        }
+
         var baseX = (uint)(eastWest + 0x400);
         var baseY = (uint)(northSouth + 0x400);
 
