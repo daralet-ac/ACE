@@ -169,7 +169,7 @@ public class DamageEvent
     {
         if (PropertyManager.GetBool("debug_level_scaling_system").Item && (attacker is Player || defender is Player))
         {
-            Console.WriteLine($"\n\n---- LEVEL SCALING - {attacker.Name} vs {defender.Name} ----");
+            _log.Information("---- LEVEL SCALING - {Attacker} vs {Defender} ----", attacker.Name, defender.Name);
         }
 
         if (defender.Name is "Placeholder")
@@ -181,11 +181,21 @@ public class DamageEvent
         CheckForOnAttackEffects(cleaveHits);
 
         SetInvulnerable(defender);
+
+        if (_invulnerable)
+        {
+            return 0.0f;
+        }
+
+        // Evade, block and parry all compare against these skills, so they must be set before any of them roll,
+        // including when a guaranteed hit (Overpower, Enrage, Backstab) skips the evade roll.
+        SetAttackAndDefenseSkills(attacker, defender);
+
         SetEvaded(attacker, defender);
         SetBlocked(attacker, defender);
         SetParry(attacker, defender);
 
-        if (_invulnerable || Evaded || Blocked || Parried)
+        if (Evaded || Blocked || Parried)
         {
             if (Blocked)
             {
@@ -197,24 +207,33 @@ public class DamageEvent
 
         _damageBeforeMitigation = GetDamageBeforeMitigation(attacker, defender, damageSource);
 
-        if (_generalFailure)
+        if (_generalFailure || Evaded)
         {
             return 0.0f;
         }
 
         var mitigation = GetMitigation(attacker, defender);
+
+        // GetMitigation evades the attack if the defender has no body part to hit
+        if (Evaded)
+        {
+            IsCritical = false;
+            return 0.0f;
+        }
+
         var cleaveMod = cleaveHits ? 0.5f : 1.0f;
 
         Damage = _damageBeforeMitigation * mitigation * cleaveMod;
-        _damageMitigated = _damageBeforeMitigation - Damage;
-
-        PostDamageMitigationEffects(attacker, defender, damageSource);
 
         if (defender.Invulnerable)
         {
             Damage = 0.0f;
             defender.OnInvulnerableHit();
         }
+
+        _damageMitigated = _damageBeforeMitigation - Damage;
+
+        PostDamageMitigationEffects(attacker, defender, damageSource);
 
         //DpsLogging();
 
@@ -274,25 +293,19 @@ public class DamageEvent
 
     private void SetInvulnerable(Creature defender)
     {
-        var playerDefender = defender as Player;
+        _invulnerable = false;
 
-        if (playerDefender is { UnderLifestoneProtection: true })
+        if (_playerDefender is { UnderLifestoneProtection: true })
         {
             LifestoneProtection = true;
-            playerDefender.HandleLifestoneProtection();
-            {
-                _invulnerable = true;
-            }
+            _playerDefender.HandleLifestoneProtection();
+            _invulnerable = true;
         }
 
         if (defender.Invincible)
         {
-            {
-                _invulnerable = true;
-            }
+            _invulnerable = true;
         }
-
-        _invulnerable = false;
     }
 
     /// <summary>
@@ -325,10 +338,8 @@ public class DamageEvent
         }
 
         // COMBAT ABILITY - Aegis: attacks can't be evaded, fully or partially.
-        // The evade chance is still calculated because block and parry chances use the attack and defense skills it sets.
         if (playerDefender is { AegisIsActive: true })
         {
-            GetEvadeChance(attacker, defender);
             return;
         }
 
@@ -342,7 +353,7 @@ public class DamageEvent
 
         // Roll combat hit chance
         var attackRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-        if (attackRoll > GetEvadeChance(attacker, defender))
+        if (attackRoll > GetEvadeChance())
         {
             return;
         }
@@ -464,7 +475,7 @@ public class DamageEvent
         // Parry base chance is always 5%
         const float minBlockChance = 0.05f;
 
-        var blockChanceShieldBonus = GetBlockChanceShieldLevelBonus(defender, (int)defender.GetSkillModifiedShieldLevel((equippedShield.ArmorLevel ?? 1)));
+        var blockChanceShieldBonus = GetBlockChanceShieldLevelBonus(defender, equippedShield.ArmorLevel ?? 1);
         var baseBlockChance = minBlockChance * blockChanceShieldBonus;
 
         // other bonuses are additive then multiplied against base block chance
@@ -506,7 +517,8 @@ public class DamageEvent
         var equippedMainHand = defender.GetEquippedWeapon();
         var equippedOffHand = defender.GetEquippedOffHand();
 
-        if (equippedMainHand is { IsTwoHanded: not true } && equippedOffHand is not {ItemType: ItemType.MeleeWeapon})
+        // parrying requires a two-handed weapon, or a weapon in each hand
+        if (equippedMainHand is null || (!equippedMainHand.IsTwoHanded && equippedOffHand is not { ItemType: ItemType.MeleeWeapon }))
         {
             return;
         }
@@ -560,15 +572,39 @@ public class DamageEvent
         _criticalChance = GetCriticalChance(attacker, defender);
 
         var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
-        if (roll > _criticalChance || GetCriticalDefendedFromAug(attacker, defender) || CheckForSpecPerceptionCriticalDefense(defender as Player))
+        var criticalRolled = roll <= _criticalChance;
+        var criticalDefendedFromPerception = false;
+
+        if (criticalRolled && !GetCriticalDefendedFromAug(attacker, defender))
+        {
+            criticalDefendedFromPerception = CheckForSpecPerceptionCriticalDefense(_playerDefender);
+        }
+
+        if (!criticalRolled || _criticalDefendedFromAug || criticalDefendedFromPerception)
         {
             _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.TwoHandedCombat, SigilTrinketShieldTwohandedCombatEffect.Might);
             _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Shield, SigilTrinketShieldTwohandedCombatEffect.Might);
 
             if (!CriticalOverridedByTrinket)
             {
+                if (criticalDefendedFromPerception)
+                {
+                    _playerDefender.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            "Your perception skill allowed you to prevent a critical strike!",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                }
+
                 return GetNonCriticalDamageBeforeMitigation();
             }
+        }
+
+        // RATING - Reprisal: the defender may evade the critical hit outright
+        if (CheckForRatingReprisalCriticalDefense(attacker, _playerDefender))
+        {
+            return 0.0f;
         }
 
         IsCritical = true;
@@ -612,7 +648,7 @@ public class DamageEvent
         _combatAbilityMultishotDamagePenalty = GetCombatAbilityMultishotDamagePenalty(playerAttacker);
         _combatAbilityFuryDamageBonus = GetCombatAbilityFuryDamageBonus(playerAttacker, playerDefender);
         _combatAbilityRelentlessDamagePenalty = GetCombatAbilityRelentlessDamagePenalty(playerAttacker);
-        _combatAbilitySteadyStrikeDamageBonus = GetCombatAbilitySteadySrikeDamageBonus(playerAttacker);
+        _combatAbilitySteadyStrikeDamageBonus = GetCombatAbilitySteadyStrikeDamageBonus(playerAttacker);
         _recklessnessMod = Creature.GetRecklessnessMod(attacker, defender);
 
         // Sneak attack / Backstab bonuses (and their one-shot charges) should only be
@@ -629,7 +665,7 @@ public class DamageEvent
             _backstabDamageMultiplier = 1.0f;
         }
 
-        _attackHeightDamageBonus += GetHighAttackHeightBonus(playerAttacker);
+        _attackHeightDamageBonus = GetHighAttackHeightBonus(playerAttacker);
         _ratingElementalDamageBonus = Jewel.HandleElementalBonuses(playerAttacker, DamageType);
         _ratingPierceResistanceBonus = GetRatingPierceResistanceBonus(defender, playerAttacker);
         _levelScalingMod = GetLevelScalingMod(attacker, defender, playerDefender);
@@ -647,7 +683,7 @@ public class DamageEvent
     /// <summary>
     /// Dual Wield Damage Mod
     /// </summary>
-    private float GetDualWieldDamageBonus(Player playerAttacker, Creature defender)
+    private static float GetDualWieldDamageBonus(Player playerAttacker, Creature defender)
     {
         if (playerAttacker is not {IsDualWieldAttack: true} || defender is null)
         {
@@ -709,7 +745,7 @@ public class DamageEvent
     /// <summary>
     /// COMBAT ABILITY - Provoke: Damage taken reduced by 15%.
     /// </summary>
-    private float GetCombatAbilityProvokeDamageReduction(Player playerDefender)
+    private static float GetCombatAbilityProvokeDamageReduction(Player playerDefender)
     {
         return playerDefender is { ProvokeIsActive: true } ? 0.85f : 1.0f;
     }
@@ -798,7 +834,7 @@ public class DamageEvent
     /// </summary>
     /// <param name="playerAttacker"></param>
     /// <returns></returns>
-    private float GetCombatAbilitySteadySrikeDamageBonus(Player playerAttacker)
+    private static float GetCombatAbilitySteadyStrikeDamageBonus(Player playerAttacker)
     {
         if (playerAttacker?.GetEquippedWeapon() is null)
         {
@@ -847,7 +883,6 @@ public class DamageEvent
 
         if (CheckForRatingReprisal(playerAttacker))
         {
-            playerAttacker.IsAttackFromStealth = false;
             return 1.0f;
         }
 
@@ -870,7 +905,6 @@ public class DamageEvent
     private float GetCriticalDamageBeforeMitigation(Creature attacker, Creature defender)
     {
         var playerAttacker = attacker as Player;
-        var playerDefender = defender as Player;
 
         CriticalDamageBonusFromTrinket = 1.0f;
         playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Thievery, SigilTrinketThieveryEffect.Treachery, true);
@@ -881,15 +915,9 @@ public class DamageEvent
         _criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBludgeon, "Bludgeon", rampQuestSource: defender);
         _criticalDamageMod *= CriticalDamageBonusFromTrinket;
 
-        CheckForRatingReprisalCriticalDefense(attacker, playerDefender);
-
+        // _damageRatingMod already includes the PK damage rating (see SetDamageModifiers)
         _criticalDamageRating = Creature.GetPositiveRatingMod(attacker.GetCritDamageRating());
         _damageRatingMod = Creature.AdditiveCombine(_damageRatingMod, _criticalDamageRating);
-
-        if (_pkBattle)
-        {
-            _damageRatingMod = Creature.AdditiveCombine(_damageRatingMod, _pkDamageMod);
-        }
 
         if (_baseDamageMod is null)
         {
@@ -897,6 +925,8 @@ public class DamageEvent
             return 0;
         }
 
+        // Intentional: player crits always use the top of the weapon's damage range, while monster crits use
+        // the median of their attack's range. Non-critical hits use a random roll for both (see _baseDamage).
         var baseDamage = playerAttacker != null ? _baseDamageMod.MaxDamage : _baseDamageMod.MedianDamage;
 
         return baseDamage
@@ -1020,7 +1050,7 @@ public class DamageEvent
     private const float ImbuedArmorPhysicalDamageReductionPerPiece = 0.01f;
     private const float ImbuedArmorCritDamageReductionPerPiece = 0.01f;
 
-    private float GetImbuedArmorPhysicalDamageMod(Creature defender)
+    private static float GetImbuedArmorPhysicalDamageMod(Creature defender)
     {
         var count = defender.GetArmorDefenseImbues(ImbuedEffectType.ReducedPhysicalDamageTaken);
         if (count > 0)
@@ -1112,7 +1142,7 @@ public class DamageEvent
     /// <summary>
     /// SPEC BONUS - Martial Weapons (Spear): +10% armor penetration (additively)
     /// </summary>
-    private float GetSpearSpecIgnoreArmorBonus(Creature attacker)
+    private static float GetSpearSpecIgnoreArmorBonus(Creature attacker)
     {
         var playerAttacker = attacker as Player;
 
@@ -1297,7 +1327,7 @@ public class DamageEvent
         }
     }
 
-    private void CheckForEnchantedBlade(Player player, Creature target, AttackHeight attackHeight)
+    private static void CheckForEnchantedBlade(Player player, Creature target, AttackHeight attackHeight)
     {
         if (player is null)
         {
@@ -1451,29 +1481,33 @@ public class DamageEvent
         //     _ => throw new ArgumentOutOfRangeException()
         // };
 
-        var weaponType = weapon.WeaponSkill;
-
-        var weaponTypeMinDamage = weaponType switch
+        (int Min, int Max)? weaponTypeDamageRange = weapon.WeaponSkill switch
         {
-            Skill.Axe => 9,
-            Skill.Dagger => 4,
-            Skill.ThrownWeapon => 10,
-            Skill.TwoHandedCombat => 5,
-            _ => throw new ArgumentOutOfRangeException()
+            Skill.Axe => (9, 132),
+            Skill.Dagger => (4, 95),
+            Skill.ThrownWeapon => (10, 296),
+            Skill.TwoHandedCombat => (5, 107),
+            _ => null
         };
 
-        var weaponTypeMaxDamage = weaponType switch
+        if (weaponTypeDamageRange is null)
         {
-            Skill.Axe => 132,
-            Skill.Dagger => 95,
-            Skill.ThrownWeapon => 296,
-            Skill.TwoHandedCombat => 107,
-            _ => throw new ArgumentOutOfRangeException()
-        };
+            _log.Warning(
+                "WeaponMasterBleed({Attacker}, {Weapon}) - no damage range for weapon skill {WeaponSkill}",
+                playerAttacker.Name,
+                weapon.Name,
+                weapon.WeaponSkill
+            );
+            return;
+        }
+
+        var (weaponTypeMinDamage, weaponTypeMaxDamage) = weaponTypeDamageRange.Value;
 
         var damageRange = weaponTypeMaxDamage - weaponTypeMinDamage;
         var weaponDamageRoll = weapon.Damage.Value - weaponTypeMinDamage;
-        var weaponDamageRollPercentile = (float)weaponDamageRoll / damageRange;
+
+        // weapons outside the expected range for their type still bleed for between 0% and 100%
+        var weaponDamageRollPercentile = Math.Clamp((float)weaponDamageRoll / damageRange, 0.0f, 1.0f);
 
         var spell = new Spell(SpellId.Bleed);
 
@@ -1617,44 +1651,47 @@ public class DamageEvent
     {
         _damageResistanceRatingBaseMod = defender.GetDamageResistRatingMod(CombatType);
 
+        var damageResistRatingMod = _damageResistanceRatingBaseMod;
+
         if (IsCritical)
         {
             _criticalDamageResistanceRatingMod = Creature.GetNegativeRatingMod(defender.GetCritDamageResistRating());
-            return Creature.AdditiveCombine(_damageResistanceRatingBaseMod, _criticalDamageResistanceRatingMod);
+            damageResistRatingMod = Creature.AdditiveCombine(damageResistRatingMod, _criticalDamageResistanceRatingMod);
         }
 
         if (pkBattle)
         {
             _pkDamageResistanceMod = Creature.GetNegativeRatingMod(defender.GetPKDamageResistRating());
-            return Creature.AdditiveCombine(_damageResistanceRatingBaseMod, _pkDamageResistanceMod);
+            damageResistRatingMod = Creature.AdditiveCombine(damageResistRatingMod, _pkDamageResistanceMod);
         }
 
-        return _damageResistanceRatingBaseMod;
+        return damageResistRatingMod;
     }
 
     /// <summary>
     /// RATING - Reprisal: Evade an Incoming Crit, auto crit in return
     /// (JEWEL - Black Opal)
     /// </summary>
-    private void CheckForRatingReprisalCriticalDefense(Creature attacker, Player playerDefender)
+    /// <returns>True if the defender evaded the critical hit</returns>
+    private bool CheckForRatingReprisalCriticalDefense(Creature attacker, Player playerDefender)
     {
         if (playerDefender == null)
         {
-            return;
+            return false;
         }
 
         var rating = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal);
 
         if (rating <= 0)
         {
-            return;
+            return false;
         }
 
         var chance = Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearReprisal);
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
-            return;
+            return false;
         }
 
         playerDefender.QuestManager.HandleReprisalQuest();
@@ -1665,6 +1702,8 @@ public class DamageEvent
 
         var msg = $"Reprisal! You evade the attack by {attacker.Name}";
         playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatEnemy));
+
+        return true;
     }
 
     /// <summary>
@@ -1694,7 +1733,7 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// SPEC BONUS - Perception - 50% chance to defend against a critical hit
+    /// SPEC BONUS - Perception - Up to 50% chance to defend against a critical hit, based on Perception vs the attacker's attack skill
     /// </summary>
     private bool CheckForSpecPerceptionCriticalDefense(Player playerDefender)
     {
@@ -1709,22 +1748,12 @@ public class DamageEvent
             return false;
         }
 
-        var skillCheck = perception.Current / (float)_attackSkill.Current;
+        // an attack skill of 0 can't beat any Perception, so it gets the full 50%
+        var attackSkill = _attackSkill?.Current ?? 0;
+        var skillCheck = attackSkill > 0 ? perception.Current / (float)attackSkill : 1.0f;
         var criticalDefenseChance = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
 
-        if (!(criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f)))
-        {
-            return false;
-        }
-
-        playerDefender.Session.Network.EnqueueSend(
-            new GameMessageSystemChat(
-                $"Your perception skill allowed you to prevent a critical strike!",
-                ChatMessageType.Broadcast
-            )
-        );
-
-        return true;
+        return criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f);
     }
 
     private static bool CheckForAugmentationCriticalDefense(Player playerDefender, Player playerAttacker)
@@ -1740,7 +1769,7 @@ public class DamageEvent
         return !(criticalDefenseChance < ThreadSafeRandom.Next(0.0f, 1.0f));
     }
 
-    private bool CheckForRatingReprisal(Creature playerAttacker)
+    private bool CheckForRatingReprisal(Player playerAttacker)
     {
         if (playerAttacker == null)
         {
@@ -1798,7 +1827,7 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// RATING - Thorns: Reflects damage on block
+    /// RATING - Thorns: Reflects a percentage of a blocked attack's damage back to a close-range attacker
     /// (JEWEL - White Quartz)
     /// </summary>
     private void CheckForRatingThorns(Creature attacker, Creature defender, WorldObject damageSource)
@@ -1820,33 +1849,27 @@ public class DamageEvent
             return;
         }
 
-        if (defender.GetEquippedWeapon() is null)
+        // the damage the blocked attack would have dealt, before mitigation
+        var blockedAttack = CreateReactiveDamageEvent(attacker, defender, damageSource);
+
+        if (blockedAttack._generalFailure)
         {
             return;
         }
 
-        SetCombatSources(attacker, defender, defender.GetEquippedWeapon());
-        SetBaseDamage(attacker, defender, damageSource);
-        SetDamageModifiers(attacker, defender, consumeSneakAttackBonuses: false);
+        var thornsAmount = blockedAttack.GetNonCriticalDamageBeforeMitigation() * Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearThorns);
 
-        var damage = GetNonCriticalDamageBeforeMitigation();
+        var damageDealt = ApplyReactiveDamage(playerDefender, attacker, blockedAttack.DamageType, thornsAmount);
 
-        var thornsAmount = damage * Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearThorns);
+        if (damageDealt is null)
+        {
+            return;
+        }
 
-        attacker.UpdateVitalDelta(attacker.Health, -(int)thornsAmount);
-        attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)thornsAmount);
-        playerDefender.ShieldReprisal = (int)thornsAmount;
+        playerDefender.ShieldReprisal = damageDealt;
 
-        var msg = $"You deflect {(int)thornsAmount} damage back to the attacker!";
+        var msg = $"You deflect {damageDealt} damage back to the attacker!";
         playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
-
-        if (!attacker.IsDead)
-        {
-            return;
-        }
-
-        attacker.OnDeath(attacker.DamageHistory.LastDamager, DamageType.Health);
-        attacker.Die();
     }
 
     public void CheckForRiposte(Creature attacker, Creature defender)
@@ -1866,44 +1889,84 @@ public class DamageEvent
             return;
         }
 
-        if (defender.GetEquippedWeapon() is null)
+        var riposteWeapon = defender.GetEquippedWeapon();
+
+        if (riposteWeapon is null)
         {
             return;
         }
 
-        SetCombatSources(defender, attacker, defender.GetEquippedWeapon());
-        SetBaseDamage(defender, attacker, defender.GetEquippedWeapon());
-        SetDamageModifiers(defender, attacker, consumeSneakAttackBonuses: false);
+        var riposte = CreateReactiveDamageEvent(defender, attacker, riposteWeapon, powerMod: 1.0f);
 
-        _powerMod = 1.0f;
-        var baseDamage = GetNonCriticalDamageBeforeMitigation();
-        var mitigation = GetMitigation(defender, attacker);
-
-        var damage = baseDamage * mitigation;
-
-        if (damage is float.NaN or < int.MinValue or > int.MaxValue)
+        if (riposte._generalFailure)
         {
-            _log.Error("CheckForRiposte({Attacker}, {Defender}) - damage ({Damage}) could not be converted to Int.", attacker.Name, defender.Name, damage);
             return;
         }
 
-        var intDamage = (int)damage;
+        var baseDamage = riposte.GetNonCriticalDamageBeforeMitigation();
+        var mitigation = riposte.GetMitigation(defender, attacker);
 
-        attacker.UpdateVitalDelta(attacker.Health, -intDamage);
-        attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)intDamage);
+        // GetMitigation evades the riposte if the attacker has no body part to hit
+        if (riposte.Evaded)
+        {
+            return;
+        }
+
+        var damageDealt = ApplyReactiveDamage(playerDefender, attacker, riposte.DamageType, baseDamage * mitigation);
+
+        if (damageDealt is null)
+        {
+            return;
+        }
 
         var parryType = Parried ? "parry" : "block";
 
-        var msg = $"You follow up your {parryType} with a quick riposte, dealing {intDamage} {_damageSource.W_DamageType} damage to {attacker.Name}!";
+        var msg = $"You follow up your {parryType} with a quick riposte, dealing {damageDealt} {riposte.DamageType} damage to {attacker.Name}!";
         playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
+    }
 
-        if (!attacker.IsDead)
+    /// <summary>
+    /// Calculates reactive damage (Thorns, Riposte) in a separate DamageEvent, so this event keeps describing the original attack
+    /// </summary>
+    private DamageEvent CreateReactiveDamageEvent(Creature source, Creature target, WorldObject damageSource, float? powerMod = null)
+    {
+        var reactiveDamageEvent = new DamageEvent
         {
-            return;
+            _attackMotion = _attackMotion,
+            _attackHook = _attackHook,
+            _evasionMod = 1.0f,
+        };
+
+        reactiveDamageEvent.SetCombatSources(source, target, damageSource);
+        reactiveDamageEvent.SetBaseDamage(source, target, damageSource);
+        reactiveDamageEvent.SetDamageModifiers(source, target, powerMod, consumeSneakAttackBonuses: false);
+
+        return reactiveDamageEvent;
+    }
+
+    /// <summary>
+    /// Deals reactive damage (Thorns, Riposte) to target through the normal damage path, which handles invulnerability, damage history and death
+    /// </summary>
+    /// <returns>The damage dealt, or null if no damage could be dealt</returns>
+    private int? ApplyReactiveDamage(Player source, Creature target, DamageType damageType, float damage)
+    {
+        if (target.IsDead || target.Invincible || target is Player { UnderLifestoneProtection: true })
+        {
+            return null;
         }
 
-        attacker.OnDeath(attacker.DamageHistory.LastDamager, DamageType.Health);
-        attacker.Die();
+        if (float.IsNaN(damage) || damage is < 0 or > int.MaxValue)
+        {
+            _log.Error(
+                "ApplyReactiveDamage({Source}, {Target}) - damage ({Damage}) is out of range",
+                source.Name,
+                target.Name,
+                damage
+            );
+            return null;
+        }
+
+        return (int)target.TakeDamage(source, damageType, damage);
     }
 
     private bool IsAttackFromStealth()
@@ -1919,7 +1982,7 @@ public class DamageEvent
         return isAttackFromStealth;
     }
 
-    private Quadrant GetQuadrant(
+    private static Quadrant GetQuadrant(
         Creature defender,
         Creature attacker,
         AttackHeight attackHeight,
@@ -1936,9 +1999,9 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// Returns the chance for creature to avoid monster attack
+    /// Sets EffectiveAttackSkill and the effective defense skill, which the evade, block and parry chances all use
     /// </summary>
-    private float GetEvadeChance(Creature attacker, Creature defender)
+    private void SetAttackAndDefenseSkills(Creature attacker, Creature defender)
     {
         var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
@@ -1958,9 +2021,15 @@ public class DamageEvent
 
         // level scaling goes last, so the bonuses above are worth the same at every level (see GetScaledPlayerDefenseSkill)
         _effectiveDefenseSkill = LevelScaling.GetScaledPlayerDefenseSkill(_effectiveDefenseSkill, playerDefender, attacker);
+    }
 
+    /// <summary>
+    /// Returns the chance for the defender to evade the attack
+    /// </summary>
+    private float GetEvadeChance()
+    {
         var evadeChance = SkillCheck.GetSkillChance(_effectiveDefenseSkill, EffectiveAttackSkill);
-        evadeChance = CheckForCombatAbilitySmokescreenEvadeChanceBonus(evadeChance, playerDefender);
+        evadeChance = CheckForCombatAbilitySmokescreenEvadeChanceBonus(evadeChance, _playerDefender);
 
         if (evadeChance < 0)
         {
@@ -1990,7 +2059,7 @@ public class DamageEvent
     /// <summary>
     /// COMBAT ABILITY - Steady Strike: Increased attack skill with melee/missile attacks by 25%.
     /// </summary>
-    private float CheckForCombatAbilitySteadyStrikeAttackSkillBonus(Player playerAttacker)
+    private static float CheckForCombatAbilitySteadyStrikeAttackSkillBonus(Player playerAttacker)
     {
         if (playerAttacker?.GetEquippedWeapon() is null)
         {
@@ -2278,9 +2347,12 @@ public class DamageEvent
 
         var damageSource = Weapon == null ? _attacker : Weapon;
 
-        Console.WriteLine($"\n---- DAMAGE LOG ({damageSource.Name}) ----");
-        Console.WriteLine(
-            $"CurrentTime: {currentTime}, LastAttackTime: {_attacker.LastAttackTime} TimeBetweenAttacks: {timeSinceLastAttack}"
+        _log.Information("---- DAMAGE LOG ({DamageSource}) ----", damageSource.Name);
+        _log.Information(
+            "CurrentTime: {CurrentTime}, LastAttackTime: {LastAttackTime} TimeBetweenAttacks: {TimeBetweenAttacks}",
+            currentTime,
+            _attacker.LastAttackTime,
+            timeSinceLastAttack
         );
         _attacker.LastAttackTime = currentTime;
 
@@ -2314,7 +2386,8 @@ public class DamageEvent
             * _levelScalingMod;
         var averageDpsAfterMitigation = averageDamageAfterMitigation / timeSinceLastAttack;
 
-        Console.WriteLine(
+        _log.Information(
+            "{DamageLog}",
             $"TimeSinceLastAttack: {timeSinceLastAttack}"
             + $"\n\n-- Base --\n"
             + $"BaseDamageMod.MaxDamage: {_baseDamageMod.MaxDamage}, BaseDamageMod.MinDamage: {_baseDamageMod.MinDamage}, LiveBaseDamage: {_baseDamage}\n"
