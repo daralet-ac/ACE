@@ -127,7 +127,25 @@ public partial class DamageEvent
         return damageEvent;
     }
 
-    private float DoCalculateDamage(Creature attacker, Creature defender, WorldObject damageSource, bool cleaveHits = false)
+    /// <summary>
+    /// Runs the attack through its phases: setup, defense (invulnerability, evade, block, parry), damage, mitigation and
+    /// effects. The order matters beyond the data each phase needs: many steps roll random numbers or change game state
+    /// as they go, so moving one changes which rolls it gets or what the next step sees. In order:
+    /// <list type="bullet">
+    /// <item>On-attack effects build adrenaline, even if the attack then misses.</item>
+    /// <item>Lifestone protection notifies the defender.</item>
+    /// <item>Evade: Overpower, Evasive Stance, the evade roll and the evade-type roll, then the Sigil Pocket Watch of
+    /// Evasion (which can turn a glancing blow into a full evade). Block and parry each roll after it.</item>
+    /// <item>A blocked attack triggers Thorns, which rolls its own damage.</item>
+    /// <item>Damage: the base damage roll, then the damage modifiers, which roll for a sneak attack and use up Backstab
+    /// and the stealth attack flag. The critical hit check uses up the attacker's Reprisal stamp, then rolls the critical
+    /// hit, the defender's critical defense augmentation and Perception, the Sigil Compass of Might (which can force the
+    /// critical hit) and the Sigil Puzzle Box of Treachery (critical damage), and then the defender's Reprisal.</item>
+    /// <item>Mitigation rolls the body part that's hit.</item>
+    /// <item>On-hit effects see the final damage.</item>
+    /// </list>
+    /// </summary>
+    private void DoCalculateDamage(Creature attacker, Creature defender, WorldObject damageSource, bool cleaveHits = false)
     {
         if (PropertyManager.GetBool("debug_level_scaling_system").Item && (attacker is Player || defender is Player))
         {
@@ -136,17 +154,19 @@ public partial class DamageEvent
 
         if (defender.Name is "Placeholder")
         {
-            return 0;
+            return;
         }
 
+        // Setup
         SetCombatSources(attacker, defender, damageSource);
-        CheckForOnAttackEffects(cleaveHits);
+        ApplyOnAttackEffects(cleaveHits);
 
+        // Defense
         SetInvulnerable();
 
         if (_invulnerable)
         {
-            return 0.0f;
+            return;
         }
 
         // Evade, block and parry all compare against these skills, so they must be set before any of them roll,
@@ -157,37 +177,40 @@ public partial class DamageEvent
         SetBlocked();
         SetParry();
 
-        if (Evaded || Blocked || Parried)
+        if (Blocked)
         {
-            if (Blocked)
-            {
-                CheckForRatingThorns();
-            }
-
-            return 0.0f;
+            CheckForRatingThorns();
         }
 
+        if (Evaded || Blocked || Parried)
+        {
+            return;
+        }
+
+        // Damage
         _damageBeforeMitigation = GetDamageBeforeMitigation();
 
         if (_generalFailure)
         {
-            return 0.0f;
+            return;
         }
 
+        // Mitigation
         var mitigation = GetMitigation();
         var cleaveMod = cleaveHits ? 0.5f : 1.0f;
 
         Damage = _damageBeforeMitigation * mitigation * cleaveMod;
 
-        if (defender.Invulnerable)
+        if (_defender.Invulnerable)
         {
             Damage = 0.0f;
-            defender.OnInvulnerableHit();
+            _defender.OnInvulnerableHit();
         }
 
         _damageMitigated = _damageBeforeMitigation - Damage;
 
-        PostDamageMitigationEffects();
+        // Effects
+        ApplyOnHitEffects();
 
         // Reprisal (during the critical hit) and a missing body part (during the armor lookup) can evade the attack after
         // its damage is rolled. The on-hit effects above still trigger, but no damage is dealt and no threat is generated.
@@ -195,10 +218,7 @@ public partial class DamageEvent
         {
             Damage = 0.0f;
             IsCritical = false;
-            return 0.0f;
         }
-
-        return Damage;
     }
 
     /// <summary>

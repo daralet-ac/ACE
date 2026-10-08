@@ -7,7 +7,10 @@ namespace ACE.Server.Entity;
 
 public partial class DamageEvent
 {
-    private void CheckForOnAttackEffects(bool cleaveHits = false)
+    /// <summary>
+    /// Effects of making an attack, whether or not it hits
+    /// </summary>
+    private void ApplyOnAttackEffects(bool cleaveHits = false)
     {
         if (cleaveHits)
         {
@@ -25,7 +28,10 @@ public partial class DamageEvent
         }
     }
 
-    private void PostDamageMitigationEffects()
+    /// <summary>
+    /// Effects of an attack that got past evade, block and parry, once its damage is final
+    /// </summary>
+    private void ApplyOnHitEffects()
     {
         // jewel stamps and procs need the attack to land; the rest also trigger on a late evade (see DoCalculateDamage)
         if (!Evaded)
