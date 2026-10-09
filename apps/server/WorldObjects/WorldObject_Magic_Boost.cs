@@ -70,6 +70,7 @@ partial class WorldObject
     /// COMBAT ABILITY - Reflect: when set, this spell was reflected back at its original caster.
     /// It is still cast by this player (kill credit, threat, messages), but its damage is based on the original caster's stats.
     /// </param>
+    /// <param name="partialEvasion">The target's resist roll for this spell, from TryResistSpell</param>
     private void HandleCastSpell_Boost(
         Spell spell,
         Creature targetCreature,
@@ -77,7 +78,8 @@ partial class WorldObject
         bool showMsg = true,
         WorldObject weapon = null,
         double damageMultiplier = 1.0,
-        Creature reflectedCaster = null
+        Creature reflectedCaster = null,
+        PartialEvasion partialEvasion = PartialEvasion.None
     )
     {
         var player = this as Player;
@@ -98,7 +100,7 @@ partial class WorldObject
             fromProc,
             damageMultiplier,
             reflectedCaster,
-            _partialEvasion
+            partialEvasion
         );
 
         // COMBAT ABILITY - Reflect: a reflected spell never damages the reflecting player.

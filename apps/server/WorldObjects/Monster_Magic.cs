@@ -348,7 +348,7 @@ partial class Creature
         }
 
         // try to resist spell, if applicable
-        if (TryResistSpell(target, spell, out _))
+        if (TryResistSpell(target, spell, out var partialEvasion))
         {
             TryHandleFactionMob(target);
             return;
@@ -359,7 +359,7 @@ partial class Creature
         {
             case MagicSchool.CreatureEnchantment:
 
-                HandleCastSpell(spell, target);
+                HandleCastSpell(spell, target, partialEvasion: partialEvasion);
 
                 TryProcOnSpellTarget(spell, target, caster);
                 break;
@@ -371,7 +371,7 @@ partial class Creature
 
             case MagicSchool.LifeMagic:
 
-                HandleCastSpell(spell, target, weapon: caster);
+                HandleCastSpell(spell, target, weapon: caster, partialEvasion: partialEvasion);
 
                 if (spell.MetaSpellType != SpellType.LifeProjectile)
                 {
@@ -384,7 +384,7 @@ partial class Creature
             case MagicSchool.WarMagic:
             case MagicSchool.VoidMagic:
 
-                HandleCastSpell(spell, target, weapon: caster);
+                HandleCastSpell(spell, target, weapon: caster, partialEvasion: partialEvasion);
                 break;
         }
     }
