@@ -101,6 +101,11 @@ partial class WorldObject
 
         ApplyTransferRatingMods(cast, ref srcVitalChange, ref destVitalChange);
 
+        if (cast.IsDrain && cast.Target != null)
+        {
+            ApplyDrainWard(cast, ref srcVitalChange, ref destVitalChange);
+        }
+
         // handle cloak damage procs for drain health other
         var equippedCloak = targetCreature?.EquippedCloak;
 
@@ -238,6 +243,21 @@ partial class WorldObject
             : 1.0f;
         srcVitalChange = Convert.ToUInt32(srcVitalChange * nullificationRatingBonus);
         destVitalChange = Convert.ToUInt32(destVitalChange * nullificationRatingBonus);
+    }
+
+    /// <summary>
+    /// A drain is reduced by the target's ward, after the caster's ward rending and ward penetration.
+    /// The caster gains less by the same proportion.
+    /// </summary>
+    private void ApplyDrainWard(in TransferCast cast, ref uint srcVitalChange, ref uint destVitalChange)
+    {
+        var creature = this as Creature;
+
+        var ignoreWardMod = GetSpellIgnoreWardMod(creature, cast.Weapon, cast.Spell);
+        var wardMod = GetWardMod(creature, cast.Target, ignoreWardMod);
+
+        srcVitalChange = Convert.ToUInt32(srcVitalChange * wardMod);
+        destVitalChange = Convert.ToUInt32(destVitalChange * wardMod);
     }
 
     /// <summary>
