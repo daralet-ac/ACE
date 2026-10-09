@@ -108,7 +108,8 @@ partial class Creature
         WorldObject target,
         Vector3 origin,
         Quaternion orientation,
-        Vector3 velocity
+        Vector3 velocity,
+        bool isCleave = false
     )
     {
         var player = this as Player;
@@ -137,6 +138,7 @@ partial class Creature
 
         proj.ProjectileLauncher = weapon;
         proj.ProjectileAmmo = ammo;
+        proj.ProjectileIsCleave = isCleave;
 
         proj.Location = new Position(Location);
         proj.Location.Pos = origin;

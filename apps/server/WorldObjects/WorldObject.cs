@@ -125,6 +125,9 @@ public abstract partial class WorldObject : IActor
     public WorldObject ProjectileLauncher { get; set; }
     public WorldObject ProjectileAmmo { get; set; }
 
+    // extra Multishot projectiles fired at the main target hit like melee cleaves: half damage, no on-attack effects
+    public bool ProjectileIsCleave { get; set; }
+
     public bool HitMsg; // FIXME: find a better way to do this for projectiles
 
     public WorldObject Wielder;
