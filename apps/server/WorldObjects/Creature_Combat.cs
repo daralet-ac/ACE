@@ -2080,9 +2080,18 @@ partial class Creature
                 return Strength.Current * 0.0005f;
             case Skill.ThrownWeapon:
                 return Coordination.Current * 0.0005f;
+
+            // magic skills have no secondary attribute
+            // (a caster's spell hit can get here from the Deception sneak attack check)
+            case Skill.WarMagic:
+            case Skill.LifeMagic:
+            case Skill.CreatureEnchantment:
+            case Skill.PortalMagic:
+            case Skill.VoidMagic:
+                return 0.0f;
         }
 
-        _log.Warning($"DamageEvent.GetSecondaryAttributeMod() - Incorrect skill used ({skill}) for attacker ({Name})");
+        _log.Warning($"Creature.GetSecondaryAttributeMod() - Incorrect skill used ({skill}) for attacker ({Name})");
         return 0.0f;
     }
 

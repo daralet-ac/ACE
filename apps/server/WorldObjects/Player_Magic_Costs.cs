@@ -8,6 +8,11 @@ namespace ACE.Server.WorldObjects;
 
 partial class Player
 {
+    /// <summary>
+    /// The mana a fizzled spell costs
+    /// </summary>
+    private const uint FizzleManaCost = 5; // todo: verify with retail
+
     private bool CalculateManaUsage(
         CastingPreCheckStatus castingPreCheckStatus,
         Spell spell,
@@ -25,7 +30,7 @@ partial class Player
         }
         else if (castingPreCheckStatus == CastingPreCheckStatus.CastFailed)
         {
-            manaUsed = 5; // todo: verify with retail
+            manaUsed = FizzleManaCost;
         }
 
         var currentMana = Mana.Current;

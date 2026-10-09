@@ -67,7 +67,6 @@ partial class WorldObject
     )
     {
         partialResist = PartialEvasion.None;
-        _partialEvasion = partialResist;
 
         if (!CanBeResisted(spell, itemCaster, projectileHit))
         {
@@ -93,7 +92,6 @@ partial class WorldObject
         var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance, targetPlayer);
 
         partialResist = pResist;
-        _partialEvasion = pResist;
 
         if (targetCreature.Invincible)
         {
@@ -478,12 +476,32 @@ partial class WorldObject
             case SpellType.Boost:
             case SpellType.FellowBoost:
 
-                if (TryResistSpell(originalCaster, spell, out _, originalCaster, false, null, null, true))
+                if (
+                    TryResistSpell(
+                        originalCaster,
+                        spell,
+                        out var partialEvasion,
+                        originalCaster,
+                        false,
+                        null,
+                        null,
+                        true
+                    )
+                )
                 {
                     return;
                 }
 
-                HandleCastSpell_Boost(spell, originalCaster, false, true, null, damageMultiplier, originalCaster);
+                HandleCastSpell_Boost(
+                    spell,
+                    originalCaster,
+                    false,
+                    true,
+                    null,
+                    damageMultiplier,
+                    originalCaster,
+                    partialEvasion
+                );
                 break;
 
             default:

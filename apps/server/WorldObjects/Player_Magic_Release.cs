@@ -155,8 +155,9 @@ partial class Player
             return;
         }
 
+        // a fizzle stays a fizzle, so it never launches projectiles
         var pk_error = CheckPKStatusVsTarget(target, spell);
-        if (pk_error != null)
+        if (pk_error != null && castingPreCheckStatus == CastingPreCheckStatus.Success)
         {
             castingPreCheckStatus = CastingPreCheckStatus.InvalidPKStatus;
         }
@@ -168,7 +169,7 @@ partial class Player
 
         var spellReleased = ReleaseSpell(spell, target, castingPreCheckStatus, caster, itemCaster, isWeaponSpell);
 
-        if (pk_error != null && spell.NumProjectiles == 0)
+        if (castingPreCheckStatus == CastingPreCheckStatus.InvalidPKStatus && spell.NumProjectiles == 0)
         {
             SendPkCastErrors(target, pk_error);
         }
@@ -546,7 +547,9 @@ partial class Player
             return;
         }
 
-        if (!spell.IsProjectile && !TryLandNonProjectileSpell(spell, target, itemCaster))
+        var partialEvasion = PartialEvasion.None;
+
+        if (!spell.IsProjectile && !TryLandNonProjectileSpell(spell, target, itemCaster, out partialEvasion))
         {
             return;
         }
@@ -560,7 +563,8 @@ partial class Player
             fromProc: false,
             equip: false,
             showMsg: true,
-            sigilTrinketSpell
+            sigilTrinketSpell,
+            partialEvasion: partialEvasion
         );
 
         if (!spell.IsProjectile)
@@ -613,7 +617,13 @@ partial class Player
     /// <summary>
     /// A non-projectile spell lands unless the target resists it or is immune to non-projectile magic
     /// </summary>
-    private bool TryLandNonProjectileSpell(Spell spell, WorldObject target, WorldObject itemCaster)
+    /// <param name="partialEvasion">The target's resist roll, for a spell that lands</param>
+    private bool TryLandNonProjectileSpell(
+        Spell spell,
+        WorldObject target,
+        WorldObject itemCaster,
+        out PartialEvasion partialEvasion
+    )
     {
         var targetCreature = target as Creature;
         var targetPlayer = target as Player;
@@ -625,7 +635,7 @@ partial class Player
 
         var harmsOther = spell.IsHarmful && targetCreature != null && targetCreature != this;
 
-        if (TryResistSpell(target, spell, out _, itemCaster))
+        if (TryResistSpell(target, spell, out partialEvasion, itemCaster))
         {
             if (harmsOther)
             {
@@ -696,7 +706,18 @@ partial class Player
 
         if (parms != null && tryFizzle)
         {
-            DoCastSpell_Inner(parms, parms.Target, CastingPreCheckStatus.CastFailed, false);
+            // an interrupted cast costs the same as a fizzle, not the spell's full mana
+            var fizzle = new CastSpellParams(
+                parms.Spell,
+                parms.CasterItem,
+                parms.MagicSkill,
+                Math.Min(parms.ManaUsed, FizzleManaCost),
+                ManaCastRefund.None,
+                parms.Target,
+                CastingPreCheckStatus.CastFailed
+            );
+
+            DoCastSpell_Inner(fizzle, fizzle.Target, CastingPreCheckStatus.CastFailed, false);
 
             werror = WeenieError.YourSpellFizzled;
         }

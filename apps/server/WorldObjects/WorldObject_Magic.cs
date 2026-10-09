@@ -11,8 +11,6 @@ namespace ACE.Server.WorldObjects;
 
 partial class WorldObject
 {
-    private PartialEvasion _partialEvasion;
-
     /// <summary>
     /// Instantly casts a spell for a WorldObject (ie. spell traps)
     /// </summary>
@@ -86,13 +84,31 @@ partial class WorldObject
         // perform resistance check, if applicable
         var weaponAttackMod = weapon?.WeaponOffense;
 
-        if (tryResist && TryResistSpell(target, spell, out _, itemCaster, false, weaponSpellcraft, weaponAttackMod))
+        var partialEvasion = PartialEvasion.None;
+
+        if (
+            tryResist
+            && TryResistSpell(target, spell, out partialEvasion, itemCaster, false, weaponSpellcraft, weaponAttackMod)
+        )
         {
             return;
         }
 
         // if not resisted, cast spell
-        HandleCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, false, showMsg, false, weaponSpellcraft, damageMultiplier);
+        HandleCastSpell(
+            spell,
+            target,
+            itemCaster,
+            weapon,
+            isWeaponSpell,
+            fromProc,
+            false,
+            showMsg,
+            false,
+            weaponSpellcraft,
+            damageMultiplier,
+            partialEvasion
+        );
     }
 
     /// <summary>
@@ -150,6 +166,9 @@ partial class WorldObject
     /// <summary>
     /// Creates a spell based on MetaSpellType
     /// </summary>
+    /// <param name="partialEvasion">
+    /// The target's resist roll for this spell, from TryResistSpell. Used by boost and transfer spells.
+    /// </param>
     protected bool HandleCastSpell(
         Spell spell,
         WorldObject target,
@@ -161,7 +180,8 @@ partial class WorldObject
         bool showMsg = true,
         bool sigilTrinketSpell = false,
         int? weaponSpellcraft = null,
-        double damageMultiplier = 1.0
+        double damageMultiplier = 1.0,
+        PartialEvasion partialEvasion = PartialEvasion.None
     )
     {
         var targetCreature = !spell.IsSelfTargeted || spell.IsFellowshipSpell ? target as Creature : this as Creature;
@@ -205,7 +225,15 @@ partial class WorldObject
             case SpellType.Boost:
             case SpellType.FellowBoost:
 
-                HandleCastSpell_Boost(spell, targetCreature, fromProc, showMsg, weapon, damageMultiplier);
+                HandleCastSpell_Boost(
+                    spell,
+                    targetCreature,
+                    fromProc,
+                    showMsg,
+                    weapon,
+                    damageMultiplier,
+                    partialEvasion: partialEvasion
+                );
                 break;
 
             case SpellType.Transfer:
@@ -215,7 +243,7 @@ partial class WorldObject
                     GenerateSupportSpellThreat(spell, targetCreature);
                 }
 
-                HandleCastSpell_Transfer(spell, targetCreature, showMsg, weapon, fromProc);
+                HandleCastSpell_Transfer(spell, targetCreature, partialEvasion, showMsg, weapon, fromProc);
                 break;
 
             case SpellType.Projectile:

@@ -97,9 +97,11 @@ partial class WorldObject
     /// Handles casting SpellType.Transfer spells
     /// usually for Life Magic, ie. Stamina to Mana, Drain
     /// </summary>
+    /// <param name="partialEvasion">The target's resist roll for this spell, from TryResistSpell</param>
     private void HandleCastSpell_Transfer(
         Spell spell,
         Creature targetCreature,
+        PartialEvasion partialEvasion,
         bool showMsg = true,
         WorldObject weapon = null,
         bool fromProc = false
@@ -114,7 +116,7 @@ partial class WorldObject
             return;
         }
 
-        var cast = new TransferCast(this, spell, targetCreature, weapon, fromProc, _partialEvasion);
+        var cast = new TransferCast(this, spell, targetCreature, weapon, fromProc, partialEvasion);
 
         var srcVitalChange = GetTransferSourceAmount(cast);
 

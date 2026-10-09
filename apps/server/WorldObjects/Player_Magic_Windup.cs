@@ -234,8 +234,13 @@ partial class Player
             return false;
         }
 
-        // get player's current magic skill
-        var magicSkill = GetCreatureSkill(spell.School).Current;
+        var magicSkill = GetModdedMagicSkill(spell.School);
+
+        // SPEC BONUS - War/Life Magic: verify advanced spell
+        if (!VerifyAdvancedSpell(spell))
+        {
+            return false;
+        }
 
         var castingPreCheckStatus = GetCastingPreCheckStatus(spell, magicSkill, false);
 
