@@ -155,8 +155,9 @@ partial class Player
             return;
         }
 
+        // a fizzle stays a fizzle, so it never launches projectiles
         var pk_error = CheckPKStatusVsTarget(target, spell);
-        if (pk_error != null)
+        if (pk_error != null && castingPreCheckStatus == CastingPreCheckStatus.Success)
         {
             castingPreCheckStatus = CastingPreCheckStatus.InvalidPKStatus;
         }
@@ -168,7 +169,7 @@ partial class Player
 
         var spellReleased = ReleaseSpell(spell, target, castingPreCheckStatus, caster, itemCaster, isWeaponSpell);
 
-        if (pk_error != null && spell.NumProjectiles == 0)
+        if (castingPreCheckStatus == CastingPreCheckStatus.InvalidPKStatus && spell.NumProjectiles == 0)
         {
             SendPkCastErrors(target, pk_error);
         }
@@ -705,7 +706,18 @@ partial class Player
 
         if (parms != null && tryFizzle)
         {
-            DoCastSpell_Inner(parms, parms.Target, CastingPreCheckStatus.CastFailed, false);
+            // an interrupted cast costs the same as a fizzle, not the spell's full mana
+            var fizzle = new CastSpellParams(
+                parms.Spell,
+                parms.CasterItem,
+                parms.MagicSkill,
+                Math.Min(parms.ManaUsed, FizzleManaCost),
+                ManaCastRefund.None,
+                parms.Target,
+                CastingPreCheckStatus.CastFailed
+            );
+
+            DoCastSpell_Inner(fizzle, fizzle.Target, CastingPreCheckStatus.CastFailed, false);
 
             werror = WeenieError.YourSpellFizzled;
         }
