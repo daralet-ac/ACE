@@ -280,7 +280,7 @@ partial class SpellProjectile
         var sneakMsg = sneakAttackMod > 1.0f ? "Sneak Attack! " : "";
         var overpowerMsg = overpower ? "Overpower! " : "";
 
-        var resistSome = partialEvasion == PartialEvasion.Some ? "Partial resist! " : "";
+        var resistSome = partialEvasion == PartialEvasion.Some ? "Partial Resist! " : "";
         var strikeThrough = Strikethrough > 0 ? "Strikethrough! " : "";
 
         var drainsVital = Spell.Category is SpellCategory.StaminaLowering or SpellCategory.ManaLowering;
