@@ -333,8 +333,14 @@ partial class SpellProjectile
 
     private void HandleTargetDeath(Creature target, bool critical)
     {
-        if (target is Player { IsInDeathProcess: false } targetPlayer)
+        if (target is Player targetPlayer)
         {
+            // a player who is already dying can't die again
+            if (targetPlayer.IsInDeathProcess)
+            {
+                return;
+            }
+
             targetPlayer.IsInDeathProcess = true;
         }
 
