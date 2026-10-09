@@ -10,7 +10,7 @@ namespace ACE.Server.Arena;
 /// </summary>
 public static class ArenaElo
 {
-    public const int StartingRating = 1400;
+    public const int StartingRating = 1000;
 
     /// <summary>
     /// The chance a player with this rating had of beating one with the other rating, from 0 to 1
