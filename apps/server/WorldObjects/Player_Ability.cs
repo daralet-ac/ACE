@@ -65,7 +65,6 @@ partial class Player
     public bool MultiShotIsActive => LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration;
     private double LastMultishotActivated;
     private double MultishotActivatedDuration = 10;
-    public int MultishotNumTargets = 1;
 
     public bool EvasiveStanceIsActive;
 

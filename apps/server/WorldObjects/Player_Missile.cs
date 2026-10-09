@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using ACE.Common;
 using ACE.Entity.Enum;
@@ -277,83 +278,7 @@ partial class Player
                     EndStealth(null, true);
                 }
 
-                // Check for missile cleaves
-                var numCleaves = 0;
-
-                numCleaves += CheckForRatingSlashCleaveBonus(ammo);
-
-                var cleaveTargets = creature.GetNearbyMonsters(10);
-
-                if (MultiShotIsActive && GetPowerAccuracyBar() >= 0.5f && cleaveTargets.Count > 1)
-                {
-                    if (cleaveTargets.Count > 2)
-                    {
-                        MultishotNumTargets = 3;
-                        numCleaves += 2;
-                    }
-                    else
-                    {
-                        MultishotNumTargets = 2;
-                        numCleaves += 1;
-                    }
-                }
-
-                var cleaveCount = 0;
-
-                foreach (var cleave in cleaveTargets)
-                {
-                    if (cleaveCount == numCleaves)
-                    {
-                        break;
-                    }
-
-                    if (cleave.Translucency == 1 || cleave.Visibility)
-                    {
-                        continue;
-                    }
-
-                    var ammoCheck = weapon.IsAmmoLauncher ? GetEquippedAmmo() : weapon;
-                    if (ammoCheck == null)
-                    {
-                        OnAttackDone();
-                        return;
-                    }
-
-                    var angle = GetAngle(cleave);
-                    var angleWrong = Math.Abs(angle) > CleaveAngle / 2.0f;
-
-                    if (angleWrong && !MultiShotIsActive) // Multishot can hit targets behind you (if within the 10 range limit)
-                    {
-                        continue;
-                    }
-
-                    var newaimVelocity = GetAimVelocity(cleave, projectileSpeed);
-
-                    var newaimLevel = GetAimLevel(newaimVelocity);
-
-                    var newlocalOrigin = GetProjectileSpawnOrigin(ammo.WeenieClassId, newaimLevel);
-
-                    var newvelocity = CalculateProjectileVelocity(
-                        newlocalOrigin,
-                        cleave,
-                        projectileSpeed,
-                        out var neworigin,
-                        out var neworientation
-                    );
-
-                    var bonusProjectile = LaunchProjectile(
-                        launcher,
-                        ammo,
-                        cleave,
-                        neworigin,
-                        neworientation,
-                        newvelocity
-                    );
-
-                    UpdateAmmoAfterLaunch(ammo);
-
-                    cleaveCount++;
-                }
+                LaunchBonusProjectiles(weapon, launcher, ammo, creature, projectileSpeed);
             }
         );
 
@@ -478,6 +403,116 @@ partial class Player
         {
             LifestoneProtectionDispel();
         }
+    }
+
+    // bonus projectiles can only hit creatures this close to the main target
+    private const float MissileCleaveRange = 10.0f;
+
+    private const int MultishotBonusProjectiles = 2;
+
+    // sideways spawn offset for bonus projectiles fired at the main target, so they don't fly as a single arrow
+    private const float MultishotSpread = 0.25f;
+
+    /// <summary>
+    /// Fires the bonus projectiles for an attack.
+    /// COMBAT ABILITY - Multishot: 2 bonus projectiles at nearby enemies. Any that can't find one fire at the main target
+    /// instead, where they deal half damage like melee cleaves.
+    /// RATING - Slash: a bonus projectile at a nearby enemy, if there's one Multishot didn't already take.
+    /// </summary>
+    private void LaunchBonusProjectiles(
+        WorldObject weapon,
+        WorldObject launcher,
+        WorldObject ammo,
+        Creature target,
+        float projectileSpeed
+    )
+    {
+        var multishotProjectiles = MultiShotIsActive && GetPowerAccuracyBar() >= 0.5f ? MultishotBonusProjectiles : 0;
+        var slashProjectiles = CheckForRatingSlashCleaveBonus(ammo);
+
+        if (multishotProjectiles + slashProjectiles == 0)
+        {
+            return;
+        }
+
+        var bonusTargets = GetMissileCleaveTargets(target, multishotProjectiles + slashProjectiles, multishotProjectiles > 0);
+
+        while (bonusTargets.Count < multishotProjectiles)
+        {
+            bonusTargets.Add(target);
+        }
+
+        var spreadDirection = 1.0f;
+
+        foreach (var bonusTarget in bonusTargets)
+        {
+            var ammoCheck = weapon.IsAmmoLauncher ? GetEquippedAmmo() : weapon;
+            if (ammoCheck == null)
+            {
+                OnAttackDone();
+                return;
+            }
+
+            var aimVelocity = GetAimVelocity(bonusTarget, projectileSpeed);
+            var aimLevel = GetAimLevel(aimVelocity);
+            var localOrigin = GetProjectileSpawnOrigin(ammo.WeenieClassId, aimLevel);
+
+            var isMainTarget = bonusTarget == target;
+
+            if (isMainTarget)
+            {
+                localOrigin.X += MultishotSpread * spreadDirection;
+                spreadDirection = -spreadDirection;
+            }
+
+            var velocity = CalculateProjectileVelocity(
+                localOrigin,
+                bonusTarget,
+                projectileSpeed,
+                out var origin,
+                out var orientation
+            );
+
+            if (velocity == Vector3.Zero)
+            {
+                continue;
+            }
+
+            LaunchProjectile(launcher, ammo, bonusTarget, origin, orientation, velocity, isMainTarget);
+            UpdateAmmoAfterLaunch(ammo);
+        }
+    }
+
+    /// <summary>
+    /// Returns up to maxTargets enemies near the main target that can be hit with a bonus projectile, nearest first
+    /// </summary>
+    private List<Creature> GetMissileCleaveTargets(Creature target, int maxTargets, bool multishot)
+    {
+        var cleaveTargets = new List<Creature>();
+
+        // excludes the main target itself
+        foreach (var creature in target.GetNearbyMonsters(MissileCleaveRange))
+        {
+            if (cleaveTargets.Count == maxTargets)
+            {
+                break;
+            }
+
+            if (!creature.IsAlive || !CanDamage(creature) || creature.Translucency == 1 || !TargetInRange(creature))
+            {
+                continue;
+            }
+
+            // Multishot can hit targets behind you
+            if (!multishot && Math.Abs(GetAngle(creature)) > CleaveAngle / 2.0f)
+            {
+                continue;
+            }
+
+            cleaveTargets.Add(creature);
+        }
+
+        return cleaveTargets;
     }
 
     /// <summary>

@@ -55,7 +55,7 @@ public static class ProjectileCollisionHelper
                 }
 
                 // player damage monster or player
-                damageEvent = sourcePlayer.DamageTarget(targetCreature, worldObject);
+                damageEvent = sourcePlayer.DamageTarget(targetCreature, worldObject, worldObject.ProjectileIsCleave);
 
                 if (damageEvent != null && damageEvent.HasDamage)
                 {
