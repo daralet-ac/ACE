@@ -323,7 +323,7 @@ public class EmoteManager
 
                     var spellTarget = GetSpellTarget(spell, targetObject);
 
-                    var preCastTime = creature.PreCastMotion(spellTarget);
+                    var preCastTime = creature.PreCastMotion();
 
                     delay = preCastTime + creature.GetPostCastTime(spell);
 

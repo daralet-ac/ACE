@@ -1962,17 +1962,8 @@ public class EnchantmentManager
             // COMBAT ABILITY - Overload/Battery: DoT ticks need to independently consult the caster's
             // current Overload/Battery state, since it can change (activate/expire) over the lifetime of the DoT,
             // and the enchantment's baked-in StatModValue does not get recalculated on refresh casts.
-            // mirrors CheckForCombatAbilityOverloadDamageMod/CheckForCombatAbilityBatteryDamageMod used for direct spell damage.
-            var overloadDamageMod = sourcePlayer switch
-            {
-                { OverloadDischargeIsActive: true } => 1.0f + sourcePlayer.DischargeLevel,
-                { OverloadStanceIsActive: true } => 1.0f + sourcePlayer.ManaChargeMeter * 0.2f,
-                _ => 1.0f
-            };
-
-            var batteryDamageMod = sourcePlayer is { BatteryStanceIsActive: true }
-                ? 1.0f - sourcePlayer.ManaChargeMeter * 0.1f
-                : 1.0f;
+            var overloadDamageMod = WorldObject.CheckForCombatAbilityOverloadDamageMod(sourcePlayer);
+            var batteryDamageMod = WorldObject.CheckForCombatAbilityBatteryDamageMod(sourcePlayer);
 
             //Console.WriteLine($"DoT Tick (Damager: {damager?.Name}, Target: {creature?.Name})\n" +
             //    $" -BaseTickAmount: {tickAmount}\n" +

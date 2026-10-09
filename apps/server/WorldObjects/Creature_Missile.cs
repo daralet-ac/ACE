@@ -219,46 +219,6 @@ partial class Creature
         return origin;
     }
 
-    /// <summary>
-    /// Returns the cached physics radius for a projectile wcid
-    /// </summary>
-    private static float GetProjectileRadius(uint projectileWcid)
-    {
-        if (ProjectileRadiusCache.TryGetValue(projectileWcid, out var radius))
-        {
-            return radius;
-        }
-
-        var weenie = DatabaseManager.World.GetCachedWeenie(projectileWcid);
-
-        if (weenie == null)
-        {
-            _log.Error($"Creature_Missile.GetProjectileRadius(): couldn't find projectile weenie {projectileWcid}");
-            return 0.0f;
-        }
-
-        if (!weenie.PropertiesDID.TryGetValue(PropertyDataId.Setup, out var setupId))
-        {
-            _log.Error(
-                $"Creature_Missile.GetProjectileRadius(): couldn't find SetupId for {weenie.WeenieClassId} - {weenie.ClassName}"
-            );
-            return 0.0f;
-        }
-
-        var setup = DatManager.PortalDat.ReadFromDat<SetupModel>(setupId);
-
-        if (!weenie.PropertiesFloat.TryGetValue(PropertyFloat.DefaultScale, out var scale))
-        {
-            scale = 1.0f;
-        }
-
-        var result = (float)(setup.Spheres[0].Radius * scale);
-
-        ProjectileRadiusCache.TryAdd(projectileWcid, result);
-
-        return result;
-    }
-
     // lowest value found in data / for starter bows
     public const float DefaultProjectileSpeed = 20.0f;
 

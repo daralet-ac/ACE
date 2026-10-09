@@ -131,7 +131,14 @@ public partial class DamageEvent
         // power bar adds +0% to +100% damage to enchanted blade spells
         var powerBarDamageMultiplier = 1.0 + player.PowerLevel;
 
-        player.TryCastSpell(spell, target, null, weapon, false, true, true, true, spellCraft, powerBarDamageMultiplier);
+        player.TryCastSpell(
+            spell,
+            target,
+            weapon: weapon,
+            fromProc: true,
+            weaponSpellcraft: spellCraft,
+            damageMultiplier: powerBarDamageMultiplier
+        );
 
         player.EnchantedBladeHighStoredSpell = null;
         player.EnchantedBladeMedStoredSpell = null;

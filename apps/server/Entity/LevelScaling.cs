@@ -60,6 +60,17 @@ public static class LevelScaling
     private static readonly float[] AvgTimeToKillMonster = [9.0f, 10.7f, 12.9f, 16.1f, 17.2f, 17.4f, 24.6f, 44.1f];
     private static readonly float[] AvgEnemyDpsPerTier = [ 1.0f, 2.0f, 3.0f, 4.0f, 6.0f, 7.0f, 7.5f, 8.0f, 10.0f];
 
+    /// <summary>
+    /// Damage multiplier from monster health scaling, for an attack on a player (damage dealt by the monster)
+    /// or on a monster (damage taken by the monster)
+    /// </summary>
+    public static float GetMonsterHealthDamageScalar(Creature attacker, Creature defender)
+    {
+        return defender is Player playerDefender
+            ? GetMonsterDamageDealtHealthScalar(playerDefender, attacker)
+            : GetMonsterDamageTakenHealthScalar(attacker, defender);
+    }
+
     public static float GetMonsterDamageDealtHealthScalar(Creature player, Creature monster)
     {
         if (IsScaledDuel(player, monster))

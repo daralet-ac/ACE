@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using ACE.Common;
 using ACE.DatLoader;
 using ACE.Entity.Enum;
@@ -81,11 +80,6 @@ partial class Creature
     private bool HasKnownSpells => Biota.HasKnownSpell(BiotaDatabaseLock);
 
     /// <summary>
-    /// Returns TRUE if the modified monster has known spells
-    /// </summary>
-    private bool HasKnownSpellsModified => Weenie.PropertiesSpellBook != null && Weenie.PropertiesSpellBook.Count > 0;
-
-    /// <summary>
     /// The next spell the monster will attempt to cast
     /// </summary>
     private Spell CurrentSpell { get; set; }
@@ -93,8 +87,6 @@ partial class Creature
     private bool TryRollSpell()
     {
         CurrentSpell = null;
-
-        //Console.WriteLine($"{Name}.TryRollSpell(), probability={GetProbabilityAny()}");
 
         // monster spellbooks have probabilities with base 2.0
         // ie. a 5% chance would be 2.05 instead of 0.05
@@ -110,10 +102,9 @@ partial class Creature
 
         // We don't use thread safety here. Monster spell books aren't mutated cross-threads.
         // This reduces memory consumption by not cloning the spell book every single TryRollSpell()
-        //foreach (var spell in Biota.CloneSpells(BiotaDatabaseLock)) // Thread-safe
         foreach (var spell in Biota.PropertiesSpellBook) // Not thread-safe
         {
-            var probability = spell.Value > 2.0f ? spell.Value - 2.0f : spell.Value / 100.0f;
+            var probability = MagicFormulas.GetSpellbookCastChance(spell.Value);
 
             var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
 
@@ -121,13 +112,7 @@ partial class Creature
 
             if (spell.Value == 2.0f)
             {
-                var maxHealth = (float)this.Health.MaxValue;
-                var currentHealth = (float)this.Health.Current;
-
-                var maxProbability = 0.33f;
-                var reciprocal = 1 / maxProbability;
-
-                probability = ((maxHealth - currentHealth) / maxHealth) / reciprocal;
+                probability = MagicFormulas.GetSpellbookHealthCastChance(Health.MaxValue, Health.Current);
             }
 
             if (rng < probability)
@@ -140,33 +125,13 @@ partial class Creature
     }
 
     /// <summary>
-    /// Returns the probability of this monster casting a spell for an attack
-    /// </summary>
-    private float GetProbabilityAny()
-    {
-        var probabilities = new List<float>();
-
-        foreach (var spell in Biota.GetKnownSpellsProbabilities(BiotaDatabaseLock))
-        {
-            var probability = spell > 2.0f ? spell - 2.0f : spell / 100.0f;
-
-            probabilities.Add(probability);
-        }
-
-        return Probability.GetProbabilityAny(probabilities);
-    }
-
-    /// <summary>
     /// Returns the maximum range for the current spell
     /// </summary>
     private float GetSpellMaxRange()
     {
         var skill = GetMagicSkillForRangeCheck();
 
-        var maxRange = Math.Min(
-            CurrentSpell.BaseRangeConstant + skill * CurrentSpell.BaseRangeMod,
-            Player.MaxRadarRange_Outdoors
-        );
+        var maxRange = CurrentSpell.GetMaxCastRange(skill);
 
         if (maxRange == 0.0f)
         {
@@ -225,7 +190,7 @@ partial class Creature
             }
         }
 
-        var preCastTime = PreCastMotion(AttackTarget);
+        var preCastTime = PreCastMotion();
 
         var actionChain = new ActionChain();
         actionChain.AddDelaySeconds(preCastTime);
@@ -247,9 +212,6 @@ partial class Creature
         actionChain.EnqueueChain();
 
         var postCastTime = GetPostCastTime(spell);
-        var animTime = preCastTime + postCastTime;
-
-        //Console.WriteLine($"{Name}.MagicAttack(): preCastTime({preCastTime}), postCastTime({postCastTime})");
 
         // slight variation here
         PrevAttackTime = Timers.RunningTime + preCastTime;
@@ -265,7 +227,7 @@ partial class Creature
         // do any monsters have mana conversion?
         var target = GetSpellMaxRange() < float.PositiveInfinity ? AttackTarget : this;
 
-        var manaUsed = CalculateManaUsage(this, CurrentSpell, target, out var manaRefund);
+        var manaUsed = CalculateManaUsage(CurrentSpell, target, out var manaRefund);
 
         if (manaUsed > Mana.Current)
         {
@@ -284,17 +246,15 @@ partial class Creature
     /// <summary>
     /// Perform the first part of monster spell casting animation - spreading arms out
     /// </summary>
-    public float PreCastMotion(WorldObject target, bool fallback = false)
+    public float PreCastMotion(bool fallback = false)
     {
         if (AiUseHumanMagicAnimations && !fallback)
         {
-            return PreCastMotion_Human(target);
+            return PreCastMotion_Human();
         }
 
         var motion = new ACE.Server.Entity.Motion(this, MotionCommand.CastSpell, PreCastSpeed);
         motion.MotionState.TurnSpeed = 2.25f;
-        //motion.HasTarget = true;
-        //motion.TargetGuid = target.Guid;
         CurrentMotionState = motion;
 
         EnqueueBroadcastMotion(motion);
@@ -312,7 +272,7 @@ partial class Creature
     /// performs the windup gestures from the spell scarabs
     ///
     /// <returns>The amount of time for the windup gestures to complete</returns>
-    private float PreCastMotion_Human(WorldObject target)
+    private float PreCastMotion_Human()
     {
         // todo: play each motion at the proper time,
         // ensuring the monster is still alive at each step
@@ -328,7 +288,7 @@ partial class Creature
 
         if (castAnimTime == 0)
         {
-            return PreCastMotion(target, true);
+            return PreCastMotion(true);
         }
 
         var animTime = 0.0f;
@@ -370,18 +330,7 @@ partial class Creature
             return;
         }
 
-        var targetSelf = spell.Flags.HasFlag(SpellFlags.SelfTargeted);
-        var untargeted = spell.NonComponentTargetType == ItemType.None;
-
-        var target = AttackTarget;
-        if (untargeted)
-        {
-            target = null;
-        }
-        else if (targetSelf)
-        {
-            target = this;
-        }
+        var target = GetMonsterSpellTarget(spell);
 
         var caster = GetEquippedWand();
 
@@ -393,26 +342,17 @@ partial class Creature
 
         // If the target is too far away, don't cast. This checks to see of this monster and the target are on separate landblock groups, and potentially separate threads.
         // This also fixes cross-threading issues
-        if (
-            target != null
-            && (
-                CurrentLandblock == null
-                || target.CurrentLandblock == null
-                || CurrentLandblock.CurrentLandblockGroup != target.CurrentLandblock.CurrentLandblockGroup
-            )
-        )
+        if (target != null && !IsInSameLandblockGroup(target))
         {
             return;
         }
 
         // try to resist spell, if applicable
-        if (TryResistSpell(target, spell, out var partialResist))
+        if (TryResistSpell(target, spell, out _))
         {
             TryHandleFactionMob(target);
             return;
         }
-
-        var targetCreature = target as Creature;
 
         // TODO: see if this can be coalesced
         switch (spell.School)
@@ -421,14 +361,7 @@ partial class Creature
 
                 HandleCastSpell(spell, target);
 
-                if (spell.IsHarmful)
-                {
-                    // handle target procs
-                    if (targetCreature != null && targetCreature != this)
-                    {
-                        TryProcEquippedItems(this, targetCreature, false, caster);
-                    }
-                }
+                TryProcOnSpellTarget(spell, target, caster);
                 break;
 
             case MagicSchool.PortalMagic:
@@ -438,28 +371,58 @@ partial class Creature
 
             case MagicSchool.LifeMagic:
 
-                HandleCastSpell(spell, target, null, caster);
+                HandleCastSpell(spell, target, weapon: caster);
 
                 if (spell.MetaSpellType != SpellType.LifeProjectile)
                 {
                     TryHandleFactionMob(target);
 
-                    if (spell.IsHarmful)
-                    {
-                        // handle target procs
-                        if (targetCreature != null && targetCreature != this)
-                        {
-                            TryProcEquippedItems(this, targetCreature, false, caster);
-                        }
-                    }
+                    TryProcOnSpellTarget(spell, target, caster);
                 }
                 break;
 
             case MagicSchool.WarMagic:
             case MagicSchool.VoidMagic:
 
-                HandleCastSpell(spell, target, null, caster);
+                HandleCastSpell(spell, target, weapon: caster);
                 break;
+        }
+    }
+
+    /// <summary>
+    /// Untargeted spells have no target, self-targeted spells target the monster, the rest target its attack target
+    /// </summary>
+    private WorldObject GetMonsterSpellTarget(Spell spell)
+    {
+        if (spell.NonComponentTargetType == ItemType.None)
+        {
+            return null;
+        }
+
+        if (spell.Flags.HasFlag(SpellFlags.SelfTargeted))
+        {
+            return this;
+        }
+
+        return AttackTarget;
+    }
+
+    private bool IsInSameLandblockGroup(WorldObject target)
+    {
+        return CurrentLandblock != null
+            && target.CurrentLandblock != null
+            && CurrentLandblock.CurrentLandblockGroup == target.CurrentLandblock.CurrentLandblockGroup;
+    }
+
+    /// <summary>
+    /// A harmful spell procs the monster's equipped items on its target
+    /// </summary>
+    private void TryProcOnSpellTarget(Spell spell, WorldObject target, WorldObject caster)
+    {
+        // handle target procs
+        if (spell.IsHarmful && target is Creature targetCreature && targetCreature != this)
+        {
+            TryProcEquippedItems(this, targetCreature, false, caster);
         }
     }
 
@@ -473,8 +436,6 @@ partial class Creature
 
         var motion = new ACE.Server.Entity.Motion(this, MotionCommand.Ready, animSpeed);
         motion.MotionState.TurnSpeed = 2.25f;
-        //motion.HasTarget = true;
-        //motion.TargetGuid = target.Guid;
         CurrentMotionState = motion;
 
         EnqueueBroadcastMotion(motion);

@@ -332,12 +332,20 @@ partial class Player
     /// <param name="damage"></param>
     /// <param name="skill"></param>
     /// <param name="effectId"></param>
-    public void CheckForSigilTrinketOnSpellHitReceivedEffects(WorldObject spellSource, Spell spell, int damage, Skill skill, Enum effectId, bool onCrit = false)
+    /// <returns>The multiplier for the spell damage received (Sigil Top of Absorption), 1.0 if none</returns>
+    public float CheckForSigilTrinketOnSpellHitReceivedEffects(
+        WorldObject spellSource,
+        Spell spell,
+        int damage,
+        Skill skill,
+        Enum effectId,
+        bool onCrit = false
+    )
     {
         var equippedSigilTrinkets = GetEquippedSigilTrinkets();
         if (equippedSigilTrinkets.Count == 0)
         {
-            return;
+            return 1.0f;
         }
 
         var sigilTrinketEvent = new SigilTrinketEvent
@@ -358,15 +366,17 @@ partial class Player
                 sigilTrinketEvent.StartSigilTrinketEffect(sigilTrinket);
             }
         }
+
+        return sigilTrinketEvent.SpellDamageReductionMod;
     }
 
     public void CreateSigilSpellProjectilesFromTarget(Spell castSpell, Creature creatureToCastSpellFrom)
     {
-        CreateSpellProjectiles(castSpell, creatureToCastSpellFrom, this, false, false, 0, true);
+        CreateSpellProjectiles(castSpell, creatureToCastSpellFrom, new SpellProjectileLaunch(this), castAtTarget: true);
     }
 
     public void CreateSigilPlayerSpell(WorldObject target, Spell castSpell, bool isWeaponSpell)
     {
-        CreatePlayerSpell(target, castSpell, isWeaponSpell, true);
+        CastPlayerSpellOn(target, castSpell, isWeaponSpell, sigilTrinketSpell: true);
     }
 }

@@ -211,7 +211,15 @@ public class Cloak
 
         defender.EnqueueBroadcast(msg, WorldObject.LocalBroadcastRange, ChatMessageType.Spellcasting);
 
-        defender.TryCastSpell(spell, target, cloak, cloak, true, true, false);
+        defender.TryCastSpell(
+            spell,
+            target,
+            cloak,
+            weapon: cloak,
+            isWeaponSpell: true,
+            fromProc: true,
+            tryResist: false
+        );
 
         return true;
     }

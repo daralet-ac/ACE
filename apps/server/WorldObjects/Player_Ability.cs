@@ -1379,22 +1379,22 @@ partial class Player
 
         if (vulnerabilitySpell.NonComponentTargetType == ItemType.None)
         {
-            TryCastSpell(vulnerabilitySpell, null, this, null, false, false, false, false);
+            TryCastSpell(vulnerabilitySpell, null, itemCaster: this, tryResist: false, showMsg: false);
         }
         else
         {
-            TryCastSpell(vulnerabilitySpell, target, this, null, false, false, false, false);
+            TryCastSpell(vulnerabilitySpell, target, itemCaster: this, tryResist: false, showMsg: false);
         }
 
         if (GetCreatureSkill(Skill.Perception).AdvancementClass == SkillAdvancementClass.Specialized)
         {
             if (imperilSpellLevel.NonComponentTargetType == ItemType.None)
             {
-                TryCastSpell(imperilSpellLevel, null, this, null, false, false, false, false);
+                TryCastSpell(imperilSpellLevel, null, itemCaster: this, tryResist: false, showMsg: false);
             }
             else
             {
-                TryCastSpell(imperilSpellLevel, target, this, null, false, false, false, false);
+                TryCastSpell(imperilSpellLevel, target, itemCaster: this, tryResist: false, showMsg: false);
             }
         }
 
@@ -1517,22 +1517,22 @@ partial class Player
 
             if (magicYieldSpell.NonComponentTargetType == ItemType.None)
             {
-                TryCastSpell(magicYieldSpell, null, this, null, false, false, false, false);
+                TryCastSpell(magicYieldSpell, null, itemCaster: this, tryResist: false, showMsg: false);
             }
             else
             {
-                TryCastSpell(magicYieldSpell, target, this, null, false, false, false, false);
+                TryCastSpell(magicYieldSpell, target, itemCaster: this, tryResist: false, showMsg: false);
             }
 
             if (GetCreatureSkill(Skill.Perception).AdvancementClass == SkillAdvancementClass.Specialized)
             {
                 if (succumbSpellLevel.NonComponentTargetType == ItemType.None)
                 {
-                    TryCastSpell(succumbSpellLevel, null, this, null, false, false, false, false);
+                    TryCastSpell(succumbSpellLevel, null, itemCaster: this, tryResist: false, showMsg: false);
                 }
                 else
                 {
-                    TryCastSpell(succumbSpellLevel, target, this, null, false, false, false, false);
+                    TryCastSpell(succumbSpellLevel, target, itemCaster: this, tryResist: false, showMsg: false);
                 }
             }
 
@@ -1923,6 +1923,22 @@ partial class Player
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Overload/Battery: the spell message prefix showing the charge ("50% Charged! ") or discharge
+    /// </summary>
+    public string GetChargedMessage()
+    {
+        return this switch
+        {
+            { OverloadDischargeIsActive: true } => "Overload Discharge! ",
+            { BatteryDischargeIsActive: true } => "Battery Discharge! ",
+            { OverloadStanceIsActive: true }
+            or { BatteryStanceIsActive: true }
+                => $"{Math.Round(ManaChargeMeter * 100)}% Charged! ",
+            _ => "",
+        };
     }
 
     public void IncreaseChargedMeter(Spell spell, bool fromProc = false)

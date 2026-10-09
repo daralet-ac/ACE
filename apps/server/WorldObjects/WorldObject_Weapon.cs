@@ -1392,7 +1392,7 @@ partial class WorldObject
 
         if (spell.NonComponentTargetType == ItemType.None)
         {
-            attacker.TryCastSpell(spell, null, itemCaster, itemCaster, true, true);
+            attacker.TryCastSpell(spell, null, itemCaster, weapon: itemCaster, isWeaponSpell: true, fromProc: true);
         }
         else if (spell.NonComponentTargetType == ItemType.Vestements)
         {
@@ -1461,7 +1461,15 @@ partial class WorldObject
             // power/accuracy bar adds +0% to +100% damage to proc spells
             var procDamageMultiplier = 1.0 + (playerAttacker?.GetPowerAccuracyBar() ?? 0.0f);
 
-            attacker.TryCastSpell(spell, target, itemCaster, itemCaster, true, true, true, true, null, procDamageMultiplier);
+            attacker.TryCastSpell(
+                spell,
+                target,
+                itemCaster,
+                weapon: itemCaster,
+                isWeaponSpell: true,
+                fromProc: true,
+                damageMultiplier: procDamageMultiplier
+            );
         }
     }
 
