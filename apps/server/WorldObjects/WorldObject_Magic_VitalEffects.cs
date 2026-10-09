@@ -1,7 +1,9 @@
 using System;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Factories;
 
 namespace ACE.Server.WorldObjects;
 
@@ -128,6 +130,55 @@ partial class WorldObject
             target.OnDeath(target.DamageHistory.LastDamager, DamageType.Health, false);
             target.Die();
         }
+    }
+
+    /// <summary>
+    /// The multiplier for how much of the target's ward a caster's damaging spell still faces (1.0 ignores none):
+    /// the higher of the caster's and the weapon's Ignore Ward, the weapon's Ward Rending (scaled by the caster's skill
+    /// in the spell's school), SPEC BONUS - War Magic (Orb) and RATING - WardPen
+    /// </summary>
+    protected static float GetSpellIgnoreWardMod(Creature caster, WorldObject weapon, Spell spell)
+    {
+        var sourcePlayer = caster as Player;
+
+        var ignoreWardMod = 1.0f;
+
+        if (sourcePlayer != null)
+        {
+            ignoreWardMod = sourcePlayer.GetIgnoreWardMod(weapon);
+        }
+
+        if (caster != null && weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.WardRending))
+        {
+            ignoreWardMod -= GetWardRendingMod(caster.GetCreatureSkill(spell.School));
+        }
+
+        ignoreWardMod *= 1.0f - CheckForWarSpecWardPenBonus(sourcePlayer, weapon);
+        ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearWardPen, "WardPen");
+
+        return ignoreWardMod;
+    }
+
+    /// <summary>
+    /// SPEC BONUS - War Magic (Orb): +10% ward penetration (additively).
+    /// </summary>
+    private static float CheckForWarSpecWardPenBonus(Player sourcePlayer, WorldObject weapon)
+    {
+        if (sourcePlayer == null || weapon == null)
+        {
+            return 0.0f;
+        }
+
+        if (
+            weapon.WeaponSkill == Skill.WarMagic
+            && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized
+            && LootGenerationFactory.GetCasterSubType(weapon) == 0
+        )
+        {
+            return 0.1f;
+        }
+
+        return 0.0f;
     }
 
     public float GetWardMod(Creature caster, Creature target, float ignoreWardMod)

@@ -359,7 +359,7 @@ partial class WorldObject
         );
 
         // ward
-        var ignoreWardMod = 1.0f - Jewel.GetJewelEffectMod(cast.DamageSourcePlayer, PropertyInt.GearWardPen, "WardPen");
+        var ignoreWardMod = GetSpellIgnoreWardMod(cast.DamageSource, cast.Weapon, cast.Spell);
         var wardMod = GetWardMod(cast.DamageSource, cast.Target, ignoreWardMod);
 
         tryBoost = Convert.ToInt32(tryBoost * wardMod);

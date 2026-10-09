@@ -324,38 +324,25 @@ partial class SpellProjectile
     /// </summary>
     private float GetTargetWardMod(in SpellHit hit)
     {
-        var ignoreWardMod = 1.0f;
-
-        if (hit.SourcePlayer != null)
-        {
-            ignoreWardMod = hit.SourcePlayer.GetIgnoreWardMod(hit.Weapon);
-        }
-
-        if (hit.Weapon != null && hit.Weapon.HasImbuedEffect(ImbuedEffectType.WardRending))
-        {
-            ignoreWardMod -= GetWardRendingMod(hit.AttackSkill);
-        }
-
-        ignoreWardMod *= 1.0f - CheckForWarSpecWardPenBonus(hit.SourcePlayer, hit.Weapon);
-        ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(hit.SourcePlayer, PropertyInt.GearWardPen, "WardPen");
+        var ignoreWardMod = GetSpellIgnoreWardMod(hit.SourceCreature, hit.Weapon, Spell);
 
         return GetWardMod(hit.SourceCreature, hit.Target, ignoreWardMod);
     }
 
     /// <summary>
-    /// The target's magic absorption and RATING - Nullification. Aegis is weaker in PvP.
+    /// The target's magic absorption and RATING - Nullification. Aegis is weaker in PvP, Nullification isn't.
     /// </summary>
     private float GetTargetAbsorbMod(in SpellHit hit)
     {
         var absorbMod = GetAbsorbMod(hit.Target, this);
-
-        absorbMod *= 1.0f - Jewel.GetJewelEffectMod(hit.TargetPlayer, PropertyInt.GearNullification, "Nullification");
 
         //http://acpedia.org/wiki/Announcements_-_2014/01_-_Forces_of_Nature - Aegis is 72% effective in PvP
         if (hit.IsPvp && (hit.Target.CombatMode == CombatMode.Melee || hit.Target.CombatMode == CombatMode.Missile))
         {
             absorbMod = MagicFormulas.GetPvpAbsorbMod(absorbMod);
         }
+
+        absorbMod *= 1.0f - Jewel.GetJewelEffectMod(hit.TargetPlayer, PropertyInt.GearNullification, "Nullification");
 
         return absorbMod;
     }
@@ -595,28 +582,6 @@ partial class SpellProjectile
         )
         {
             return 0.05f;
-        }
-
-        return 0.0f;
-    }
-
-    /// <summary>
-    /// SPEC BONUS - War Magic (Orb): +10% ward penetration (additively).
-    /// </summary>
-    private static float CheckForWarSpecWardPenBonus(Player sourcePlayer, WorldObject weapon)
-    {
-        if (sourcePlayer == null || weapon == null)
-        {
-            return 0.0f;
-        }
-
-        if (
-            weapon.WeaponSkill == Skill.WarMagic
-            && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized
-            && LootGenerationFactory.GetCasterSubType(weapon) == 0
-        )
-        {
-            return 0.1f;
         }
 
         return 0.0f;
