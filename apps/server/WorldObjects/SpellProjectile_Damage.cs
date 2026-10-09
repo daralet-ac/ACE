@@ -343,19 +343,19 @@ partial class SpellProjectile
     }
 
     /// <summary>
-    /// The target's magic absorption and RATING - Nullification. Aegis is weaker in PvP.
+    /// The target's magic absorption and RATING - Nullification. Aegis is weaker in PvP, Nullification isn't.
     /// </summary>
     private float GetTargetAbsorbMod(in SpellHit hit)
     {
         var absorbMod = GetAbsorbMod(hit.Target, this);
-
-        absorbMod *= 1.0f - Jewel.GetJewelEffectMod(hit.TargetPlayer, PropertyInt.GearNullification, "Nullification");
 
         //http://acpedia.org/wiki/Announcements_-_2014/01_-_Forces_of_Nature - Aegis is 72% effective in PvP
         if (hit.IsPvp && (hit.Target.CombatMode == CombatMode.Melee || hit.Target.CombatMode == CombatMode.Missile))
         {
             absorbMod = MagicFormulas.GetPvpAbsorbMod(absorbMod);
         }
+
+        absorbMod *= 1.0f - Jewel.GetJewelEffectMod(hit.TargetPlayer, PropertyInt.GearNullification, "Nullification");
 
         return absorbMod;
     }

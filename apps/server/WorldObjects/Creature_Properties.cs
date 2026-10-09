@@ -586,9 +586,8 @@ partial class Creature
     public uint GetModdedMagicDefSkill()
     {
         var magicDefSkill = GetCreatureSkill(Skill.MagicDefense);
-        // Nullification (Amethyst) is a ramping spell-damage reduction applied in
-        // WorldObject_Magic.CheckForRatingNullificationBoostDefenseBonus() and the spell-projectile
-        // absorb path, not a magic-defense-skill bonus.
+        // Nullification (Amethyst) is a ramping spell-damage reduction applied to harms, drains
+        // and spell projectiles, not a magic-defense-skill bonus.
         var armorMagicDefSkillMod = GetGearSkillModNotInCurrent(Skill.MagicDefense) + 1;
         var weaponMagicDefSkillMod = GetWeaponMagicDefenseModifier(this) - 1.0f;
         var tempMagicDefSkill = magicDefSkill.Current * (armorMagicDefSkillMod + weaponMagicDefSkillMod);

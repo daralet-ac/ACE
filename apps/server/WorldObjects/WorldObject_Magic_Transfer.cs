@@ -9,33 +9,6 @@ namespace ACE.Server.WorldObjects;
 partial class WorldObject
 {
     /// <summary>
-    /// RATING - Nullification: Ramping boost spell defense.
-    /// Spell damage taken reduced by up to 20% + 1% per rating. (after quest stamp build up of 25% per spell hit received)
-    /// (JEWEL - Amethyst)
-    /// </summary>
-    private static float CheckForRatingNullificationBoostDefenseBonus(Creature targetCreature)
-    {
-        if (targetCreature is not Player targetPlayer)
-        {
-            return 1.0f;
-        }
-
-        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) <= 0)
-        {
-            return 1.0f;
-        }
-
-        const float baseMod = 0.2f;
-        const float bonusPerRating = 0.01f;
-        var rating = targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification);
-        var finalRating = baseMod + bonusPerRating * rating;
-
-        var rampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 100;
-
-        return 1.0f - rampMod * finalRating;
-    }
-
-    /// <summary>
     /// Who and what is involved in casting a vital transfer spell (ie. Stamina to Mana, Drain)
     /// </summary>
     private readonly struct TransferCast
@@ -261,7 +234,7 @@ partial class WorldObject
 
         // RATING - Nullification only reduces spell damage taken, so it doesn't apply to beneficial transfers
         var nullificationRatingBonus = cast.IsDrain
-            ? CheckForRatingNullificationBoostDefenseBonus(cast.TargetPlayer)
+            ? 1.0f - Jewel.GetJewelEffectMod(cast.TargetPlayer, PropertyInt.GearNullification, "Nullification")
             : 1.0f;
         srcVitalChange = Convert.ToUInt32(srcVitalChange * nullificationRatingBonus);
         destVitalChange = Convert.ToUInt32(destVitalChange * nullificationRatingBonus);
