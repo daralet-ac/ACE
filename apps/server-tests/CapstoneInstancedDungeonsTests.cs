@@ -1,4 +1,5 @@
 using System.Linq;
+using ACE.Entity;
 using ACE.Server.Commands.AdminCommands;
 using ACE.Server.Entity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -63,6 +64,45 @@ public class CapstoneInstancedDungeonsTests
         StringAssert.Contains(Landblock.DescribeCapstoneInstancing(null), "numbered copies");
         StringAssert.Contains(Landblock.DescribeCapstoneInstancing("*"), "every capstone dungeon opens as an instance");
         StringAssert.Contains(Landblock.DescribeCapstoneInstancing("Sand Shallow, Mage Academy"), "2 name(s)");
+    }
+
+    [TestMethod]
+    public void CapstoneInstancing_TheShatteredSourceFollowsTheValueLikeAnyOtherDungeon()
+    {
+        Assert.IsTrue(Landblock.IsListedAsCapstoneInstanced("*", "Xarabydun Researcher Halls"));
+        Assert.IsTrue(Landblock.IsListedAsCapstoneInstanced($"{EveryName},Xarabydun Researcher Halls", "Xarabydun Researcher Halls"));
+
+        // the old default, from before it was a capstone dungeon, doesn't have it
+        Assert.IsFalse(Landblock.IsListedAsCapstoneInstanced(EveryName, "Xarabydun Researcher Halls"));
+        Assert.IsFalse(Landblock.IsListedAsCapstoneInstanced("", "Xarabydun Researcher Halls"));
+    }
+
+    [TestMethod]
+    public void CapstoneInstancing_TheShatteredSourceIsOneInstanceOfTheResidenceAndTheBossRoom()
+    {
+        var residence = new LandblockId(0x22FEFFFF);
+        var bossRoom = new LandblockId(0x21FEFFFF);
+
+        // entered at the residence, which is where the instance lets players in
+        CollectionAssert.AreEqual(new[] { residence }, Landblock.CapstoneDungeonLists("Xarabydun Researcher Halls"));
+        Assert.IsTrue(Landblock.CapstoneTeleportLocations.ContainsKey(residence));
+        Assert.IsTrue(Landblock.CapstoneTeleportLocations.ContainsKey(bossRoom), "the boss room counts as a capstone landblock");
+
+        var footprint = Landblock.GetCapstoneInstanceFootprint("Xarabydun Researcher Halls", residence);
+
+        CollectionAssert.AreEquivalent(new[] { residence, bossRoom }, footprint.ToList());
+        Assert.AreEqual(residence, footprint.First());
+
+        // the boss room isn't a dungeon of its own any more
+        Assert.IsNull(Landblock.CapstoneDungeonLists("Shattered Source"));
+    }
+
+    [TestMethod]
+    public void CapstoneInstancing_AnyOtherDungeonIsAnInstanceOfItsOriginalLandblockOnly()
+    {
+        var original = Landblock.CapstoneDungeonLists(Dungeon)[0];
+
+        CollectionAssert.AreEqual(new[] { original }, Landblock.GetCapstoneInstanceFootprint(Dungeon, original).ToList());
     }
 
     [TestMethod]
