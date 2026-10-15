@@ -107,7 +107,7 @@ public class MigrateTierPower
 
     /// <summary>
     /// Loot items (tier 1 melee and thrown weapons rolled in a narrower band too), rolled quest items, ammo, and
-    /// weapons whose weenie's speed changed, that haven't been migrated
+    /// weapons whose weenie's speed or variance changed, that haven't been migrated
     /// </summary>
     private static List<uint> GetCandidateIds()
     {
@@ -127,7 +127,9 @@ public class MigrateTierPower
 
             var ammo = ctx.Biota.Where(i => i.WeenieType == (int)WeenieType.Ammunition).Select(i => i.Id).ToList();
 
-            var respeeded = LootGenerationFactory.PreviousWeenieWeaponTime.Keys.ToList();
+            var respeeded = LootGenerationFactory.PreviousWeenieWeaponTime.Keys
+                .Concat(LootGenerationFactory.PreviousWeenieDamageVariance.Keys)
+                .ToList();
             var speedChanged = ctx.Biota.Where(i => respeeded.Contains(i.WeenieClassId)).Select(i => i.Id).ToList();
 
             var done = ctx

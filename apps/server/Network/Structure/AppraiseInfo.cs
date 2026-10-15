@@ -2156,7 +2156,7 @@ public class AppraiseInfo
 
         var wielder = (Creature)wo.Wielder;
 
-        var ratingAmount = Math.Round((critMultiplier - 1) * 100, 0);
+        var ratingAmount = Math.Round(WorldObject.GetCrushingBlowBonus(critMultiplier) * 100, 0);
 
         _hasExtraPropertiesText = true;
 
@@ -2167,8 +2167,11 @@ public class AppraiseInfo
 
             if (baseCritMultiplier != null && !ShowsQuestItemRollRanges(wo))
             {
-                var rangeMin = Math.Round((baseCritMultiplier.Value - 1) * 100, 0);
-                var rangeMax = rangeMin + Math.Round(LootGenerationFactory.QuestCritMultiplierBonusRange * 100, 0);
+                var rangeMin = Math.Round(WorldObject.GetCrushingBlowBonus(baseCritMultiplier.Value) * 100, 0);
+                var rangeMax = Math.Round(
+                    WorldObject.GetCrushingBlowBonus(baseCritMultiplier.Value + LootGenerationFactory.QuestCritMultiplierBonusRange) * 100,
+                    0
+                );
 
                 _additionalPropertiesLongDescriptionsText +=
                     $"~ Crushing Blow: Increases critical damage by +{ratingAmount}%, additively. " +
@@ -2183,11 +2186,12 @@ public class AppraiseInfo
         else
         {
             var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
-            var rangeMinAtTier = Math.Round(LootTables.BonusCritMultiplierPerTier[itemTier - 1] * 100, 0);
+            var rangeMinAtTier = Math.Round(LootTables.BonusCritMultiplierPerTier[itemTier - 1] * WorldObject.CrushingBlowScale * 100, 0);
+            var rangeMaxAtTier = Math.Round((LootTables.BonusCritMultiplierPerTier[itemTier - 1] + 0.5) * WorldObject.CrushingBlowScale * 100, 0);
 
             _additionalPropertiesLongDescriptionsText +=
                 $"~ Crushing Blow: Increases critical damage by +{ratingAmount}%, additively. " +
-                $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 50}%)\n";
+                $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMaxAtTier}%)\n";
         }
     }
 
@@ -2220,7 +2224,7 @@ public class AppraiseInfo
 
         _additionalPropertiesLongDescriptionsText +=
             $"~ Crippling Blow: Increases critical damage by +{amountFormatted}%, additively. " +
-            $"Value is based on wielder attack skill (range: 50% to 100%).\n";
+            $"Value is based on wielder attack skill (range: {Math.Round(WorldObject.MinCripplingBlowMod * 100, 0)}% to {Math.Round(WorldObject.MaxCripplingBlowMod * 100, 0)}%).\n";
     }
 
     private void SetArmorCleavingUseLongText(WorldObject wo)
@@ -2245,21 +2249,44 @@ public class AppraiseInfo
                 var rangeMax = rangeMin + Math.Round(LootGenerationFactory.QuestIgnoreArmorBonusRange * 100, 0);
 
                 _additionalPropertiesLongDescriptionsText +=
-                    $"~ Armor Cleaving: Increases armor ignored by {ratingAmount}%, additively. " +
+                    $"~ Armor Cleaving: {GetArmorPenetrationText(ratingAmount)} " +
                     $"Roll range is {rangeMin}% to {rangeMax}%.\n";
             }
             else
             {
                 _additionalPropertiesLongDescriptionsText +=
-                    $"~ Armor Cleaving: Increases armor ignored by {ratingAmount}%, additively.\n";
+                    $"~ Armor Cleaving: {GetArmorPenetrationText(ratingAmount)}\n";
             }
         }
         else
         {
             _additionalPropertiesLongDescriptionsText +=
-                $"~ Armor Cleaving: Increases armor ignored by {ratingAmount}%, additively. " +
+                $"~ Armor Cleaving: {GetArmorPenetrationText(ratingAmount)} " +
                 "Roll range is 10% to 20%.\n";
         }
+    }
+
+    private static string GetArmorPenetrationText(double penetrationPercent)
+    {
+        return GetPenetrationText(penetrationPercent, "armor", "armored");
+    }
+
+    private static string GetWardPenetrationText(double penetrationPercent)
+    {
+        return GetPenetrationText(penetrationPercent, "ward", "warded");
+    }
+
+    /// <summary>
+    /// What a penetration percent does (see ArmorPenetration): the damage it adds against a target with the average
+    /// armor or ward for its level, and against the most heavily armored
+    /// </summary>
+    private static string GetPenetrationText(double penetrationPercent, string armorName, string armoredName)
+    {
+        var averageBonus = Math.Round(penetrationPercent * ArmorPenetration.DamageBonusPerPenetration, 0);
+        var maxBonus = Math.Round(penetrationPercent * ArmorPenetration.DamageBonusPerPenetration * ArmorPenetration.MaxArmorRatio, 0);
+
+        return $"Grants {penetrationPercent}% {armorName} penetration, additively, for about +{averageBonus}% damage against targets "
+            + $"with average {armorName} for their level, up to +{maxBonus}% against heavily {armoredName} targets, and less against lightly {armoredName} ones.";
     }
 
     private void SetArmorRendUseLongText(WorldObject wo)
@@ -2290,7 +2317,7 @@ public class AppraiseInfo
         _hasExtraPropertiesText = true;
 
         _additionalPropertiesLongDescriptionsText +=
-            $"~ Armor Rending: Increases armor ignored by {amountFormatted}%, additively. " +
+            $"~ Armor Rending: {GetArmorPenetrationText(amountFormatted)} " +
             $"Value is based on wielder attack skill (10% to 20%).\n";
     }
 
@@ -2388,19 +2415,19 @@ public class AppraiseInfo
                     var rangeMax = rangeMin + Math.Round(LootGenerationFactory.QuestIgnoreWardBonusRange * 100, 0);
 
                     _additionalPropertiesLongDescriptionsText +=
-                        $"~ Ward Cleaving: Increases ward ignored by {ratingAmount}%, additively. " +
+                        $"~ Ward Cleaving: {GetWardPenetrationText(ratingAmount)} " +
                         $"Roll range is {rangeMin}% to {rangeMax}%.\n";
                 }
                 else
                 {
                     _additionalPropertiesLongDescriptionsText +=
-                        $"~ Ward Cleaving: Increases ward ignored by {ratingAmount}%, additively.\n";
+                        $"~ Ward Cleaving: {GetWardPenetrationText(ratingAmount)}\n";
                 }
             }
             else
             {
                 _additionalPropertiesLongDescriptionsText +=
-                    $"~ Ward Cleaving: Increases ward ignored by {ratingAmount}%, additively. " +
+                    $"~ Ward Cleaving: {GetWardPenetrationText(ratingAmount)} " +
                     "Roll range is 10% to 20%.\n";
             }
         }
@@ -2435,7 +2462,7 @@ public class AppraiseInfo
         _hasExtraPropertiesText = true;
 
         _additionalPropertiesLongDescriptionsText +=
-            $"~ Ward Rending: Increases ward ignored by +{amountFormatted}%, additively. " +
+            $"~ Ward Rending: {GetWardPenetrationText(amountFormatted)} " +
             $"Value is based on wielder attack skill (10% to 20%).\n";
     }
 

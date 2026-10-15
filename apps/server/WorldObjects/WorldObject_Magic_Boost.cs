@@ -371,8 +371,8 @@ partial class WorldObject
         );
 
         // ward
-        var ignoreWardMod = GetSpellIgnoreWardMod(cast.DamageSource, cast.Weapon, cast.Spell);
-        var wardMod = GetWardMod(cast.DamageSource, cast.Target, ignoreWardMod);
+        var wardPenetration = GetSpellWardPenetration(cast.DamageSource, cast.Weapon, cast.Spell);
+        var wardMod = GetWardMod(cast.DamageSource, cast.Target, wardPenetration);
 
         tryBoost = Convert.ToInt32(tryBoost * wardMod);
 

@@ -26,15 +26,16 @@ public class Creature_BodyPart
     /// <summary>
     /// Main entry point for getting the armor mod
     /// </summary>
+    /// <param name="armorPenetration">The attacker's Armor Cleaving + Armor Rending + spec bonus (see ArmorPenetration)</param>
     public float GetArmorMod(
         DamageType damageType,
         List<WorldObject> armorLayers,
         Creature attacker,
         WorldObject weapon,
-        float armorRendingMod = 1.0f
+        float armorPenetration = 0.0f
     )
     {
-        var effectiveArmorVsType = GetEffectiveArmorVsType(damageType, armorLayers, attacker, weapon, armorRendingMod);
+        var effectiveArmorVsType = GetEffectiveArmorVsType(damageType, armorLayers, attacker, weapon);
 
         if (attacker is Player)
         {
@@ -45,15 +46,45 @@ public class Creature_BodyPart
             effectiveArmorVsType *= LevelScaling.GetPlayerArmorWardScalar(Creature, attacker);
         }
 
+        if (armorPenetration > 0 && effectiveArmorVsType > 0)
+        {
+            effectiveArmorVsType *= ArmorPenetration.GetArmorRemaining(
+                armorPenetration,
+                GetBaseArmorVsType(damageType, armorLayers),
+                ArmorPenetration.GetReferenceArmor(Creature),
+                effectiveArmorVsType
+            );
+        }
+
         return SkillFormula.CalcArmorMod(effectiveArmorVsType);
+    }
+
+    /// <summary>
+    /// The body part's armor before buffs and debuffs (imperil, impen, banes), which armor penetration scales with
+    /// </summary>
+    public float GetBaseArmorVsType(DamageType damageType, List<WorldObject> armorLayers)
+    {
+        // For monsters, we don't use the armorMod float (see GetEffectiveArmorVsType)
+        var armorMod = Creature.IsMonster ? 1.0f : (float)Creature.GetArmorVsType(damageType);
+
+        var baseArmor = Biota.Value.BaseArmor * armorMod;
+
+        if (Creature is { IsMonster: true, CreatureArmorEffectsDamageReduction: true })
+        {
+            foreach (var armorLayer in armorLayers)
+            {
+                baseArmor += GetArmorMod(armorLayer, damageType, ignoreMagicArmor: true);
+            }
+        }
+
+        return baseArmor;
     }
 
     public float GetEffectiveArmorVsType(
         DamageType damageType,
         List<WorldObject> armorLayers,
         Creature attacker,
-        WorldObject weapon,
-        float armorRendingMod = 1.0f
+        WorldObject weapon
     )
     {
         var ignoreMagicArmor = (weapon?.IgnoreMagicArmor ?? false) || (attacker?.IgnoreMagicArmor ?? false);
@@ -83,12 +114,6 @@ public class Creature_BodyPart
             {
                 effectiveAL += GetArmorMod(armorLayer, damageType, ignoreMagicArmor);
             }
-        }
-
-        // armor rending reduces base armor + all physical armor too?
-        if (effectiveAL > 0)
-        {
-            effectiveAL *= armorRendingMod;
         }
 
         return effectiveAL;

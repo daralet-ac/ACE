@@ -50,8 +50,8 @@ public partial class DamageEvent
             return 1.0f;
         }
 
-        _ignoreArmorMod = GetIgnoreArmorMod();
-        _ignoreArmorMod -= GetSpearSpecIgnoreArmorBonus(_playerAttacker);
+        _armorPenetration = GetArmorPenetration();
+        _armorPenetration += GetSpearSpecArmorPenetration(_playerAttacker);
 
         _mitigationModifiers.Armor = GetArmorMod();
 
@@ -145,38 +145,40 @@ public partial class DamageEvent
         return DamageFormulas.GetSwarmedMod(playerDefender.GetNearbyMonsters(3).Count);
     }
 
-    private float GetIgnoreArmorMod()
+    /// <summary>
+    /// Armor Cleaving + Armor Rending (see ArmorPenetration)
+    /// </summary>
+    private float GetArmorPenetration()
     {
         if (Weapon is null or { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
         {
-            return 1.0f;
+            return 0.0f;
         }
 
-        var armorRendingMod = GetArmorRendingMod();
-        var armorCleavingMod = _attacker.GetArmorCleavingMod(Weapon);
+        var armorCleaving = 1.0f - _attacker.GetArmorCleavingMod(Weapon);
 
-        return armorCleavingMod - (1.0f - armorRendingMod);
+        return armorCleaving + GetArmorRendingPenetration();
     }
 
-    private float GetArmorRendingMod()
+    private float GetArmorRendingPenetration()
     {
         if (Weapon is null or { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
         {
-            return 1.0f;
+            return 0.0f;
         }
 
         if (Weapon.HasImbuedEffect(ImbuedEffectType.ArmorRending))
         {
-            return 1.0f - WorldObject.GetArmorRendingMod(_attackSkill, _playerAttacker, _defender);
+            return WorldObject.GetArmorRendingMod(_attackSkill, _playerAttacker, _defender);
         }
 
-        return 1.0f;
+        return 0.0f;
     }
 
     /// <summary>
     /// SPEC BONUS - Martial Weapons (Spear): +10% armor penetration (additively)
     /// </summary>
-    private static float GetSpearSpecIgnoreArmorBonus(Player playerAttacker)
+    private static float GetSpearSpecArmorPenetration(Player playerAttacker)
     {
         if (playerAttacker?.GetEquippedWeapon() == null)
         {
@@ -202,7 +204,7 @@ public partial class DamageEvent
             _armor = _attacker.GetArmorLayers(_playerDefender, BodyPart);
 
             // get armor modifiers
-            return _attacker.GetArmorMod(_playerDefender, DamageType, _armor, Weapon, _ignoreArmorMod);
+            return _attacker.GetArmorMod(_playerDefender, DamageType, _armor, Weapon, _armorPenetration);
         }
 
         // determine height quadrant
@@ -231,7 +233,7 @@ public partial class DamageEvent
         _armor = _creaturePart.GetArmorLayers(_propertiesBodyPart.Key);
 
         // get target armor
-        return _creaturePart.GetArmorMod(DamageType, _armor, _attacker, Weapon, _ignoreArmorMod);
+        return _creaturePart.GetArmorMod(DamageType, _armor, _attacker, Weapon, _armorPenetration);
     }
 
     private float GetResistanceMod()

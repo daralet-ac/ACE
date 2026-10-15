@@ -1751,12 +1751,17 @@ public static partial class LootGenerationFactory
 
     /// <summary>
     /// The range a melee or thrown weapon's Damage rolled in before the tier rework: the 25% band around the previous
-    /// target DPS (TierPower), at the given speed and the weapon's variance
+    /// target DPS (TierPower), at the given speed and variance (the weapon's weenie's if none is given)
     /// </summary>
-    internal static (double Minimum, double Maximum) GetPreviousMeleeDamageRange(WorldObject wo, int tier, int weaponTime)
+    internal static (double Minimum, double Maximum) GetPreviousMeleeDamageRange(
+        WorldObject wo,
+        int tier,
+        int weaponTime,
+        double? previousVariance = null
+    )
     {
         var weenie = wo.Weenie ?? DatabaseManager.World?.GetCachedWeenie(wo.WeenieClassId);
-        var variance = weenie?.GetProperty(PropertyFloat.DamageVariance) ?? wo.DamageVariance ?? 0.0;
+        var variance = previousVariance ?? weenie?.GetProperty(PropertyFloat.DamageVariance) ?? wo.DamageVariance ?? 0.0;
         var hitsPerSecond = GetWeaponHitsPerSecond(weaponTime, wo.IsRanged, tier);
 
         if (hitsPerSecond <= 0)

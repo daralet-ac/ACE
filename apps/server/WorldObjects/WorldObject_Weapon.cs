@@ -383,16 +383,14 @@ partial class WorldObject
     {
         var critRate = (float)(weapon?.CriticalFrequency ?? DefaultPhysicalCritFrequency);
 
-        if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.CriticalStrike))
+        // Critical Strike stacks additively with Biting Strike
+        if (
+            weapon != null
+            && weapon.HasImbuedEffect(ImbuedEffectType.CriticalStrike)
+            && weapon is not { SpecialPropertiesRequireMana: true, ItemCurMana: 0 }
+        )
         {
-            var criticalStrikeBonus = DefaultPhysicalCritFrequency + GetCriticalStrikeMod(skill, wielder, target);
-
-            if (weapon is { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
-            {
-                criticalStrikeBonus = DefaultPhysicalCritFrequency;
-            }
-
-            critRate = Math.Max(critRate, criticalStrikeBonus);
+            critRate += GetCriticalStrikeMod(skill, wielder, target);
         }
 
         if (wielder != null)
@@ -442,18 +440,15 @@ partial class WorldObject
 
         var critRate = (float)(weapon.GetProperty(PropertyFloat.CriticalFrequency) ?? DefaultMagicCritFrequency);
 
-        if (weapon.HasImbuedEffect(ImbuedEffectType.CriticalStrike))
+        // Critical Strike stacks additively with Biting Strike
+        if (
+            weapon.HasImbuedEffect(ImbuedEffectType.CriticalStrike)
+            && weapon is not { SpecialPropertiesRequireMana: true, ItemCurMana: 0 }
+        )
         {
             var isPvP = wielder is Player && target is Player;
 
-            var criticalStrikeMod = DefaultMagicCritFrequency + GetCriticalStrikeMod(skill, wielder, target, isPvP);
-
-            if (weapon is { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
-            {
-                criticalStrikeMod = DefaultMagicCritFrequency;
-            }
-
-            critRate = Math.Max(critRate, criticalStrikeMod);
+            critRate += GetCriticalStrikeMod(skill, wielder, target, isPvP);
         }
 
         critRate += wielder.GetCritRating() * 0.01f;
@@ -474,6 +469,22 @@ partial class WorldObject
 
     private const float DefaultCritDamageMultiplier = 1.0f;
 
+    // -- CRUSHING BLOW --
+    // The critical damage a weapon's CriticalMultiplier adds above the default counts 30% more than its stored value,
+    // so added critical damage is worth as much as the matching added critical chance (Biting Strike) on the same weapon
+
+    public const float CrushingBlowScale = 1.3f;
+
+    /// <summary>
+    /// The critical damage bonus a CriticalMultiplier grants above the default x1.0 (Crushing Blow), scaled
+    /// </summary>
+    public static double GetCrushingBlowBonus(double criticalMultiplier)
+    {
+        var bonus = criticalMultiplier - DefaultCritDamageMultiplier;
+
+        return bonus > 0 ? bonus * CrushingBlowScale : bonus;
+    }
+
     /// <summary>
     /// Returns the critical damage multiplier for the attack weapon
     /// </summary>
@@ -484,20 +495,17 @@ partial class WorldObject
         Creature target
     )
     {
-        var critDamageMod = (float)(
-            weapon?.GetProperty(PropertyFloat.CriticalMultiplier) ?? DefaultCritDamageMultiplier
-        );
+        var criticalMultiplier = weapon?.GetProperty(PropertyFloat.CriticalMultiplier) ?? DefaultCritDamageMultiplier;
+        var critDamageMod = DefaultCritDamageMultiplier + (float)GetCrushingBlowBonus(criticalMultiplier);
 
-        if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.CripplingBlow))
+        // Crippling Blow stacks additively with Crushing Blow
+        if (
+            weapon != null
+            && weapon.HasImbuedEffect(ImbuedEffectType.CripplingBlow)
+            && weapon is not { SpecialPropertiesRequireMana: true, ItemCurMana: 0 }
+        )
         {
-            var cripplingBlowMod = DefaultCritDamageMultiplier + GetCripplingBlowMod(skill, wielder, target);
-
-            if (weapon is { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
-            {
-                cripplingBlowMod = DefaultCritDamageMultiplier;
-            }
-
-            critDamageMod = Math.Max(critDamageMod, cripplingBlowMod);
+            critDamageMod += GetCripplingBlowMod(skill, wielder, target);
         }
 
         return critDamageMod;
@@ -877,11 +885,11 @@ partial class WorldObject
     }
 
     // -- CRIPPLING BLOW IMBUE --
-    // Grants +50% crit damage, plus up to an additional 50% based on skill level
+    // Grants +65% crit damage, plus up to an additional 65% based on skill level
     // Bonus amount caps 500 skill level
 
-    private static float MinCripplingBlowMod = 0.5f;
-    private static float MaxCripplingBlowMod = 1.0f;
+    public static float MinCripplingBlowMod = 0.65f;
+    public static float MaxCripplingBlowMod = 1.3f;
 
     public static float GetCripplingBlowMod(CreatureSkill skill, Creature wielder, Creature target = null)
     {

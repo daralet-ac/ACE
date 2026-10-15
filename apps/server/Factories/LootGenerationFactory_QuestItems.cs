@@ -719,7 +719,7 @@ public static partial class LootGenerationFactory
         AddQuestItemFlatRange(ranges, "Bonus to War Magic Skill", wo.WeaponWarMagicMod, authored.GetProperty(PropertyFloat.WeaponWarMagicMod), Shift(LootTables.WeaponSkillModBonusPerTier), WeaponModMaxBonus, rolled, Skill);
 
         AddQuestItemFlatRange(ranges, "Biting Strike", wo.CriticalFrequency, authored.GetProperty(PropertyFloat.CriticalFrequency), 0, QuestCritFrequencyBonusRange, rolled, value => (value - 0.1) * 100);
-        AddQuestItemFlatRange(ranges, "Crushing Blow", wo.GetProperty(PropertyFloat.CriticalMultiplier), authored.GetProperty(PropertyFloat.CriticalMultiplier), 0, QuestCritMultiplierBonusRange, rolled, Bonus);
+        AddQuestItemFlatRange(ranges, "Crushing Blow", wo.GetProperty(PropertyFloat.CriticalMultiplier), authored.GetProperty(PropertyFloat.CriticalMultiplier), 0, QuestCritMultiplierBonusRange, rolled, value => WorldObject.GetCrushingBlowBonus(value) * 100);
 
         // cleaving rolls downward: less armor or ward left after the strike
         AddQuestItemFlatRange(ranges, "Armor Cleaving", wo.IgnoreArmor, authored.GetProperty(PropertyFloat.IgnoreArmor), 0, -QuestIgnoreArmorBonusRange, rolled, value => (1 - value) * 100);

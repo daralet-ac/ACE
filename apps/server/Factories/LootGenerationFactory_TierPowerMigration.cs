@@ -14,7 +14,7 @@ namespace ACE.Server.Factories;
 /// Moves an item rolled before the tier rework onto the new scale (TierPower): each rolled stat keeps its place in its
 /// tier's range, and its tinks keep their share of the untinkered value. Flat ward tinks (Silver +3, Pyreal +2,
 /// White Jade +1) come off and go back on as the share each now adds, and Pyreal's armor share drops from 5% to 3%.
-/// Tier 1 didn't change. Run once, with migrate-tier-power, after the world-db import; a migrated item is marked so a
+/// Maces and staves take their weenies' lower variance (0.75 to 0.6), keeping their own share of it. Tier 1 didn't change. Run once, with migrate-tier-power, after the world-db import; a migrated item is marked so a
 /// second run skips it.
 /// </summary>
 public static partial class LootGenerationFactory
@@ -68,13 +68,14 @@ public static partial class LootGenerationFactory
             var meleeOrThrown = wo.WeenieType is not (WeenieType.Caster or WeenieType.MissileLauncher)
                 && (wo.ItemType == ItemType.MeleeWeapon || wo.WeenieType == WeenieType.Missile);
 
-            // a weapon whose weenie's speed changed takes the new speed, whatever its tier
+            // a weapon whose weenie's speed or variance changed takes the new one, whatever its tier
             var previousWeaponTime = MigrateWeaponSpeed(wo, changes);
+            var previousVariance = MigrateWeaponVariance(wo, changes);
 
             // melee and thrown weapons rolled tier 1 in a narrower band too
             if (meleeOrThrown && tier >= 1)
             {
-                MigrateWeaponDamage(wo, tier, quest, previousWeaponTime, changes);
+                MigrateWeaponDamage(wo, tier, quest, previousWeaponTime, previousVariance, changes);
             }
 
             if (tier >= 2)
@@ -169,11 +170,62 @@ public static partial class LootGenerationFactory
     }
 
     /// <summary>
-    /// Melee and thrown weapons: the untinkered damage keeps its place in its tier's range, from the 25% band it rolled
-    /// in at its old speed to the x1-x2 range at its new one (GetMeleeDamageRollRange), with its tinks' share on top.
-    /// A rolled quest weapon rolls again from its stored roll quality.
+    /// The DamageVariance of the weenies whose variance the rework changed, before it (world-db): the mace and staff
+    /// loot weapons, lowered to the axes' and daggers' 0.6 so every crit weapon type gets the same share of its damage
+    /// from critical hits
     /// </summary>
-    private static void MigrateWeaponDamage(WorldObject wo, int tier, bool quest, int previousWeaponTime, List<string> changes)
+    internal static readonly Dictionary<uint, double> PreviousWeenieDamageVariance = new uint[]
+        {
+            309, 325, 331, 332, 356, 3766, 3767, 3768, 3769, 3774, 3775, 3776, 3777, 3814, 3815, 3816, 3817, 3834, 3835,
+            3836, 3837, 3897, 3898, 3899, 3900, 3937, 3938, 3939, 3940, 7768, 7787, 7788, 7789, 7790, // maces
+            7771, 7795, 7796, 7797, 7798, 22154, 22155, 22156, 22157, 22158, 22159, 22160, 22161, 22162, 22163, 22164,
+            22165, 22166, 22167, 22168, // staves
+        }
+        .ToDictionary(wcid => wcid, _ => 0.75);
+
+    /// <summary>
+    /// A weapon whose weenie's variance changed takes the new variance, keeping its own share of it (loot's +-0.1 roll,
+    /// Granite tinks). Returns the weenie's variance before the rework, which the weapon's damage was rolled for, or
+    /// null if it didn't change.
+    /// </summary>
+    private static double? MigrateWeaponVariance(WorldObject wo, List<string> changes)
+    {
+        // an item restored from the shard has no Weenie of its own
+        var weenie = wo.Weenie ?? DatabaseManager.World?.GetCachedWeenie(wo.WeenieClassId);
+        var weenieVariance = weenie?.GetProperty(PropertyFloat.DamageVariance) ?? 0.0;
+
+        if (
+            !PreviousWeenieDamageVariance.TryGetValue(wo.WeenieClassId, out var previousVariance)
+            || weenieVariance <= 0
+            || Math.Abs(weenieVariance - previousVariance) < 0.0001
+        )
+        {
+            return null;
+        }
+
+        if (wo.DamageVariance is > 0)
+        {
+            var variance = Math.Round(wo.DamageVariance.Value * weenieVariance / previousVariance, 4);
+            changes.Add($"DamageVariance {wo.DamageVariance:0.###} => {variance:0.###}");
+            wo.DamageVariance = variance;
+        }
+
+        return previousVariance;
+    }
+
+    /// <summary>
+    /// Melee and thrown weapons: the untinkered damage keeps its place in its tier's range, from the 25% band it rolled
+    /// in at its old speed and variance to the x1-x2 range at its new ones (GetMeleeDamageRollRange), with its tinks'
+    /// share on top. A rolled quest weapon rolls again from its stored roll quality.
+    /// </summary>
+    private static void MigrateWeaponDamage(
+        WorldObject wo,
+        int tier,
+        bool quest,
+        int previousWeaponTime,
+        double? previousVariance,
+        List<string> changes
+    )
     {
         if (wo.Damage is not > 0)
         {
@@ -195,7 +247,7 @@ public static partial class LootGenerationFactory
         }
         else
         {
-            var previousRange = GetPreviousMeleeDamageRange(wo, tier, previousWeaponTime);
+            var previousRange = GetPreviousMeleeDamageRange(wo, tier, previousWeaponTime, previousVariance);
             var position = Math.Clamp(TierPower.GetRollPosition(baseDamage, previousRange), 0.0, 1.0);
             newBaseDamage = newRange.Minimum + (newRange.Maximum - newRange.Minimum) * position;
         }

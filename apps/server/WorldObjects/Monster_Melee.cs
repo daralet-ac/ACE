@@ -551,12 +551,13 @@ partial class Creature
     /// Returns the percent of damage absorbed by layered armor + clothing
     /// </summary>
     /// <param name="armors">The list of armor/clothing covering the targeted body part</param>
+    /// <param name="armorPenetration">The attacker's Armor Cleaving + Armor Rending + spec bonus (see ArmorPenetration)</param>
     public float GetArmorMod(
         Creature defender,
         DamageType damageType,
         List<WorldObject> armors,
         WorldObject weapon,
-        float armorRendingMod = 1.0f
+        float armorPenetration = 0.0f
     )
     {
         var ignoreMagicArmor = (weapon?.IgnoreMagicArmor ?? false) || IgnoreMagicArmor;
@@ -576,18 +577,26 @@ partial class Creature
         //if (ignoreMagicResist)
         //    bodyArmorMod = IgnoreMagicResistScaled(bodyArmorMod);
 
-        // handle armor rending mod here?
-        //if (bodyArmorMod > 0)
-        //bodyArmorMod *= armorRendingMod;
-
         //Console.WriteLine("==");
         //Console.WriteLine("Armor Self: " + bodyArmorMod);
         effectiveAL += bodyArmorMod;
 
-        // Armor Rending reduces physical armor too?
-        if (effectiveAL > 0)
+        // armor penetration scales with the armor pieces' own armor, before impen, banes and imperil
+        if (armorPenetration > 0 && effectiveAL > 0)
         {
-            effectiveAL *= armorRendingMod;
+            var baseAL = 0.0f;
+
+            foreach (var armor in armors)
+            {
+                baseAL += defender.GetArmorMod(armor, damageType, ignoreMagicArmor: true);
+            }
+
+            effectiveAL *= ArmorPenetration.GetArmorRemaining(
+                armorPenetration,
+                baseAL,
+                ArmorPenetration.GetReferenceArmor(defender),
+                effectiveAL
+            );
         }
 
         // level scaling scales the mitigation, not the armor level -- see LevelScaling.GetPlayerArmorWardModScalar()

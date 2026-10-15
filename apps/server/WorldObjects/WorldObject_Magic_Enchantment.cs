@@ -152,21 +152,24 @@ partial class WorldObject
 
         if (addResult.Enchantment.StatModValue < 0 && targetPlayerWard > 0)
         {
-            var ignoreWardMod = 1.0f;
+            var wardPenetration = WardPenetration.None;
 
             if (this is Player player)
             {
-                ignoreWardMod = player.GetIgnoreWardMod(weapon);
+                var penetration = 1.0f - player.GetIgnoreWardMod(weapon);
 
                 if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.WardRending))
                 {
-                    ignoreWardMod -= GetWardRendingMod(player.GetCreatureSkill(Skill.LifeMagic));
+                    penetration += GetWardRendingMod(player.GetCreatureSkill(Skill.LifeMagic));
                 }
 
-                ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearWardPen, "WardPen");
+                wardPenetration = new WardPenetration(
+                    penetration,
+                    1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearWardPen, "WardPen")
+                );
             }
 
-            var wardMod = GetWardMod(caster as Creature, targetPlayer, ignoreWardMod);
+            var wardMod = GetWardMod(caster as Creature, targetPlayer, wardPenetration);
 
             // ward shortens the debuff, it doesn't weaken it
             addResult.Enchantment.Duration *= MagicFormulas.GetWardDebuffDurationMod(wardMod);
