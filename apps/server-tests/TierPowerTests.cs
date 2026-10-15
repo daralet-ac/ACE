@@ -154,15 +154,58 @@ public class TierPowerTests
     }
 
     [TestMethod]
-    public void Migration_MeleeDamageTakesTheTiersWeaponScale()
+    public void Migration_MeleeDamageKeepsItsPlaceInTheTiersRange()
     {
-        var axe = CreateItem(WeenieType.MeleeWeapon, ItemType.MeleeWeapon, new() { [PropertyInt.Tier] = 5, [PropertyInt.Damage] = 30 });
-        axe.BaseDamage = 28;
-        var scale = TierPower.GetWeaponScale(5);
+        // a T5 battle axe (speed 59) whose speed didn't change: the bottom of its old band lands on the bottom of the
+        // new x1-x2 range, the top on the top, and the middle in the middle
+        foreach (var place in new[] { 0.0, 0.5, 1.0 })
+        {
+            var axe = CreateMelee(wcid: 999998, tier: 5, weenieTime: 59, variance: 0.6);
+            var previous = LootGenerationFactory.GetPreviousMeleeDamageRange(axe, 5, 59);
+            var rolled = previous.Minimum + (previous.Maximum - previous.Minimum) * place;
+            axe.Damage = (int)System.Math.Round(rolled);
+            axe.BaseDamage = axe.Damage;
+            var actualPlace = TierPower.GetRollPosition(axe.BaseDamage.Value, previous);
 
-        Assert.IsTrue(LootGenerationFactory.MigrateToTierPower(axe, new List<string>()));
-        Assert.AreEqual((int)System.Math.Round(30 * scale), axe.Damage);
-        Assert.AreEqual((int)System.Math.Round(28 * scale), axe.BaseDamage);
+            Assert.IsTrue(LootGenerationFactory.MigrateToTierPower(axe, new List<string>()));
+
+            var range = LootGenerationFactory.GetMeleeDamageRollRange(axe, 5);
+            var expected = range.Minimum + (range.Maximum - range.Minimum) * System.Math.Clamp(actualPlace, 0.0, 1.0);
+            Assert.AreEqual((int)System.Math.Round(expected, System.MidpointRounding.AwayFromZero), axe.Damage, $"place {place}");
+            Assert.AreEqual(59, axe.WeaponTime);
+        }
+    }
+
+    [TestMethod]
+    public void Migration_TwoHanderTakesItsNewSpeedAndTheDamageForIt()
+    {
+        // a T6 Quadrelle rolled at speed 95 (+4% on the loot speed roll: 99), now 68: it keeps its roll, and its damage
+        // keeps its place, from its old band at 95 to the new range at 68
+        var quadrelle = CreateMelee(wcid: 40623, tier: 6, weenieTime: 68, variance: 0.75);
+        quadrelle.WeaponTime = 99;
+        quadrelle.BaseWeaponTime = 99;
+        var previous = LootGenerationFactory.GetPreviousMeleeDamageRange(quadrelle, 6, 95);
+        quadrelle.Damage = (int)System.Math.Round((previous.Minimum + previous.Maximum) / 2);
+        quadrelle.BaseDamage = quadrelle.Damage;
+        var place = TierPower.GetRollPosition(quadrelle.Damage.Value, previous);
+
+        Assert.IsTrue(LootGenerationFactory.MigrateToTierPower(quadrelle, new List<string>()));
+
+        Assert.AreEqual((int)System.Math.Round(99 * 68 / 95.0), quadrelle.WeaponTime);
+        Assert.AreEqual(quadrelle.WeaponTime, quadrelle.BaseWeaponTime);
+        var range = LootGenerationFactory.GetMeleeDamageRollRange(quadrelle, 6);
+        Assert.AreEqual((int)System.Math.Round(range.Minimum + (range.Maximum - range.Minimum) * place, System.MidpointRounding.AwayFromZero), quadrelle.Damage);
+    }
+
+    [TestMethod]
+    public void Migration_SpeedChangesEvenWithoutATier()
+    {
+        // a two-hander bought off a vendor has no tier, but takes the new speed
+        var greataxe = CreateMelee(wcid: 41052, tier: 0, weenieTime: 68, variance: 0.75);
+        greataxe.WeaponTime = 95;
+
+        Assert.IsTrue(LootGenerationFactory.MigrateToTierPower(greataxe, new List<string>()));
+        Assert.AreEqual(68, greataxe.WeaponTime);
     }
 
     [TestMethod]
@@ -224,6 +267,17 @@ public class TierPowerTests
         return ammo;
     }
 
+    private static WorldObject CreateMelee(uint wcid, int tier, int weenieTime, double variance)
+    {
+        var ints = new Dictionary<PropertyInt, int> { [PropertyInt.WeaponTime] = weenieTime, [PropertyInt.Damage] = 1 };
+        if (tier > 0)
+        {
+            ints[PropertyInt.Tier] = tier;
+        }
+
+        return CreateItem(WeenieType.MeleeWeapon, ItemType.MeleeWeapon, ints, new() { [PropertyFloat.DamageVariance] = variance }, wcid);
+    }
+
     private static WorldObject CreateArmor(ArmorStyle style, ArmorWeightClass weightClass, int tier, int armorLevel, int wardLevel, int armorSlots)
     {
         return CreateItem(
@@ -245,14 +299,15 @@ public class TierPowerTests
         WeenieType weenieType,
         ItemType itemType,
         Dictionary<PropertyInt, int> ints,
-        Dictionary<PropertyFloat, double> floats = null
+        Dictionary<PropertyFloat, double> floats = null,
+        uint wcid = 999998
     )
     {
         ints[PropertyInt.ItemType] = (int)itemType;
 
         var weenie = new Weenie
         {
-            WeenieClassId = 999998,
+            WeenieClassId = wcid,
             ClassName = "tierpowertest",
             WeenieType = weenieType,
             PropertiesInt = ints,

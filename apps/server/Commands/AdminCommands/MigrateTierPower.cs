@@ -106,7 +106,8 @@ public class MigrateTierPower
     }
 
     /// <summary>
-    /// Loot items of tier 2 and up, rolled quest items and ammo, that haven't been migrated
+    /// Loot items (tier 1 melee and thrown weapons rolled in a narrower band too), rolled quest items, ammo, and
+    /// weapons whose weenie's speed changed, that haven't been migrated
     /// </summary>
     private static List<uint> GetCandidateIds()
     {
@@ -115,7 +116,7 @@ public class MigrateTierPower
             ctx.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
 
             var tiered = ctx
-                .BiotaPropertiesInt.Where(i => i.Type == (ushort)PropertyInt.Tier && i.Value >= 2)
+                .BiotaPropertiesInt.Where(i => i.Type == (ushort)PropertyInt.Tier && i.Value >= 1)
                 .Select(i => i.ObjectId)
                 .ToList();
 
@@ -126,12 +127,15 @@ public class MigrateTierPower
 
             var ammo = ctx.Biota.Where(i => i.WeenieType == (int)WeenieType.Ammunition).Select(i => i.Id).ToList();
 
+            var respeeded = LootGenerationFactory.PreviousWeenieWeaponTime.Keys.ToList();
+            var speedChanged = ctx.Biota.Where(i => respeeded.Contains(i.WeenieClassId)).Select(i => i.Id).ToList();
+
             var done = ctx
                 .BiotaPropertiesBool.Where(i => i.Type == (ushort)PropertyBool.TierPowerMigrated && i.Value)
                 .Select(i => i.ObjectId)
                 .ToHashSet();
 
-            return tiered.Concat(questItems).Concat(ammo).Distinct().Where(i => !done.Contains(i)).OrderBy(i => i).ToList();
+            return tiered.Concat(questItems).Concat(ammo).Concat(speedChanged).Distinct().Where(i => !done.Contains(i)).OrderBy(i => i).ToList();
         }
     }
 }

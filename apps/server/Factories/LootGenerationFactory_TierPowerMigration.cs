@@ -64,37 +64,46 @@ public static partial class LootGenerationFactory
         else
         {
             var tier = GetTierPowerMigrationTier(wo);
+            var quest = wo.Tier is not > 0;
+            var meleeOrThrown = wo.WeenieType is not (WeenieType.Caster or WeenieType.MissileLauncher)
+                && (wo.ItemType == ItemType.MeleeWeapon || wo.WeenieType == WeenieType.Missile);
 
-            if (tier < 2)
+            // a weapon whose weenie's speed changed takes the new speed, whatever its tier
+            var previousWeaponTime = MigrateWeaponSpeed(wo, changes);
+
+            // melee and thrown weapons rolled tier 1 in a narrower band too
+            if (meleeOrThrown && tier >= 1)
             {
-                return false;
+                MigrateWeaponDamage(wo, tier, quest, previousWeaponTime, changes);
             }
 
-            var quest = wo.Tier is not > 0;
-
-            switch (wo.WeenieType)
+            if (tier >= 2)
             {
-                case WeenieType.Caster:
-                    MigrateCaster(wo, tier, changes);
-                    break;
-                case WeenieType.MissileLauncher:
-                    MigrateLauncher(wo, tier, changes);
-                    break;
-                default:
-                    if (wo.ItemType == ItemType.MeleeWeapon || wo.WeenieType == WeenieType.Missile)
-                    {
-                        MigrateWeaponDamage(wo, tier, changes);
-                    }
-                    else if (wo.ItemType == ItemType.Jewelry)
-                    {
-                        MigrateJewelryWard(wo, tier, quest, changes);
-                    }
-                    else if (wo.ItemType is ItemType.Armor or ItemType.Clothing)
-                    {
-                        MigrateArmorLevel(wo, tier, quest, changes);
-                        MigrateArmorWard(wo, tier, quest, changes);
-                    }
-                    break;
+                switch (wo.WeenieType)
+                {
+                    case WeenieType.Caster:
+                        MigrateCaster(wo, tier, changes);
+                        break;
+                    case WeenieType.MissileLauncher:
+                        MigrateLauncher(wo, tier, changes);
+                        break;
+                    default:
+                        if (wo.ItemType == ItemType.Jewelry)
+                        {
+                            MigrateJewelryWard(wo, tier, quest, changes);
+                        }
+                        else if (wo.ItemType is ItemType.Armor or ItemType.Clothing)
+                        {
+                            MigrateArmorLevel(wo, tier, quest, changes);
+                            MigrateArmorWard(wo, tier, quest, changes);
+                        }
+                        break;
+                }
+            }
+
+            if (changes.Count == before && tier < 2)
+            {
+                return false;
             }
         }
 
@@ -104,24 +113,101 @@ public static partial class LootGenerationFactory
     }
 
     /// <summary>
-    /// Melee and thrown weapons: damage, and the untinkered damage, times the tier's weapon scale
+    /// The WeaponTime of the weenies whose speed the rework changed, before it (world-db): the two-handers' loot and
+    /// quest weapons, and the thrown loot weapons
     /// </summary>
-    private static void MigrateWeaponDamage(WorldObject wo, int tier, List<string> changes)
+    internal static readonly Dictionary<uint, int> PreviousWeenieWeaponTime = new[]
+        {
+            (83, new uint[]
+            {
+                40618, 40619, 40620, 40621, 40622, 40760, 40761, 40762, 40763, 40764, 40818, 40819, 40820, 40821, 40822,
+                41036, 41037, 41038, 41039, 41040, 41046, 41047, 41048, 41049, 41050, 41067, 41068, 41069, 41070, 41071,
+                1054204, // Warden's Greatsword
+            }),
+            (95, new uint[]
+            {
+                40623, 40624, 40625, 40626, 40627, 40635, 40636, 40637, 40638, 40639, 41041, 41042, 41043, 41044, 41045,
+                41052, 41053, 41054, 41055, 41056, 41057, 41058, 41059, 41060, 41061, 41062, 41063, 41064, 41065, 41066,
+            }),
+            (111, new uint[] { 317, 3790, 3791, 3792, 3793 }),
+            (112, new uint[] { 315, 343, 3782, 3783, 3784, 3785, 3786, 3787, 3788, 3789, 3861, 3862, 3863, 3864 }),
+            (120, new uint[] { 304, 310, 316, 320, 3758, 3759, 3760, 3761, 3770, 3771, 3772, 3773, 3798, 3799, 3800, 3801 }),
+        }
+        .SelectMany(group => group.Item2.Select(wcid => (Wcid: wcid, WeaponTime: group.Item1)))
+        .ToDictionary(entry => entry.Wcid, entry => entry.WeaponTime);
+
+    /// <summary>
+    /// A weapon whose weenie's speed changed takes the new speed, keeping its own share of it (loot's +-5% roll, Iron
+    /// tinks). Returns the weenie's speed before the rework, which the weapon's damage was rolled for.
+    /// </summary>
+    private static int MigrateWeaponSpeed(WorldObject wo, List<string> changes)
+    {
+        // an item restored from the shard has no Weenie of its own
+        var weenie = wo.Weenie ?? DatabaseManager.World?.GetCachedWeenie(wo.WeenieClassId);
+        var weenieTime = weenie?.GetProperty(PropertyInt.WeaponTime) ?? 0;
+
+        if (!PreviousWeenieWeaponTime.TryGetValue(wo.WeenieClassId, out var previousTime) || weenieTime <= 0 || weenieTime == previousTime)
+        {
+            return weenieTime > 0 ? weenieTime : wo.WeaponTime ?? 0;
+        }
+
+        var ratio = (double)weenieTime / previousTime;
+
+        if (wo.WeaponTime is > 0)
+        {
+            var weaponTime = (int)Math.Round(wo.WeaponTime.Value * ratio);
+            changes.Add($"WeaponTime {wo.WeaponTime} => {weaponTime}");
+            wo.WeaponTime = weaponTime;
+        }
+
+        if (wo.BaseWeaponTime is > 0)
+        {
+            wo.BaseWeaponTime = (int)Math.Round(wo.BaseWeaponTime.Value * ratio);
+        }
+
+        return previousTime;
+    }
+
+    /// <summary>
+    /// Melee and thrown weapons: the untinkered damage keeps its place in its tier's range, from the 25% band it rolled
+    /// in at its old speed to the x1-x2 range at its new one (GetMeleeDamageRollRange), with its tinks' share on top.
+    /// A rolled quest weapon rolls again from its stored roll quality.
+    /// </summary>
+    private static void MigrateWeaponDamage(WorldObject wo, int tier, bool quest, int previousWeaponTime, List<string> changes)
     {
         if (wo.Damage is not > 0)
         {
             return;
         }
 
-        var scale = TierPower.GetWeaponScale(tier);
-        var damage = (int)Math.Round(wo.Damage.Value * scale);
+        var newRange = GetMeleeDamageRollRange(wo, tier);
+        if (newRange.Maximum <= 0)
+        {
+            return;
+        }
+
+        var baseDamage = wo.BaseDamage is > 0 ? wo.BaseDamage.Value : wo.Damage.Value;
+        double newBaseDamage;
+
+        if (quest && wo.QuestItemRollQuality is { } quality)
+        {
+            newBaseDamage = QuestItemMutation.GetRollValue(Math.Round(newRange.Minimum), Math.Round(newRange.Maximum), quality);
+        }
+        else
+        {
+            var previousRange = GetPreviousMeleeDamageRange(wo, tier, previousWeaponTime);
+            var position = Math.Clamp(TierPower.GetRollPosition(baseDamage, previousRange), 0.0, 1.0);
+            newBaseDamage = newRange.Minimum + (newRange.Maximum - newRange.Minimum) * position;
+        }
+
+        var damage = (int)Math.Round(ApplyTinkShare(wo.Damage.Value, baseDamage, newBaseDamage), MidpointRounding.AwayFromZero);
 
         changes.Add($"Damage {wo.Damage} => {damage}");
         wo.Damage = damage;
 
         if (wo.BaseDamage is > 0)
         {
-            wo.BaseDamage = (int)Math.Round(wo.BaseDamage.Value * scale);
+            wo.BaseDamage = (int)Math.Round(newBaseDamage, MidpointRounding.AwayFromZero);
         }
     }
 
