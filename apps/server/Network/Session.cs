@@ -74,6 +74,28 @@ public class Session
     private Queue<(uint DatFileId, DatDatabaseType DatDatabaseType)> dddDataQueue;
 
     /// <summary>
+    /// Files currently waiting in dddDataQueue. The client counts every DDD data byte it receives toward the BeginDDD total,
+    /// so sending a file twice makes it think patching finished before the queue is actually drained.
+    /// </summary>
+    private readonly HashSet<(uint DatFileId, DatDatabaseType DatDatabaseType)> dddDataQueued = new();
+
+    private readonly object dddDataQueueLock = new();
+
+    /// <summary>
+    /// The number of DAT files still waiting to be sent to the client
+    /// </summary>
+    public int DDDQueueCount
+    {
+        get
+        {
+            lock (dddDataQueueLock)
+            {
+                return dddDataQueue?.Count ?? 0;
+            }
+        }
+    }
+
+    /// <summary>
     /// The rate at which ProcessDDDQueue executes (and sends DDD patch data out to client)
     /// </summary>
     private static readonly RateLimiter dddDataQueueRateLimiter = new RateLimiter(1000, TimeSpan.FromSeconds(1));
@@ -415,15 +437,24 @@ public class Session
     /// </summary>
     public bool AddToDDDQueue(uint datFileId, DatDatabaseType datDatabaseType)
     {
-        if (dddDataQueue == null)
+        lock (dddDataQueueLock)
         {
-            dddDataQueue = new();
+            if (dddDataQueue == null)
+            {
+                dddDataQueue = new();
+            }
+
+            // already waiting to be sent, don't send it twice
+            if (!dddDataQueued.Add((datFileId, datDatabaseType)))
+            {
+                return false;
+            }
+
+            //Network.EnqueueSend(new GameMessageDDDDataMessage(datFileId, datDatabaseType);
+            dddDataQueue.Enqueue((datFileId, datDatabaseType));
+
+            return true;
         }
-
-        //Network.EnqueueSend(new GameMessageDDDDataMessage(datFileId, datDatabaseType);
-        dddDataQueue.Enqueue((datFileId, datDatabaseType));
-
-        return true;
     }
 
     /// <summary>
@@ -452,7 +483,17 @@ public class Session
             BeginDDDSentTime = DateTime.MinValue;
         }
 
-        var success = dddDataQueue.TryDequeue(out var dataFile);
+        bool success;
+        (uint DatFileId, DatDatabaseType DatDatabaseType) dataFile;
+        lock (dddDataQueueLock)
+        {
+            success = dddDataQueue.TryDequeue(out dataFile);
+            if (success)
+            {
+                dddDataQueued.Remove(dataFile);
+            }
+        }
+
         if (success)
         {
             //Console.WriteLine($"{Account}.ProcessDDDQueue: 0x{dataFile.DatFileId:X8}, {dataFile.DatDatabaseType}; Remaining in Queue: {dddDataQueue.Count}");
