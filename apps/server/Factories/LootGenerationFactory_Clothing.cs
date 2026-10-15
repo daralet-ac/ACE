@@ -5,6 +5,7 @@ using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
@@ -241,16 +242,46 @@ public static partial class LootGenerationFactory
             return;
         }
 
-        var baseArmorLevel = wo.ArmorLevel ?? 75;
-
         if (tier < 2)
         {
             return;
         }
 
         var armorSlots = wo.ArmorSlots ?? 1;
+        var (styleArmorLevel, baseWardLevel) = GetArmorBaseLevels(wo);
+        var baseArmorLevel = styleArmorLevel ?? wo.ArmorLevel ?? 75;
 
-        // Get Armor/Ward Level
+        // Final Calculation, in the tier's ranges (TierPower): armor and ward double every tier. A shield's armor level
+        // feeds the block check rather than damage mitigation, so it keeps the ranges from before the tier rework.
+        var (armorLevelMinimum, armorLevelMaximum) = wo.IsShield
+            ? TierPower.GetShieldArmorRollRange(baseArmorLevel, tier)
+            : TierPower.GetArmorRollRange(baseArmorLevel, tier);
+        var (wardLevelMinimum, wardLevelMaximum) = TierPower.GetWardRollRange(baseWardLevel, tier);
+
+        var newArmorLevel = armorLevelMinimum + GetDiminishingRoll(treasureDeath) * (armorLevelMaximum - armorLevelMinimum);
+        var newWardLevel = (wardLevelMinimum + GetDiminishingRoll(treasureDeath) * (wardLevelMaximum - wardLevelMinimum)) * armorSlots;
+
+        // Assign levels
+        wo.SetProperty(PropertyInt.ArmorLevel, (int)newArmorLevel);
+        wo.SetProperty(PropertyInt.WardLevel, (int)newWardLevel);
+
+        // tier 8 Covenant tops out at 12800
+        if ((wo.ResistMagic == null || wo.ResistMagic < 9999) && wo.ArmorLevel > 13000)
+        {
+            _log.Warning($"[LOOT] Standard armor item exceeding upper AL threshold {wo.WeenieClassId} - {wo.Name}");
+        }
+    }
+
+    /// <summary>
+    /// The base armor level and per-slot base ward level a loot armor piece's tier ranges are built from (TierPower),
+    /// by its armor style, shield type and weight class. The armor level is null for a style without one of its own,
+    /// which builds on its weenie's armor level.
+    /// </summary>
+    internal static (int? ArmorLevel, int WardLevel) GetArmorBaseLevels(WorldObject wo)
+    {
+        int? baseArmorLevel = null;
+
+        // Ward Level by weight class
         var baseWardLevel = wo.ArmorWeightClass switch
         {
             (int)ArmorWeightClass.Cloth => 6,
@@ -323,18 +354,54 @@ public static partial class LootGenerationFactory
                 break;
         }
 
-        // Final Calculation
-        var newArmorLevel = baseArmorLevel * (tier - 1) + GetDiminishingRoll(treasureDeath) * baseArmorLevel;
-        var newWardLevel = baseWardLevel * (tier - 1) * armorSlots + GetDiminishingRoll(treasureDeath) * baseWardLevel * armorSlots;
+        return (baseArmorLevel, baseWardLevel);
+    }
 
-        // Assign levels
-        wo.SetProperty(PropertyInt.ArmorLevel, (int)newArmorLevel);
-        wo.SetProperty(PropertyInt.WardLevel, (int)newWardLevel);
+    /// <summary>
+    /// An armor piece's armor level for workmanship, which is fitted to armor before the tier rework: its place in its
+    /// tier's range, in the range the tier had before. Shields and tier 1 armor didn't change.
+    /// </summary>
+    private static double GetPreviousScaleArmorLevel(WorldObject wo)
+    {
+        var armorLevel = wo.ArmorLevel ?? 0;
+        var tier = wo.Tier ?? 1;
+        var (styleArmorLevel, _) = GetArmorBaseLevels(wo);
 
-        if ((wo.ResistMagic == null || wo.ResistMagic < 9999) && wo.ArmorLevel >= 1000)
+        if (tier < 2 || wo.IsShield || styleArmorLevel is not { } baseArmorLevel)
         {
-            _log.Warning($"[LOOT] Standard armor item exceeding upper AL threshold {wo.WeenieClassId} - {wo.Name}");
+            return armorLevel;
         }
+
+        return TierPower.MapToRange(
+            armorLevel,
+            TierPower.GetArmorRollRange(baseArmorLevel, tier),
+            TierPower.GetPreviousArmorRollRange(baseArmorLevel, tier)
+        );
+    }
+
+    /// <summary>
+    /// An armor piece's ward level for workmanship, on the scale before the tier rework (see GetPreviousScaleArmorLevel)
+    /// </summary>
+    private static double GetPreviousScaleWardLevel(WorldObject wo)
+    {
+        var wardLevel = wo.WardLevel ?? 0;
+        var tier = wo.Tier ?? 1;
+
+        if (tier < 2)
+        {
+            return wardLevel;
+        }
+
+        var armorSlots = wo.ArmorSlots ?? 1;
+        var (_, baseWardLevel) = GetArmorBaseLevels(wo);
+        var (minimum, maximum) = TierPower.GetWardRollRange(baseWardLevel, tier);
+        var (previousMinimum, previousMaximum) = TierPower.GetPreviousArmorRollRange(baseWardLevel, tier);
+
+        return TierPower.MapToRange(
+            wardLevel,
+            (minimum * armorSlots, maximum * armorSlots),
+            (previousMinimum * armorSlots, previousMaximum * armorSlots)
+        );
     }
 
     private static WorldObject CreateSocietyArmor(TreasureDeath profile, bool mutate = true)
@@ -1251,7 +1318,7 @@ public static partial class LootGenerationFactory
         {
             if (wo.ArmorLevel > 0 && maxArmorLevel > 0)
             {
-                armorLevelPercentile = (float)wo.ArmorLevel / maxArmorLevel;
+                armorLevelPercentile = (float)(GetPreviousScaleArmorLevel(wo) / maxArmorLevel);
                 armorLevelPercentile += protectionLevelPercentile;
                 armorLevelPercentile /= 2;
 
@@ -1273,7 +1340,7 @@ public static partial class LootGenerationFactory
         var wardLevelPercentile = 0.0f;
         if (wo.WardLevel > 0 && maxWardLevel > 0)
         {
-            wardLevelPercentile = (float)wo.WardLevel / maxWardLevel;
+            wardLevelPercentile = (float)(GetPreviousScaleWardLevel(wo) / maxWardLevel);
 
             sum += wardLevelPercentile;
             divisor++;

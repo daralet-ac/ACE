@@ -5,6 +5,7 @@ using ACE.Database;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Factories.Tables.Cantrips;
 using ACE.Server.WorldObjects;
@@ -121,16 +122,12 @@ public static partial class LootGenerationFactory
             return;
         }
 
-        var currentBaseStat = target.Damage.Value;
-        var currentTierMinimum = LootTables.GetMeleeSubtypeMinimumDamage(weaponSubtype, currentTier);
-        var currentRange = LootTables.GetMeleeSubtypeDamageRange(weaponSubtype, currentTier);
-        var currentRoll = currentBaseStat - currentTierMinimum;
-        var rollPercentile = (float)currentRoll / currentRange;
-
-        var newTierMinimum = LootTables.GetMeleeSubtypeMinimumDamage(weaponSubtype, newTier);
-        var newTierRange = LootTables.GetMeleeSubtypeDamageRange(weaponSubtype, newTier);
-        var amountAboveMinimum = newTierRange * rollPercentile;
-        var final = Convert.ToInt32(newTierMinimum + amountAboveMinimum);
+        // keeps its place in the range loot of its speed and variance rolls at each tier (GetMeleeDamageRollRange)
+        var final = Convert.ToInt32(TierPower.MapToRange(
+            target.Damage.Value,
+            GetMeleeDamageRollRange(target, currentTier + 1),
+            GetMeleeDamageRollRange(target, newTier + 1)
+        ));
 
         target.SetProperty(PropertyInt.Damage, final);
     }
@@ -163,12 +160,11 @@ public static partial class LootGenerationFactory
             return;
         }
 
-        var magicSkill = target.WieldSkillType2 == 34 ? Skill.WarMagic : Skill.LifeMagic;
-        var elementalDamageMod = target.ElementalDamageMod.Value;
-        var restorationSpellMod = target.WeaponRestorationSpellsMod.Value;
+        // war and Nether (Life) casters roll the elemental damage mod on the same ladder, with restoration at the same
+        // place on its own ladder (TierPower)
+        var nether = target.WieldSkillType2 != (int)Skill.WarMagic;
 
-        // a life caster keeps half of its war-scale roll, so double it back before comparing against the caster table
-        var currentBaseStat = magicSkill == Skill.WarMagic ? elementalDamageMod : 1 + (restorationSpellMod - 1) * 2;
+        var currentBaseStat = target.ElementalDamageMod.Value;
         var currentTierMinimum = LootTables.GetMissileCasterSubtypeMinimumDamage(weaponSubtype, currentTier);
         var currentRange = LootTables.GetMissileCasterSubtypeDamageRange(weaponSubtype, currentTier);
         var currentRoll = currentBaseStat - currentTierMinimum;
@@ -179,16 +175,8 @@ public static partial class LootGenerationFactory
         var amountAboveMinimum = newTierRange * rollPercentile;
         var final = newTierMinimum + amountAboveMinimum;
 
-        if (magicSkill == Skill.WarMagic)
-        {
-            target.SetProperty(PropertyFloat.ElementalDamageMod, final);
-            target.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, 1 + (final - 1) / 4);
-        }
-        else
-        {
-            target.SetProperty(PropertyFloat.ElementalDamageMod, 1 + (final - 1) / 2);
-            target.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, 1 + (final - 1) / 2);
-        }
+        target.SetProperty(PropertyFloat.ElementalDamageMod, final);
+        target.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, QuestItemMutation.GetCasterRestorationMod(newTier, final, nether));
     }
 
     private static void ScaleUpElementalMod(WorldObject target, LootTables.WeaponSubtype weaponSubtype, int currentTier, int newTier)
@@ -219,16 +207,13 @@ public static partial class LootGenerationFactory
             return;
         }
 
-        var currentBaseStat = target.WeaponRestorationSpellsMod.Value;
-        var currentTierMinimum = LootTables.GetMissileCasterSubtypeMinimumDamage(weaponSubtype, currentTier);
-        var currentRange = LootTables.GetMissileCasterSubtypeDamageRange(weaponSubtype, currentTier);
-        var currentRoll = currentBaseStat - currentTierMinimum;
-        var rollPercentile = (float)currentRoll / currentRange;
-
-        var newTierMinimum = LootTables.GetMissileCasterSubtypeMinimumDamage(weaponSubtype, newTier);
-        var newTierRange = LootTables.GetMissileCasterSubtypeDamageRange(weaponSubtype, newTier);
-        var amountAboveMinimum = newTierRange * rollPercentile;
-        var final = newTierMinimum + amountAboveMinimum;
+        // a caster with only a restoration mod keeps its place on its war or Nether restoration ladder (TierPower)
+        var nether = target.WieldSkillType2 != (int)Skill.WarMagic;
+        var final = TierPower.MapToRange(
+            target.WeaponRestorationSpellsMod.Value,
+            QuestItemMutation.GetCasterRestorationRange(currentTier, nether),
+            QuestItemMutation.GetCasterRestorationRange(newTier, nether)
+        );
 
         target.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, final);
     }
@@ -319,15 +304,27 @@ public static partial class LootGenerationFactory
         }
 
         var armorStyleBaseArmorLevel = LootTables.GetArmorStyleBaseArmorLevel(target.ArmorStyle);
-
         var currentLevel = target.ArmorLevel.Value;
-        var currentTierMinimum = armorStyleBaseArmorLevel * Math.Clamp(currentTier, 1, 7);
-        var rolledAmount = currentLevel - currentTierMinimum;
 
-        var newTierMinimum = armorStyleBaseArmorLevel * Math.Clamp(newTier, 1, 7);
-        var final = newTierMinimum + rolledAmount;
+        // a shield's armor feeds the block check, so it keeps the tier ranges from before the tier rework: one base a tier
+        if (target.IsShield)
+        {
+            var currentTierMinimum = armorStyleBaseArmorLevel * Math.Clamp(currentTier, 1, 7);
+            var newTierMinimum = armorStyleBaseArmorLevel * Math.Clamp(newTier, 1, 7);
 
-        target.SetProperty(PropertyInt.ArmorLevel, final);
+            target.SetProperty(PropertyInt.ArmorLevel, newTierMinimum + (currentLevel - currentTierMinimum));
+            return;
+        }
+
+        // body armor keeps its place in its tier's range, which doubles every tier (TierPower), so the roll and any
+        // tinks scale with it
+        var final = TierPower.MapToRange(
+            currentLevel,
+            TierPower.GetArmorRollRange(armorStyleBaseArmorLevel, Math.Clamp(currentTier, 1, 7) + 1),
+            TierPower.GetArmorRollRange(armorStyleBaseArmorLevel, Math.Clamp(newTier, 1, 7) + 1)
+        );
+
+        target.SetProperty(PropertyInt.ArmorLevel, (int)Math.Round(final));
     }
 
     private static void ScaleUpWardLevel(WorldObject target, int currentTier, int newTier)
@@ -345,12 +342,17 @@ public static partial class LootGenerationFactory
         var currentLevel = target.WardLevel.Value;
         var armorSlots = target.ArmorSlots ?? 1;
 
-        // each tier adds one base per slot; adding the difference keeps the roll's odd points that dividing by slots dropped
-        var currentTierMinimum = armorStyleBaseWardLevel * Math.Clamp(currentTier, 1, 7);
-        var newTierMinimum = armorStyleBaseWardLevel * Math.Clamp(newTier, 1, 7);
-        var final = currentLevel + (newTierMinimum - currentTierMinimum) * armorSlots;
+        // ward keeps its place in its tier's range, which doubles every tier (TierPower), so the roll and any tinks
+        // scale with it
+        var (currentMinimum, currentMaximum) = TierPower.GetWardRollRange(armorStyleBaseWardLevel, Math.Clamp(currentTier, 1, 7) + 1);
+        var (newMinimum, newMaximum) = TierPower.GetWardRollRange(armorStyleBaseWardLevel, Math.Clamp(newTier, 1, 7) + 1);
+        var final = TierPower.MapToRange(
+            currentLevel,
+            (currentMinimum * armorSlots, currentMaximum * armorSlots),
+            (newMinimum * armorSlots, newMaximum * armorSlots)
+        );
 
-        target.SetProperty(PropertyInt.WardLevel, final);
+        target.SetProperty(PropertyInt.WardLevel, (int)Math.Round(final));
     }
 
     private static void ScaleUpArmorSkillMod(PropertyFloat property, WorldObject target, int currentTier, int newTier)

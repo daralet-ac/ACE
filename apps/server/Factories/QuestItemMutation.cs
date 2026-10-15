@@ -1,5 +1,6 @@
 using System;
 using ACE.Entity.Enum;
+using ACE.Server.Entity;
 
 namespace ACE.Server.Factories;
 
@@ -66,37 +67,71 @@ public static class QuestItemMutation
     }
 
     /// <summary>
-    /// Life casters keep half of what a war caster rolls above 1.0.
+    /// The range a caster's elemental damage mod rolls in at tier index t: the multiplier ladder (TierPower), the
+    /// same for war and Nether (Life) casters.
     /// </summary>
-    public static double ToLifeCasterScale(double warCasterMod)
+    public static (double Min, double Max) GetCasterDamageModRange(int tier)
     {
-        return 1 + (warCasterMod - 1) / 2;
+        return TierPower.GetMultiplierRange(tier + 1);
     }
 
     /// <summary>
-    /// A war caster's restoration mod is a quarter of its elemental roll above 1.0.
+    /// The range a caster's restoration mod rolls in at tier index t, on the war or Nether ladder (TierPower)
     /// </summary>
-    public static double GetWarCasterRestorationMod(double elementalDamageMod)
+    public static (double Min, double Max) GetCasterRestorationRange(int tier, bool nether)
     {
-        return 1 + (elementalDamageMod - 1) / 4;
+        return nether ? TierPower.GetNetherRestorationRange(tier + 1) : TierPower.GetWarRestorationRange(tier + 1);
     }
 
     /// <summary>
-    /// Loot armor rolls between base x t and base x (t + 1) Armor Level at tier index t (AssignArmorLevel).
+    /// A caster's restoration mod, at the same place in its range as its elemental damage mod is in its own.
+    /// </summary>
+    public static double GetCasterRestorationMod(int tier, double elementalDamageMod, bool nether)
+    {
+        var position = TierPower.GetRollPosition(elementalDamageMod, GetCasterDamageModRange(tier));
+
+        return TierPower.GetRestorationForRoll(tier + 1, position, nether);
+    }
+
+    /// <summary>
+    /// The Armor Level loot armor rolls in at tier index t (AssignArmorLevel): doubling every tier from tier 2
+    /// (TierPower). Tier 1 keeps 0 to base.
     /// </summary>
     public static (int Min, int Max) GetArmorLevelRange(int baseArmorLevel, int tier)
+    {
+        if (tier <= 0)
+        {
+            return (0, baseArmorLevel);
+        }
+
+        var (minimum, maximum) = TierPower.GetArmorRollRange(baseArmorLevel, tier + 1);
+
+        return ((int)minimum, (int)maximum);
+    }
+
+    /// <summary>
+    /// The Armor Level a loot shield rolls in at tier index t: base x t to base x (t + 1), as before the tier rework,
+    /// since a shield's armor feeds the block check rather than damage mitigation.
+    /// </summary>
+    public static (int Min, int Max) GetShieldArmorLevelRange(int baseArmorLevel, int tier)
     {
         return (baseArmorLevel * tier, baseArmorLevel * (tier + 1));
     }
 
     /// <summary>
-    /// Loot armor carries base x t Ward Level per armor slot at tier index t, plus up to one more base per slot (AssignArmorLevel).
+    /// The Ward Level loot armor rolls in at tier index t, per armor slot (AssignArmorLevel): doubling every tier
+    /// from tier 2 (TierPower). Tier 1 keeps 0 to one base per slot.
     /// </summary>
     public static (int Min, int Max) GetWardLevelRange(int baseWardLevel, int tier, int armorSlots)
     {
-        var min = baseWardLevel * tier * armorSlots;
+        if (tier <= 0)
+        {
+            return (0, baseWardLevel * armorSlots);
+        }
 
-        return (min, min + baseWardLevel * armorSlots);
+        var (minimum, maximum) = TierPower.GetWardRollRange(baseWardLevel, tier + 1);
+
+        return ((int)minimum * armorSlots, (int)maximum * armorSlots);
     }
 
     /// <summary>

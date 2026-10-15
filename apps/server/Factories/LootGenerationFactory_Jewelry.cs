@@ -3,6 +3,7 @@ using System.Linq;
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Tables;
 using ACE.Server.WorldObjects;
@@ -104,6 +105,24 @@ public static partial class LootGenerationFactory
         return false;
     }
 
+    /// <summary>
+    /// A jewelry ward roll for workmanship, which is fitted to jewelry ward before the tier rework: the roll's place in
+    /// its tier's previous range, against the previous best tier 8 roll
+    /// </summary>
+    internal static float GetJewelryWardPercentile(int wardLevel, int tier, int necklaceMultiplier)
+    {
+        var t = Math.Clamp(tier, 1, 8);
+        var range = ((double)GetBaseWardOfTier(t) * necklaceMultiplier, (double)GetBaseWardOfTier(t + 1) * necklaceMultiplier);
+        var previousRange = (
+            (double)TierPower.GetPreviousJewelryBaseWard(t) * necklaceMultiplier,
+            (double)TierPower.GetPreviousJewelryBaseWard(t + 1) * necklaceMultiplier
+        );
+
+        var previousWard = range.Item2 > range.Item1 ? TierPower.MapToRange(wardLevel, range, previousRange) : wardLevel;
+
+        return (float)(previousWard / (TierPower.GetPreviousJewelryBaseWard(9) * necklaceMultiplier));
+    }
+
     private static bool TryMutateJewelryMods(
         WorldObject wo,
         TreasureDeath td,
@@ -124,7 +143,7 @@ public static partial class LootGenerationFactory
         var range = maxWardOfTier - baseWardOfTier;
 
         wo.WardLevel = (int)Math.Max(1, (baseWardOfTier + range * GetDiminishingRoll(td)));
-        var maxWardRollPercentile = (float)wo.WardLevel / ((GetBaseWardOfTier(9)) * necklaceMulti);
+        var maxWardRollPercentile = GetJewelryWardPercentile(wo.WardLevel.Value, tier, necklaceMulti);
 
         // Necklaces
         if (jewelryType == EquipMask.NeckWear)

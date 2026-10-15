@@ -223,10 +223,7 @@ public partial class DamageEvent
             return;
         }
 
-        var weaponDamageRollPercentile = DamageFormulas.GetBleedDamagePercentile(
-            Weapon.Damage.Value,
-            weaponTypeDamageRange.Value
-        );
+        var weaponDamageScale = DamageFormulas.GetBleedDamageScale(Weapon.Damage.Value, weaponTypeDamageRange.Value);
 
         var spell = new Spell(SpellId.Bleed);
 
@@ -235,7 +232,7 @@ public partial class DamageEvent
             return;
         }
 
-        spell.SpellStatModVal = powerLevel * weaponDamageRollPercentile;
+        spell.SpellStatModVal = powerLevel * weaponDamageScale;
 
         _defender.EnchantmentManager.Add(spell, _playerAttacker, Weapon);
         _defender.EnqueueBroadcast(new GameMessageScript(_defender.Guid, PlayScript.DirtyFightingDamageOverTime));

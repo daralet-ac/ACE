@@ -405,7 +405,13 @@ partial class SpellProjectile
         {
             Critical = criticalDamageMod,
             Attribute = hit.SourceCreature?.GetAttributeMod(hit.Weapon, true) ?? 1.0f,
-            Elemental = GetCasterElementalDamageModifier(hit.Weapon, hit.SourceCreature, hit.Target, Spell.DamageType),
+            Elemental = GetCasterElementalDamageModifier(
+                hit.Weapon,
+                hit.SourceCreature,
+                hit.Target,
+                Spell.DamageType,
+                Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile
+            ),
 
             // Possible 2x + damage bonus for the slayer property
             Slayer = GetWeaponCreatureSlayerModifier(hit.Weapon, hit.SourceCreature, hit.Target),

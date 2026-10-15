@@ -790,7 +790,7 @@ public partial class Creature : Container
                 break;
         }
 
-        var avgHealth = enemyHealth[tier] + (enemyHealth[tier + 1] - enemyHealth[tier]) * statWeight;
+        var avgHealth = TierPower.GetMonsterHealth(tier, statWeight);
 
         return (int)avgHealth;
     }

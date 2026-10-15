@@ -26,8 +26,21 @@ public class Salvage : WorldObject
     public const double MahoganyTinkPercent = 0.075; // of the untinkered Damage modifier (GetModTinkBonus)
     public const double GreenGarnetTinkPercent = 0.075; // of the untinkered Elemental Damage modifier
     public const double LavenderJadeTinkPercent = 0.075; // of the untinkered Restoration modifier
-    public const int SilverTinkWardLevel = 3;
-    public const int WhiteJadeTinkWardLevel = 1;
+    // ward tinks add a share of the untinkered Ward Level (BaseWard), as armor tinks do of the Armor Level, so they
+    // keep pace with ward as it doubles every tier
+    public const double SilverTinkWardPercent = 0.05;
+    public const double PyrealTinkWardPercent = 0.03;
+    public const double PyrealTinkArmorPercent = 0.03; // of the untinkered Armor Level
+    public const double WhiteJadeTinkWardPercent = 0.03;
+
+    /// <summary>
+    /// What one ward tink adds: a share of the untinkered Ward Level (BaseWard, or the current Ward Level if the item
+    /// has no snapshot), but never less than 1
+    /// </summary>
+    public static int GetWardTinkBonus(WorldObject target, double percent)
+    {
+        return Math.Max(1, (int)((target.BaseWard ?? target.WardLevel ?? 0) * percent));
+    }
 
     /// <summary>
     /// What one percentage tink on a launcher or caster mod adds: a share of the untinkered mod, as Iron adds a share
@@ -808,7 +821,7 @@ public class Salvage : WorldObject
                     }
                     break;
 
-                // Weapon - 0.5% MagicD Mod + 5% Damage | Armor - 2 Ward and 5% ArmorLevel
+                // Weapon - 0.5% MagicD Mod + 5% Damage | Armor - 3% Ward and 3% ArmorLevel
                 case ACE.Entity.Enum.MaterialType.Pyreal: // Pyreal
                     if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                     {
@@ -828,15 +841,16 @@ public class Salvage : WorldObject
                     }
                     if (target.ItemType == ItemType.Armor)
                     {
-                        target.WardLevel += 2;
-                        var armorBonus = (int)(target.BaseArmor * 0.05) < 1 ? 1 : (int)(target.BaseArmor * 0.05);
+                        var wardBonus = GetWardTinkBonus(target, PyrealTinkWardPercent);
+                        target.WardLevel += wardBonus;
+                        var armorBonus = (int)(target.BaseArmor * PyrealTinkArmorPercent) < 1 ? 1 : (int)(target.BaseArmor * PyrealTinkArmorPercent);
                         target.ArmorLevel += armorBonus;
 
-                        successAmount = $"raising its Armor by {armorBonus} and its Ward Level by 2";
+                        successAmount = $"raising its Armor by {armorBonus} and its Ward Level by {wardBonus}";
                     }
                     break;
 
-                // Weapon - 1% MagicD Mod | Armor - 3 Ward + 0.25% HP Regen
+                // Weapon - 1% MagicD Mod | Armor - 5% Ward + 0.25% HP Regen
                 case ACE.Entity.Enum.MaterialType.Silver: // Silver
                     if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                     {
@@ -853,11 +867,12 @@ public class Salvage : WorldObject
                     }
                     if (target.ItemType == ItemType.Armor)
                     {
-                        target.WardLevel += SilverTinkWardLevel;
+                        var wardBonus = GetWardTinkBonus(target, SilverTinkWardPercent);
+                        target.WardLevel += wardBonus;
                         target.ArmorHealthRegenMod += (0.0025 * armorSlots);
 
                         successAmount =
-                            $"raising its Ward Level by {SilverTinkWardLevel} and its Health Regeneration modifier by {0.25 * armorSlots}%";
+                            $"raising its Ward Level by {wardBonus} and its Health Regeneration modifier by {0.25 * armorSlots}%";
                     }
                     break;
 
@@ -1357,9 +1372,12 @@ public class Salvage : WorldObject
                     }
                     break;
                 case ACE.Entity.Enum.MaterialType.WhiteJade:
-                    target.WardLevel += WhiteJadeTinkWardLevel;
-                    successAmount = $"raising its Ward Level by {WhiteJadeTinkWardLevel}";
+                {
+                    var wardBonus = GetWardTinkBonus(target, WhiteJadeTinkWardPercent);
+                    target.WardLevel += wardBonus;
+                    successAmount = $"raising its Ward Level by {wardBonus}";
                     break;
+                }
 
                 /*   case ACE.Entity.Enum.MaterialType.Agate:
                        Console.WriteLine(Skill.ItemTinkering);

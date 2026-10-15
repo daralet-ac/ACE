@@ -589,12 +589,13 @@ public static partial class LootGenerationFactory
         {
             var (minimum, maximum) = GetQuestItemWardLevelRange(wo, tier);
             var floor = rolled ? 0 : wo.WardLevel.Value;
-            var wardTinks = tinks * (wo.ItemType == ItemType.Jewelry ? Salvage.WhiteJadeTinkWardLevel : Salvage.SilverTinkWardLevel * (wo.ArmorSlots ?? 1));
+            var wardTinkPercent = wo.ItemType == ItemType.Jewelry ? Salvage.WhiteJadeTinkWardPercent : Salvage.SilverTinkWardPercent;
+            int WardTinked(int value) => value + tinks * QuestItemMutation.GetPercentTinkBonus(value, wardTinkPercent);
 
             ranges.Add(new(
                 "Ward Level",
-                QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 0) + wardTinks,
-                QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 1) + wardTinks,
+                WardTinked(QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 0)),
+                WardTinked(QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 1)),
                 false,
                 rolled ? wo.QuestItemWardRollQuality : null
             ));
@@ -643,21 +644,17 @@ public static partial class LootGenerationFactory
                 return;
             }
 
-            double minimum = LootTables.CasterMinDamageMod[tier];
-            double maximum = LootTables.CasterMaxDamageMod[tier];
-            var isWar = IsQuestItemWarCaster(wo);
-
-            if (!isWar)
-            {
-                minimum = QuestItemMutation.ToLifeCasterScale(minimum);
-                maximum = QuestItemMutation.ToLifeCasterScale(maximum);
-            }
-
-            var floor = rolled ? 0 : isWar ? wo.ElementalDamageMod ?? wo.WeaponRestorationSpellsMod.Value : wo.WeaponRestorationSpellsMod ?? wo.ElementalDamageMod.Value;
+            // the shown stat is the one the caster's tinks go on: the elemental damage mod on the multiplier ladder, or
+            // the restoration mod on its war or Nether ladder (TierPower)
             var tinksElemental = QuestItemCasterTinksElementalDamageMod(wo);
+            var (minimum, maximum) = tinksElemental
+                ? QuestItemMutation.GetCasterDamageModRange(tier)
+                : QuestItemMutation.GetCasterRestorationRange(tier, !IsQuestItemWarCaster(wo));
+
+            var floor = rolled ? 0 : tinksElemental ? wo.ElementalDamageMod.Value : wo.WeaponRestorationSpellsMod.Value;
             var tinkPercent = tinksElemental ? Salvage.GreenGarnetTinkPercent : Salvage.LavenderJadeTinkPercent;
             double Tinked(double value) => value + tinks * Salvage.GetModTinkBonus(value, tinkPercent);
-            var rolledBase = isWar ? wo.BaseElementalDamageMod ?? wo.BaseWeaponRestorationSpellsMod : wo.BaseWeaponRestorationSpellsMod ?? wo.BaseElementalDamageMod;
+            var rolledBase = tinksElemental ? wo.BaseElementalDamageMod : wo.BaseWeaponRestorationSpellsMod;
 
             ranges.Add(new(
                 tinksElemental ? "Elemental Damage Bonus" : "Restoration Healing Bonus",
@@ -689,7 +686,7 @@ public static partial class LootGenerationFactory
         }
         else if (IsQuestItemDamageWeapon(wo, out _))
         {
-            var (minimum, maximum) = GetQuestItemDamageRange(subtype, tier);
+            var (minimum, maximum) = GetQuestItemDamageRange(wo, tier);
             var floor = rolled ? 0 : wo.Damage.Value;
             int Tinked(int value) => value + tinks * QuestItemMutation.GetPercentTinkBonus(value, Salvage.IronTinkPercent);
 
@@ -818,7 +815,7 @@ public static partial class LootGenerationFactory
             return false;
         }
 
-        var (minimumDamage, maximumDamage) = GetQuestItemDamageRange(weaponSubtype, tier);
+        var (minimumDamage, maximumDamage) = GetQuestItemDamageRange(wo, tier);
         var roll = GetDiminishingRoll(null, lootQuality);
 
         wo.Damage = QuestItemMutation.RollWholeMainStat(wo.Damage.Value, minimumDamage, maximumDamage, roll);
@@ -826,11 +823,14 @@ public static partial class LootGenerationFactory
         return true;
     }
 
-    private static (int Minimum, int Maximum) GetQuestItemDamageRange(LootTables.WeaponSubtype weaponSubtype, int tier)
+    /// <summary>
+    /// A quest weapon's Damage range at tier index t: what loot of its speed and variance rolls (GetMeleeDamageRollRange)
+    /// </summary>
+    private static (int Minimum, int Maximum) GetQuestItemDamageRange(WorldObject wo, int tier)
     {
-        var minimum = LootTables.GetMeleeSubtypeMinimumDamage(weaponSubtype, tier);
+        var (minimum, maximum) = GetMeleeDamageRollRange(wo, tier + 1);
 
-        return (minimum, minimum + LootTables.GetMeleeSubtypeDamageRange(weaponSubtype, tier));
+        return ((int)Math.Round(minimum), (int)Math.Round(maximum));
     }
 
     private static bool RollQuestItemCasterMainStat(WorldObject wo, LootTables.WeaponSubtype weaponSubtype, int tier, float lootQuality)
@@ -846,47 +846,29 @@ public static partial class LootGenerationFactory
             return false;
         }
 
-        double minimum = LootTables.CasterMinDamageMod[tier];
-        double maximum = LootTables.CasterMaxDamageMod[tier];
         var roll = GetDiminishingRoll(null, lootQuality);
+        var nether = !IsQuestItemWarCaster(wo);
 
-        if (IsQuestItemWarCaster(wo))
+        // war and Nether (Life) casters roll the elemental damage mod on the same ladder, with restoration at the same
+        // place on its own ladder, as on loot (TierPower)
+        if (wo.ElementalDamageMod != null)
         {
-            var rolled = QuestItemMutation.RollMainStat(wo.ElementalDamageMod ?? wo.WeaponRestorationSpellsMod.Value, minimum, maximum, roll);
-
-            if (wo.ElementalDamageMod == null)
-            {
-                wo.WeaponRestorationSpellsMod = rolled;
-                return true;
-            }
+            var (minimum, maximum) = QuestItemMutation.GetCasterDamageModRange(tier);
+            var rolled = QuestItemMutation.RollMainStat(wo.ElementalDamageMod.Value, minimum, maximum, roll);
 
             wo.ElementalDamageMod = rolled;
 
             if (wo.WeaponRestorationSpellsMod != null)
             {
-                wo.WeaponRestorationSpellsMod = QuestItemMutation.GetWarCasterRestorationMod(rolled);
+                wo.WeaponRestorationSpellsMod = QuestItemMutation.GetCasterRestorationMod(tier, rolled, nether);
             }
 
             return true;
         }
 
-        // life casters are authored on the life scale, with elemental matching restoration as on loot
-        var lifeRolled = QuestItemMutation.RollMainStat(
-            wo.WeaponRestorationSpellsMod ?? wo.ElementalDamageMod.Value,
-            QuestItemMutation.ToLifeCasterScale(minimum),
-            QuestItemMutation.ToLifeCasterScale(maximum),
-            roll
-        );
-
-        if (wo.WeaponRestorationSpellsMod != null)
-        {
-            wo.WeaponRestorationSpellsMod = lifeRolled;
-        }
-
-        if (wo.ElementalDamageMod != null)
-        {
-            wo.ElementalDamageMod = lifeRolled;
-        }
+        // a caster with only a restoration mod rolls it on its restoration ladder
+        var (restorationMinimum, restorationMaximum) = QuestItemMutation.GetCasterRestorationRange(tier, nether);
+        wo.WeaponRestorationSpellsMod = QuestItemMutation.RollMainStat(wo.WeaponRestorationSpellsMod.Value, restorationMinimum, restorationMaximum, roll);
 
         return true;
     }
@@ -923,7 +905,11 @@ public static partial class LootGenerationFactory
 
     private static (int Minimum, int Maximum) GetQuestItemArmorLevelRange(WorldObject wo, int tier)
     {
-        return QuestItemMutation.GetArmorLevelRange(LootTables.GetArmorStyleBaseArmorLevel(wo.ArmorStyle), tier);
+        var baseArmorLevel = LootTables.GetArmorStyleBaseArmorLevel(wo.ArmorStyle);
+
+        return wo.IsShield
+            ? QuestItemMutation.GetShieldArmorLevelRange(baseArmorLevel, tier)
+            : QuestItemMutation.GetArmorLevelRange(baseArmorLevel, tier);
     }
 
     private static bool RollQuestItemWardLevel(WorldObject wo, int tier, float lootQuality)
@@ -970,7 +956,7 @@ public static partial class LootGenerationFactory
         {
             if (IsQuestItemDamageWeapon(wo, out var subtype))
             {
-                var (minimum, maximum) = GetQuestItemDamageRange(subtype, tier);
+                var (minimum, maximum) = GetQuestItemDamageRange(wo, tier);
                 damage = wo.Damage.Value - QuestItemMutation.GetRollValue(minimum, maximum, quality);
             }
             else if (IsQuestItemArmor(wo) && wo.ArmorLevel is > 0)
@@ -995,7 +981,7 @@ public static partial class LootGenerationFactory
 
         if (offsets.Damage is { } damage && IsQuestItemDamageWeapon(wo, out var subtype))
         {
-            var (minimum, maximum) = GetQuestItemDamageRange(subtype, tier);
+            var (minimum, maximum) = GetQuestItemDamageRange(wo, tier);
             wo.Damage = Round(QuestItemMutation.GetRollValue(minimum, maximum, wo.QuestItemRollQuality.Value) + damage);
         }
 
@@ -1105,10 +1091,9 @@ public static partial class LootGenerationFactory
 
         if (wo.BaseWard is > 0)
         {
-            // ward scales with armor slots, so armor gets Silver's ward once per slot
-            wo.WardLevel += wo.ItemType == ItemType.Jewelry
-                ? tinks * Salvage.WhiteJadeTinkWardLevel
-                : tinks * Salvage.SilverTinkWardLevel * (wo.ArmorSlots ?? 1);
+            // a share of the untinkered ward, as Silver (armor) or White Jade (jewelry) adds
+            var wardTinkPercent = wo.ItemType == ItemType.Jewelry ? Salvage.WhiteJadeTinkWardPercent : Salvage.SilverTinkWardPercent;
+            wo.WardLevel += tinks * QuestItemMutation.GetPercentTinkBonus(wo.BaseWard.Value, wardTinkPercent);
         }
     }
 }

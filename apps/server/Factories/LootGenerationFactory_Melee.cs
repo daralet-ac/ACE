@@ -1,8 +1,12 @@
 using System;
 using System.Linq;
 using ACE.Common;
+using ACE.Database;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
+using ACE.Entity.Models;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
@@ -155,13 +159,13 @@ public static partial class LootGenerationFactory
         wo.WieldSkillType2 = GetWeaponWieldSkill(wo.WeaponSkill);
 
         // Max damage
-        TryMutateMeleeWeaponDamage(wo, roll, profile, out var maxPossibleDamage);
+        TryMutateMeleeWeaponDamage(wo, roll, profile, out var maxPossibleDamage, out var previousScaleDamage);
 
         // Variance (min damage)
         var baseVariance = wo.DamageVariance ?? 1.0f;
         wo.DamageVariance = baseVariance + ThreadSafeRandom.Next(-0.1f, 0.1f);
 
-        var damagePercentile = ((float)wo.Damage / maxPossibleDamage);
+        var damagePercentile = (float)(previousScaleDamage / maxPossibleDamage);
 
         // weapon speed
         if (wo.WeaponTime != null)
@@ -1648,10 +1652,12 @@ public static partial class LootGenerationFactory
         WorldObject wo,
         TreasureRoll roll,
         TreasureDeath profile,
-        out int maxPossibleDamage
+        out int maxPossibleDamage,
+        out double previousScaleDamage
     )
     {
         maxPossibleDamage = 0;
+        previousScaleDamage = 0;
 
         if (wo.DamageVariance == null)
         {
@@ -1675,22 +1681,16 @@ public static partial class LootGenerationFactory
             return;
         }
 
-        // target dps per tier
-        var targetBaseDps = GetWeaponBaseDps(wo.Tier ?? 1);
+        // roll and assign weapon damage, within the tier's range for this weapon's speed and variance
+        var (minimumDamage, maximumDamage) = GetMeleeDamageRollRange(wo, profile.Tier);
+        wo.Damage = (int)Math.Round(minimumDamage + (maximumDamage - minimumDamage) * GetDiminishingRoll(profile));
+
+        // workmanship is fitted to the narrower band weapons rolled in before: score the roll at its place there
+        previousScaleDamage = GetPreviousBandDamage(wo.Damage.Value, (minimumDamage, maximumDamage));
 
         // hits per second (two-handed weapons deal one hit per swing, multi-strike weapons deal one per strike)
         var effectiveAttacksPerSecond = GetWeaponHitsPerSecond(wo, profile.Tier);
-
-        // target weapon hit damage
-        var targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
-
-        // find average max damage, considering variance and critical strikes
         var weaponVariance = wo.DamageVariance.Value;
-        var averageBaseMaxDamage = targetAverageHitDamage / ((((1 - weaponVariance) + 1) / 2 * 0.9) + 0.2);
-
-        // roll and assign weapon damage, within the tier's range around that average
-        var finalMaxDamage = RollTierDamage(averageBaseMaxDamage, GetDiminishingRoll(profile));
-        wo.Damage = (int)Math.Round(finalMaxDamage);
 
         // debug
         //var averageDamage = (averageBaseMaxDamage + (averageBaseMaxDamage * (1 - weaponVariance))) / 2;
@@ -1711,11 +1711,50 @@ public static partial class LootGenerationFactory
         //    $" Average Hit Damage with Crits: {averageDamageWithCrits}\n" +
         //    $" Avg DPS: {averageDamageWithCrits * effectiveAttacksPerSecond}");
 
-        // max possible damage (for workmanship)
-        targetBaseDps = GetWeaponBaseDps(8);
+        // max possible damage (for workmanship), on this tier's scale: workmanship is fitted to the weapon damage before
+        // the tier rework, whose best tier 8 roll this is, scaled the same as this tier's weapons (TierPower)
+        var targetBaseDps = TierPower.GetPreviousWeaponDps(8) * TierPower.GetWeaponScale(wo.Tier ?? 1);
 
-        targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
-        averageBaseMaxDamage = targetAverageHitDamage / ((((1 - weaponVariance) + 1) / 2 * 0.9) + 0.2);
+        var targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
+        var averageBaseMaxDamage = targetAverageHitDamage / ((((1 - weaponVariance) + 1) / 2 * 0.9) + 0.2);
         maxPossibleDamage = (int)GetTierDamageRange(averageBaseMaxDamage).Maximum;
+    }
+
+    /// <summary>
+    /// The range a melee or thrown weapon's Damage rolls in at a tier (1-8), like armor's: from the tier's target DPS
+    /// (TierPower) up to double it, the next tier's target, so a top roll keeps up with monsters to the end of the tier.
+    /// The Damage that deals the target DPS is the target over the weapon's hits per second at the tier's average
+    /// Quickness, sized for its variance and critical hits. Loot, quest items and Upgrade Kits all roll in it, so they
+    /// always agree, whatever the weapon's speed. The speed and variance are the weapon's own before any mutation: its
+    /// weenie's, or its own without one.
+    /// </summary>
+    internal static (double Minimum, double Maximum) GetMeleeDamageRollRange(WorldObject wo, int tier)
+    {
+        var weenie = wo.Weenie ?? DatabaseManager.World?.GetCachedWeenie(wo.WeenieClassId);
+        var weaponTime = weenie?.GetProperty(PropertyInt.WeaponTime) ?? wo.WeaponTime ?? 0;
+        var variance = weenie?.GetProperty(PropertyFloat.DamageVariance) ?? wo.DamageVariance ?? 0.0;
+
+        var hitsPerSecond = GetWeaponHitsPerSecond(weaponTime, wo.IsRanged, tier);
+
+        if (hitsPerSecond <= 0)
+        {
+            return (0, 0);
+        }
+
+        var averageHitDamage = GetWeaponBaseDps(tier) / hitsPerSecond;
+
+        // the max damage whose hits average that, considering variance and critical strikes
+        var bottomMaxDamage = averageHitDamage / ((((1 - variance) + 1) / 2 * 0.9) + 0.2);
+
+        return (bottomMaxDamage, bottomMaxDamage * 2);
+    }
+
+    /// <summary>
+    /// A melee roll moved to its place in the band weapons rolled in before (25% wide, around the tier's target), which
+    /// workmanship is fitted to
+    /// </summary>
+    internal static double GetPreviousBandDamage(double damage, (double Minimum, double Maximum) rollRange)
+    {
+        return TierPower.MapToRange(damage, rollRange, GetTierDamageRange(rollRange.Minimum));
     }
 }

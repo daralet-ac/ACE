@@ -4,6 +4,7 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Managers;
 
 namespace ACE.Server.WorldObjects;
 
@@ -191,25 +192,36 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// Rolls the spell's boost range (negative for harm spells),
-    /// with the weapon's restoration mod and the self-target proc mod
+    /// Rolls the spell's boost range (negative for harm spells), with the self-target proc mod.
+    /// A harm uses a Nether caster's elemental damage mod, as Life damage follows the Nether multiplier.
+    /// A boost uses the weapon's restoration mod, and a heal the heal_spell_multiplier server property.
     /// </summary>
     private int RollBoostAmount(in BoostCast cast)
     {
         // handle negatives?
         var minBoostValue = Math.Min(cast.Spell.Boost, cast.Spell.MaxBoost);
         var maxBoostValue = Math.Max(cast.Spell.Boost, cast.Spell.MaxBoost);
+        var harm = maxBoostValue <= 0;
 
-        double? weaponRestorationMod = 1.0;
-        if (cast.Weapon is { WeaponRestorationSpellsMod: > 1 })
+        double? weaponMod = 1.0;
+        if (harm)
         {
-            weaponRestorationMod = cast.Weapon.WeaponRestorationSpellsMod;
+            weaponMod = GetLifeDamageMod(cast.Weapon, cast.DamageSource, cast.Target);
+        }
+        else if (cast.Weapon is { WeaponRestorationSpellsMod: > 1 })
+        {
+            weaponMod = cast.Weapon.WeaponRestorationSpellsMod;
+        }
+
+        if (!harm && cast.Spell.VitalDamageType == DamageType.Health)
+        {
+            weaponMod *= PropertyManager.GetDouble("heal_spell_multiplier").Item;
         }
 
         var selfTargetProcSpellMod = SelfTargetSpellProcMod(cast.FromProc, cast.Spell, cast.Weapon, this as Player);
 
         return (int)(
-            ThreadSafeRandom.Next(minBoostValue, maxBoostValue) * weaponRestorationMod * selfTargetProcSpellMod
+            ThreadSafeRandom.Next(minBoostValue, maxBoostValue) * weaponMod * selfTargetProcSpellMod
         );
     }
 
@@ -364,6 +376,9 @@ partial class WorldObject
 
         tryBoost = Convert.ToInt32(tryBoost * wardMod);
 
+        // Void DoT vulnerability: more damage taken for each Void DoT on the target
+        tryBoost = Convert.ToInt32(tryBoost * (cast.Target?.GetVoidDotVulnerabilityMod() ?? 1.0f));
+
         // COMBAT ABILITY - Phalanx: health damage taken from full hits reduced by 30%. Partial resists are unaffected.
         if (cast.Spell.VitalDamageType == DamageType.Health && cast.PartialEvasion == PartialEvasion.None)
         {
@@ -383,8 +398,14 @@ partial class WorldObject
             tryBoost = Convert.ToInt32(tryBoost * archetypeSpellDamageMod);
         }
 
-        // LEVEL SCALING - Reduces harms against enemies, and restoration for players.
+        // LEVEL SCALING - Harms scale like any other damage (monster health and kill time, or the duel scalar), since
+        // Life damage follows the weapon ladder. Restoration for players follows the heal table.
         // Also scales up healing on higher level player targets when both players are Shrouded (excluding self heals).
+        if (tryBoost < 0)
+        {
+            return (int)(tryBoost * LevelScaling.GetMonsterHealthDamageScalar(cast.DamageSource, cast.Target));
+        }
+
         var scalar = LevelScaling.GetPlayerBoostSpellScalar(cast.DamageSourcePlayer, cast.Target);
         if (tryBoost > 0 && player != null && cast.TargetPlayer != null && cast.TargetPlayer != player)
         {

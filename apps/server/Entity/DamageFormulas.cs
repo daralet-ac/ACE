@@ -205,7 +205,8 @@ internal static class DamageFormulas
     }
 
     /// <summary>
-    /// The lootgen damage range of weapons that can cause a Weapon Master bleed, or null for other weapon skills
+    /// The lootgen damage range of weapons that can cause a Weapon Master bleed, from before the tier rework (weapons now
+    /// double every tier), or null for other weapon skills. The top of the range is the bleed's full strength.
     /// </summary>
     public static (int Min, int Max)? GetBleedWeaponDamageRange(Skill weaponSkill)
     {
@@ -221,14 +222,11 @@ internal static class DamageFormulas
     }
 
     /// <summary>
-    /// Where a weapon's damage falls within its type's damage range (0-1), which scales a Weapon Master bleed.
-    /// Weapons outside the range clamp to 0 or 1.
+    /// A Weapon Master bleed's strength: the weapon's damage over the top of its type's damage range from before the
+    /// tier rework, so the bleed grows with weapon damage, as the weapon's hits do. Not capped.
     /// </summary>
-    public static float GetBleedDamagePercentile(int weaponDamage, (int Min, int Max) damageRange)
+    public static float GetBleedDamageScale(int weaponDamage, (int Min, int Max) damageRange)
     {
-        var range = damageRange.Max - damageRange.Min;
-        var weaponDamageRoll = weaponDamage - damageRange.Min;
-
-        return Math.Clamp((float)weaponDamageRoll / range, 0.0f, 1.0f);
+        return Math.Max(0, weaponDamage) / (float)damageRange.Max;
     }
 }

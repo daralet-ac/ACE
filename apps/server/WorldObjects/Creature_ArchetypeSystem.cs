@@ -4,6 +4,7 @@ using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Tables;
 using ACE.Server.WorldObjects.Entity;
 
@@ -13,20 +14,16 @@ partial class Creature
 {
     private static bool DebugArchetypeSystem = false;
 
-    // Stat ranges by tier
-    private static readonly int[] enemyHealth = { 10, 100, 200, 300, 500, 750, 1000, 1500, 2000 };
+    // Stat ranges by tier. Health, armor/ward and damage come from TierPower, which sets them so a reference player kills
+    // a same-level monster in the tier's kill-time target and loses the tier's incoming % of health per second.
     private static readonly int[] enemyStaminaMana = { 20, 100, 150, 225, 325, 450, 650, 950, 1250 };
     private static readonly int[] enemyHealthRegen = { 1, 2, 5, 10, 20, 30, 40, 50, 100 };
     private static readonly int[] enemyStaminaManaRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
 
-    private static readonly int[] enemyArmorWard = { 10, 20, 45, 68, 101, 152, 228, 342, 513 };
     private static readonly int[] enemyAssessDeception = { 10, 60, 100, 150, 175, 200, 250, 350, 500 };
     private static readonly int[] enemyRun = { 10, 100, 150, 200, 250, 300, 400, 500, 600 };
 
-    private static readonly float[] enemyDamage = { 1.0f, 2.0f, 3.0f, 4.5f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
-
     private static readonly int[] avgPlayerHealth = { 75, 110, 170, 200, 230, 260, 300, 350, 400 };
-    private static readonly float[] avgPlayerArmorReduction = { 0.6667f, 0.5000f, 0.3333f, 0.2500f, 0.2000f, 0.1667f, 0.1429f, 0.1250f, 0.1111f };
     private static readonly float[] avgPlayerLifeProtReduction = { 1.0f, 1.0f, 0.9f, 0.9f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f };
     internal static readonly int[] avgPlayerPhysicalMagicDefense = { 10, 60, 90, 120, 150, 180, 225, 300, 500 };
 
@@ -931,7 +928,7 @@ partial class Creature
 
     private int GetNewArmorLevel(int tier, float statWeight, double toughness, double physicality)
     {
-        var target = enemyArmorWard[tier] + (enemyArmorWard[tier + 1] - enemyArmorWard[tier]) * statWeight;
+        var target = TierPower.GetMonsterArmorWard(tier, statWeight);
         var multiplier = physicality;
         var newArmor = (int)(target * multiplier);
 
@@ -947,7 +944,7 @@ partial class Creature
 
     private int GetNewWardLevel(int tier, float statWeight, double toughness, double magic)
     {
-        var target = enemyArmorWard[tier] + (enemyArmorWard[tier + 1] - enemyArmorWard[tier]) * statWeight;
+        var target = TierPower.GetMonsterArmorWard(tier, statWeight);
         var multiplier = magic;
         var newWard = (int)(target * multiplier);
 
@@ -963,7 +960,7 @@ partial class Creature
 
     private uint GetNewHealthLevel(int tier, float statWeight, double toughness, double physicality)
     {
-        var target = enemyHealth[tier] + (enemyHealth[tier + 1] - enemyHealth[tier]) * statWeight;
+        var target = TierPower.GetMonsterHealth(tier, statWeight);
         var multiplier = toughness;
         var tweakedVital = (uint)(target * multiplier);
 
@@ -1138,10 +1135,10 @@ partial class Creature
     private double GetNewBaseDamage(int tier, float statWeight, double lethality)
     {
         // target enemy damage per second. If enemy uses nearby player scaling, use highest tier enemy damage.
-        var weightedEnemyDamage = (enemyDamage[tier] + (enemyDamage[tier + 1] - enemyDamage[tier]) * statWeight);
+        var weightedEnemyDamage = TierPower.GetIncomingPercent(tier, statWeight);
         if (CurrentLandblock is not null && CurrentLandblock.IsFellowshipRequired())
         {
-            weightedEnemyDamage = enemyDamage[5]; // capstone dps setting
+            weightedEnemyDamage = TierPower.FellowshipIncomingPercent; // capstone dps setting: the T6 rate
         }
 
         var weightedPlayerHealth = (
@@ -1162,10 +1159,8 @@ partial class Creature
         var playerEvadeChance = 1 - SkillCheck.GetSkillChance((int)enemyAttackSkill, (int)weightedPlayerMeleeDef);
         var playerEvadeDamageReduction = 1 - (playerEvadeChance * 0.5f);
 
-        // player armor
-        var weightedPlayerArmorReduction =
-            avgPlayerArmorReduction[tier]
-            + (avgPlayerArmorReduction[tier + 1] - avgPlayerArmorReduction[tier]) * statWeight;
+        // player armor: the reference player's (TierPower), whose armor doubles every tier
+        var weightedPlayerArmorReduction = SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(tier, statWeight));
 
         //player life protection
         var playerLifeProtReduction = avgPlayerLifeProtReduction[tier];
@@ -1232,10 +1227,10 @@ partial class Creature
     private double GetArchetypeSpellDamageMultiplier(int tier, float statWeight, double lethality)
     {
         // target enemy damage per second
-        var weightedEnemyDamage = (enemyDamage[tier] + (enemyDamage[tier + 1] - enemyDamage[tier]) * statWeight);
+        var weightedEnemyDamage = TierPower.GetIncomingPercent(tier, statWeight);
         if (CurrentLandblock is not null && CurrentLandblock.IsFellowshipRequired())
         {
-            weightedEnemyDamage = enemyDamage[5]; // capstone dps setting
+            weightedEnemyDamage = TierPower.FellowshipIncomingPercent; // capstone dps setting: the T6 rate
         }
 
         var weightedPlayerHealth = (avgPlayerHealth[tier] + (avgPlayerHealth[tier + 1] - avgPlayerHealth[tier]) * statWeight);
@@ -1252,9 +1247,8 @@ partial class Creature
         var playerResistDamageReduction = 1 - (playerResistChance * 0.5f);
 
         // player armor
-        var weightedPlayerWardReduction =
-            avgPlayerArmorReduction[tier]
-            + (avgPlayerArmorReduction[tier + 1] - avgPlayerArmorReduction[tier]) * statWeight;
+        // player ward: the reference player's (TierPower), whose ward doubles every tier
+        var weightedPlayerWardReduction = SkillFormula.CalcWardMod(TierPower.GetReferenceWard(tier, statWeight));
 
         //player life protection
         var playerLifeProtReduction = avgPlayerLifeProtReduction[tier];
@@ -1277,7 +1271,7 @@ partial class Creature
             * lethality;
 
         // base spell damage
-        var baseSpellDamage = GetAvgSpellDamageAtTier(tier);
+        var baseSpellDamage = TierPower.GetAvgSpellDamage(tier + 1);
 
 
         if (DebugArchetypeSystem)
@@ -1318,21 +1312,6 @@ partial class Creature
         }
 
         return baseAvgDamage / baseSpellDamage;
-    }
-
-    private int GetAvgSpellDamageAtTier(int tier)
-    {
-        return tier switch
-        {
-            1 => 9,
-            2 => 18,
-            3 => 27,
-            4 => 36,
-            5 => 45,
-            6 => 54,
-            7 => 160,
-            _ => 9
-        };
     }
 
     /// <summary>

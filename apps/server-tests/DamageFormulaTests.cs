@@ -224,13 +224,13 @@ public class DamageFormulaTests
     }
 
     [TestMethod]
-    public void BleedDamagePercentile_ScalesAcrossTheRangeAndClamps()
+    public void BleedDamageScale_GrowsWithWeaponDamageWithoutACap()
     {
-        Assert.AreEqual(0.0f, DamageFormulas.GetBleedDamagePercentile(4, (4, 95)));
-        Assert.AreEqual(1.0f, DamageFormulas.GetBleedDamagePercentile(95, (4, 95)));
-        Assert.AreEqual(0.5f, DamageFormulas.GetBleedDamagePercentile(50, (0, 100)), Tolerance);
-        Assert.AreEqual(0.0f, DamageFormulas.GetBleedDamagePercentile(1, (4, 95)));
-        Assert.AreEqual(1.0f, DamageFormulas.GetBleedDamagePercentile(200, (4, 95)));
+        // full strength at the top of the type's range from before the tier rework, and on up with weapon damage
+        Assert.AreEqual(1.0f, DamageFormulas.GetBleedDamageScale(95, (4, 95)), Tolerance);
+        Assert.AreEqual(0.5f, DamageFormulas.GetBleedDamageScale(50, (0, 100)), Tolerance);
+        Assert.AreEqual(2.0f, DamageFormulas.GetBleedDamageScale(190, (4, 95)), Tolerance);
+        Assert.AreEqual(0.0f, DamageFormulas.GetBleedDamageScale(-5, (4, 95)));
     }
 
     // ---- Perception / Deception

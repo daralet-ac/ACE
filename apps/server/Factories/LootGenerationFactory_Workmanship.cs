@@ -4,6 +4,7 @@
 using System;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Tables;
 using ACE.Server.WorldObjects;
 
@@ -68,7 +69,8 @@ public static partial class LootGenerationFactory
             return 0.0f;
         }
 
-        var targetBaseDps = GetWeaponBaseDps(8);
+        // workmanship is fitted to weapon damage before the tier rework: compare to its best tier 8 roll, on this tier's scale
+        var targetBaseDps = TierPower.GetPreviousWeaponDps(8) * TierPower.GetWeaponScale(tier);
         var targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
         var weaponVariance = wo.DamageVariance.Value;
         var averageBaseMaxDamage = targetAverageHitDamage / ((((1 - weaponVariance) + 1) / 2 * 0.9) + 0.2);
@@ -79,7 +81,10 @@ public static partial class LootGenerationFactory
             return 0.0f;
         }
 
-        return Math.Clamp((float)(wo.Damage.Value / maximumBaseMaxDamage), 0.0f, 1.0f);
+        // score the roll at its place in the band weapons rolled in before, which workmanship is fitted to
+        var previousScaleDamage = GetPreviousBandDamage(wo.Damage.Value, GetMeleeDamageRollRange(wo, tier));
+
+        return Math.Clamp((float)(previousScaleDamage / maximumBaseMaxDamage), 0.0f, 1.0f);
     }
 
     private static float GetMissileDamagePercentileFromCurrentStats(WorldObject wo, int tier)
@@ -95,30 +100,53 @@ public static partial class LootGenerationFactory
             return 0.0f;
         }
 
-        var targetBaseDps = GetWeaponBaseDps(8);
-        var ammoMaxDamage = GetAmmoBaseMaxDamage(wo.WeaponSkill, 8);
-        var weaponVariance = GetAmmoVariance(wo.WeaponSkill);
-        var ammoMinDamage = ammoMaxDamage * (1 - weaponVariance);
-        var ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
-        var targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
-        var averageBaseDamageMod = targetAverageHitDamage / ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2));
-        var maximumBaseMaxDamageMod = GetTierDamageRange(averageBaseDamageMod).Maximum;
+        // workmanship is fitted to launcher mods before the tier rework: put this one at its roll's place in its tier's
+        // previous range, and compare to the best previous tier 8 roll
+        var previousDamageMod = wo.DamageMod.Value;
+        if (tier > 1)
+        {
+            previousDamageMod = TierPower.MapToRange(
+                wo.DamageMod.Value,
+                TierPower.GetMultiplierRange(tier),
+                GetPreviousLauncherDamageModRange(wo.WeaponSkill, tier, effectiveAttacksPerSecond)
+            );
+        }
 
-        if (maximumBaseMaxDamageMod <= 1)
+        var maximumPreviousDamageMod = GetPreviousLauncherDamageModRange(wo.WeaponSkill, 8, effectiveAttacksPerSecond).Maximum;
+
+        if (maximumPreviousDamageMod <= 1)
         {
             return 0.0f;
         }
 
-        return Math.Clamp((float)((wo.DamageMod.Value - 1) / (maximumBaseMaxDamageMod - 1)), 0.0f, 1.0f);
+        return Math.Clamp((float)((previousDamageMod - 1) / (maximumPreviousDamageMod - 1)), 0.0f, 1.0f);
     }
 
     private static double GetCasterDamagePercentileFromCurrentStats(WorldObject wo)
     {
-        var damageRoll = wo.WieldSkillType2 == (int)Skill.WarMagic
-            ? wo.ElementalDamageMod ?? 1.0
-            : ((wo.ElementalDamageMod ?? wo.WeaponRestorationSpellsMod ?? 1.0) - 1.0) * 2.0 + 1.0;
+        // workmanship is fitted to caster mods before the tier rework: put the roll at its place in its tier's
+        // previous range, and compare to the previous best tier 8 roll
+        var tier = Math.Clamp(wo.Tier ?? 1, 1, 8);
+        var previousRange = TierPower.GetPreviousCasterModRange(tier);
 
-        var maxPossibleDamage = GetCasterMaxDamageMod()[7];
+        double damageRoll;
+        if (wo.ElementalDamageMod is { } damageMod)
+        {
+            damageRoll = tier > 1 ? TierPower.MapToRange(damageMod, TierPower.GetMultiplierRange(tier), previousRange) : damageMod;
+        }
+        else if (wo.WeaponRestorationSpellsMod is { } restorationMod)
+        {
+            // a Life caster with only a restoration mod
+            damageRoll = tier > 1
+                ? TierPower.MapToRange(restorationMod, TierPower.GetNetherRestorationRange(tier), previousRange)
+                : (restorationMod - 1.0) * 2.0 + 1.0;
+        }
+        else
+        {
+            damageRoll = 1.0;
+        }
+
+        var maxPossibleDamage = TierPower.GetPreviousCasterModRange(8).Maximum;
         if (maxPossibleDamage <= 1)
         {
             return 0.0;
@@ -248,7 +276,7 @@ public static partial class LootGenerationFactory
     private static double GetJewelryRatingPercentileFromCurrentStats(WorldObject wo)
     {
         var necklaceMultiplier = wo.ValidLocations is EquipMask.NeckWear ? 2 : 1;
-        var wardPercentile = (double)(wo.WardLevel ?? 0) / (GetBaseWardOfTier(9) * necklaceMultiplier);
+        var wardPercentile = (double)GetJewelryWardPercentile(wo.WardLevel ?? 0, wo.Tier ?? 1, necklaceMultiplier);
 
         double ratingPercentile;
         if (wo.ValidLocations == EquipMask.NeckWear)

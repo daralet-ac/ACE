@@ -6,6 +6,7 @@ using ACE.Database;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
@@ -2426,31 +2427,13 @@ public static partial class LootGenerationFactory
         return minimum + (maximum - minimum) * roll;
     }
 
+    /// <summary>
+    /// The bottom of a ring or bracelet's ward roll at a tier (TierPower); a necklace's is double. Tier 9 is the top
+    /// of tier 8.
+    /// </summary>
     private static int GetBaseWardOfTier(int tier)
     {
-        // Values reduced ~50% from prior jewelry ward tuning pass
-        switch (tier)
-        {
-            case 1:
-            case 2:
-                return 4;
-            case 3:
-                return 7;
-            case 4:
-                return 11;
-            case 5:
-                return 14;
-            case 6:
-                return 18;
-            case 7:
-                return 25;
-            case 8:
-                return 38;
-            case 9:
-                return 50;
-            default:
-                return 4;
-        }
+        return TierPower.GetJewelryBaseWard(tier);
     }
 
     public static int GetWieldDifficultyPerTier(int tier)
