@@ -509,13 +509,29 @@ partial class WorldObject
     public const float ElementalDamageBonusPvPReduction = 0.5f;
 
     /// <summary>
-    /// Returns a multiplicative elemental damage modifier for the magic caster weapon type
+    /// The multiplier on Life damage (harms and Life projectiles such as Martyr's): a Nether caster's elemental
+    /// damage modifier, and no bonus from any other caster
+    /// </summary>
+    public static float GetLifeDamageMod(WorldObject weapon, Creature wielder, Creature target)
+    {
+        if (weapon is not Caster || weapon.W_DamageType != DamageType.Nether)
+        {
+            return 1.0f;
+        }
+
+        return GetCasterElementalDamageModifier(weapon, wielder, target, DamageType.Nether);
+    }
+
+    /// <summary>
+    /// Returns a multiplicative elemental damage modifier for the magic caster weapon type.
+    /// A Life projectile (Health damage, ie. Martyr's) uses a Nether caster's modifier (GetLifeDamageMod).
     /// </summary>
     public static float GetCasterElementalDamageModifier(
         WorldObject weapon,
         Creature wielder,
         Creature target,
-        DamageType damageType
+        DamageType damageType,
+        bool lifeProjectile = false
     )
     {
         if (wielder == null || !(weapon is Caster))
@@ -523,22 +539,17 @@ partial class WorldObject
             return 1.0f;
         }
 
-        double elementalDamageMod;
-
-        // Life projectiles (Martyr's Hecatomb) scale with the caster's restoration mod regardless of its element -
-        // loot life casters are Nether, so gating on W_DamageType first would never let a Health spell through.
-        if (damageType is DamageType.Health)
+        if (lifeProjectile && damageType is DamageType.Health)
         {
-            elementalDamageMod = weapon.WeaponRestorationSpellsMod ?? 1.0f;
+            return GetLifeDamageMod(weapon, wielder, target);
         }
-        else if (weapon.W_DamageType != damageType)
+
+        if (weapon.W_DamageType != damageType)
         {
             return 1.0f;
         }
-        else
-        {
-            elementalDamageMod = weapon.ElementalDamageMod ?? 1.0f;
-        }
+
+        double elementalDamageMod = weapon.ElementalDamageMod ?? 1.0f;
 
         // multiplicative to base multiplier
         var wielderEnchantments = wielder.EnchantmentManager.GetElementalDamageMod();

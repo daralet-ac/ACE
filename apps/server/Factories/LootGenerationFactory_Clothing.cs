@@ -5,6 +5,7 @@ using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
@@ -241,16 +242,46 @@ public static partial class LootGenerationFactory
             return;
         }
 
-        var baseArmorLevel = wo.ArmorLevel ?? 75;
-
         if (tier < 2)
         {
             return;
         }
 
         var armorSlots = wo.ArmorSlots ?? 1;
+        var (styleArmorLevel, baseWardLevel) = GetArmorBaseLevels(wo);
+        var baseArmorLevel = styleArmorLevel ?? wo.ArmorLevel ?? 75;
 
-        // Get Armor/Ward Level
+        // Final Calculation, in the tier's ranges (TierPower): armor and ward double every tier. A shield's armor level
+        // feeds the block check rather than damage mitigation, so it keeps the ranges from before the tier rework.
+        var (armorLevelMinimum, armorLevelMaximum) = wo.IsShield
+            ? TierPower.GetShieldArmorRollRange(baseArmorLevel, tier)
+            : TierPower.GetArmorRollRange(baseArmorLevel, tier);
+        var (wardLevelMinimum, wardLevelMaximum) = TierPower.GetWardRollRange(baseWardLevel, tier);
+
+        var newArmorLevel = armorLevelMinimum + GetDiminishingRoll(treasureDeath) * (armorLevelMaximum - armorLevelMinimum);
+        var newWardLevel = (wardLevelMinimum + GetDiminishingRoll(treasureDeath) * (wardLevelMaximum - wardLevelMinimum)) * armorSlots;
+
+        // Assign levels
+        wo.SetProperty(PropertyInt.ArmorLevel, (int)newArmorLevel);
+        wo.SetProperty(PropertyInt.WardLevel, (int)newWardLevel);
+
+        // tier 8 Covenant tops out at 12800
+        if ((wo.ResistMagic == null || wo.ResistMagic < 9999) && wo.ArmorLevel > 13000)
+        {
+            _log.Warning($"[LOOT] Standard armor item exceeding upper AL threshold {wo.WeenieClassId} - {wo.Name}");
+        }
+    }
+
+    /// <summary>
+    /// The base armor level and per-slot base ward level a loot armor piece's tier ranges are built from (TierPower),
+    /// by its armor style, shield type and weight class. The armor level is null for a style without one of its own,
+    /// which builds on its weenie's armor level.
+    /// </summary>
+    internal static (int? ArmorLevel, int WardLevel) GetArmorBaseLevels(WorldObject wo)
+    {
+        int? baseArmorLevel = null;
+
+        // Ward Level by weight class
         var baseWardLevel = wo.ArmorWeightClass switch
         {
             (int)ArmorWeightClass.Cloth => 6,
@@ -323,18 +354,54 @@ public static partial class LootGenerationFactory
                 break;
         }
 
-        // Final Calculation
-        var newArmorLevel = baseArmorLevel * (tier - 1) + GetDiminishingRoll(treasureDeath) * baseArmorLevel;
-        var newWardLevel = baseWardLevel * (tier - 1) * armorSlots + GetDiminishingRoll(treasureDeath) * baseWardLevel * armorSlots;
+        return (baseArmorLevel, baseWardLevel);
+    }
 
-        // Assign levels
-        wo.SetProperty(PropertyInt.ArmorLevel, (int)newArmorLevel);
-        wo.SetProperty(PropertyInt.WardLevel, (int)newWardLevel);
+    /// <summary>
+    /// An armor piece's armor level for workmanship, which is fitted to armor before the tier rework: its place in its
+    /// tier's range, in the range the tier had before. Shields and tier 1 armor didn't change.
+    /// </summary>
+    private static double GetPreviousScaleArmorLevel(WorldObject wo)
+    {
+        var armorLevel = wo.ArmorLevel ?? 0;
+        var tier = wo.Tier ?? 1;
+        var (styleArmorLevel, _) = GetArmorBaseLevels(wo);
 
-        if ((wo.ResistMagic == null || wo.ResistMagic < 9999) && wo.ArmorLevel >= 1000)
+        if (tier < 2 || wo.IsShield || styleArmorLevel is not { } baseArmorLevel)
         {
-            _log.Warning($"[LOOT] Standard armor item exceeding upper AL threshold {wo.WeenieClassId} - {wo.Name}");
+            return armorLevel;
         }
+
+        return TierPower.MapToRange(
+            armorLevel,
+            TierPower.GetArmorRollRange(baseArmorLevel, tier),
+            TierPower.GetPreviousArmorRollRange(baseArmorLevel, tier)
+        );
+    }
+
+    /// <summary>
+    /// An armor piece's ward level for workmanship, on the scale before the tier rework (see GetPreviousScaleArmorLevel)
+    /// </summary>
+    private static double GetPreviousScaleWardLevel(WorldObject wo)
+    {
+        var wardLevel = wo.WardLevel ?? 0;
+        var tier = wo.Tier ?? 1;
+
+        if (tier < 2)
+        {
+            return wardLevel;
+        }
+
+        var armorSlots = wo.ArmorSlots ?? 1;
+        var (_, baseWardLevel) = GetArmorBaseLevels(wo);
+        var (minimum, maximum) = TierPower.GetWardRollRange(baseWardLevel, tier);
+        var (previousMinimum, previousMaximum) = TierPower.GetPreviousArmorRollRange(baseWardLevel, tier);
+
+        return TierPower.MapToRange(
+            wardLevel,
+            (minimum * armorSlots, maximum * armorSlots),
+            (previousMinimum * armorSlots, previousMaximum * armorSlots)
+        );
     }
 
     private static WorldObject CreateSocietyArmor(TreasureDeath profile, bool mutate = true)
@@ -547,112 +614,123 @@ public static partial class LootGenerationFactory
     }
 
     /// <summary>
-    /// Rolls the protections, folds their average into the armor level, and keeps that armor level as BaseArmor
+    /// Rolls the protections and keeps the armor level, as it rolled, as BaseArmor
     /// </summary>
     internal static void MutateArmorProtections(WorldObject wo, TreasureDeath profile)
     {
-        MutateArmorModVsType(wo, profile);
+        RollBalancedProtections(wo);
 
-        NormalizeProtectionLevels(wo);
-
-        // Snapshot after NormalizeProtectionLevels, which rescales ArmorLevel. Scouring Stone reverts
-        // ArmorLevel to BaseArmor, so a pre-normalization snapshot would drop AL below the rolled value.
         if (wo.ArmorLevel != null)
         {
             wo.BaseArmor = wo.ArmorLevel;
         }
     }
 
-    private static void MutateArmorModVsType(WorldObject wo, TreasureDeath profile)
-    {
-        // for the PropertyInt.MutateFilters found in py16 data,
-        // items either had all of these, or none of these
+    internal static readonly PropertyFloat[] ProtectionProperties =
+    [
+        PropertyFloat.ArmorModVsSlash,
+        PropertyFloat.ArmorModVsPierce,
+        PropertyFloat.ArmorModVsBludgeon,
+        PropertyFloat.ArmorModVsAcid,
+        PropertyFloat.ArmorModVsFire,
+        PropertyFloat.ArmorModVsCold,
+        PropertyFloat.ArmorModVsElectric,
+    ];
 
-        // only the elemental types could mutate
-        TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsFire);
-        TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsCold);
-        TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsAcid);
-        TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsElectric);
-        TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsSlash);
-        TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsPierce);
-        TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsBludgeon);
+    /// <summary>
+    /// How far a loot protection can roll from 1.0
+    /// </summary>
+    internal const double ProtectionRollRange = 0.3;
+
+    /// <summary>
+    /// Loot armor's protections start at 1.0, whatever the armor type, and each rolls up or down by up to
+    /// ProtectionRollRange, balanced so they always average exactly 1.0: the armor level is the armor against the
+    /// average damage type. Loot quality only affects the armor level.
+    /// </summary>
+    private static void RollBalancedProtections(WorldObject wo)
+    {
+        // for the PropertyInt.MutateFilters found in py16 data, items either had all of these, or none of these
+        var present = ProtectionProperties.Where(protection => wo.GetProperty(protection) != null).ToArray();
+
+        if (present.Length == 0)
+        {
+            return;
+        }
+
+        var offsets = present.Select(_ => (double)ThreadSafeRandom.Next((float)-ProtectionRollRange, (float)ProtectionRollRange)).ToArray();
+        var protections = BalanceProtections(offsets);
+
+        for (var i = 0; i < present.Length; i++)
+        {
+            wo.SetProperty(present[i], protections[i]);
+        }
     }
 
-    private static bool TryMutateArmorModVsType(WorldObject wo, TreasureDeath profile, PropertyFloat prop)
+    /// <summary>
+    /// Protections of 1.0 plus the rolled offsets, shifted so they average exactly 1.0 and kept within
+    /// ProtectionRollRange of it: whatever clamping takes off one goes onto the others
+    /// </summary>
+    internal static double[] BalanceProtections(double[] offsets)
     {
-        var armorModVsType = wo.GetProperty(prop);
+        var mean = offsets.Average();
+        var protections = offsets.Select(offset => 1.0 + offset - mean).ToArray();
+        var minimum = 1.0 - ProtectionRollRange;
+        var maximum = 1.0 + ProtectionRollRange;
 
-        if (armorModVsType == null)
+        for (var pass = 0; pass < 20; pass++)
         {
-            return false;
-        }
+            for (var i = 0; i < protections.Length; i++)
+            {
+                protections[i] = Math.Clamp(protections[i], minimum, maximum);
+            }
 
-        var baseMod = wo.GetProperty(prop) ?? 0;
-
-        // Target range for armor that has 1.0 base protection: 0.4 to 1.6. Rare chance for -0.05 or +0.05.
-        // Loot Quality Mod contributes.
-        var minimumRoll = 0.0f;
-        if (profile is not null)
-        {
-            minimumRoll = (float)(1 - Math.Exp(-1 * profile.LootQualityMod));
-        }
-
-        var roll = ThreadSafeRandom.Next(minimumRoll, 1.2f);
-        roll -= 0.6;
-
-        // rare chance for outliers
-        var outlierRoll = ThreadSafeRandom.Next(1, 10);
-        switch (outlierRoll)
-        {
-            case 1:
-                roll -= 0.05;
+            var shortfall = protections.Length - protections.Sum();
+            if (Math.Abs(shortfall) < 1e-9)
+            {
                 break;
-            case 10:
-                roll += 0.05;
+            }
+
+            var free = Enumerable.Range(0, protections.Length)
+                .Where(i => shortfall > 0 ? protections[i] < maximum : protections[i] > minimum)
+                .ToList();
+            if (free.Count == 0)
+            {
                 break;
+            }
+
+            foreach (var i in free)
+            {
+                protections[i] += shortfall / free.Count;
+            }
         }
 
-        var newMod = baseMod + roll;
-
-        wo.SetProperty(prop, newMod);
-
-        return true;
+        return protections;
     }
 
-    private static void NormalizeProtectionLevels(WorldObject wo)
+    /// <summary>
+    /// Scales authored protections (quest armor) so they average 1.0, keeping their shape: the armor level is then the
+    /// armor against the average damage type, as loot's is
+    /// </summary>
+    internal static void BalanceAuthoredProtections(WorldObject wo)
     {
-        if (wo.ArmorLevel is null ||
-            wo.ArmorModVsAcid is null ||
-            wo.ArmorModVsBludgeon is null ||
-            wo.ArmorModVsCold is null ||
-            wo.ArmorModVsElectric is null ||
-            wo.ArmorModVsFire is null ||
-            wo.ArmorModVsPierce is null ||
-            wo.ArmorModVsSlash is null)
+        var present = ProtectionProperties.Where(protection => wo.GetProperty(protection) != null).ToArray();
+
+        if (present.Length == 0)
         {
-            _log.Error("LootGeneration_Clothing.NormalizeProtectionLevels({WorldObject}) - Armor or Protection Level is null", wo.Name);
-            return; 
+            return;
         }
 
-        var protectionLevelSum =
-            wo.ArmorModVsSlash
-            + wo.ArmorModVsPierce
-            + wo.ArmorModVsBludgeon
-            + wo.ArmorModVsAcid
-            + wo.ArmorModVsFire
-            + wo.ArmorModVsCold
-            + wo.ArmorModVsElectric;
+        var mean = present.Average(protection => wo.GetProperty(protection).Value);
 
-        var scalar = protectionLevelSum / 7.0;
+        if (mean <= 0)
+        {
+            return;
+        }
 
-        wo.ArmorLevel = (int)(wo.ArmorLevel.Value * scalar);
-        wo.ArmorModVsSlash /= scalar;
-        wo.ArmorModVsPierce /= scalar;
-        wo.ArmorModVsBludgeon /= scalar;
-        wo.ArmorModVsAcid /= scalar;
-        wo.ArmorModVsFire /= scalar;
-        wo.ArmorModVsCold /= scalar;
-        wo.ArmorModVsElectric /= scalar;
+        foreach (var protection in present)
+        {
+            wo.SetProperty(protection, wo.GetProperty(protection).Value / mean);
+        }
     }
 
     private static bool TryMutateGearRating(
@@ -950,7 +1028,7 @@ public static partial class LootGenerationFactory
             return false;
         }
 
-        // BaseArmor is snapshotted in MutateArmor, after NormalizeProtectionLevels rescales ArmorLevel
+        // BaseArmor is snapshotted in MutateArmorProtections
 
         if (wo.WardLevel != null)
         {
@@ -1233,39 +1311,13 @@ public static partial class LootGenerationFactory
         var divisor = 0;
         var sum = 0.0;
 
-        // Armor + Protection Levels
+        // Armor Level: protections always average 1.0, so the armor level alone says how good the armor is
         var maxArmorLevel = GetMaxArmorLevel(wo);
-        var armorLevelPercentile = 0.0f;
 
-        var avgProtectionLevel = GetAverageProtectionLevel(wo);
-        var minProtectionLevel = 0.25f;
-        var maxProtectionLevel = 1.5f;
-        var protectionLevelPercentile = 1.0f;
-        if (avgProtectionLevel != 0)
+        if (wo.ItemType != ItemType.Clothing && wo.ArmorLevel > 0 && maxArmorLevel > 0)
         {
-            protectionLevelPercentile =
-                (avgProtectionLevel - minProtectionLevel) / (maxProtectionLevel - minProtectionLevel);
-        }
-
-        if (wo.ItemType != ItemType.Clothing)
-        {
-            if (wo.ArmorLevel > 0 && maxArmorLevel > 0)
-            {
-                armorLevelPercentile = (float)wo.ArmorLevel / maxArmorLevel;
-                armorLevelPercentile += protectionLevelPercentile;
-                armorLevelPercentile /= 2;
-
-                sum += armorLevelPercentile;
-                divisor++;
-            }
-            else
-            {
-                armorLevelPercentile =
-                    (avgProtectionLevel - minProtectionLevel) / (maxProtectionLevel - minProtectionLevel);
-
-                sum += armorLevelPercentile;
-                divisor++;
-            }
+            sum += (float)(GetPreviousScaleArmorLevel(wo) / maxArmorLevel);
+            divisor++;
         }
 
         // Ward
@@ -1273,7 +1325,7 @@ public static partial class LootGenerationFactory
         var wardLevelPercentile = 0.0f;
         if (wo.WardLevel > 0 && maxWardLevel > 0)
         {
-            wardLevelPercentile = (float)wo.WardLevel / maxWardLevel;
+            wardLevelPercentile = (float)(GetPreviousScaleWardLevel(wo) / maxWardLevel);
 
             sum += wardLevelPercentile;
             divisor++;
@@ -1394,57 +1446,6 @@ public static partial class LootGenerationFactory
         }
 
         return (int)(wardLevel * armorSlots * 1.1f);
-    }
-
-    private static float GetAverageProtectionLevel(WorldObject wo)
-    {
-        var amount = 0.0;
-        var divisor = 0;
-
-        if (wo.ArmorModVsSlash != null)
-        {
-            amount += (float)wo.ArmorModVsSlash;
-            divisor++;
-        }
-        if (wo.ArmorModVsPierce != null)
-        {
-            amount += (float)wo.ArmorModVsPierce;
-            divisor++;
-        }
-        if (wo.ArmorModVsFire != null)
-        {
-            amount += (float)wo.ArmorModVsFire;
-            divisor++;
-        }
-        if (wo.ArmorModVsCold != null)
-        {
-            amount += (float)wo.ArmorModVsCold;
-            divisor++;
-        }
-        if (wo.ArmorModVsAcid != null)
-        {
-            amount += (float)wo.ArmorModVsAcid;
-            divisor++;
-        }
-        if (wo.ArmorModVsElectric != null)
-        {
-            amount += (float)wo.ArmorModVsElectric;
-            divisor++;
-        }
-        if (wo.ArmorModVsBludgeon != null)
-        {
-            amount += (float)wo.ArmorModVsBludgeon;
-            divisor++;
-        }
-
-        if (divisor != 7)
-        {
-            _log.Error("Mutate Error during GetAverageProtectionLevel() - Armor Protection Levels returned null for {Wo}.", wo);
-        }
-
-        amount /= divisor;
-
-        return (float)amount;
     }
 
     private static bool IsShieldWcid(WorldObject wo)

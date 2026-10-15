@@ -245,6 +245,12 @@ partial class WorldObject
             : 1.0f;
         srcVitalChange = Convert.ToUInt32(srcVitalChange * nullificationRatingBonus);
         destVitalChange = Convert.ToUInt32(destVitalChange * nullificationRatingBonus);
+
+        // Void DoT vulnerability: a drain takes more for each Void DoT on the target
+        if (cast.IsDrain && cast.Target is not null)
+        {
+            srcVitalChange = Convert.ToUInt32(srcVitalChange * cast.Target.GetVoidDotVulnerabilityMod());
+        }
     }
 
     /// <summary>
@@ -334,12 +340,16 @@ partial class WorldObject
             destVitalChange = Convert.ToUInt32(destVitalChange * archetypeSpellDamageMod);
         }
 
-        // LEVEL SCALING - Reduce Drain effectiveness vs. monsters, and increase vs. player
+        // LEVEL SCALING - A health drain's damage scales like any other damage (monster health and kill time, or the duel
+        // scalar). What the caster gets back, and other drains, follow the heal table.
         if (cast.IsDrain)
         {
             var levelScalingMod = LevelScaling.GetPlayerBoostSpellScalar(player, cast.Target);
+            var damageScalingMod = cast.Spell.Source is PropertyAttribute2nd.Mana or PropertyAttribute2nd.Stamina
+                ? levelScalingMod
+                : LevelScaling.GetMonsterHealthDamageScalar(creature, cast.Target);
 
-            srcVitalChange = (uint)(srcVitalChange * levelScalingMod);
+            srcVitalChange = (uint)(srcVitalChange * damageScalingMod);
             destVitalChange = (uint)(destVitalChange * levelScalingMod);
         }
 

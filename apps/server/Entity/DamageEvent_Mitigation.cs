@@ -73,6 +73,9 @@ public partial class DamageEvent
         _mitigationModifiers.DamageResistanceRating *=
             1.0f - GetRatingHardenedDefenseDamageResistanceBonus(_playerDefender);
 
+        // Void DoT vulnerability: more damage taken for each Void DoT on the defender
+        _mitigationModifiers.DamageResistanceRating *= _defender.GetVoidDotVulnerabilityMod();
+
         _mitigationModifiers.SpecDefense = GetSpecDefenseMod(_attacker, _playerDefender);
 
         _mitigationModifiers.Shield = _defender.GetShieldMod(_attacker, DamageType, Weapon);

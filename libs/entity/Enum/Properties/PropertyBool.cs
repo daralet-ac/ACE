@@ -399,6 +399,11 @@ public enum PropertyBool : ushort
     /// </summary>
     HotspotCollidesFromCenter = 9015,
     AccountAttuned = 9016,
+
+    /// <summary>
+    /// Set on an item migrate-tier-power has moved onto the tier rework's scale, so a second run skips it
+    /// </summary>
+    TierPowerMigrated = 9017,
 }
 
 public static class PropertyBoolExtensions

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ACE.Common;
 using ACE.Database.Models.Shard;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity;
+using ACE.Server.Factories;
 using ACE.Server.Network;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,16 +18,18 @@ public class VerifyArmorLevels
         "verify-armor-levels",
         AccessLevel.Admin,
         CommandHandlerFlag.ConsoleInvoke,
-        "Verifies and optionally fixes any existing armor levels above AL cap"
+        "Verifies and optionally fixes any existing armor levels above the top of their tier's range, plus tinks"
     )]
     public static void HandleFixArmorLevel(Session session, params string[] parameters)
     {
         Console.WriteLine($"Fetching shard armors (this may take awhile on large servers) ...");
 
         var resistMagic = GetResistMagic();
-        var tinkerLogs = GetTinkerLogs();
         var numTimesTinkered = GetNumTimesTinkered();
         var imbuedEffects = GetImbuedEffect();
+        var armorStyles = GetIntProperty(PropertyInt.ArmorStyle);
+        var armorPatches = GetIntProperty(PropertyInt.ArmorPatchAmount);
+        var tiers = GetIntProperty(PropertyInt.Tier);
 
         var fix = parameters.Length > 0 && parameters[0].Equals("fix");
         var fixStr = fix ? " -- fixed" : "";
@@ -69,22 +71,26 @@ public class VerifyArmorLevels
                     continue;
                 }
 
-                TinkerLog tinkerLog = null;
-                if (tinkerLogs.TryGetValue(armorItem.Guid, out var _tinkerLog))
-                {
-                    tinkerLog = new TinkerLog(_tinkerLog);
-                }
-
                 numTimesTinkered.TryGetValue(armorItem.Guid, out var numTinkers);
                 imbuedEffects.TryGetValue(armorItem.Guid, out var imbuedEffect);
 
-                var numArmorTinkers = tinkerLog != null ? tinkerLog.NumTinkers(MaterialType.Steel) : 0;
+                armorStyles.TryGetValue(armorItem.Guid, out var armorStyle);
+                armorPatches.TryGetValue(armorItem.Guid, out var armorPatch);
+                var tier = tiers.TryGetValue(armorItem.Guid, out var itemTier) ? itemTier : 8;
 
-                var numArmorTinkerStr = numArmorTinkers > 0 ? $" ({numArmorTinkers})" : "";
+                var numArmorTinkerStr = numTinkers > 0 ? $" ({numTinkers})" : "";
 
                 var equipMask = (EquipMask)armorItem.ValidLocs;
 
-                var newArmorLevel = GetArmorLevel(armorItem.ArmorLevel, equipMask, tinkerLog, numTinkers, imbuedEffect);
+                var newArmorLevel = GetArmorLevel(
+                    armorItem.ArmorLevel,
+                    equipMask,
+                    armorStyle,
+                    tier,
+                    armorPatch,
+                    numTinkers,
+                    imbuedEffect
+                );
 
                 if (newArmorLevel != armorItem.ArmorLevel)
                 {
@@ -159,6 +165,16 @@ public class VerifyArmorLevels
         }
     }
 
+    public static Dictionary<uint, int> GetIntProperty(PropertyInt property)
+    {
+        using (var ctx = new ShardDbContext())
+        {
+            return ctx
+                .BiotaPropertiesInt.Where(i => i.Type == (int)property)
+                .ToDictionary(i => i.ObjectId, i => i.Value);
+        }
+    }
+
     public static Dictionary<uint, int> GetImbuedEffect()
     {
         using (var ctx = new ShardDbContext())
@@ -171,49 +187,35 @@ public class VerifyArmorLevels
         }
     }
 
-    // head / hands / feet
-    public const int MaxArmorLevel_Extremity = 345;
+    /// <summary>
+    /// The most Armor Level a tink can add: the largest share of the untinkered Armor Level any material adds
+    /// </summary>
+    public const double MaxArmorTinkPercent = 0.10;
 
-    // everything else
-    public const int MaxArmorLevel_NonExtremity = 315;
-
+    /// <summary>
+    /// Caps an item's Armor Level at the top of its style's range in its tier (TierPower; T8 for items with no tier),
+    /// plus the most each tink could add (a share of that top, never less than 1) and any armor patch. Every tink but
+    /// an imbue counts as an armor tink, so a capped item is never lowered below what tinkering could have made it.
+    /// </summary>
     public static int GetArmorLevel(
         int armorLevel,
         EquipMask equipMask,
-        TinkerLog tinkerLog,
+        int armorStyle,
+        int tier,
+        int armorPatch,
         int numTinkers,
         int imbuedEffect
     )
     {
-        var maxArmorLevel =
-            (equipMask & EquipMask.Extremity) != 0 ? MaxArmorLevel_Extremity : MaxArmorLevel_NonExtremity;
+        var baseArmorLevel = LootTables.GetArmorStyleBaseArmorLevel(armorStyle == 0 ? null : armorStyle);
+        var (_, topOfTier) = (equipMask & EquipMask.Shield) != 0
+            ? TierPower.GetShieldArmorRollRange(baseArmorLevel, tier)
+            : TierPower.GetArmorRollRange(baseArmorLevel, tier);
 
-        if (tinkerLog != null && tinkerLog.Tinkers.Count == numTinkers)
-        {
-            // full tinkering log available
-            maxArmorLevel += tinkerLog.NumTinkers(MaterialType.Steel) * 20;
-        }
-        else if (numTinkers > 0)
-        {
-            // partial or no tinkering log available
-            var rngMax = numTinkers;
-            if (imbuedEffect != 0)
-            {
-                rngMax--;
-            }
+        var armorTinks = Math.Max(0, imbuedEffect != 0 ? numTinkers - 1 : numTinkers);
+        var maxTinkBonus = Math.Max(1, (int)(topOfTier * MaxArmorTinkPercent));
+        var maxArmorLevel = (int)topOfTier + armorTinks * maxTinkBonus + armorPatch;
 
-            if (rngMax > 0)
-            {
-                // prevent further iterations on multiple re-runs
-                if (armorLevel <= maxArmorLevel + rngMax * 20)
-                {
-                    return armorLevel;
-                }
-
-                var rng = ThreadSafeRandom.Next(0, rngMax);
-                maxArmorLevel += rng * 20;
-            }
-        }
         return Math.Min(armorLevel, maxArmorLevel);
     }
 }

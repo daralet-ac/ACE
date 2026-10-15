@@ -5,6 +5,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Factories;
 using ACE.Server.WorldObjects;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TreasureDeath = ACE.Database.Models.World.TreasureDeath;
 
@@ -76,23 +77,60 @@ public class LootRegressionTests
     #region Scouring Stone (#1246)
 
     [TestMethod]
-    public void ArmorProtections_TheArmorLevelTheyFoldInIsKeptAsBaseArmor()
+    public void ArmorProtections_AverageOneAndLeaveTheArmorLevelAsItRolled()
     {
         for (var i = 0; i < 500; i++)
         {
             var armor = CreateArmor(armorLevel: 200);
 
-            LootGenerationFactory.MutateArmorProtections(armor, new TreasureDeath { Tier = 5 });
+            LootGenerationFactory.MutateArmorProtections(armor, new TreasureDeath { Tier = 5, LootQualityMod = 0.5f });
 
+            // the armor level is the armor against the average damage type
+            Assert.AreEqual(200, armor.ArmorLevel);
             Assert.AreEqual(armor.ArmorLevel, armor.BaseArmor);
+
+            var protections = new List<double>();
+            foreach (var protection in LootGenerationFactory.ProtectionProperties)
+            {
+                var value = armor.GetProperty(protection).Value;
+                Assert.IsTrue(value >= 0.7 - 1e-9 && value <= 1.3 + 1e-9, $"{protection} {value}");
+                protections.Add(value);
+            }
+
+            Assert.AreEqual(1.0, protections.Average(), 1e-9);
         }
+    }
+
+    [TestMethod]
+    public void ArmorProtections_ClampingStillBalancesToOne()
+    {
+        // one offset far out past the range: it clamps, and what it loses spreads over the others
+        var protections = LootGenerationFactory.BalanceProtections([0.3, 0.3, 0.3, 0.3, 0.3, 0.3, -3.0]);
+
+        Assert.AreEqual(1.0, protections.Average(), 1e-9);
+        Assert.AreEqual(0.7, protections[6], 1e-9);
+        Assert.IsTrue(protections.All(value => value >= 0.7 - 1e-9 && value <= 1.3 + 1e-9));
+    }
+
+    [TestMethod]
+    public void QuestArmorProtections_KeepTheirShapeAndAverageOne()
+    {
+        var armor = CreateArmor(armorLevel: 200);
+        armor.SetProperty(PropertyFloat.ArmorModVsSlash, 2.0);
+
+        LootGenerationFactory.BalanceAuthoredProtections(armor);
+
+        // 8 / 7 was the average: every protection is divided by it, and the armor level is untouched
+        Assert.AreEqual(2.0 * 7 / 8, armor.GetProperty(PropertyFloat.ArmorModVsSlash).Value, 1e-9);
+        Assert.AreEqual(1.0 * 7 / 8, armor.GetProperty(PropertyFloat.ArmorModVsFire).Value, 1e-9);
+        Assert.AreEqual(200, armor.ArmorLevel);
     }
 
     [TestMethod]
     public void ScouringStone_PutsLootArmorBackToTheArmorLevelItRolled()
     {
-        // #1246: BaseArmor was kept before the protections were folded into the armor level,
-        // so scouring dropped the armor level of anything whose protections rolled above average
+        // #1246: BaseArmor was kept before the protections were folded into the armor level, so scouring dropped the
+        // armor level of anything whose protections rolled above average (they don't fold in any more)
         for (var i = 0; i < 500; i++)
         {
             var armor = CreateArmor(armorLevel: 200);

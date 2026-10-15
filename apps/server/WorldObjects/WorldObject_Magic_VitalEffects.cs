@@ -137,7 +137,7 @@ partial class WorldObject
     /// the higher of the caster's and the weapon's Ignore Ward, the weapon's Ward Rending (scaled by the caster's skill
     /// in the spell's school), SPEC BONUS - War Magic (Orb) and RATING - WardPen
     /// </summary>
-    protected static float GetSpellIgnoreWardMod(Creature caster, WorldObject weapon, Spell spell)
+    internal static float GetSpellIgnoreWardMod(Creature caster, WorldObject weapon, Spell spell)
     {
         var sourcePlayer = caster as Player;
 
@@ -199,7 +199,7 @@ partial class WorldObject
         // A player caster only scales it in a scaled arena duel, where the higher fighter's ward counts as at the other's level
         if (target is Player && (caster is not Player || LevelScaling.IsScaledDuel(target, caster)))
         {
-            wardMod *= LevelScaling.GetPlayerArmorWardModScalar(target, caster);
+            wardMod *= LevelScaling.GetPlayerArmorWardModScalar(target, caster, ward: true);
         }
 
         return wardMod;

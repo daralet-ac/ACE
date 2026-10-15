@@ -1520,24 +1520,15 @@ public class EnchantmentManager
         return (int)Math.Round(GetAdditiveMod(enchantments));
     }
 
-    public virtual int GetNetherDotDamageRating()
+    /// <summary>
+    /// The number of different Void DoTs (Corrosion, Destructive Curse) on this creature, for the Void DoT
+    /// vulnerability (Creature.GetVoidDotVulnerabilityMod). Weapon bleed isn't a Void DoT.
+    /// </summary>
+    public virtual int GetNetherDotCount()
     {
         var type = EnchantmentTypeFlags.Int | EnchantmentTypeFlags.SingleStat | EnchantmentTypeFlags.Additive;
-        var netherDots = GetEnchantments_TopLayer(type, (uint)PropertyInt.NetherOverTime);
 
-        // this function produces a similar value to the original ACE function,
-        // but is using the actual retail calculation method
-        var totalBaseDamage = 0.0f;
-        foreach (var netherDot in netherDots)
-        {
-            // normally we could just use netherDot.StatModValue here,
-            // but in case WorldObject has a non-default HeartbeatInterval,
-            // we want this value to still be based on the damage per default heartbeat interval
-            totalBaseDamage += GetDamagePerTick(netherDot, 5.0);
-        }
-        var rating = (int)Math.Round(totalBaseDamage / 8.0f); // thanks to Xenocide for this formula!
-        //Console.WriteLine($"{WorldObject.Name}.NetherDotDamageRating: {rating}");
-        return rating;
+        return GetEnchantments_TopLayer(type, (uint)PropertyInt.NetherOverTime).Count;
     }
 
     /// <summary>
@@ -1936,10 +1927,8 @@ public class EnchantmentManager
                 }
             }
 
-            // with the halvening, this actually seems like the fairest balance currently..
-            var useNetherDotDamageRating = targetPlayer != null;
-
-            var damageResistRatingMod = creature.GetDamageResistRatingMod(CombatType.Magic, useNetherDotDamageRating); // df?
+            // the Void DoT vulnerability only applies to direct damage, not to DoT ticks
+            var damageResistRatingMod = creature.GetDamageResistRatingMod(CombatType.Magic); // df?
 
             if (sourcePlayer != null && targetPlayer != null)
             {
@@ -1956,7 +1945,17 @@ public class EnchantmentManager
                 bleedResistance = (float)(creature.ResistBleed ?? (1 / (creature.ArchetypePhysicality ?? 1)));
             }
 
-            var wardMod = creature.GetWardMod(damager as Creature, creature, 1.0f);
+            // ward rending and penetration apply to ticks as they do to the caster's direct damage, from the caster's
+            // current weapon: the wand for spell DoTs, the weapon for a Weapon Master bleed
+            var damagerCreature = damager as Creature;
+            var ignoreWardMod = 1.0f;
+            if (damagerCreature is not null)
+            {
+                var tickWeapon = enchantment.SpellId is 6410 ? damagerCreature.GetEquippedWeapon() : damagerCreature.GetEquippedWand();
+                ignoreWardMod = WorldObject.GetSpellIgnoreWardMod(damagerCreature, tickWeapon, new Spell(enchantment.SpellId));
+            }
+
+            var wardMod = creature.GetWardMod(damagerCreature, creature, ignoreWardMod);
             var levelScalingMod = LevelScaling.GetMonsterDamageTakenHealthScalar(sourcePlayer, creature);
 
             // COMBAT ABILITY - Overload/Battery: DoT ticks need to independently consult the caster's

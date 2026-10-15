@@ -3,6 +3,7 @@ using ACE.Entity.Enum;
 using ACE.Server.Arena;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
+using System.Collections.Concurrent;
 using Serilog;
 
 namespace ACE.Server.Entity;
@@ -16,7 +17,8 @@ public static class LevelScaling
      * When level scaling is active, the following adjustments are made to the player and enemy:
      *  -During player attacks on the enemy:
      *   -Player attack skill is scaled down.
-     *   -Player damage is scaled down based on monster average max health.
+     *   -Player damage is scaled down based on monster average max health, then by the ratio of the kill-time
+     *    targets at the two levels, so a Shrouded player kills a monster in the time a native at its level does.
      *   -Monster armor/ward is scaled up.
      *  -During enemy attacks on the player
      *   -Player defense skill is reduced by the difference in average defense skill between the two levels.
@@ -30,10 +32,18 @@ public static class LevelScaling
      * player's gear is at their own level, it's worth the same at every lower level too. See
      * GetPlayerArmorWardModScalar() and GetScaledPlayerDefenseSkill().
      *
+     * Monster stats and the reference player they're authored against come from TierPower, the same tables
+     * Creature_ArchetypeSystem builds monsters from, so the two always agree.
+     *
+     * Fellowship-required dungeons require everyone to be Shrouded, and their monsters are all the dungeon's level.
+     * Everyone there is scaled to the monster's level whichever is higher, and kills at the fellowship kill-time
+     * target (TierPower.FellowshipKillTime) instead of the monster level's.
+     *
      * A scaled arena duel scales the higher-level fighter down to their opponent's level the same way, with the opponent
      * in the monster's place (ArenaManager.IsScaledDuel), whether or not anyone is Shrouded. A player is not a monster,
      * so in a duel the monster tables are left out: damage both ways follows the fighters' average health at their
-     * levels (GetDuelDamageScalar) instead of the monster's health and armor. A raw duel is never scaled, Shrouded or not.
+     * levels, and the higher fighter's also the weapon power of the two tiers (GetDuelDamageScalar), instead of the
+     * monster's health and armor. A raw duel is never scaled, Shrouded or not.
      */
 
     /// <summary>
@@ -44,6 +54,8 @@ public static class LevelScaling
     private static readonly ILogger _log = Log.ForContext(typeof(LevelScaling));
 
     private static readonly int[] AvgPlayerHealthPerTier = [75, 110, 170, 200, 230, 260, 300, 350, 400];
+    // a shield's armor level only feeds the block check, and shields kept their old tier ranges (TierPower), so
+    // they're scaled by these. Body armor and ward use TierPower's reference player (GetArmorWardModRatio).
     private static readonly int[] AvgPlayerArmorWardPerTier = [50, 100, 200, 300, 400, 500, 600, 700, 800];
     private static readonly int[] AvgPlayerAttributePerTier = [100, 125, 175, 200, 215, 230, 250, 270, 290];
     // Monster attack/defense are set a flat amount above these (Creature_ArchetypeSystem's EnemySkillGap, built from its
@@ -54,11 +66,8 @@ public static class LevelScaling
     private static readonly float[] AvgPlayerResistancePerTier = [1.0f, 1.0f, 0.9f, 0.9f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f];
     private static readonly float[] AvgPlayerBoostPerTier = [5.0f, 7.5f, 12.5f, 17.5f, 22.5f, 27.5f, 32.5f, 37.5f, 42.5f];
 
-    private static readonly int[] AvgMonsterArmorWardPerTier = [10, 20, 45, 68, 101, 152, 228, 342, 513];
-    private static readonly int[] AvgMonsterHealthPerTier = [10, 100, 200, 300, 500, 750, 1000, 1500, 2000];
-
-    private static readonly float[] AvgTimeToKillMonster = [9.0f, 10.7f, 12.9f, 16.1f, 17.2f, 17.4f, 24.6f, 44.1f];
-    private static readonly float[] AvgEnemyDpsPerTier = [ 1.0f, 2.0f, 3.0f, 4.0f, 6.0f, 7.0f, 7.5f, 8.0f, 10.0f];
+    // fellowship-required landblocks and the first monster level seen in each, for the dungeon-level warning
+    private static readonly ConcurrentDictionary<uint, int> FellowshipDungeonLevels = new();
 
     /// <summary>
     /// Damage multiplier from monster health scaling, for an attack on a player (damage dealt by the monster)
@@ -138,18 +147,14 @@ public static class LevelScaling
         var statAtPlayerLevel = GetMonsterHealthAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetMonsterHealthAtLevel(monster.Level.Value);
 
-        var scalarMod = (float)statAtMonsterLevel / statAtPlayerLevel;
+        var fellowship = monster.CurrentLandblock?.IsFellowshipRequired() == true;
 
-        // Fellowship-required dungeons: on top of the normal health-ratio scaling, additionally divide by a
-        // per-dungeon-tier constant so a Shrouded player's damage-dealt TTK against this tier approaches
-        // native level-50 TTK instead of the tier's own (much faster) native pace. Monster Armor/Ward is
-        // deliberately NOT scaled up for these landblocks (see GetMonsterArmorWardScalar) -- this health-only
-        // ratio is close enough on its own. Natives are unaffected: CanScalePlayer already excludes them.
-        // See docs/fellowship-dungeon-scaling.md for the derivation, and GetFellowshipDealtTtkDivisor() below.
-        if (monster.CurrentLandblock?.IsFellowshipRequired() == true)
+        if (fellowship)
         {
-            scalarMod /= GetFellowshipDealtTtkDivisor(monster.Level.Value);
+            CheckFellowshipDungeonLevel(monster);
         }
+
+        var scalarMod = GetDamageTakenRatio(player.Level.Value, monster.Level.Value, fellowship);
 
         if (PropertyManager.GetBool("debug_level_scaling_system").Item)
         {
@@ -163,30 +168,39 @@ public static class LevelScaling
     }
 
     /// <summary>
-    /// Per-dungeon-tier divisor applied in GetMonsterDamageTakenHealthScalar() for fellowship-required
-    /// dungeons. Derived from native TTK = ArchetypeHealth / (real weapon DPS * real attribute mod * armor
-    /// mitigation) at each tier -- using GetWeaponBaseDps, the real Str-by-tier progression, and
-    /// Creature_ArchetypeSystem's enemyHealth/enemyArmorWard -- as the ratio of native level-50 TTK to each
-    /// lower tier's own native TTK. Hand-computed, not derived at runtime: recompute if the reference level
-    /// (currently native level 50) or any of the source tables above change. See
-    /// docs/fellowship-dungeon-scaling.md for the full derivation and its known limits at high shrouded levels.
+    /// The scalar on a Shrouded player's damage to a monster. The health ratio (and the monster's armor/ward, scaled
+    /// separately) leaves the player killing it in the kill-time target of their own level; the kill-time ratio
+    /// moves that to the target of the monster's level, or the fellowship target in a fellowship-required dungeon.
     /// </summary>
-    private static float GetFellowshipDealtTtkDivisor(int monsterLevel)
+    internal static float GetDamageTakenRatio(int playerLevel, int monsterLevel, bool fellowship)
     {
-        switch (monsterLevel)
+        var healthRatio = GetMonsterHealthAtLevel(monsterLevel) / GetMonsterHealthAtLevel(playerLevel);
+        var killTimeTarget = fellowship ? TierPower.FellowshipKillTime : TierPower.GetKillTime(monsterLevel);
+
+        return healthRatio * TierPower.GetKillTime(playerLevel) / killTimeTarget;
+    }
+
+    /// <summary>
+    /// Every monster in a fellowship-required dungeon should be the dungeon's level, since everyone there is scaled
+    /// to it. Warns once per landblock when a monster's level differs from the first one seen there.
+    /// </summary>
+    private static void CheckFellowshipDungeonLevel(Creature monster)
+    {
+        var landblock = monster.CurrentLandblock.Id.Landblock;
+        var dungeonLevel = FellowshipDungeonLevels.GetOrAdd(landblock, monster.Level.Value);
+
+        if (dungeonLevel != monster.Level.Value && dungeonLevel > 0)
         {
-            case 10:
-                return 1.906f;
-            case 20:
-                return 1.551f;
-            case 30:
-                return 1.464f;
-            case 40:
-                return 1.171f;
-            case 50:
-                return 1.000f;
-            default:
-                return 1.0f;
+            FellowshipDungeonLevels[landblock] = -1;
+
+            _log.Warning(
+                "LevelScaling - fellowship landblock {Landblock:X4}: {Monster} ({Wcid}) is level {Level}, but the dungeon's monsters are level {DungeonLevel}. Everyone is scaled to each monster's own level.",
+                landblock,
+                monster.Name,
+                monster.WeenieClassId,
+                monster.Level.Value,
+                dungeonLevel
+            );
         }
     }
 
@@ -199,14 +213,6 @@ public static class LevelScaling
 
         // an opponent in a duel is a player, whose armor is a player's: the higher fighter's damage is scaled instead (GetDuelDamageScalar)
         if (IsScaledDuel(player, monster))
-        {
-            return 1.0f;
-        }
-
-        // See the matching guard in GetMonsterDamageTakenHealthScalar() -- fellowship-required dungeons already
-        // pin this monster's actual Armor/Ward to a fixed reference tier for every visitor, so scaling it again
-        // here off the monster's stale Level property would double-count on top of an already-normalized value.
-        if (monster.CurrentLandblock?.IsFellowshipRequired() == true)
         {
             return 1.0f;
         }
@@ -287,7 +293,7 @@ public static class LevelScaling
     /// level), so the monster's level cancels out. A player with exactly average armor gets the same result
     /// either way. Works for ward too, since SkillFormula.ArmorMod and WardMod are both 100.
     /// </summary>
-    public static float GetPlayerArmorWardModScalar(Creature player, Creature monster)
+    public static float GetPlayerArmorWardModScalar(Creature player, Creature monster, bool ward = false)
     {
         if (!CanScalePlayer(player, monster))
         {
@@ -306,16 +312,13 @@ public static class LevelScaling
             return 1.0f;
         }
 
-        var statAtPlayerLevel = GetPlayerArmorWardAtLevel(player.Level.Value);
-        var statAtMonsterLevel = GetPlayerArmorWardAtLevel(monster.Level.Value);
-
-        var scalarMod = GetArmorWardModRatio(player.Level.Value, monster.Level.Value);
+        var scalarMod = GetArmorWardModRatio(player.Level.Value, monster.Level.Value, ward);
 
         if (PropertyManager.GetBool("debug_level_scaling_system").Item)
         {
             Console.WriteLine(
-                $"\nGetPlayerArmorWardModScalar(Player {player.Name}, Monster {monster.Name})"
-                + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {scalarMod}"
+                $"\nGetPlayerArmorWardModScalar(Player {player.Name}, Monster {monster.Name}, ward {ward})"
+                + $"\n  scalarMod: {scalarMod}"
             );
         }
 
@@ -512,13 +515,19 @@ public static class LevelScaling
 
     /// <summary>
     /// Scales a player's armor/ward mod from their level to the monster's. Monster damage is authored against the
-    /// average armor at the monster's level, so armor as far above or below the average at the player's level is
-    /// worth the same against the monster.
+    /// reference player's armor (melee) or ward (spells) at the monster's level (TierPower), so armor as far above or
+    /// below the reference at the player's level is worth the same against the monster.
     /// </summary>
-    internal static float GetArmorWardModRatio(int playerLevel, int monsterLevel)
+    internal static float GetArmorWardModRatio(int playerLevel, int monsterLevel, bool ward = false)
     {
-        return SkillFormula.CalcArmorMod(GetPlayerArmorWardAtLevel(monsterLevel))
-            / SkillFormula.CalcArmorMod(GetPlayerArmorWardAtLevel(playerLevel));
+        if (ward)
+        {
+            return SkillFormula.CalcWardMod(TierPower.GetReferenceWard(monsterLevel))
+                / SkillFormula.CalcWardMod(TierPower.GetReferenceWard(playerLevel));
+        }
+
+        return SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(monsterLevel))
+            / SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(playerLevel));
     }
 
     /// <summary>
@@ -610,48 +619,15 @@ public static class LevelScaling
         return stat;
     }
 
-    internal static int GetMonsterHealthAtLevel(int level)
+    // monsters are built from these (Creature_ArchetypeSystem), interpolated the same way
+    internal static float GetMonsterHealthAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight, 0.5f);
-
-        var stat =
-            (AvgMonsterHealthPerTier[range + 1] - AvgMonsterHealthPerTier[range]) * statweight
-            + AvgMonsterHealthPerTier[range];
-
-        return (int)stat;
+        return TierPower.GetMonsterHealth(level);
     }
 
-    private static int GetTtkMonsterAtLevel(int level)
+    internal static float GetMonsterArmorWardAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight);
-
-        var stat =
-            (AvgTimeToKillMonster[range + 1] - AvgTimeToKillMonster[range]) * statweight
-            + AvgTimeToKillMonster[range];
-
-        return (int)stat;
-    }
-
-    private static int GetMonsterDpsPerTierAtLevel(int level)
-    {
-        GetRangeAndStatWeight(level, out var range, out var statweight);
-
-        var stat =
-            (AvgEnemyDpsPerTier[range + 1] - AvgEnemyDpsPerTier[range]) * statweight
-            + AvgEnemyDpsPerTier[range];
-
-        return (int)stat;
-    }
-
-    internal static int GetMonsterArmorWardAtLevel(int level)
-    {
-        GetRangeAndStatWeight(level, out var range, out var statweight, 0.0f);
-
-        var stat =
-            (AvgMonsterArmorWardPerTier[range + 1] - AvgMonsterArmorWardPerTier[range]) * statweight
-            + AvgMonsterArmorWardPerTier[range];
-
-        return (int)stat;
+        return TierPower.GetMonsterArmorWard(level);
     }
 
     private static void GetRangeAndStatWeight(int level, out int range, out float statweight, float scaleWeight = 1.0f)
@@ -729,16 +705,10 @@ public static class LevelScaling
             return false;
         }
 
-        if (player.Level < monster.Level)
-        {
-            return false;
-        }
-
-        // Equal levels only scale in fellowship-required (level-scaled) dungeons -- these can require every
-        // visitor to be Shrouded via Portal.RequiresShrouded, including natives fighting at-level enemies, so
-        // they get the same TTK normalization as anyone else. Everywhere else, equal levels never scaled
-        // before and still don't -- this only changes behavior inside fellowship-required landblocks.
-        if (player.Level == monster.Level && monster.CurrentLandblock?.IsFellowshipRequired() != true)
+        // Fellowship-required (level-scaled) dungeons require every visitor to be Shrouded (Portal.RequiresShrouded),
+        // and scale everyone to the monster's level whichever is higher, so everyone gets the fellowship kill-time and
+        // damage targets. Everywhere else, only a higher-level player is scaled down.
+        if (monster.CurrentLandblock?.IsFellowshipRequired() != true && player.Level <= monster.Level)
         {
             return false;
         }
@@ -763,7 +733,9 @@ public static class LevelScaling
     /// Damage one fighter does another in a scaled duel. The higher-level fighter does damage as if to someone with their
     /// opponent's average health, and takes it as if they had the average health of their opponent's level: each fighter's
     /// damage is scaled by the average health at the defender's level over the average health at the attacker's.
-    /// Nothing changes if they are the same level, or the lower one is below MinimumScaledLevel.
+    /// The higher fighter's damage is also scaled by the weapon power of the lower one's tier over their own (TierPower),
+    /// since weapons double every tier. Nothing changes if they are the same level, or the lower one is below
+    /// MinimumScaledLevel.
     /// </summary>
     public static float GetDuelDamageScalar(Creature attacker, Creature defender)
     {
@@ -775,7 +747,7 @@ public static class LevelScaling
             return 1.0f;
         }
 
-        var scalarMod = GetDuelHealthRatio(attacker.Level.Value, defender.Level.Value);
+        var scalarMod = GetDuelDamageRatio(attacker.Level.Value, defender.Level.Value);
 
         if (PropertyManager.GetBool("debug_level_scaling_system").Item)
         {
@@ -794,6 +766,22 @@ public static class LevelScaling
     internal static float GetDuelHealthRatio(int attackerLevel, int defenderLevel)
     {
         return (float)GetPlayerHealthAtLevel(defenderLevel) / GetPlayerHealthAtLevel(attackerLevel);
+    }
+
+    /// <summary>
+    /// The health ratio, and for the higher fighter the weapon power of the defender's tier over the attacker's
+    /// </summary>
+    internal static float GetDuelDamageRatio(int attackerLevel, int defenderLevel)
+    {
+        var ratio = GetDuelHealthRatio(attackerLevel, defenderLevel);
+
+        if (attackerLevel > defenderLevel)
+        {
+            ratio *= TierPower.GetWeaponTargetDps(TierPower.GetTierForLevel(defenderLevel))
+                / TierPower.GetWeaponTargetDps(TierPower.GetTierForLevel(attackerLevel));
+        }
+
+        return ratio;
     }
 
     public static float GetPlayerBoostHealScalarShroudedUpward(Player caster, Player target)

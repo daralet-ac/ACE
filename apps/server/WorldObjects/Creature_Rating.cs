@@ -1,6 +1,7 @@
 using System;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Entity;
 using ACE.Server.Managers;
 
 namespace ACE.Server.WorldObjects;
@@ -243,7 +244,7 @@ partial class Creature
         return damageRating + equipment + enchantments - weaknessRating + augBonus + lumAugBonus;
     }
 
-    public int GetDamageResistRating(CombatType? combatType = null, bool directDamage = true)
+    public int GetDamageResistRating(CombatType? combatType = null)
     {
         // get from base properties (monsters)?
         var damageResistRating = DamageResistRating ?? 0;
@@ -253,10 +254,6 @@ partial class Creature
 
         // equipment ratings
         var equipment = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearDamageResist);
-
-        // nether DoTs as negative DRR?
-        // TODO: this should be factored in as a separate nether damage rating...
-        var netherDotDamageRating = directDamage ? EnchantmentManager.GetNetherDotDamageRating() : 0;
 
         var augBonus = 0;
         var lumAugBonus = 0;
@@ -270,18 +267,26 @@ partial class Creature
         return damageResistRating
             + equipment
             + enchantments
-            - netherDotDamageRating
             + augBonus
             + lumAugBonus;
     }
 
-    public float GetDamageResistRatingMod(CombatType? combatType = null, bool directDamage = true)
+    public float GetDamageResistRatingMod(CombatType? combatType = null)
     {
-        var damageResistRating = GetDamageResistRating(combatType, directDamage);
+        var damageResistRating = GetDamageResistRating(combatType);
 
         var allowBug = PropertyManager.GetBool("allow_negative_rating_curve").Item;
 
         return GetNegativeRatingMod(damageResistRating, allowBug);
+    }
+
+    /// <summary>
+    /// Void DoT vulnerability: each different Void DoT on this creature (Corrosion, Destructive Curse) makes it take
+    /// 5% more direct damage: melee, missile, spell projectiles, harms and drains, PvP included. Not DoT ticks.
+    /// </summary>
+    public float GetVoidDotVulnerabilityMod()
+    {
+        return 1.0f + TierPower.VoidDotVulnerabilityPerDot * EnchantmentManager.GetNetherDotCount();
     }
 
     public int GetSpecDefenseBonus(CombatType? combatType)

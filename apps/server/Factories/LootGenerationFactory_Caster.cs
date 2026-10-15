@@ -3,6 +3,7 @@ using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
@@ -846,31 +847,27 @@ public static partial class LootGenerationFactory
     {
         damagePercentile = 0;
 
-        var tier = Math.Clamp(profile.Tier - 1, 0, 7);
-        if (tier > 0)
+        // tier 1 casters don't roll a damage or restoration mod
+        var tier = Math.Clamp(profile.Tier, 1, 8);
+        if (tier > 1)
         {
-            float damageRoll;
+            var roll = GetDiminishingRoll(profile);
 
-            // Calculate Max, Min, and Roll
-            var maxDamageMod = GetCasterMaxDamageMod()[tier];
-            var minDamageMod = GetCasterMinDamageMod()[tier];
-            var diminishedDamageModRoll = (maxDamageMod - minDamageMod) * GetDiminishingRoll(profile);
+            // the damage mod rolls on the multiplier ladder (TierPower), the same for war and Nether (Life) casters,
+            // and restoration rolls on its own ladder at the same place
+            var (minimum, maximum) = TierPower.GetMultiplierRange(tier);
+            var nether = wo.WieldSkillType2 != (int)Skill.WarMagic;
 
-            damageRoll = minDamageMod + diminishedDamageModRoll;
+            wo.ElementalDamageMod = minimum + (maximum - minimum) * roll;
+            wo.WeaponRestorationSpellsMod = TierPower.GetRestorationForRoll(tier, roll, nether);
 
-            if (wo.WieldSkillType2 == (int)Skill.WarMagic)
-            {
-                wo.ElementalDamageMod = damageRoll;
-                wo.WeaponRestorationSpellsMod = (damageRoll - 1.0) * 0.25 + 1.0; // 25% of damage roll
-            }
-            else
-            {
-                wo.ElementalDamageMod = (damageRoll - 1.0) * 0.5 + 1.0; // 50% of damage roll
-                wo.WeaponRestorationSpellsMod = wo.ElementalDamageMod; // 50% of damage roll
-            }
+            // workmanship is fitted to caster mods before the tier rework: the same roll in the previous range,
+            // against the previous best tier 8 roll
+            var previous = TierPower.GetPreviousCasterModRange(tier);
+            var previousDamageMod = previous.Minimum + (previous.Maximum - previous.Minimum) * roll;
+            var maxPreviousDamageMod = TierPower.GetPreviousCasterModRange(8).Maximum;
 
-            var maxPossibleDamage = GetCasterMaxDamageMod()[7];
-            damagePercentile = ((double)damageRoll - 1) / (maxPossibleDamage - 1);
+            damagePercentile = (previousDamageMod - 1) / (maxPreviousDamageMod - 1);
         }
     }
 

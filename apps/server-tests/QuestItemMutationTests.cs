@@ -5,6 +5,7 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
+using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.WorldObjects;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -66,11 +67,18 @@ public class QuestItemMutationTests
     }
 
     [TestMethod]
-    public void CasterScales_MatchTheAuthoredQuestCasters()
+    public void CasterRanges_FollowTheMultiplierAndRestorationLadders()
     {
-        // Staff of Clarity (life, 1.84) and Zefir Wing (war, 2.68 elemental / 1.42 restoration) are both T6
-        Assert.AreEqual(1.84, QuestItemMutation.ToLifeCasterScale(2.68), 1e-9);
-        Assert.AreEqual(1.42, QuestItemMutation.GetWarCasterRestorationMod(2.68), 1e-9);
+        // war and Nether casters share the T6 multiplier range, with restoration at the same place on its own ladder
+        Assert.AreEqual(TierPower.GetMultiplierRange(6), ((float, float))QuestItemMutation.GetCasterDamageModRange(5));
+        Assert.AreEqual(TierPower.GetWarRestorationRange(6), ((float, float))QuestItemMutation.GetCasterRestorationRange(5, false));
+        Assert.AreEqual(TierPower.GetNetherRestorationRange(6), ((float, float))QuestItemMutation.GetCasterRestorationRange(5, true));
+
+        var (minimum, maximum) = QuestItemMutation.GetCasterDamageModRange(5);
+        var (netherMinimum, netherMaximum) = QuestItemMutation.GetCasterRestorationRange(5, true);
+
+        Assert.AreEqual(netherMinimum, QuestItemMutation.GetCasterRestorationMod(5, minimum, true), 1e-5);
+        Assert.AreEqual(netherMaximum, QuestItemMutation.GetCasterRestorationMod(5, maximum, true), 1e-5);
     }
 
     [TestMethod]
@@ -79,14 +87,15 @@ public class QuestItemMutationTests
         // T2 platemail
         Assert.AreEqual((95, 190), QuestItemMutation.GetArmorLevelRange(95, 1));
 
-        // Platemail Hauberk of the Ogre (T2, 4 slots) is authored at 28 ward, Shroud of Cazamal (T5 robe, 8 slots) at 192
+        // Platemail Hauberk of the Ogre (T2, 4 slots) is authored at 28 ward; Shroud of Cazamal (T5 robe, 8 slots),
+        // authored at 192, now rolls in the doubled T5 range
         Assert.AreEqual((28, 56), QuestItemMutation.GetWardLevelRange(7, 1, 4));
-        Assert.AreEqual((192, 240), QuestItemMutation.GetWardLevelRange(6, 4, 8));
+        Assert.AreEqual((384, 768), QuestItemMutation.GetWardLevelRange(6, 4, 8));
 
-        // a T6 ring, and a T4 necklace like the Amulet of Impulse (authored at 22)
-        Assert.AreEqual((18, 25), QuestItemMutation.GetJewelryWardLevelRange(5, false));
-        Assert.AreEqual((22, 28), QuestItemMutation.GetJewelryWardLevelRange(3, true));
-        Assert.AreEqual((38, 50), QuestItemMutation.GetJewelryWardLevelRange(7, false));
+        // a T6 ring, a T4 necklace like the Amulet of Impulse, and a T8 ring: jewelry ward doubles every tier
+        Assert.AreEqual((64, 128), QuestItemMutation.GetJewelryWardLevelRange(5, false));
+        Assert.AreEqual((32, 64), QuestItemMutation.GetJewelryWardLevelRange(3, true));
+        Assert.AreEqual((256, 512), QuestItemMutation.GetJewelryWardLevelRange(7, false));
     }
 
     [TestMethod]
@@ -98,19 +107,34 @@ public class QuestItemMutationTests
     }
 
     [TestMethod]
-    public void MeleeTables_CoverEverySubtypeAtEveryTier()
+    public void MeleeDamageRollRange_FollowsTheWeaponsSpeed()
     {
-        // the two-handed subtypes used to return 0 here, breaking Upgrade Kit math for them
-        Assert.AreEqual(10, LootTables.GetMeleeSubtypeMinimumDamage(LootTables.WeaponSubtype.TwohandSword, 2));
+        // quest items and Upgrade Kits roll in the range loot of the same speed and variance rolls
+        var slow = CreateMeleeWeapon(LootTables.WeaponSubtype.TwohandMace, 10, 230, weaponTime: 68, variance: 0.75);
+        var fast = CreateMeleeWeapon(LootTables.WeaponSubtype.TwohandMace, 10, 230, weaponTime: 34, variance: 0.75);
 
-        foreach (var subtype in Enum.GetValues<LootTables.WeaponSubtype>().Where(LootTables.IsMeleeOrThrownSubtype))
+        for (var tier = 1; tier <= 8; tier++)
         {
-            for (var tier = 0; tier < 8; tier++)
-            {
-                Assert.IsTrue(LootTables.GetMeleeSubtypeMinimumDamage(subtype, tier) > 0, $"{subtype} T{tier + 1} minimum");
-                Assert.IsTrue(LootTables.GetMeleeSubtypeDamageRange(subtype, tier) > 0, $"{subtype} T{tier + 1} range");
-            }
+            var (slowMinimum, slowMaximum) = LootGenerationFactory.GetMeleeDamageRollRange(slow, tier);
+            var (fastMinimum, fastMaximum) = LootGenerationFactory.GetMeleeDamageRollRange(fast, tier);
+
+            Assert.IsTrue(slowMinimum > 0 && slowMaximum > slowMinimum, $"T{tier}");
+
+            // twice as fast, half the damage per hit: the same damage per second
+            Assert.AreEqual(slowMaximum / 2, fastMaximum, 1e-6, $"T{tier}");
+            Assert.AreEqual(slowMinimum / 2, fastMinimum, 1e-6, $"T{tier}");
+
+            // like armor: from the tier's target DPS up to double it, the next tier's target
+            Assert.AreEqual(0.5, slowMinimum / slowMaximum, 1e-9, $"T{tier}");
+
+            // workmanship scores a roll at its place in the 25% band weapons rolled in before
+            var previous = LootGenerationFactory.GetTierDamageRange(slowMinimum);
+            Assert.AreEqual(previous.Minimum, LootGenerationFactory.GetPreviousBandDamage(slowMinimum, (slowMinimum, slowMaximum)), 1e-6);
+            Assert.AreEqual(previous.Maximum, LootGenerationFactory.GetPreviousBandDamage(slowMaximum, (slowMinimum, slowMaximum)), 1e-6);
         }
+
+        // a weapon without a speed has no range rather than a broken one
+        Assert.AreEqual((0.0, 0.0), LootGenerationFactory.GetMeleeDamageRollRange(CreateMeleeWeapon(LootTables.WeaponSubtype.AxeLarge, 10, 230, weaponTime: 0), 5));
     }
 
     [TestMethod]
@@ -163,7 +187,9 @@ public class QuestItemMutationTests
     [TestMethod]
     public void MutateQuestItem_MeleeWeapon_RollsFromTheMedianAndBakesInIronTinks()
     {
-        // Obsidian Axe: T6 AxeLarge (47-62), authored at the tier minimum
+        // Obsidian Axe: T6 AxeLarge, authored at the old tier minimum (47), under the new one
+        var (minimum, maximum) = AxeLargeRange(5);
+
         for (var i = 0; i < Rolls; i++)
         {
             var axe = CreateMeleeWeapon(LootTables.WeaponSubtype.AxeLarge, 47, 230);
@@ -172,7 +198,7 @@ public class QuestItemMutationTests
 
             Assert.IsFalse(axe.MutableQuestItem);
             Assert.AreEqual(4, axe.QuestItemTinks);
-            AssertBetween(55, 62, axe.BaseDamage.Value);
+            AssertBetween(QuestItemMutation.RollWholeMainStat(minimum, minimum, maximum, 0), maximum, axe.BaseDamage.Value);
             Assert.AreEqual(axe.BaseDamage + 4 * (int)(axe.BaseDamage * 0.075), axe.Damage);
         }
     }
@@ -208,18 +234,18 @@ public class QuestItemMutationTests
 
             LootGenerationFactory.MutateQuestItem(ring);
 
+            var (minimum, maximum) = QuestItemMutation.GetJewelryWardLevelRange(5, false);
             Assert.AreEqual(6, ring.QuestItemTinks);
-            AssertBetween(22, 25, ring.BaseWard.Value);
-            Assert.AreEqual(ring.BaseWard + 6 * Salvage.WhiteJadeTinkWardLevel, ring.WardLevel);
+            AssertBetween(QuestItemMutation.RollWholeMainStat(minimum, minimum, maximum, 0), maximum, ring.BaseWard.Value);
+            Assert.AreEqual(ring.BaseWard + 6 * QuestItemMutation.GetPercentTinkBonus(ring.BaseWard.Value, Salvage.WhiteJadeTinkWardPercent), ring.WardLevel);
         }
     }
 
     [TestMethod]
-    public void MutateQuestItem_LifeCaster_IsOnlyHalvedOnce()
+    public void MutateQuestItem_LifeCaster_RollsTheLadderWithNetherRestoration()
     {
-        // Staff of Clarity: T6 life caster authored at 1.84 / 1.84 (half of a 2.68 war roll)
-        var lifeMedian = QuestItemMutation.ToLifeCasterScale((LootTables.CasterMinDamageMod[5] + LootTables.CasterMaxDamageMod[5]) / 2);
-        var lifeMax = QuestItemMutation.ToLifeCasterScale(LootTables.CasterMaxDamageMod[5]);
+        // Staff of Clarity: T6 life caster authored at 1.84 / 1.84
+        var (minimum, maximum) = QuestItemMutation.GetCasterDamageModRange(5);
 
         for (var i = 0; i < Rolls; i++)
         {
@@ -227,10 +253,12 @@ public class QuestItemMutationTests
 
             LootGenerationFactory.MutateQuestItem(staff);
 
-            var rolled = staff.BaseWeaponRestorationSpellsMod.Value;
-            AssertBetween(lifeMedian, lifeMax, rolled);
+            var rolled = staff.BaseElementalDamageMod.Value;
+            var restoration = staff.BaseWeaponRestorationSpellsMod.Value;
+            AssertBetween((minimum + maximum) / 2, maximum, rolled);
             Assert.AreEqual(rolled, staff.ElementalDamageMod.Value, 1e-6);
-            Assert.AreEqual(rolled * (1 + 4 * Salvage.LavenderJadeTinkPercent), staff.WeaponRestorationSpellsMod.Value, 1e-6);
+            Assert.AreEqual(QuestItemMutation.GetCasterRestorationMod(5, rolled, true), restoration, 1e-5);
+            Assert.AreEqual(restoration * (1 + 4 * Salvage.LavenderJadeTinkPercent), staff.WeaponRestorationSpellsMod.Value, 1e-5);
         }
     }
 
@@ -241,16 +269,19 @@ public class QuestItemMutationTests
 
         LootGenerationFactory.MutateQuestItem(wand);
 
+        var (minimum, maximum) = QuestItemMutation.GetCasterDamageModRange(5);
         var rolled = wand.BaseElementalDamageMod.Value;
-        AssertBetween(3.125, 3.75, rolled);
+        AssertBetween((minimum + maximum) / 2, maximum, rolled);
         Assert.AreEqual(rolled * (1 + 4 * Salvage.GreenGarnetTinkPercent), wand.ElementalDamageMod.Value, 1e-6);
-        Assert.AreEqual(QuestItemMutation.GetWarCasterRestorationMod(rolled), wand.WeaponRestorationSpellsMod.Value, 1e-6);
+        Assert.AreEqual(QuestItemMutation.GetCasterRestorationMod(5, rolled, false), wand.WeaponRestorationSpellsMod.Value, 1e-5);
     }
 
     [TestMethod]
     public void MutateQuestItem_MissileLauncher_BakesInMahoganyTinksSizedOffItsRoll()
     {
-        // T6 large bow (3.02-4.02), authored at the tier minimum
+        // T6 large bow, authored at the old tier minimum (3.02), under the new one
+        var (minimum, maximum) = BowLargeRange(5);
+
         for (var i = 0; i < Rolls; i++)
         {
             var bow = CreateMissileLauncher(LootTables.WeaponSubtype.BowLarge, 3.02, 230);
@@ -259,7 +290,7 @@ public class QuestItemMutationTests
 
             var rolled = bow.BaseDamageMod.Value;
             Assert.AreEqual(4, bow.QuestItemTinks);
-            AssertBetween(3.52, 4.02, rolled);
+            AssertBetween((minimum + maximum) / 2, maximum, rolled);
             Assert.AreEqual(rolled * (1 + 4 * Salvage.MahoganyTinkPercent), bow.DamageMod.Value, 1e-6);
         }
     }
@@ -278,7 +309,7 @@ public class QuestItemMutationTests
             AssertBetween(143, 190, hauberk.BaseArmor.Value);
             AssertBetween(42, 56, hauberk.BaseWard.Value);
             Assert.AreEqual(hauberk.BaseArmor + 2 * QuestItemMutation.GetPercentTinkBonus(hauberk.BaseArmor.Value, Salvage.IronTinkPercent), hauberk.ArmorLevel);
-            Assert.AreEqual(hauberk.BaseWard + 2 * Salvage.SilverTinkWardLevel * 4, hauberk.WardLevel);
+            Assert.AreEqual(hauberk.BaseWard + 2 * QuestItemMutation.GetPercentTinkBonus(hauberk.BaseWard.Value, Salvage.SilverTinkWardPercent), hauberk.WardLevel);
         }
     }
 
@@ -291,7 +322,7 @@ public class QuestItemMutationTests
 
         Assert.AreEqual(0, shirt.ArmorLevel);
         Assert.IsNull(shirt.BaseArmor);
-        Assert.AreEqual(shirt.BaseWard + 2 * Salvage.SilverTinkWardLevel * 3, shirt.WardLevel);
+        Assert.AreEqual(shirt.BaseWard + 2 * QuestItemMutation.GetPercentTinkBonus(shirt.BaseWard.Value, Salvage.SilverTinkWardPercent), shirt.WardLevel);
     }
 
     [TestMethod]
@@ -305,14 +336,16 @@ public class QuestItemMutationTests
 
             Assert.IsTrue(UpgradeKit.UpgradeItem(null, axe, 250));
 
-            // T7 AxeLarge is 69-92; the stored roll quality lands in the same place there, plus the rounding it had
+            // the stored roll quality lands in the same place in the T7 range, plus the rounding it had at T6
+            var (t6Minimum, t6Maximum) = AxeLargeRange(5);
+            var (t7Minimum, t7Maximum) = AxeLargeRange(6);
             var quality = axe.QuestItemRollQuality.Value;
-            var expected = QuestItemMutation.GetRollValue(69, 92, quality) + (t6Roll - QuestItemMutation.GetRollValue(47, 62, quality));
+            var expected = QuestItemMutation.GetRollValue(t7Minimum, t7Maximum, quality) + (t6Roll - QuestItemMutation.GetRollValue(t6Minimum, t6Maximum, quality));
 
             Assert.AreEqual(250, axe.WieldDifficulty);
             Assert.AreEqual(5, axe.QuestItemTinks);
             Assert.AreEqual((int)Math.Round(expected, MidpointRounding.AwayFromZero), axe.BaseDamage);
-            AssertBetween(80, 92, axe.BaseDamage.Value);
+            AssertBetween((t7Minimum + t7Maximum) / 2.0 - 1, t7Maximum, axe.BaseDamage.Value);
             Assert.AreEqual(axe.BaseDamage + 5 * (int)(axe.BaseDamage * 0.075), axe.Damage);
         }
     }
@@ -329,8 +362,10 @@ public class QuestItemMutationTests
 
             Assert.IsTrue(UpgradeKit.UpgradeItem(null, axe, 250));
 
-            // within a point of where that quality lands at T7 (69-92), not snapped to its middle or top
-            AssertBetween(QuestItemMutation.GetRollValue(69, 92, quality) - 1, QuestItemMutation.GetRollValue(69, 92, quality) + 1, axe.BaseDamage.Value);
+            // within a point of where that quality lands at T7, not snapped to its middle or top
+            var (t7Minimum, t7Maximum) = AxeLargeRange(6);
+            var expected = QuestItemMutation.GetRollValue(t7Minimum, t7Maximum, quality);
+            AssertBetween(expected - 1, expected + 1, axe.BaseDamage.Value);
         }
     }
 
@@ -353,10 +388,12 @@ public class QuestItemMutationTests
             LootGenerationFactory.MutateQuestItem(ring);
             var quality = ring.QuestItemWardRollQuality.Value;
 
-            // a ring's T6 ward is 18-25
             Assert.IsTrue(UpgradeKit.UpgradeItemToRequirement(ring, 50));
 
-            AssertBetween(QuestItemMutation.GetRollValue(18, 25, quality) - 1, QuestItemMutation.GetRollValue(18, 25, quality) + 1, ring.BaseWard.Value);
+            // within a point of where that quality lands in a ring's T6 ward range
+            var (minimum, maximum) = QuestItemMutation.GetJewelryWardLevelRange(5, false);
+            var expected = QuestItemMutation.GetRollValue(minimum, maximum, quality);
+            AssertBetween(expected - 1, expected + 1, ring.BaseWard.Value);
         }
     }
 
@@ -369,9 +406,10 @@ public class QuestItemMutationTests
 
         Assert.IsTrue(UpgradeKit.UpgradeItem(null, silifi, 230));
 
+        var (minimum, maximum) = AxeLargeRange(5);
         Assert.IsFalse(silifi.MutableQuestItem);
         Assert.AreEqual(4, silifi.QuestItemTinks);
-        AssertBetween(54, 62, silifi.BaseDamage.Value);
+        AssertBetween((minimum + maximum) / 2.0 - 1, maximum, silifi.BaseDamage.Value);
         Assert.AreEqual(silifi.BaseDamage + 4 * (int)(silifi.BaseDamage * 0.075), silifi.Damage);
     }
 
@@ -387,39 +425,60 @@ public class QuestItemMutationTests
 
             Assert.IsTrue(UpgradeKit.UpgradeItem(null, axe, 250));
 
+            var (t7Minimum, t7Maximum) = AxeLargeRange(6);
             Assert.AreEqual(5, axe.QuestItemTinks);
             Assert.IsTrue(axe.BaseDamage >= scaled);
-            AssertBetween(81, 92, axe.BaseDamage.Value);
+            AssertBetween(QuestItemMutation.RollWholeMainStat(t7Minimum, t7Minimum, t7Maximum, 0), t7Maximum, axe.BaseDamage.Value);
             Assert.AreEqual(axe.BaseDamage + 5 * (int)(axe.BaseDamage * 0.075), axe.Damage);
         }
     }
 
     [TestMethod]
-    public void UpgradeItem_ArmorKeepsWardTinksPerSlot()
+    public void UpgradeItem_ArmorKeepsItsWardRollAndRetinksWard()
     {
         var hauberk = CreateArmor(ArmorStyle.Platemail, ArmorWeightClass.Heavy, armorLevel: 120, wardLevel: 28, armorSlots: 4, wieldDifficulty: 125);
         LootGenerationFactory.MutateQuestItem(hauberk);
         var t2Ward = hauberk.BaseWard.Value;
+        var quality = hauberk.QuestItemWardRollQuality.Value;
 
         Assert.IsTrue(UpgradeKit.UpgradeItem(null, hauberk, 250));
 
-        // ward climbs one per-slot base (7 x 4 slots) per tier, from T2 to T7
+        // the stored ward roll quality lands in the same place in the doubled T7 range (7 per slot, 4 slots), plus
+        // the rounding it had at T2
+        var (t2Minimum, t2Maximum) = QuestItemMutation.GetWardLevelRange(7, 1, 4);
+        var (t7Minimum, t7Maximum) = QuestItemMutation.GetWardLevelRange(7, 6, 4);
+        var expectedWard = (int)Math.Round(
+            QuestItemMutation.GetRollValue(t7Minimum, t7Maximum, quality) + (t2Ward - QuestItemMutation.GetRollValue(t2Minimum, t2Maximum, quality)),
+            MidpointRounding.AwayFromZero
+        );
+
         Assert.AreEqual(7, hauberk.QuestItemTinks);
-        Assert.AreEqual(t2Ward + 7 * 4 * 5, hauberk.BaseWard);
-        Assert.AreEqual(hauberk.BaseWard + 7 * Salvage.SilverTinkWardLevel * 4, hauberk.WardLevel);
+        Assert.AreEqual(expectedWard, hauberk.BaseWard);
+        Assert.AreEqual(hauberk.BaseWard + 7 * QuestItemMutation.GetPercentTinkBonus(hauberk.BaseWard.Value, Salvage.SilverTinkWardPercent), hauberk.WardLevel);
         Assert.AreEqual(hauberk.BaseArmor + 7 * QuestItemMutation.GetPercentTinkBonus(hauberk.BaseArmor.Value, Salvage.IronTinkPercent), hauberk.ArmorLevel);
     }
 
     [TestMethod]
     public void RollRanges_ShowTheFinalSpreadOfAnUnrolledItem()
     {
-        // Obsidian Axe on a vendor: T6 AxeLarge, authored at its 55 floor, 4 tinks of +4 at either end
+        // Obsidian Axe on a vendor: T6 AxeLarge, authored under the new range's median, with 4 Iron tinks at either end
         var axe = CreateMeleeWeapon(LootTables.WeaponSubtype.AxeLarge, 55, 230);
+        var (minimum, maximum) = AxeLargeRange(5);
+        int Tinked(int value) => value + 4 * QuestItemMutation.GetPercentTinkBonus(value, Salvage.IronTinkPercent);
 
         var ranges = LootGenerationFactory.GetQuestItemRollRanges(axe, null);
 
         Assert.AreEqual(1, ranges.Count);
-        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Damage", 55 + 4 * 4, 62 + 4 * 4, false, null), ranges[0]);
+        Assert.AreEqual(
+            new LootGenerationFactory.QuestItemRollRange(
+                "Damage",
+                Tinked(QuestItemMutation.RollWholeMainStat(55, minimum, maximum, 0)),
+                Tinked(maximum),
+                false,
+                null
+            ),
+            ranges[0]
+        );
     }
 
     [TestMethod]
@@ -456,15 +515,18 @@ public class QuestItemMutationTests
     }
 
     [TestMethod]
-    public void RollRanges_ArmorScalesArmorLevelByProtectionAndWardBySlots()
+    public void RollRanges_ArmorShowsArmorLevelAsItRollsAndWardBySlots()
     {
-        // Platemail Hauberk of the Ogre: T2, 4 slots, authored at its 143 armor level floor; its 32 ward sits under the 42 median
+        // Platemail Hauberk of the Ogre: T2 (95-190), 4 slots, authored at its 143 armor level floor; its 32 ward sits
+        // under the 42 median. Protections average 1.0 now, so the armor level isn't scaled by them
         var hauberk = CreateArmor(ArmorStyle.Platemail, ArmorWeightClass.Heavy, armorLevel: 143, wardLevel: 32, armorSlots: 4, wieldDifficulty: 125);
 
-        var ranges = LootGenerationFactory.GetQuestItemRollRanges(hauberk, null, 0.5, 0.55);
+        var ranges = LootGenerationFactory.GetQuestItemRollRanges(hauberk, null);
 
-        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Armor Level", 71 + 2 * 5, 104 + 2 * 7, false, null), ranges[0]);
-        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Ward Level", 42 + 2 * 12, 56 + 2 * 12, false, null), ranges[1]);
+        // each Iron tink adds 7.5% of the armor level
+        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Armor Level", 143 + 2 * 10, 190 + 2 * 14, false, null), ranges[0]);
+        // each Silver tink adds 5% of the ward
+        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Ward Level", 42 + 2 * 2, 56 + 2 * 2, false, null), ranges[1]);
     }
 
     [TestMethod]
@@ -474,9 +536,11 @@ public class QuestItemMutationTests
 
         var range = LootGenerationFactory.GetQuestItemRollRanges(staff, null).Single();
 
+        // a life caster's tinks go on restoration, so it shows the T6 Nether restoration range from its median
+        var (minimum, maximum) = QuestItemMutation.GetCasterRestorationRange(5, true);
         Assert.AreEqual("Restoration Healing Bonus", range.Stat);
-        Assert.AreEqual((2.0625 * (1 + 4 * Salvage.LavenderJadeTinkPercent) - 1) * 100, range.Low, 1e-6);
-        Assert.AreEqual((2.375 * (1 + 4 * Salvage.LavenderJadeTinkPercent) - 1) * 100, range.High, 1e-6);
+        Assert.AreEqual((QuestItemMutation.RollMainStat(2.0625, minimum, maximum, 0) * (1 + 4 * Salvage.LavenderJadeTinkPercent) - 1) * 100, range.Low, 1e-4);
+        Assert.AreEqual((maximum * (1 + 4 * Salvage.LavenderJadeTinkPercent) - 1) * 100, range.High, 1e-4);
         Assert.IsTrue(range.IsPercent);
     }
 
@@ -521,7 +585,7 @@ public class QuestItemMutationTests
             Assert.AreEqual(5, wand.QuestItemTinks);
             Assert.AreEqual(ScaleUpCasterDamageModToT7(t6Roll), t7Roll, 1e-5);
             Assert.AreEqual(t7Roll * (1 + 5 * Salvage.GreenGarnetTinkPercent), wand.ElementalDamageMod.Value, 1e-6);
-            Assert.AreEqual(QuestItemMutation.GetWarCasterRestorationMod(t7Roll), wand.WeaponRestorationSpellsMod.Value, 1e-6);
+            Assert.AreEqual(QuestItemMutation.GetCasterRestorationMod(6, t7Roll, false), wand.WeaponRestorationSpellsMod.Value, 1e-5);
         }
     }
 
@@ -546,17 +610,19 @@ public class QuestItemMutationTests
         {
             var staff = CreateCaster(Skill.LifeMagic, 230, 1.84, 1.84);
             LootGenerationFactory.MutateQuestItem(staff);
-            var t6Roll = staff.BaseWeaponRestorationSpellsMod.Value;
+            var t6Roll = staff.BaseElementalDamageMod.Value;
 
             Assert.IsTrue(UpgradeKit.UpgradeItem(null, staff, 250));
 
-            // the life roll is rescaled on the war scale, so the restoration tinks must be off it first
-            var t7Roll = staff.BaseWeaponRestorationSpellsMod.Value;
-            var expectedT7Roll = QuestItemMutation.ToLifeCasterScale(ScaleUpCasterDamageModToT7(1 + (t6Roll - 1) * 2));
+            // the elemental roll is rescaled on the ladder, and restoration follows it on the Nether ladder, so the
+            // restoration tinks must be off it first
+            var t7Roll = staff.BaseElementalDamageMod.Value;
+            var t7Restoration = staff.BaseWeaponRestorationSpellsMod.Value;
             Assert.AreEqual(5, staff.QuestItemTinks);
-            Assert.AreEqual(expectedT7Roll, t7Roll, 1e-5);
+            Assert.AreEqual(ScaleUpCasterDamageModToT7(t6Roll), t7Roll, 1e-5);
             Assert.AreEqual(t7Roll, staff.ElementalDamageMod.Value, 1e-6);
-            Assert.AreEqual(t7Roll * (1 + 5 * Salvage.LavenderJadeTinkPercent), staff.WeaponRestorationSpellsMod.Value, 1e-6);
+            Assert.AreEqual(QuestItemMutation.GetCasterRestorationMod(6, t7Roll, true), t7Restoration, 1e-5);
+            Assert.AreEqual(t7Restoration * (1 + 5 * Salvage.LavenderJadeTinkPercent), staff.WeaponRestorationSpellsMod.Value, 1e-5);
         }
     }
 
@@ -571,22 +637,46 @@ public class QuestItemMutationTests
     // ScaleUpDamage's arithmetic for AxeLarge, T6 (47-62) to T7 (69-92)
     private static int ScaleUpAxeLargeDamageToT7(int t6Damage)
     {
-        var rollPercentile = (float)(t6Damage - 47) / 15;
-        return Convert.ToInt32(69 + 23 * rollPercentile);
+        var (t6Minimum, t6Maximum) = AxeLargeRange(5);
+        var (t7Minimum, t7Maximum) = AxeLargeRange(6);
+        var rollPercentile = (float)(t6Damage - t6Minimum) / (t6Maximum - t6Minimum);
+        return Convert.ToInt32(t7Minimum + (t7Maximum - t7Minimum) * rollPercentile);
     }
 
-    // ScaleUpDamageMod's arithmetic for BowLarge, T6 (3.02-4.02) to T7 (4.01-5.34)
+    // ScaleUpDamageMod's arithmetic for BowLarge, T6 to T7
     private static double ScaleUpBowLargeDamageModToT7(double t6DamageMod)
     {
-        var rollPercentile = (float)(t6DamageMod - 3.02f) / (4.02f - 3.02f);
-        return 4.01f + (5.34f - 4.01f) * rollPercentile;
+        var t6Minimum = LootTables.GetMissileCasterSubtypeMinimumDamage(LootTables.WeaponSubtype.BowLarge, 5);
+        var t6Range = LootTables.GetMissileCasterSubtypeDamageRange(LootTables.WeaponSubtype.BowLarge, 5);
+        var t7Minimum = LootTables.GetMissileCasterSubtypeMinimumDamage(LootTables.WeaponSubtype.BowLarge, 6);
+        var t7Range = LootTables.GetMissileCasterSubtypeDamageRange(LootTables.WeaponSubtype.BowLarge, 6);
+        var rollPercentile = (float)(t6DamageMod - t6Minimum) / t6Range;
+        return t7Minimum + t7Range * rollPercentile;
+    }
+
+    // the loot range of a large axe (CreateMeleeWeapon's Battle Axe speed and variance) at tier index t
+    private static (int Minimum, int Maximum) AxeLargeRange(int tier)
+    {
+        var (minimum, maximum) = LootGenerationFactory.GetMeleeDamageRollRange(CreateMeleeWeapon(LootTables.WeaponSubtype.AxeLarge, 10, 230), tier + 1);
+
+        return ((int)Math.Round(minimum), (int)Math.Round(maximum));
+    }
+
+    // the loot damage mod range of a large bow at tier index t
+    private static (double Minimum, double Maximum) BowLargeRange(int tier)
+    {
+        var minimum = LootTables.GetMissileCasterSubtypeMinimumDamage(LootTables.WeaponSubtype.BowLarge, tier);
+
+        return (minimum, minimum + LootTables.GetMissileCasterSubtypeDamageRange(LootTables.WeaponSubtype.BowLarge, tier));
     }
 
     // ScaleUpElementalAndRestoMod's arithmetic for a war-scale caster mod, T6 (2.5-3.75) to T7 (3.5-4.75)
-    private static double ScaleUpCasterDamageModToT7(double t6WarScaleMod)
+    private static double ScaleUpCasterDamageModToT7(double t6Mod)
     {
-        var rollPercentile = (float)(t6WarScaleMod - 2.5f) / (3.75f - 2.5f);
-        return 3.5f + (4.75f - 3.5f) * rollPercentile;
+        var (t6Minimum, t6Maximum) = QuestItemMutation.GetCasterDamageModRange(5);
+        var (t7Minimum, t7Maximum) = QuestItemMutation.GetCasterDamageModRange(6);
+        var rollPercentile = (float)(t6Mod - t6Minimum) / (float)(t6Maximum - t6Minimum);
+        return t7Minimum + (t7Maximum - t7Minimum) * rollPercentile;
     }
 
     private static void AssertBetween(double minimum, double maximum, double value)
@@ -594,13 +684,19 @@ public class QuestItemMutationTests
         Assert.IsTrue(value >= minimum - 1e-6 && value <= maximum + 1e-6, $"{value} is outside {minimum}-{maximum}");
     }
 
+    // a Battle Axe's speed and variance by default
     private static WorldObject CreateMeleeWeapon(
         LootTables.WeaponSubtype subtype,
         int damage,
         int wieldDifficulty,
-        Dictionary<PropertyFloat, double> floats = null
+        Dictionary<PropertyFloat, double> floats = null,
+        int weaponTime = 59,
+        double variance = 0.6
     )
     {
+        floats ??= new Dictionary<PropertyFloat, double>();
+        floats.TryAdd(PropertyFloat.DamageVariance, variance);
+
         return CreateItem(
             WeenieType.MeleeWeapon,
             ItemType.MeleeWeapon,
@@ -608,6 +704,7 @@ public class QuestItemMutationTests
             {
                 [PropertyInt.Damage] = damage,
                 [PropertyInt.WeaponSubtype] = (int)subtype,
+                [PropertyInt.WeaponTime] = weaponTime,
                 [PropertyInt.WieldRequirements] = (int)WieldRequirement.RawAttrib,
                 [PropertyInt.WieldDifficulty] = wieldDifficulty,
             },

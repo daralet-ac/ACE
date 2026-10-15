@@ -87,14 +87,19 @@ public static partial class LootGenerationFactory
     /// </summary>
     private static double GetWeaponHitsPerSecond(WorldObject wo, int tier)
     {
-        if (wo.WeaponTime is null or <= 0)
+        return GetWeaponHitsPerSecond(wo.WeaponTime ?? 0, wo.IsRanged, tier);
+    }
+
+    private static double GetWeaponHitsPerSecond(int weaponTime, bool isRanged, int tier)
+    {
+        if (weaponTime <= 0)
         {
             return 0.0;
         }
 
         var quickness = AvgQuicknessPerTier[Math.Clamp(tier - 1, 0, AvgQuicknessPerTier.Length - 1)];
 
-        return 1.0 / WeaponSpeed.GetSecondsPerHit(wo.WeaponTime.Value, quickness, wo.IsRanged);
+        return 1.0 / WeaponSpeed.GetSecondsPerHit(weaponTime, quickness, isRanged);
     }
 
     public const float MaxSpeedBonus = 0.1f;
@@ -257,38 +262,12 @@ public static partial class LootGenerationFactory
         return WorkmanshipChance.FromPowerScore(finalPercentile);
     }
 
-    private static float[] GetCasterMaxDamageMod()
-    {
-        return LootTables.CasterMaxDamageMod;
-    }
-
-    private static float[] GetCasterMinDamageMod()
-    {
-        return LootTables.CasterMinDamageMod;
-    }
-
+    /// <summary>
+    /// The DPS a tier's weapons are built around (TierPower): doubles every tier
+    /// </summary>
     private static float GetWeaponBaseDps(int tier)
     {
-        switch (tier)
-        {
-            default:
-            case 1:
-                return 5.0f;
-            case 2:
-                return 10.0f;
-            case 3:
-                return 15.0f;
-            case 4:
-                return 22.0f;
-            case 5:
-                return 33.0f;
-            case 6:
-                return 50.0f;
-            case 7:
-                return 75.0f;
-            case 8:
-                return 110.0f;
-        }
+        return TierPower.GetWeaponTargetDps(tier);
     }
 
     private static int GetWeaponPrimaryAttribute(Skill weaponSkill)

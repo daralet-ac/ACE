@@ -213,7 +213,7 @@ public class EnchantmentManagerWithCaching : EnchantmentManager
         armorModVsTypeModCache.Clear();
         wardModCache = null;
         ratingCache.Clear();
-        netherDotDamageRatingCache = null;
+        netherDotCountCache = null;
         xpBonusCache = null;
         resistLockpickCache = null;
     }
@@ -646,16 +646,16 @@ public class EnchantmentManagerWithCaching : EnchantmentManager
         return value;
     }
 
-    private int? netherDotDamageRatingCache;
+    private int? netherDotCountCache;
 
-    public override int GetNetherDotDamageRating()
+    public override int GetNetherDotCount()
     {
-        if (netherDotDamageRatingCache == null)
+        if (netherDotCountCache == null)
         {
-            netherDotDamageRatingCache = base.GetNetherDotDamageRating();
+            netherDotCountCache = base.GetNetherDotCount();
         }
 
-        return netherDotDamageRatingCache.Value;
+        return netherDotCountCache.Value;
     }
 
     private float? xpBonusCache;

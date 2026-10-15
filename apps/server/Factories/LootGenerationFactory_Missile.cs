@@ -2,6 +2,7 @@ using System.Linq;
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
@@ -483,6 +484,29 @@ public static partial class LootGenerationFactory
         return LootTables.NonElementalMissileWeaponsMatrix[missileType][subType];
     }
 
+    /// <summary>
+    /// The DamageMod range a launcher rolled in at a tier before the tier rework: sized so the tier's previous weapon DPS
+    /// comes out of its previous ammo at this attack speed. Tier 1 launchers still roll in it, and workmanship
+    /// compares launchers on it.
+    /// </summary>
+    internal static (double Minimum, double Maximum) GetPreviousLauncherDamageModRange(Skill weaponSkill, int tier, double hitsPerSecond)
+    {
+        if (hitsPerSecond <= 0)
+        {
+            return (1.0, 1.0);
+        }
+
+        var ammoMaxDamage = TierPower.GetPreviousAmmoMaxDamage(weaponSkill, tier);
+        var ammoMinDamage = ammoMaxDamage * (1 - GetAmmoVariance(weaponSkill));
+        var ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
+        var targetAvgHitDamage = TierPower.GetPreviousWeaponDps(tier) / hitsPerSecond;
+
+        // average damage mod, considering ammo and critical strikes
+        var averageDamageMod = targetAvgHitDamage / ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2));
+
+        return GetTierDamageRange(averageDamageMod);
+    }
+
     private static void TryMutateMissileWeaponDamage(
         WorldObject wo,
         TreasureRoll roll,
@@ -503,56 +527,29 @@ public static partial class LootGenerationFactory
             return;
         }
 
-        // target dps per tier
-        var targetBaseDps = GetWeaponBaseDps(wo.Tier.Value);
+        var tier = wo.Tier.Value;
+        var damageRoll = GetDiminishingRoll(profile);
+        var hitsPerSecond = GetWeaponHitsPerSecond(wo, profile.Tier);
 
-        // attacks per second
-        var effectiveAttacksPerSecond = GetWeaponHitsPerSecond(wo, profile.Tier);
+        // the mod this roll gave before the tier rework: tier 1 keeps it, and workmanship is fitted to that scale
+        var previousRange = GetPreviousLauncherDamageModRange(wo.WeaponSkill, tier, hitsPerSecond);
+        var previousDamageMod = previousRange.Minimum + (previousRange.Maximum - previousRange.Minimum) * damageRoll;
 
-        // target weapon hit damage
-        var ammoMaxDamage = GetAmmoBaseMaxDamage(wo.WeaponSkill, wo.Tier.Value);
-        var weaponVariance = GetAmmoVariance(wo.WeaponSkill);
-        var ammoMinDamage = ammoMaxDamage * (1 - weaponVariance);
-        var ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
-        var targetAvgHitDamage = targetBaseDps / effectiveAttacksPerSecond;
-
-        // find average damage mod, considering ammo and critical strikes
-        var averageBaseDamageMod = targetAvgHitDamage / ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2));
-
-        // roll and assign weapon damage, within the tier's range around that average
-        var finalMaxDamageMod = RollTierDamage(averageBaseDamageMod, GetDiminishingRoll(profile));
-        wo.DamageMod = finalMaxDamageMod;
-
-        // debug
-        //var averageHitDamage = ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2)) * averageBaseDamageMod;
-        //Console.WriteLine($"\nTryMutateMissileWeaponDamage()\n" +
-        //    $" TargetBaseDps: {targetBaseDps}\n" +
-        //    $" BaseAnimLength: {baseAnimLength}\n" +
-        //    $" WeaponTime: {wo.WeaponTime.Value}\n" +
-        //    $" Quick: {quick}\n" +
-        //    $" SpeedMod: {speedMod} FullFormula: 1.0f + ({1 - (wo.WeaponTime.Value /100.0)}) + ({quick / 600})\n" +
-        //    $" AttacksPerSecond: {effectiveAttacksPerSecond}\n" +
-        //    $" TargetAvgHitDamage: {targetAvgHitDamage}\n" +
-        //    $" AmmoMaxDamage: {ammoMaxDamage} AmmoAvgDamage: {ammoAverageDamage} WeaponVariance: {weaponVariance}\n\n" +
-        //    $" AverageBaseMaxDamageMod: {averageBaseDamageMod}\n" +
-        //    $" MaximumBaseMaxDamageMod: {maximumBaseMaxDamageMod}\n" +
-        //    $" MinimumBaseMaxDamageMod: {minimumBaseMaxDamageMod}\n" +
-        //    $" DiminishedRoll: {diminishedRoll}\n" +
-        //    $" FinalMaxDamageMod: {finalMaxDamageMod}\n\n" +
-        //    $" Non-Crit average Hit Damage: {ammoAverageDamage * averageBaseDamageMod}\n" +
-        //    $" Average Hit Damage: {averageHitDamage}\n" +
-        //    $" Avg DPS: {averageHitDamage * effectiveAttacksPerSecond}");
+        // from tier 2 up, launchers roll in the multiplier ranges casters share (TierPower); ammo carries the rest
+        if (tier <= 1)
+        {
+            wo.DamageMod = previousDamageMod;
+        }
+        else
+        {
+            var (minimum, maximum) = TierPower.GetMultiplierRange(tier);
+            wo.DamageMod = minimum + (maximum - minimum) * damageRoll;
+        }
 
         // max possible damage (for workmanship)
-        targetBaseDps = GetWeaponBaseDps(8);
-        ammoMaxDamage = GetAmmoBaseMaxDamage(wo.WeaponSkill, 8);
-        ammoMinDamage = ammoMaxDamage * (1 - weaponVariance);
-        ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
-        targetAvgHitDamage = targetBaseDps / effectiveAttacksPerSecond;
-        averageBaseDamageMod = targetAvgHitDamage / ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2));
-        var maximumBaseMaxDamageMod = GetTierDamageRange(averageBaseDamageMod).Maximum;
+        var maximumPreviousDamageMod = GetPreviousLauncherDamageModRange(wo.WeaponSkill, 8, hitsPerSecond).Maximum;
 
-        damageModPercentile = (finalMaxDamageMod - 1) / (maximumBaseMaxDamageMod - 1);
+        damageModPercentile = (previousDamageMod - 1) / (maximumPreviousDamageMod - 1);
         //Console.WriteLine($"damMod: {wo.DamageMod - 1} maxDamMod: {maxPossibleDamageMod} damModPercentile: {damageModPercentile}");
     }
 
@@ -616,77 +613,6 @@ public static partial class LootGenerationFactory
         //wo.MaterialType = (MaterialType)materialType;
         wo.UiEffects = (UiEffects)uiEffect;
         wo.Name = elementString + " " + wo.Name;
-    }
-
-    private static int GetAmmoBaseMaxDamage(Skill weaponSkill, int tier)
-    {
-        switch (weaponSkill)
-        {
-            default:
-            case Skill.Bow:
-                switch (tier)
-                {
-                    default:
-                    case 1:
-                        return 6;
-                    case 2:
-                        return 8;
-                    case 3:
-                        return 10;
-                    case 4:
-                        return 12;
-                    case 5:
-                        return 14;
-                    case 6:
-                        return 16;
-                    case 7:
-                        return 18;
-                    case 8:
-                        return 20;
-                }
-            case Skill.Crossbow:
-                switch (tier)
-                {
-                    default:
-                    case 1:
-                        return 9;
-                    case 2:
-                        return 12;
-                    case 3:
-                        return 15;
-                    case 4:
-                        return 18;
-                    case 5:
-                        return 21;
-                    case 6:
-                        return 24;
-                    case 7:
-                        return 27;
-                    case 8:
-                        return 30;
-                }
-            case Skill.ThrownWeapon:
-                switch (tier)
-                {
-                    default:
-                    case 1:
-                        return 12;
-                    case 2:
-                        return 16;
-                    case 3:
-                        return 20;
-                    case 4:
-                        return 24;
-                    case 5:
-                        return 28;
-                    case 6:
-                        return 32;
-                    case 7:
-                        return 36;
-                    case 8:
-                        return 40;
-                }
-        }
     }
 
     private static float GetAmmoVariance(Skill weaponSkill)

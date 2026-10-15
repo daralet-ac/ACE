@@ -212,6 +212,9 @@ partial class SpellProjectile
             pkBattle ? ratings.PkDamageResistRating : null
         );
 
+        // Void DoT vulnerability: more damage taken for each Void DoT on the target
+        ratings.DamageResistRating *= target.GetVoidDotVulnerabilityMod();
+
         return ratings;
     }
 
