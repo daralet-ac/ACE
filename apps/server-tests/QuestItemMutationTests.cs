@@ -515,14 +515,16 @@ public class QuestItemMutationTests
     }
 
     [TestMethod]
-    public void RollRanges_ArmorScalesArmorLevelByProtectionAndWardBySlots()
+    public void RollRanges_ArmorShowsArmorLevelAsItRollsAndWardBySlots()
     {
-        // Platemail Hauberk of the Ogre: T2, 4 slots, authored at its 143 armor level floor; its 32 ward sits under the 42 median
+        // Platemail Hauberk of the Ogre: T2 (95-190), 4 slots, authored at its 143 armor level floor; its 32 ward sits
+        // under the 42 median. Protections average 1.0 now, so the armor level isn't scaled by them
         var hauberk = CreateArmor(ArmorStyle.Platemail, ArmorWeightClass.Heavy, armorLevel: 143, wardLevel: 32, armorSlots: 4, wieldDifficulty: 125);
 
-        var ranges = LootGenerationFactory.GetQuestItemRollRanges(hauberk, null, 0.5, 0.55);
+        var ranges = LootGenerationFactory.GetQuestItemRollRanges(hauberk, null);
 
-        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Armor Level", 71 + 2 * 5, 104 + 2 * 7, false, null), ranges[0]);
+        // each Iron tink adds 7.5% of the armor level
+        Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Armor Level", 143 + 2 * 10, 190 + 2 * 14, false, null), ranges[0]);
         // each Silver tink adds 5% of the ward
         Assert.AreEqual(new LootGenerationFactory.QuestItemRollRange("Ward Level", 42 + 2 * 2, 56 + 2 * 2, false, null), ranges[1]);
     }

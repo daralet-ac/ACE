@@ -442,10 +442,9 @@ public static partial class LootGenerationFactory
 
             if (wo.ItemType is ItemType.Armor)
             {
-                NormalizeProtectionLevels(wo);
+                BalanceAuthoredProtections(wo);
             }
 
-            // tinks are sized off the Armor Level NormalizeProtectionLevels leaves, as with loot
             if (rolledArmorLevel || rolledWardLevel)
             {
                 SetQuestItemTinks(wo, LootTables.QuestItemArmorTinksPerTier[tier]);
@@ -551,10 +550,9 @@ public static partial class LootGenerationFactory
     /// The roll ranges of every stat MutateQuestItem rolls, at the item's current tier and with its baked-in tinks.
     /// authored is the item's weenie: secondary stats roll up from their authored values, so without it only the main
     /// stats are listed. An unrolled item's current main stats are their floors; a rolled one is shown from the tier
-    /// median. Armor Level is scaled by the average protection NormalizeProtectionLevels folds into it - for armor,
-    /// pass the lowest and highest that average can come out after protections roll.
+    /// median.
     /// </summary>
-    public static List<QuestItemRollRange> GetQuestItemRollRanges(WorldObject wo, Weenie authored, double protectionScaleMin = 1.0, double protectionScaleMax = 1.0)
+    public static List<QuestItemRollRange> GetQuestItemRollRanges(WorldObject wo, Weenie authored)
     {
         var ranges = new List<QuestItemRollRange>();
         var tier = GetQuestItemTierIndex(wo);
@@ -578,8 +576,8 @@ public static partial class LootGenerationFactory
         {
             var (minimum, maximum) = GetQuestItemArmorLevelRange(wo, tier);
             var floor = rolled ? 0 : wo.ArmorLevel.Value;
-            var low = (int)(QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 0) * protectionScaleMin);
-            var high = (int)(QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 1) * protectionScaleMax);
+            var low = QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 0);
+            var high = QuestItemMutation.RollWholeMainStat(floor, minimum, maximum, 1);
             int Tinked(int value) => value + tinks * QuestItemMutation.GetPercentTinkBonus(value, Salvage.IronTinkPercent);
 
             ranges.Add(new("Armor Level", Tinked(low), Tinked(high), false, rolled ? wo.QuestItemRollQuality : null));

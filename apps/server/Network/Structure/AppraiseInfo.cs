@@ -1508,29 +1508,7 @@ public class AppraiseInfo
 
         var weenie = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId);
 
-        // NormalizeProtectionLevels folds armor's average protection, after each rolls up to +10%, into its Armor Level
-        var protectionScaleMin = 1.0;
-        var protectionScaleMax = 1.0;
-
-        if (wo.ItemType == ItemType.Armor)
-        {
-            var protections = new[]
-                {
-                    PropertyFloat.ArmorModVsSlash, PropertyFloat.ArmorModVsPierce, PropertyFloat.ArmorModVsBludgeon,
-                    PropertyFloat.ArmorModVsAcid, PropertyFloat.ArmorModVsFire, PropertyFloat.ArmorModVsCold,
-                    PropertyFloat.ArmorModVsElectric,
-                }
-                .Select(protection => weenie?.GetProperty(protection))
-                .ToList();
-
-            if (protections.All(protection => protection != null))
-            {
-                protectionScaleMin = protections.Average(protection => protection.Value);
-                protectionScaleMax = protectionScaleMin * 1.1;
-            }
-        }
-
-        var ranges = LootGenerationFactory.GetQuestItemRollRanges(wo, weenie, protectionScaleMin, protectionScaleMax);
+        var ranges = LootGenerationFactory.GetQuestItemRollRanges(wo, weenie);
 
         if (ranges.Count == 0)
         {
