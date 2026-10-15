@@ -796,7 +796,11 @@ internal static class MarketListingFormatter
         {
             line4.Add($"Imbue {imbue}");
         }
-        AppendPropertyFloatIfPresent(snap, line4, PropertyFloat.CriticalMultiplier, "Crushing Blow", multiplyBy100: true, subtractBy1: true);
+        if (TryGetPropertyFloat(snap, PropertyFloat.CriticalMultiplier, out var cm))
+        {
+            var crushingBlow = Math.Round(ACE.Server.WorldObjects.WorldObject.GetCrushingBlowBonus(cm) * 100.0, 1, MidpointRounding.AwayFromZero);
+            line4.Add($"Crushing Blow {crushingBlow:+0.0;-0.0;0.0}%");
+        }
         if (TryGetPropertyFloat(snap, PropertyFloat.CriticalFrequency, out var cf) && cf > 0.1)
         {
             var bonusPct = (cf - 0.1) * 100.0;
@@ -1448,7 +1452,7 @@ internal static class MarketListingFormatter
             return;
         }
 
-        var bonusPct = (val.Value - 1.0) * 100.0;
+        var bonusPct = ACE.Server.WorldObjects.WorldObject.GetCrushingBlowBonus(val.Value) * 100.0;
         parts.Add($"Crushing Blow {bonusPct:+0.##;-0.##;0}%");
     }
 

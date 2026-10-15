@@ -1948,14 +1948,14 @@ public class EnchantmentManager
             // ward rending and penetration apply to ticks as they do to the caster's direct damage, from the caster's
             // current weapon: the wand for spell DoTs, the weapon for a Weapon Master bleed
             var damagerCreature = damager as Creature;
-            var ignoreWardMod = 1.0f;
+            var wardPenetration = WardPenetration.None;
             if (damagerCreature is not null)
             {
                 var tickWeapon = enchantment.SpellId is 6410 ? damagerCreature.GetEquippedWeapon() : damagerCreature.GetEquippedWand();
-                ignoreWardMod = WorldObject.GetSpellIgnoreWardMod(damagerCreature, tickWeapon, new Spell(enchantment.SpellId));
+                wardPenetration = WorldObject.GetSpellWardPenetration(damagerCreature, tickWeapon, new Spell(enchantment.SpellId));
             }
 
-            var wardMod = creature.GetWardMod(damagerCreature, creature, ignoreWardMod);
+            var wardMod = creature.GetWardMod(damagerCreature, creature, wardPenetration);
             var levelScalingMod = LevelScaling.GetMonsterDamageTakenHealthScalar(sourcePlayer, creature);
 
             // COMBAT ABILITY - Overload/Battery: DoT ticks need to independently consult the caster's

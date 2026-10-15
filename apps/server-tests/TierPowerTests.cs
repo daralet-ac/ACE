@@ -198,6 +198,25 @@ public class TierPowerTests
     }
 
     [TestMethod]
+    public void Migration_MaceTakesItsNewVarianceAndTheDamageForIt()
+    {
+        // a T6 mace rolled at its weenie's old 0.75 variance (+0.05 on the loot roll: 0.8), now 0.6: it keeps its share
+        // of the variance, and its damage keeps its place, from its old band at 0.75 to the new range at 0.6
+        var mace = CreateMelee(wcid: 331, tier: 6, weenieTime: 50, variance: 0.6);
+        mace.DamageVariance = 0.8;
+        var previous = LootGenerationFactory.GetPreviousMeleeDamageRange(mace, 6, 50, 0.75);
+        mace.Damage = (int)System.Math.Round((previous.Minimum + previous.Maximum) / 2);
+        mace.BaseDamage = mace.Damage;
+        var place = TierPower.GetRollPosition(mace.Damage.Value, previous);
+
+        Assert.IsTrue(LootGenerationFactory.MigrateToTierPower(mace, new List<string>()));
+
+        Assert.AreEqual(0.64, mace.DamageVariance.Value, 1e-4);
+        var range = LootGenerationFactory.GetMeleeDamageRollRange(mace, 6);
+        Assert.AreEqual((int)System.Math.Round(range.Minimum + (range.Maximum - range.Minimum) * place, System.MidpointRounding.AwayFromZero), mace.Damage);
+    }
+
+    [TestMethod]
     public void Migration_SpeedChangesEvenWithoutATier()
     {
         // a two-hander bought off a vendor has no tier, but takes the new speed

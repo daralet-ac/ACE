@@ -384,7 +384,7 @@ public partial class DamageEvent
     }
 
     /// <summary>
-    /// SPEC BONUS - Staff: +50% crit damage (additively)
+    /// SPEC BONUS - Staff: +65% crit damage (additively)
     /// </summary>
     private static float GetStaffSpecCriticalDamageBonus(Player playerAttacker)
     {
@@ -393,11 +393,11 @@ public partial class DamageEvent
             return 0.0f;
         }
 
-        return IsWeaponSkillSpecialized(playerAttacker, Skill.Staff) ? 0.5f : 0.0f;
+        return IsWeaponSkillSpecialized(playerAttacker, Skill.Staff) ? 0.65f : 0.0f;
     }
 
     /// <summary>
-    /// SPEC BONUS - Martial Weapons (Mace): +50% crit damage (additively)
+    /// SPEC BONUS - Martial Weapons (Mace): +65% crit damage (additively)
     /// </summary>
     private static float GetMaceSpecCriticalDamageBonus(Player playerAttacker)
     {
@@ -406,7 +406,7 @@ public partial class DamageEvent
             return 0.0f;
         }
 
-        return IsWeaponSkillSpecialized(playerAttacker, Skill.Mace) ? 0.5f : 0.0f;
+        return IsWeaponSkillSpecialized(playerAttacker, Skill.Mace) ? 0.65f : 0.0f;
     }
 
     /// <summary>

@@ -324,9 +324,9 @@ partial class SpellProjectile
     /// </summary>
     private float GetTargetWardMod(in SpellHit hit)
     {
-        var ignoreWardMod = GetSpellIgnoreWardMod(hit.SourceCreature, hit.Weapon, Spell);
+        var wardPenetration = GetSpellWardPenetration(hit.SourceCreature, hit.Weapon, Spell);
 
-        return GetWardMod(hit.SourceCreature, hit.Target, ignoreWardMod);
+        return GetWardMod(hit.SourceCreature, hit.Target, wardPenetration);
     }
 
     /// <summary>

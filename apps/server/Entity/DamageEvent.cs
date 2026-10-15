@@ -38,7 +38,7 @@ public partial class DamageEvent
     private DamageModifiers _damageModifiers;
     private float _evasionMod;
     private bool _generalFailure;
-    private float _ignoreArmorMod;
+    private float _armorPenetration;
     private bool _invulnerable;
     private MitigationModifiers _mitigationModifiers;
     private bool _overpower;

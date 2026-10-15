@@ -261,8 +261,8 @@ partial class WorldObject
     {
         var creature = this as Creature;
 
-        var ignoreWardMod = GetSpellIgnoreWardMod(creature, cast.Weapon, cast.Spell);
-        var wardMod = GetWardMod(creature, cast.Target, ignoreWardMod);
+        var wardPenetration = GetSpellWardPenetration(creature, cast.Weapon, cast.Spell);
+        var wardMod = GetWardMod(creature, cast.Target, wardPenetration);
 
         srcVitalChange = Convert.ToUInt32(srcVitalChange * wardMod);
         destVitalChange = Convert.ToUInt32(destVitalChange * wardMod);

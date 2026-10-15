@@ -133,30 +133,31 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// The multiplier for how much of the target's ward a caster's damaging spell still faces (1.0 ignores none):
-    /// the higher of the caster's and the weapon's Ignore Ward, the weapon's Ward Rending (scaled by the caster's skill
-    /// in the spell's school), SPEC BONUS - War Magic (Orb) and RATING - WardPen
+    /// What a caster's damaging spell does to the target's ward: penetration from the higher of the caster's and the
+    /// weapon's Ward Cleaving, the weapon's Ward Rending (scaled by the caster's skill in the spell's school) and
+    /// SPEC BONUS - War Magic (Orb), and RATING - WardPen
     /// </summary>
-    internal static float GetSpellIgnoreWardMod(Creature caster, WorldObject weapon, Spell spell)
+    internal static WardPenetration GetSpellWardPenetration(Creature caster, WorldObject weapon, Spell spell)
     {
         var sourcePlayer = caster as Player;
 
-        var ignoreWardMod = 1.0f;
+        var penetration = 0.0f;
 
         if (sourcePlayer != null)
         {
-            ignoreWardMod = sourcePlayer.GetIgnoreWardMod(weapon);
+            penetration += 1.0f - sourcePlayer.GetIgnoreWardMod(weapon);
         }
 
         if (caster != null && weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.WardRending))
         {
-            ignoreWardMod -= GetWardRendingMod(caster.GetCreatureSkill(spell.School));
+            penetration += GetWardRendingMod(caster.GetCreatureSkill(spell.School));
         }
 
-        ignoreWardMod *= 1.0f - CheckForWarSpecWardPenBonus(sourcePlayer, weapon);
-        ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearWardPen, "WardPen");
+        penetration += CheckForWarSpecWardPenBonus(sourcePlayer, weapon);
 
-        return ignoreWardMod;
+        var ratingMod = 1.0f - Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearWardPen, "WardPen");
+
+        return new WardPenetration(penetration, ratingMod);
     }
 
     /// <summary>
@@ -181,10 +182,12 @@ partial class WorldObject
         return 0.0f;
     }
 
-    public float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
+    public float GetWardMod(Creature caster, Creature target, WardPenetration wardPenetration)
     {
-        var wardLevel = target.GetWardLevel();
-        wardLevel += target.EnchantmentManager.GetWardAdditiveMod();
+        // ward penetration scales with the target's ward before buffs and debuffs
+        var baseWardLevel = target.GetWardLevel();
+
+        var wardLevel = baseWardLevel + target.EnchantmentManager.GetWardAdditiveMod();
 
         if (caster is Player)
         {
@@ -193,7 +196,20 @@ partial class WorldObject
 
         var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
 
-        var wardMod = SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
+        var effectiveWard = wardLevel * wardPenetration.RatingMod * wardBuffDebuffMod;
+
+        if (wardPenetration.Penetration > 0 && effectiveWard > 0)
+        {
+            effectiveWard *= ArmorPenetration.GetArmorRemaining(
+                wardPenetration.Penetration,
+                baseWardLevel,
+                ArmorPenetration.GetReferenceWard(target),
+                effectiveWard,
+                SkillFormula.WardMod
+            );
+        }
+
+        var wardMod = SkillFormula.CalcWardMod(effectiveWard);
 
         // level scaling scales the mitigation, not the ward level -- see LevelScaling.GetPlayerArmorWardModScalar().
         // A player caster only scales it in a scaled arena duel, where the higher fighter's ward counts as at the other's level
