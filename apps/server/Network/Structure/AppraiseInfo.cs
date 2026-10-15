@@ -1501,14 +1501,29 @@ public class AppraiseInfo
 
     private void SetQuestItemRollRangeLongText(WorldObject wo)
     {
-        if (!ShowsQuestItemRollRanges(wo))
+        List<LootGenerationFactory.QuestItemRollRange> ranges;
+        var header = "Roll Quality:\n";
+
+        if (ShowsQuestItemRollRanges(wo))
+        {
+            var weenie = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId);
+
+            ranges = LootGenerationFactory.GetQuestItemRollRanges(wo, weenie);
+        }
+        else if (wo.Workmanship != null)
+        {
+            ranges = LootGenerationFactory.GetLootItemRollRanges(wo);
+
+            // loot ranges are of the stats as they rolled, which tinkering moves past
+            if (wo.NumTimesTinkered > 0)
+            {
+                header = "Roll Quality (before tinkering):\n";
+            }
+        }
+        else
         {
             return;
         }
-
-        var weenie = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId);
-
-        var ranges = LootGenerationFactory.GetQuestItemRollRanges(wo, weenie);
 
         if (ranges.Count == 0)
         {
@@ -1517,7 +1532,7 @@ public class AppraiseInfo
 
         static string Format(double value, bool isPercent) => isPercent ? $"{Math.Round(value, 1)}%" : $"{value:0}";
 
-        _questItemRollRangeText = "Roll Ranges:\n";
+        _questItemRollRangeText = header;
 
         foreach (var range in ranges)
         {
