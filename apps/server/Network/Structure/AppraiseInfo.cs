@@ -1019,6 +1019,10 @@ public class AppraiseInfo
 
         SetSigilTrinketUseText(wo);
 
+        PropertiesString.TryGetValue(PropertyString.LongDesc, out var itemDescription);
+
+        var longDescHeader = "";
+
         if (_hasExtraPropertiesText)
         {
             _extraPropertiesText += "";
@@ -1027,22 +1031,19 @@ public class AppraiseInfo
             // Additional Long
             if (_additionalPropertiesLongDescriptionsText.Length > 0)
             {
-                PropertiesString.TryGetValue(PropertyString.LongDesc, out var longDescString);
-
-                _additionalPropertiesLongDescriptionsText =
-                    "Property Descriptions:\n" + _additionalPropertiesLongDescriptionsText + "\n\n" +
-                    longDescString;
-
-                PropertiesString[PropertyString.LongDesc] = _additionalPropertiesLongDescriptionsText;
+                longDescHeader = "Property Descriptions:\n" + _additionalPropertiesLongDescriptionsText + "\n\n";
             }
         }
 
-        // roll ranges go last, after the property descriptions
+        // roll ranges go after the property descriptions, ahead of the item's description (its name, material and gems)
         if (_questItemRollRangeText.Length > 0)
         {
-            PropertiesString.TryGetValue(PropertyString.LongDesc, out var longDesc);
-            PropertiesString[PropertyString.LongDesc] =
-                string.IsNullOrEmpty(longDesc) ? _questItemRollRangeText : longDesc.TrimEnd() + "\n\n" + _questItemRollRangeText;
+            longDescHeader += _questItemRollRangeText + "\n";
+        }
+
+        if (longDescHeader.Length > 0)
+        {
+            PropertiesString[PropertyString.LongDesc] = longDescHeader + itemDescription;
         }
     }
 
