@@ -397,11 +397,8 @@ public static class DDDManager
         var rangeEnd = 0;
         foreach (var ints in clientIterations.Ints)
         {
-            if (Math.Abs(ints) == totalIterations)
-            {
-                return new();
-            }
-
+            // a client that is up to date reports a single range covering every iteration, which the loop below removes in full.
+            // don't short-circuit on a value equal to totalIterations: a client holding only the latest iteration reports that too.
             if (ints < 0)
             {
                 rangeEnd = ints;

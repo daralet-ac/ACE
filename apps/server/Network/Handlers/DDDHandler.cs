@@ -267,19 +267,9 @@ public static class DDDHandler
                             //Console.WriteLine($"EnvCell: {fileId:X8} {fileId}");
                         }
 
-                        // Landblock also needs to send the LandBlockInfo (0xFFFE) file with it...
-                        if (qdid_type == DatFileType.LandBlock)
-                        {
-                            var qdid_ID_FFFE = qdid_ID - 1;
-                            if (DatManager.CellDat.AllFiles.TryGetValue(qdid_ID_FFFE, out var datFileFFFE))
-                            {
-                                //session.Network.EnqueueSend(new GameMessageDDDDataMessage(qdid_ID_FFFE, DatDatabaseType.Cell));
-                                DDDManager.AddToQueue(session, qdid_ID_FFFE, DatDatabaseType.Cell);
-                            }
-                            //else
-                            //    _log.Warning($"[DDD] The server does not have the requested data on 0x{qdid_ID_FFFE:X8} | {qdid_type} to send.");
-                        }
-
+                        // Unlike on-demand requests, don't add the LandBlockInfo (0xFFFE) companion here. If it changed it is already
+                        // in the missing iterations list, and if it didn't, its bytes aren't in the BeginDDD total - sending it anyway
+                        // pushes the client's byte count past the total, so it ends patching before the rest of the queue arrives.
                         if (
                             qdid_type == DatFileType.LandBlock
                             || qdid_type == DatFileType.LandBlockInfo
@@ -403,6 +393,14 @@ public static class DDDHandler
             _log.Information(
                 $"[DDD] client {session.Account} reported it successfully received and patched its DAT files with expected BeginDDD payload"
             );
+
+            var remainingFiles = session.DDDQueueCount;
+            if (remainingFiles > 0)
+            {
+                _log.Warning(
+                    $"[DDD] client {session.Account} ended patching with {remainingFiles:N0} DAT files still queued to send"
+                );
+            }
         }
     }
 
