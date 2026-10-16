@@ -2918,7 +2918,7 @@ public class EmoteManager
             // Sets the emote's own WorldObject (must be a Creature) to an absolute percentage of
             // one vital's MaxValue. Self only, like HealSelf - no target resolution.
             //
-            //   stat        = raw PropertyAttribute2nd value (Health = 1, Stamina = 3, Mana = 5)
+            //   stat        = raw PropertyAttribute2nd value (Health = 2, Stamina = 4, Mana = 6)
             //   percent     = fraction of MaxValue, 0.0-1.0 (matches CreatureVital.Percent's own
             //                 scale, and CastSpellInstant's damage-multiplier convention)
             //
@@ -2936,7 +2936,21 @@ public class EmoteManager
                     {
                         var newValue = (int)Math.Round(vital.MaxValue * emote.Percent.Value);
 
-                        creature.UpdateVital(vital, newValue);
+                        var delta = creature.UpdateVital(vital, newValue);
+
+                        // Keep DamageHistory in step (as HealSelf and /setvital do) so health bars
+                        // refresh immediately instead of on the next hit.
+                        if (vital == creature.Health)
+                        {
+                            if (delta > 0)
+                            {
+                                creature.DamageHistory.OnHeal((uint)delta);
+                            }
+                            else if (delta < 0)
+                            {
+                                creature.DamageHistory.Add(creature, DamageType.Health, (uint)-delta);
+                            }
+                        }
                     }
                 }
                 break;
@@ -2948,8 +2962,8 @@ public class EmoteManager
             // every other Creature within the spell's own range sharing the same Cohort value,
             // excluding the caster itself. Which one gets picked depends on stat:
             //
-            //   stat set (1/3/5)   - vital mode: pick whoever's lowest on that vital (raw
-            //                        PropertyAttribute2nd value - Health=1, Stamina=3, Mana=5).
+            //   stat set (2/4/6)   - vital mode: pick whoever's lowest on that vital (raw
+            //                        PropertyAttribute2nd value - Health=2, Stamina=4, Mana=6).
             //                        max_Dbl (0.0-1.0) is a skip threshold - if even the lowest
             //                        candidate is already at or above it, the cast is skipped
             //                        entirely rather than wasted on someone who doesn't need it.
@@ -3000,6 +3014,7 @@ public class EmoteManager
                             .OfType<Creature>()
                             .Where(candidate =>
                                 candidate != creature
+                                && !candidate.IsDead
                                 && candidate.Cohort == creature.Cohort
                                 && (!emote.WeenieClassId.HasValue || candidate.WeenieClassId == emote.WeenieClassId.Value)
                                 && candidate.Location.SquaredDistanceTo(creature.Location) <= maxRangeSquared
@@ -3010,7 +3025,7 @@ public class EmoteManager
                         if (emote.Stat.HasValue)
                         {
                             // Vital mode: pick whoever's lowest on the named vital (raw
-                            // PropertyAttribute2nd value - Health=1, Stamina=3, Mana=5), skip if
+                            // PropertyAttribute2nd value - Health=2, Stamina=4, Mana=6), skip if
                             // even the lowest is already at or above the skip threshold.
                             var vitalType = (PropertyAttribute2nd)emote.Stat.Value;
 
@@ -3104,8 +3119,12 @@ public class EmoteManager
                                     ? anchor.Fellowship.GetFellowshipMembers().Values
                                     : new List<Player> { anchor };
 
+                            // Fellowship membership carries no location guarantee, and another instance
+                            // of the same landblock shares these coordinates - so match InstanceId too
+                            // (same check as Fellowship.WithinRange).
                             var presentFellows = fellowshipMembers.Where(fellow =>
-                                fellow.Location.SquaredDistanceTo(creature.Location) <= effectiveRadiusSquared
+                                fellow.InstanceId == creature.InstanceId
+                                && fellow.Location.SquaredDistanceTo(creature.Location) <= effectiveRadiusSquared
                             );
 
                             foreach (var fellow in presentFellows)
