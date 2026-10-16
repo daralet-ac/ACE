@@ -1,0 +1,7 @@
+bin
+obj
+*.user
+Dockerfile
+.dockerignore
+# Local dev settings can contain real DB credentials; never bake them into an image.
+appsettings.Development.json
