@@ -16,33 +16,42 @@ namespace ACE.Server.Commands.PlayerCommands;
 /// </summary>
 public class ArenaCommand
 {
+    // Each entry is kept on a line of its own, and sections are split by a blank line, so the chat window's own wrapping stays readable.
     private const string Usage =
-        "arena [queue [levels] [scaled] [unrated] [fellowship] | challenge <name> [scaled] [unrated] [fellowship] | leave | watch [duel | name] | stats [name] | top [2v2] [scaled] | maps]\n"
-        + "  queue [levels]: waits for an opponent. Give a number of levels to only be matched with someone within that many levels of you\n"
-        + "  challenge <name>: asks a player to a duel\n"
-        + "  scaled: a scaled duel, in which the higher-level fighter fights at the other one's level (level 10 and up). Without it, a raw duel at your own levels\n"
-        + "  unrated: a duel that changes no rating and no record. The queue only pairs you with someone who asked for the same kind of duel\n"
-        + "  fellowship: (fellowship leaders) your whole fellowship, against a fellowship of the same size: the one <name> is in, or one from the queue. Everyone on both sides is asked\n"
-        + "  leave: leaves the queue (with your fellowship, if it is waiting), calls off a duel that has not begun, gives up the one you are fighting, or stops watching one\n"
-        + "  watch [duel | name]: lists the duels going on, or takes you to watch one (by its number, or the name of someone fighting in it). Nobody can see you there\n"
-        + "  stats [name]: your arena ratings and records, on every board you have fought on, or someone else's\n"
-        + "  top [2v2] [scaled]: the best arena ratings on a board: 1v1, 2v2, 3v3... raw or scaled (1v1 raw if you say nothing)\n"
-        + "  maps: the arenas duels are fought in\n"
-        + "Duels are fought as player killer lites in an arena of your own. Nobody loses anything by being defeated, "
-        + "and you go back to exactly where you were afterwards. Only non-player killers and player killer lites can duel.";
+        "Duel other players in an arena of your own.\n"
+        + "Nobody loses anything by being defeated, and you go back to where you were afterwards.\n"
+        + "Only non-player killers and player killer lites can duel.\n"
+        + "\n"
+        + "-- Finding a duel --\n"
+        + "/arena queue [levels]: wait for an opponent, optionally only within that many levels.\n"
+        + "/arena challenge <name>: ask a player to a duel.\n"
+        + "/arena leave: leave the queue, call off or give up your duel, or stop watching.\n"
+        + "\n"
+        + "-- Duel options (add to queue or challenge) --\n"
+        + "scaled: the higher-level fighter is scaled down to the other's level (level 10 and up).\n"
+        + "unrated: changes no rating or record. Only pairs you with others who asked for unrated.\n"
+        + "fellowship: (leaders only) your whole fellowship against another of the same size.\n"
+        + "\n"
+        + "-- Watching and rankings --\n"
+        + "/arena watch [duel | name]: list duels, or watch one unseen, by number or fighter name.\n"
+        + "/arena stats [name]: ratings and records on every board, yours or someone else's.\n"
+        + "/arena top [2v2] [scaled]: the best ratings on a board (1v1 raw if you say nothing).\n"
+        + "/arena maps: the arenas duels are fought in.";
 
-    private const string StaffUsage = "\nStaff: arena list | arena cancel <duel>";
-
-    private const string RankingUsage =
-        "\nAdmin: arena reset <name> [2v2] [scaled] | arena restore <name> | arena unrank <name> | arena rerank <name>\n"
-        + "  reset <name>: puts a character's rating back to the start and clears their record, on every board, or only on the one named\n"
-        + "  restore <name>: gives back what the last resets took, if one was a mistake\n"
-        + "  unrank <name>: takes a character off /arena top (their rating and record are kept)\n"
-        + "  rerank <name>: puts them back on it";
+    private const string StaffUsage =
+        "\n\n-- Staff --\n"
+        + "/arena list: every duel and the queue.\n"
+        + "/arena cancel <duel>: calls off a duel.";
 
     private const string AdminUsage =
-        "\nAdmin: /modifybool arena_dueling_enabled false turns the whole arena off at once (true turns it back on). "
-        + "/modifylong arena_dueling_minimum_level <level> sets the lowest level that can duel. /showprops lists the other arena_ settings.";
+        "\n\n-- Admin --\n"
+        + "/arena reset <name> [2v2] [scaled]: resets rating and record, on every board or one.\n"
+        + "/arena restore <name>: gives back what the last resets took.\n"
+        + "/arena unrank <name>: takes a character off /arena top (rating and record are kept).\n"
+        + "/arena rerank <name>: puts them back on it.\n"
+        + "/modifybool arena_dueling_enabled false: turns the arena off (true turns it on).\n"
+        + "/modifylong arena_dueling_minimum_level <level>: the lowest level that can duel.\n"
+        + "/showprops: lists the other arena_ settings.";
 
     private const AccessLevel StaffLevel = AccessLevel.Sentinel;
 
@@ -129,20 +138,16 @@ public class ArenaCommand
                 break;
 
             default:
+                var minimumLevel =
+                    ArenaManager.MinimumLevel > 1
+                        ? $"\nYou have to be at least level {ArenaManager.MinimumLevel} to duel."
+                        : "";
+
                 player.SendMessage(
-                    $"Usage: {Usage}{(staff ? StaffUsage : "")}{(admin ? AdminUsage + RankingUsage : "")}",
+                    $"===== Arena =====\n{Usage}{(staff ? StaffUsage : "")}{(admin ? AdminUsage : "")}\n"
+                        + $"\n-- Your status --\n{ArenaManager.Status(player)}{minimumLevel}",
                     ChatMessageType.System
                 );
-
-                if (ArenaManager.MinimumLevel > 1)
-                {
-                    player.SendMessage(
-                        $"You have to be at least level {ArenaManager.MinimumLevel} to duel.",
-                        ChatMessageType.System
-                    );
-                }
-
-                player.SendMessage(ArenaManager.Status(player));
                 break;
         }
     }
