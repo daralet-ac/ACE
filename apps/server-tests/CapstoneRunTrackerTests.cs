@@ -79,15 +79,31 @@ public class CapstoneRunTrackerTests
     }
 
     [TestMethod]
-    public void IsCompletionOf_OnlyTheQuestOfTheDungeonBeingRun()
+    public void EndsRun_OnlyTheBossKillOrCompletionOfTheDungeonBeingRun()
     {
         var state = new CapstoneRunState("Colier Mine", Start);
 
-        Assert.IsTrue(CapstoneRunTracker.IsCompletionOf(state, "MinesOfColierCompleted"));
-        Assert.IsFalse(CapstoneRunTracker.IsCompletionOf(state, "MinesOfDespairCompleted"));
-        Assert.IsFalse(CapstoneRunTracker.IsCompletionOf(state, "MinesOfColierCompleted_size:2_diff:5%"));
-        Assert.IsFalse(CapstoneRunTracker.IsCompletionOf(state, null));
-        Assert.IsFalse(CapstoneRunTracker.IsCompletionOf(null, "MinesOfColierCompleted"));
+        // the boss's death stamps the first, the reward cache the second
+        Assert.IsTrue(CapstoneRunTracker.EndsRun(state, "CapstoneMinesOfColierBossKilled"));
+        Assert.IsTrue(CapstoneRunTracker.EndsRun(state, "MinesOfColierCompleted"));
+
+        Assert.IsFalse(CapstoneRunTracker.EndsRun(state, "CapstoneMinesOfDespairBossKilled"));
+        Assert.IsFalse(CapstoneRunTracker.EndsRun(state, "MinesOfDespairCompleted"));
+        Assert.IsFalse(CapstoneRunTracker.EndsRun(state, "MinesOfColierCompleted_size:2_diff:5%"));
+        Assert.IsFalse(CapstoneRunTracker.EndsRun(state, "CapstoneMinesOfColierBossKilled@2"));
+        Assert.IsFalse(CapstoneRunTracker.EndsRun(state, null));
+        Assert.IsFalse(CapstoneRunTracker.EndsRun(null, "CapstoneMinesOfColierBossKilled"));
+    }
+
+    [TestMethod]
+    public void BossKilledQuest_IsNamedLikeTheWorldDatabasesOnes()
+    {
+        // e.g. the boss of Green Mire Grave stamps this on its killer's fellowship when it dies
+        Assert.AreEqual("CapstoneGreenMireGraveBossKilled", CapstoneRunTracker.BossKilledQuest("GreenMireGrave"));
+
+        // every dungeon with a leaderboard has one, and none is mistaken for another dungeon's
+        var names = CapstoneRunTracker.DungeonKeys.Values.Select(CapstoneRunTracker.BossKilledQuest).ToList();
+        Assert.AreEqual(names.Count, names.Distinct().Count());
     }
 
     [TestMethod]
