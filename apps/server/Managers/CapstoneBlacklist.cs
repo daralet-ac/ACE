@@ -24,5 +24,10 @@ public static class CapstoneBlacklist
         {
             player.RemoveProperty(PropertyBool.CapstoneTrackingExcluded);
         }
+
+        // The leaderboard API reads the database, and a changed property is otherwise only written at the next automatic
+        // save: every player_save_interval (5 minutes) for a character who is playing, and only every hour (or when the
+        // server stops) for one who is offline. Save it now, so the leaderboard follows straight away.
+        player.SaveBiotaToDatabase();
     }
 }
