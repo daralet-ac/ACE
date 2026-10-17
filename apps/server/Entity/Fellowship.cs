@@ -53,6 +53,12 @@ public class Fellowship
     /// </summary>
     public List<string> CapstoneDungeonMods;
 
+    /// <summary>
+    /// The clock on the capstone dungeon the fellowship is doing, for the capstone leaderboard: started when it was given the
+    /// dungeon, null once the run is recorded. A field, not a property, because CapstoneRunTracker takes it with Interlocked.
+    /// </summary>
+    public CapstoneRunState CapstoneRun;
+
     public int TotalMembers
     {
         get
