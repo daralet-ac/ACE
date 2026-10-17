@@ -42,3 +42,21 @@ public class TradeSkillLeaderEntry
     public string? CharacterName { get; set; }
     public int? SkillLevel { get; set; }
 }
+
+public class CapstoneLeaderboardEntry
+{
+    public int Rank { get; set; }
+    public List<string> CharacterNames { get; set; } = new();
+    public int CompletionSeconds { get; set; }
+    public DateTime CompletedAt { get; set; }
+}
+
+public class ArenaLeaderboardEntry
+{
+    public int Rank { get; set; }
+    public string CharacterName { get; set; } = "";
+    public int Rating { get; set; }
+    public int Wins { get; set; }
+    public int Losses { get; set; }
+    public int Draws { get; set; }
+}

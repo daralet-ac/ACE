@@ -1,5 +1,7 @@
+using System.Net;
 using System.Threading.RateLimiting;
 using ACE.MarketApi;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 
@@ -21,6 +23,22 @@ if (string.IsNullOrEmpty(dbOptions.Username) || string.IsNullOrEmpty(dbOptions.P
 builder.Services.AddSingleton(dbOptions);
 builder.Services.AddSingleton<MarketRepository>();
 builder.Services.AddSingleton<LeaderboardRepository>();
+
+// Behind a reverse proxy (Caddy in the Docker deployment) every connection comes from the proxy's own
+// address, so without this the per-IP rate limit below would put the whole site in one bucket. Take the
+// client address from X-Forwarded-For, but only when the request really came from a private-network
+// peer (the proxy); a request from anywhere else can't set it, so it can't be used to dodge the limit.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    options.KnownProxies.Clear();
+    options.KnownIPNetworks.Clear();
+    options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Loopback, 8));
+    options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("10.0.0.0"), 8));
+    options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("172.16.0.0"), 12));
+    options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("192.168.0.0"), 16));
+});
 
 const string CorsPolicy = "SitePolicy";
 builder.Services.AddCors(options =>
@@ -54,6 +72,9 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+// Must come before the rate limiter, which reads the client address.
+app.UseForwardedHeaders();
 
 app.UseCors(CorsPolicy);
 app.UseRateLimiter();
@@ -365,5 +386,44 @@ app.MapGet("/api/leaderboards/dangerous-creatures", async (int? limit, Leaderboa
 
 app.MapGet("/api/leaderboards/trade-skills", async (LeaderboardRepository repository, CancellationToken ct) =>
     Results.Ok(await repository.GetTradeSkillLeadersAsync(ct)));
+
+// size = how many fight on each side (1 = 1v1, up to the game's 9-person fellowship); scaled picks
+// the scaled-duel ladder instead of the raw one.
+app.MapGet("/api/leaderboards/arena", async (int? size, bool? scaled, int? limit, LeaderboardRepository repository, CancellationToken ct) =>
+{
+    var teamSize = size ?? 1;
+    if (teamSize < 1 || teamSize > 9)
+    {
+        return Results.BadRequest(new { error = "size must be between 1 and 9." });
+    }
+
+    return Results.Ok(await repository.GetArenaBoardAsync(teamSize, scaled ?? false, limit ?? 50, ct));
+});
+
+// The fastest completions of a capstone dungeon: dungeon is its website key (GlendenWoodDungeon), fellowshipSize
+// is 1, 2, or 3 (3 or more) and difficulty is the Dungeon: Difficulty tier, 0 for none up to 20. 404 until the game
+// server has created the tables its runs are recorded in, which the website shows as "not tracked yet".
+app.MapGet("/api/leaderboards/capstone", async (string? dungeon, int? fellowshipSize, int? difficulty, int? limit, LeaderboardRepository repository, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(dungeon) || dungeon.Length > 40 || !dungeon.All(char.IsAsciiLetter))
+    {
+        return Results.BadRequest(new { error = "dungeon is required (for example GlendenWoodDungeon)." });
+    }
+
+    var size = fellowshipSize ?? 1;
+    if (size < 1 || size > 3)
+    {
+        return Results.BadRequest(new { error = "fellowshipSize must be 1, 2, or 3 (3 or more)." });
+    }
+
+    var tier = difficulty ?? 0;
+    if (tier < 0 || tier > 20)
+    {
+        return Results.BadRequest(new { error = "difficulty must be between 0 and 20." });
+    }
+
+    var rows = await repository.GetCapstoneBoardAsync(dungeon, size, tier, limit ?? 50, ct);
+    return rows is null ? Results.NotFound() : Results.Ok(rows);
+});
 
 app.Run();
