@@ -2973,6 +2973,8 @@ public class EmoteManager
             //                        everyone already has it, the candidate list is simply empty.
             //
             //   spell_Id        = the spell to cast (same convention as CastSpellInstant)
+            //   message         = "noresist" skips the target's resist roll (as on CastSpellInstant)
+            //   percent         = spell effect multiplier, default 1.0 (as on CastSpellInstant)
             //   weenie_Class_Id = optional secondary filter - if set, only candidates whose own
             //                     WCID matches are considered, narrowing "anyone in my Cohort" down
             //                     to "specifically this creature type". Needed whenever a Cohort
@@ -3059,8 +3061,8 @@ public class EmoteManager
                                 null,
                                 false,
                                 false,
-                                true,
-                                1.0
+                                emote.Message != "noresist",
+                                emote.Percent ?? 1.0
                             );
                         }
                     }
@@ -3073,6 +3075,8 @@ public class EmoteManager
             // Casts a spell on every present member of a nearby player's Fellowship.
             //
             //   spell_Id    = the spell to cast (same convention as CastSpellInstant)
+            //   message     = "noresist" skips each fellow's resist roll (as on CastSpellInstant)
+            //   percent     = spell effect multiplier, default 1.0 (as on CastSpellInstant)
             //
             // "Present" means within Math.Max(HomeRadius, 2 x the spell's own BaseRangeConstant) -
             // HomeRadius is reused here purely as a read (no write, no interaction with its own
@@ -3136,8 +3140,8 @@ public class EmoteManager
                                     null,
                                     false,
                                     false,
-                                    true,
-                                    1.0
+                                    emote.Message != "noresist",
+                                    emote.Percent ?? 1.0
                                 );
                             }
                         }

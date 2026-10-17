@@ -239,6 +239,7 @@ public enum EmoteType
     /// means lowest current Health percentage among those candidates; the cast is skipped entirely
     /// if even that lowest candidate is already at or above the action's max_Dbl threshold (nobody
     /// needs it). No candidates, or the caster has no Cohort set, is also a silent no-op.
+    /// Like CastSpellInstant, Message "noresist" skips the resist roll and Percent scales the spell.
     /// </summary>
     CastSpellOnCohort = 10026,
 
@@ -249,7 +250,8 @@ public enum EmoteType
     /// if unfellowshiped), re-filters the fellowship by that same radius (Fellowship membership
     /// itself carries no proximity guarantee), and casts on every survivor. No skip-threshold -
     /// unlike CastSpellOnCohort this isn't a beneficial "does anyone need this" cast. No nearby
-    /// player found is a silent no-op.
+    /// player found is a silent no-op. Like CastSpellInstant, Message "noresist" skips the resist
+    /// roll and Percent scales the spell.
     /// </summary>
     CastSpellOnFellowship = 10027,
 
