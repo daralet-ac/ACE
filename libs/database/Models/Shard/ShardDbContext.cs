@@ -95,6 +95,10 @@ public partial class ShardDbContext : DbContext
 
     public virtual DbSet<BankActivity> BankActivities { get; set; }
 
+    public virtual DbSet<CapstoneRun> CapstoneRuns { get; set; }
+
+    public virtual DbSet<CapstoneRunMember> CapstoneRunMembers { get; set; }
+
     public virtual DbSet<AccountQuestRegistry> AccountQuestRegistry { get; set; }
 
     public DbSet<ResonanceZoneRow> ResonanceZoneEntries { get; set; }
@@ -1425,6 +1429,37 @@ public partial class ShardDbContext : DbContext
             entity.Property(e => e.Action).HasColumnName("action").HasMaxLength(20);
             entity.Property(e => e.Details).HasColumnName("details").HasMaxLength(500);
             entity.Property(e => e.CreatedAtUtc).HasColumnName("created_at_utc");
+        });
+
+        modelBuilder.Entity<CapstoneRun>(entity =>
+        {
+            entity.ToTable("capstone_run");
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.HasIndex(e => new { e.Dungeon, e.DifficultyTier, e.FellowshipSize, e.CompletionSeconds }, "idx_capstone_run_board");
+            entity.HasIndex(e => e.RosterKey, "idx_capstone_run_roster");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Dungeon).HasColumnName("dungeon").HasMaxLength(40);
+            entity.Property(e => e.FellowshipSize).HasColumnName("fellowship_size");
+            entity.Property(e => e.DifficultyTier).HasColumnName("difficulty_tier");
+            entity.Property(e => e.CompletionSeconds).HasColumnName("completion_seconds");
+            entity.Property(e => e.RosterKey).HasColumnName("roster_key").HasMaxLength(120);
+            entity.Property(e => e.CompletedAtUtc).HasColumnName("completed_at_utc");
+        });
+
+        modelBuilder.Entity<CapstoneRunMember>(entity =>
+        {
+            entity.ToTable("capstone_run_member");
+            entity.HasKey(e => new { e.RunId, e.CharacterId }).HasName("PRIMARY");
+            entity.HasIndex(e => e.CharacterId, "idx_capstone_run_member_character");
+            entity.Property(e => e.RunId).HasColumnName("run_id");
+            entity.Property(e => e.CharacterId).HasColumnName("character_id");
+            entity.Property(e => e.CharacterName).HasColumnName("character_name").HasMaxLength(50);
+
+            entity.HasOne(e => e.Run)
+                .WithMany(r => r.Members)
+                .HasForeignKey(e => e.RunId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_capstone_run_member_run");
         });
 
         modelBuilder.Entity<AccountQuestRegistry>(entity =>

@@ -2090,6 +2090,9 @@ public class Landblock : IActor
 
         if (created)
         {
+            // the clock for the capstone leaderboard starts with the instance (not for a second part, which carries on the first's run)
+            CapstoneRunTracker.StartRun(fellowship, dungeonName);
+
             // set it up the way FindOpenInstanceFellowship does for a copy: which fellowship opened it, and the modifiers its leader chose
             var landblock = LandblockManager.TryGetLandblock(original, instance.Id);
 
@@ -2128,6 +2131,9 @@ public class Landblock : IActor
             }
 
             landblock.CapstoneFellowship = fellowship;
+
+            // the clock for the capstone leaderboard starts with the copy (not for a second part, which carries on the first's run)
+            CapstoneRunTracker.StartRun(fellowship, dungeonName);
 
             // before CapstoneDungeon is changed, since that's how SetLandblockMods knows which dungeon the fellowship's mods are for
             landblock.SetLandblockMods(fellowship, dungeonName);
@@ -2250,12 +2256,8 @@ public class Landblock : IActor
             return false;
         }
 
-        var partOneName = dungeonName switch
-        {
-            "Lugian Mines2" => "Lugian Mines",
-            "Beyond the Mines" => "Mines of Despair",
-            _ => null
-        };
+        // a second part has its own name and landblocks (see CapstoneRunTracker.SecondParts)
+        CapstoneRunTracker.SecondParts.TryGetValue(dungeonName, out var partOneName);
 
         return (CapstoneDungeonLists(dungeonName)?.Contains(capstoneDungeon) ?? false)
                || (partOneName != null && CapstoneDungeonLists(partOneName).Contains(capstoneDungeon));

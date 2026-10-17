@@ -1687,6 +1687,18 @@ LEFT JOIN biota_properties_int tq
     }
 
     /// <summary>
+    /// Saves a completed capstone run with its members (capstone_run, capstone_run_member). Throws if the database can't be
+    /// reached or the tables are missing; the caller decides how loudly to report it.
+    /// </summary>
+    public virtual void AddCapstoneRun(CapstoneRun run)
+    {
+        using var context = new ShardDbContext();
+
+        context.CapstoneRuns.Add(run);
+        context.SaveChanges();
+    }
+
+    /// <summary>
     /// Every quest stamped on an account (account_quest_registry). Throws if they can't be read.
     /// </summary>
     public virtual List<AccountQuestRegistry> GetAccountQuests(uint accountId)

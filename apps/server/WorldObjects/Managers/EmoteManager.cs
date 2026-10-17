@@ -2215,6 +2215,12 @@ public class EmoteManager
                         }
 
                         questTarget.QuestManager.Stamp(emote.Message+"_size:"+fellowshipSize+"_diff:"+capstoneDifficulty+"%");
+
+                        // ends the fellowship's run for the capstone leaderboard, if it has one going
+                        if (questTarget is Player completingPlayer)
+                        {
+                            CapstoneRunTracker.OnCompletionQuest(completingPlayer, emote.Message);
+                        }
                     }
                 }
                 break;
