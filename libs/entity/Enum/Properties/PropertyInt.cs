@@ -1279,6 +1279,21 @@ public enum PropertyInt : ushort
     ArenaScaledWins = 531,
     ArenaScaledLosses = 532,
     ArenaScaledDraws = 533,
+
+    /// <summary>
+    /// A plain shared tag identifying valid beneficial-cast partners for EmoteType.CastSpellOnCohort.
+    /// See WorldObject.Cohort for the full explanation of why this is separate from FriendType.
+    /// </summary>
+    Cohort = 534,
+
+    /// <summary>
+    /// Generic, content-driven state value - not tied to any specific mechanic or encounter.
+    /// Set via SetMyIntStat/SetIntStat, and readable by RecipeRequirements (as a plain target
+    /// property) where quest-state checks aren't available. Purely a per-object flag; has no
+    /// built-in engine behavior of its own.
+    /// </summary>
+    SequenceState = 535,
+
     PCAPRecordedAutonomousMovement = 8007,
     PCAPRecordedMaxVelocityEstimated = 8030,
     PCAPRecordedPlacement = 8041,
