@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Network;
+using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Commands.AdminCommands;
 
@@ -20,6 +22,13 @@ public class Capstone
     {
         // @capstone -- outputs a list of capstone dungeons with active instances and player counts
         // @capstone
+        // @capstone blacklist add|remove <name>, @capstone blacklist list -- characters whose runs stay off the capstone leaderboard
+
+        if (parameters.Length >= 1 && parameters[0].Equals("blacklist", StringComparison.OrdinalIgnoreCase))
+        {
+            HandleBlacklist(session.Player, parameters[1..]);
+            return;
+        }
 
         if (parameters.Length < 1)
         {
@@ -77,6 +86,7 @@ public class Capstone
                 "For more detailed information about a specific dungeon, use @capstone followed by the dungeon name.",
                 ChatMessageType.System
             );
+            session.Player.SendMessage(BlacklistUsage, ChatMessageType.System);
         }
 
         if (parameters.Length >= 1)
@@ -225,5 +235,103 @@ public class Capstone
                 }
             }
         }
+    }
+
+    private const string BlacklistUsage =
+        "@capstone blacklist add <name> | remove <name> | list: a character on the blacklist keeps its runs "
+        + "(and any run it is in) off the website's capstone leaderboard.";
+
+    internal enum BlacklistAction
+    {
+        Usage,
+        Add,
+        Remove,
+        List,
+    }
+
+    /// <summary>
+    /// What was typed after "@capstone blacklist": add and remove need a name (everything after the word, so names with
+    /// spaces work), list does not, and anything else is a request for the usage.
+    /// </summary>
+    internal static (BlacklistAction Action, string Name) ParseBlacklist(string[] words)
+    {
+        if (words.Length == 0)
+        {
+            return (BlacklistAction.Usage, "");
+        }
+
+        var name = string.Join(" ", words.Skip(1)).Trim();
+
+        return words[0].ToLowerInvariant() switch
+        {
+            "list" => (BlacklistAction.List, ""),
+            "add" when name.Length > 0 => (BlacklistAction.Add, name),
+            "remove" when name.Length > 0 => (BlacklistAction.Remove, name),
+            _ => (BlacklistAction.Usage, ""),
+        };
+    }
+
+    private static void HandleBlacklist(Player admin, string[] words)
+    {
+        var (action, name) = ParseBlacklist(words);
+
+        switch (action)
+        {
+            case BlacklistAction.Add:
+                SetBlacklisted(admin, name, true);
+                break;
+
+            case BlacklistAction.Remove:
+                SetBlacklisted(admin, name, false);
+                break;
+
+            case BlacklistAction.List:
+                var listed = PlayerManager
+                    .GetAllPlayers()
+                    .Where(CapstoneBlacklist.IsBlacklisted)
+                    .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                admin.SendMessage(
+                    listed.Count == 0
+                        ? "Nobody is on the capstone blacklist."
+                        : $"On the capstone blacklist ({listed.Count}): {string.Join(", ", listed.Select(p => p.Name))}",
+                    ChatMessageType.System
+                );
+                break;
+
+            default:
+                admin.SendMessage(BlacklistUsage, ChatMessageType.System);
+                break;
+        }
+    }
+
+    private static void SetBlacklisted(Player admin, string name, bool blacklisted)
+    {
+        var character = PlayerManager.FindByName(name);
+
+        if (character == null)
+        {
+            admin.SendMessage($"There is no character called {name}.", ChatMessageType.System);
+            return;
+        }
+
+        if (CapstoneBlacklist.IsBlacklisted(character) == blacklisted)
+        {
+            admin.SendMessage(
+                $"{character.Name} is already {(blacklisted ? "" : "not ")}on the capstone blacklist.",
+                ChatMessageType.System
+            );
+            return;
+        }
+
+        CapstoneBlacklist.Set(character, blacklisted);
+
+        admin.SendMessage(
+            blacklisted
+                ? $"{character.Name} is on the capstone blacklist: every capstone run they are in is hidden from the leaderboard (the runs are kept)."
+                : $"{character.Name} is off the capstone blacklist: their capstone runs are on the leaderboard again.",
+            ChatMessageType.System
+        );
     }
 }

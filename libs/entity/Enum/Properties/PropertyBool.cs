@@ -404,6 +404,12 @@ public enum PropertyBool : ushort
     /// Set on an item migrate-tier-power has moved onto the tier rework's scale, so a second run skips it
     /// </summary>
     TierPowerMigrated = 9017,
+
+    /// <summary>
+    /// The character is on the capstone blacklist (@capstone blacklist add): a capstone run with them in the fellowship is
+    /// not shown on the website's capstone leaderboard. The runs are still recorded, so taking them off brings theirs back.
+    /// </summary>
+    CapstoneTrackingExcluded = 9018,
 }
 
 public static class PropertyBoolExtensions

@@ -34,6 +34,9 @@ public class LeaderboardRepository
     private const int PropertyStringArenaTeamBoards = 9015;
     private const int PropertyBoolArenaRankingExcluded = 185;
 
+    // On the capstone blacklist (@capstone blacklist in the game): a run with such a character in it is not shown.
+    private const int PropertyBoolCapstoneTrackingExcluded = 9018;
+
     // ACE.Entity.Enum.Skill values, confirmed against the real enum (not counted by hand).
     private static readonly (string Name, int SkillId)[] TradeSkills =
     {
@@ -427,7 +430,7 @@ public class LeaderboardRepository
     /// <summary>
     /// The fastest capstone completions of one dungeon at one difficulty and fellowship size (1, 2, or 3 meaning 3 or
     /// more), fastest first, with only the best time of each distinct group of characters. Runs with a character on
-    /// a staff account (accessLevel &gt; 1) are left out, as elsewhere. Returns null while the game server has not
+    /// a staff account (accessLevel &gt; 1), or a character on the capstone blacklist, are left out. Returns null while the game server has not
     /// created the capstone_run tables yet (they come with the server update that records runs).
     /// </summary>
     public async Task<List<CapstoneLeaderboardEntry>?> GetCapstoneBoardAsync(
@@ -459,6 +462,12 @@ public class LeaderboardRepository
                               JOIN `character` c ON c.id = m.character_id
                               JOIN {_dbOptions.AuthDatabase}.account a ON a.accountId = c.account_Id
                               WHERE m.run_id = r.id AND a.accessLevel > 1)
+                          AND NOT EXISTS (
+                              SELECT 1
+                              FROM capstone_run_member mb
+                              JOIN biota_properties_bool bl ON bl.object_Id = mb.character_id
+                                  AND bl.type = @blacklistType AND bl.value = 1
+                              WHERE mb.run_id = r.id)
                     ) best
                     WHERE best.rn = 1
                     ORDER BY best.completion_seconds, best.id
@@ -467,6 +476,7 @@ public class LeaderboardRepository
                 cmd.Parameters.AddWithValue("@dungeon", dungeon);
                 cmd.Parameters.AddWithValue("@tier", difficultyTier);
                 cmd.Parameters.AddWithValue("@size", fellowshipSize);
+                cmd.Parameters.AddWithValue("@blacklistType", PropertyBoolCapstoneTrackingExcluded);
                 cmd.Parameters.AddWithValue("@limit", limit);
 
                 await using var reader = await cmd.ExecuteReaderAsync(ct);
