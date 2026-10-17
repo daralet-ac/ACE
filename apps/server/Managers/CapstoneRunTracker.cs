@@ -31,8 +31,10 @@ public sealed class CapstoneRunState
 /// Times the capstone dungeons for the website's capstone leaderboard (capstone_run, /api/leaderboards/capstone).
 ///
 /// The clock starts when a fellowship's instance of a dungeon is created (Landblock.AssignInstancedCapstoneDungeon), or when it is
-/// given one of the numbered copies (FindOpenInstanceFellowship), and stops when the dungeon's completion quest is stamped
-/// (EmoteManager, StampQuest). It is kept on the fellowship (Fellowship.CapstoneRun), so it ends with the fellowship, and a
+/// given one of the numbered copies (FindOpenInstanceFellowship), and stops when the dungeon's boss is killed: its death emote
+/// stamps "Capstone<key>BossKilled" (StampQuestForAllFellows). The dungeon's completion quest ("<key>Completed", stamped when
+/// someone opens the reward cache, a while after the kill) also stops it, for a dungeon whose boss quest isn't stamped; it is
+/// the later of the two, so it only ever ends a run the kill did not. It is kept on the fellowship (Fellowship.CapstoneRun), so it ends with the fellowship, and a
 /// server restart in the middle of a run means the run isn't recorded. A run that is recorded is used up: the next one needs
 /// the dungeon to be entered again.
 ///
@@ -111,14 +113,21 @@ public static class CapstoneRunTracker
     }
 
     /// <summary>
-    /// Whether this completion quest ("MinesOfColierCompleted") is the one that ends the run
+    /// The quest the dungeon's boss stamps on its killer's fellowship when it dies ("CapstoneMinesOfColierBossKilled")
     /// </summary>
-    internal static bool IsCompletionOf(CapstoneRunState state, string questName)
+    internal static string BossKilledQuest(string dungeonKey) => "Capstone" + dungeonKey + "BossKilled";
+
+    /// <summary>
+    /// Whether this quest is one that ends the run of the dungeon the fellowship is doing: the boss being killed
+    /// ("CapstoneMinesOfColierBossKilled"), or else the dungeon's completion quest ("MinesOfColierCompleted")
+    /// </summary>
+    internal static bool EndsRun(CapstoneRunState state, string questName)
     {
         return state != null
             && questName != null
             && DungeonKeys.TryGetValue(state.Dungeon, out var key)
-            && string.Equals(questName, key + "Completed", StringComparison.Ordinal);
+            && (string.Equals(questName, BossKilledQuest(key), StringComparison.Ordinal)
+                || string.Equals(questName, key + "Completed", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -152,11 +161,12 @@ public static class CapstoneRunTracker
     private static int _writeFailureReported;
 
     /// <summary>
-    /// A completion quest was stamped on player: if it ends the run their fellowship has, records it. Called from the
-    /// StampQuest emote for every capstone completion quest, so it does nothing for a fellowship that has no run
-    /// (it didn't enter the dungeon since the server started, or the run has already been recorded).
+    /// A quest was stamped on player: if it ends the run their fellowship has (the dungeon's boss was killed, or its
+    /// completion quest was stamped), records it. Called from the emotes that stamp those quests, so it does nothing for a
+    /// fellowship that has no run (it didn't enter the dungeon since the server started, or the run has already been
+    /// recorded, which the boss kill does before the completion quest comes).
     /// </summary>
-    public static void OnCompletionQuest(Player player, string questName)
+    public static void OnQuestStamped(Player player, string questName)
     {
         var fellowship = player?.Fellowship;
 
@@ -167,7 +177,7 @@ public static class CapstoneRunTracker
 
         var state = Volatile.Read(ref fellowship.CapstoneRun);
 
-        if (!IsCompletionOf(state, questName))
+        if (!EndsRun(state, questName))
         {
             return;
         }

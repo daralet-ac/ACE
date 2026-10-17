@@ -2216,10 +2216,10 @@ public class EmoteManager
 
                         questTarget.QuestManager.Stamp(emote.Message+"_size:"+fellowshipSize+"_diff:"+capstoneDifficulty+"%");
 
-                        // ends the fellowship's run for the capstone leaderboard, if it has one going
+                        // ends the fellowship's run for the capstone leaderboard, if the boss kill has not already (see CapstoneRunTracker)
                         if (questTarget is Player completingPlayer)
                         {
-                            CapstoneRunTracker.OnCompletionQuest(completingPlayer, emote.Message);
+                            CapstoneRunTracker.OnQuestStamped(completingPlayer, emote.Message);
                         }
                     }
                 }
@@ -2652,6 +2652,13 @@ public class EmoteManager
                     }
 
                     questTarget.QuestManager.Stamp(emote.Message);
+
+                    // a capstone dungeon's boss stamps its "...BossKilled" quest here when it dies: that ends the
+                    // fellowship's run for the capstone leaderboard, if it has one going
+                    if (questTarget is Player killer)
+                    {
+                        CapstoneRunTracker.OnQuestStamped(killer, emote.Message);
+                    }
                 }
 
                 // If killer is in a fellowship, also stamp the quest for all fellows
