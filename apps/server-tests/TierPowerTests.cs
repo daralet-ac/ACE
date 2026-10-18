@@ -217,6 +217,39 @@ public class TierPowerTests
     }
 
     [TestMethod]
+    public void Migration_ShurikenTakesItsNewSpeedAndVarianceAndTheDamageForThem()
+    {
+        // a T6 shuriken rolled at its weenie's old 112 speed and 0.75 variance (+0.05 on the loot roll: 0.8), now 80 and
+        // 0.6: its damage keeps its place, from its old band at both to the new range at both
+        var shuriken = CreateItem(
+            WeenieType.Missile,
+            ItemType.MissileWeapon,
+            new()
+            {
+                [PropertyInt.Tier] = 6,
+                [PropertyInt.WeaponTime] = 80,
+                [PropertyInt.Damage] = 1,
+                [PropertyInt.DefaultCombatStyle] = (int)CombatStyle.ThrownWeapon,
+            },
+            new() { [PropertyFloat.DamageVariance] = 0.6 },
+            343
+        );
+        shuriken.WeaponTime = 112;
+        shuriken.DamageVariance = 0.8;
+        var previous = LootGenerationFactory.GetPreviousMeleeDamageRange(shuriken, 6, 112, 0.75);
+        shuriken.Damage = (int)System.Math.Round((previous.Minimum + previous.Maximum) / 2);
+        shuriken.BaseDamage = shuriken.Damage;
+        var place = TierPower.GetRollPosition(shuriken.Damage.Value, previous);
+
+        Assert.IsTrue(LootGenerationFactory.MigrateToTierPower(shuriken, new List<string>()));
+
+        Assert.AreEqual(80, shuriken.WeaponTime);
+        Assert.AreEqual(0.64, shuriken.DamageVariance.Value, 1e-4);
+        var range = LootGenerationFactory.GetMeleeDamageRollRange(shuriken, 6);
+        Assert.AreEqual((int)System.Math.Round(range.Minimum + (range.Maximum - range.Minimum) * place, System.MidpointRounding.AwayFromZero), shuriken.Damage);
+    }
+
+    [TestMethod]
     public void Migration_SpeedChangesEvenWithoutATier()
     {
         // a two-hander bought off a vendor has no tier, but takes the new speed
