@@ -14,7 +14,8 @@ namespace ACE.Server.Factories;
 /// Moves an item rolled before the tier rework onto the new scale (TierPower): each rolled stat keeps its place in its
 /// tier's range, and its tinks keep their share of the untinkered value. Flat ward tinks (Silver +3, Pyreal +2,
 /// White Jade +1) come off and go back on as the share each now adds, and Pyreal's armor share drops from 5% to 3%.
-/// Maces and staves take their weenies' lower variance (0.75 to 0.6), keeping their own share of it. Tier 1 didn't change. Run once, with migrate-tier-power, after the world-db import; a migrated item is marked so a
+/// Maces, staves and thrown axes, clubs, daggers and shuriken take their weenies' lower variance (0.75 to 0.6),
+/// keeping their own share of it. Tier 1 didn't change. Run once, with migrate-tier-power, after the world-db import; a migrated item is marked so a
 /// second run skips it.
 /// </summary>
 public static partial class LootGenerationFactory
@@ -170,8 +171,8 @@ public static partial class LootGenerationFactory
     }
 
     /// <summary>
-    /// The DamageVariance of the weenies whose variance the rework changed, before it (world-db): the mace and staff
-    /// loot weapons, lowered to the axes' and daggers' 0.6 so every crit weapon type gets the same share of its damage
+    /// The DamageVariance of the weenies whose variance the rework changed, before it (world-db): the mace, staff and
+    /// thrown axe, club, dagger and shuriken loot weapons, lowered to the axes' and daggers' 0.6 so every crit weapon type gets the same share of its damage
     /// from critical hits
     /// </summary>
     internal static readonly Dictionary<uint, double> PreviousWeenieDamageVariance = new uint[]
@@ -180,6 +181,8 @@ public static partial class LootGenerationFactory
             3836, 3837, 3897, 3898, 3899, 3900, 3937, 3938, 3939, 3940, 7768, 7787, 7788, 7789, 7790, // maces
             7771, 7795, 7796, 7797, 7798, 22154, 22155, 22156, 22157, 22158, 22159, 22160, 22161, 22162, 22163, 22164,
             22165, 22166, 22167, 22168, // staves
+            304, 310, 315, 343, 3758, 3759, 3760, 3761, 3770, 3771, 3772, 3773, 3782, 3783, 3784, 3785, 3861, 3862, 3863,
+            3864, // thrown axes, clubs, daggers and shuriken
         }
         .ToDictionary(wcid => wcid, _ => 0.75);
 
