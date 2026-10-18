@@ -14,7 +14,7 @@ public class ModifyDouble
         CommandHandlerFlag.None,
         2,
         "Modifies a server property that is a double",
-        "modifyfloat (string) (double)"
+        "modifydouble (string) (double)"
     )]
     public static void HandleModifyServerFloatProperty(Session session, params string[] parameters)
     {
