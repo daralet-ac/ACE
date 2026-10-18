@@ -3007,6 +3007,8 @@ public class EmoteManager
             // Monster_Magic/Creature_Magic use elsewhere - a scripted caster's skill value here
             // is tuned for resist checks, not a meaningful measure of real casting range.
             //
+            // Dead creatures and admin-only (Visibility) objects are never candidates.
+            //
             // No candidates in range, or the caster having no Cohort set, is a silent no-op -
             // same convention as an unregistered spell_Id on CastSpellInstant.
             // -----------------------------------------------------------------------------
@@ -3030,6 +3032,7 @@ public class EmoteManager
                             .Where(candidate =>
                                 candidate != creature
                                 && !candidate.IsDead
+                                && !candidate.Visibility
                                 && candidate.Cohort == creature.Cohort
                                 && (!emote.WeenieClassId.HasValue || candidate.WeenieClassId == emote.WeenieClassId.Value)
                                 && candidate.Location.SquaredDistanceTo(creature.Location) <= maxRangeSquared

@@ -2656,14 +2656,14 @@ public class Landblock : IActor
 
     /// <summary>
     /// The capstone dungeons that are more than one landblock. A fellowship gets one instance of all of them, so the portals between
-    /// them keep it in its instance and go to their own destinations. The first is the one the dungeon is entered at
-    /// (CapstoneDungeonLists, CapstoneTeleportLocations). Like any other capstone dungeon, it's only instanced if
-    /// capstone_instanced_dungeons says so.
+    /// them keep it in its instance and go to their own destinations. The order here doesn't matter: InstanceTemplate keeps the
+    /// footprint as a set. The dungeon is entered at the position CapstoneTeleportLocations gives for its original landblock
+    /// (CapstoneDungeonLists). Like any other capstone dungeon, it's only instanced if capstone_instanced_dungeons says so.
     /// </summary>
     private static readonly Dictionary<string, LandblockId[]> CapstoneInstanceFootprints =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            // the Shattered Source: the residence, then the boss room
+            // the Shattered Source: the residence (0x22FE) and the boss room (0x21FE)
             { "Xarabydun Researcher Halls", [new LandblockId(0x22FE << 16 | 0xFFFF), new LandblockId(0x21FE << 16 | 0xFFFF)] },
         };
 

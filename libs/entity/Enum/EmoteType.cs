@@ -234,11 +234,13 @@ public enum EmoteType
     TopOffEquippedItemsMana = 10025,
 
     /// <summary>
-    /// Casts a spell on the neediest member of the caster's own Cohort - every other Creature in
-    /// the caster's landblock sharing the same Cohort value, excluding the caster itself. "Neediest"
-    /// means lowest current Health percentage among those candidates; the cast is skipped entirely
-    /// if even that lowest candidate is already at or above the action's max_Dbl threshold (nobody
-    /// needs it). No candidates, or the caster has no Cohort set, is also a silent no-op.
+    /// Casts a spell on one member of the caster's own Cohort: another Creature sharing the same
+    /// Cohort value, within the spell's range, that is not dead or admin-only (Visibility). The
+    /// action's weenie_Class_Id optionally narrows the candidates to one creature type.
+    /// With Stat set, it picks the candidate lowest on that vital (a PropertyAttribute2nd value:
+    /// Health 2, Stamina 4, Mana 6); the cast is skipped if even that candidate is at or above the
+    /// action's max_Dbl threshold (nobody needs it). With Stat unset, it picks a candidate that
+    /// doesn't already have the spell. No candidates, or the caster has no Cohort set, is a silent no-op.
     /// Like CastSpellInstant, Message "noresist" skips the resist roll and Percent scales the spell.
     /// </summary>
     CastSpellOnCohort = 10026,
