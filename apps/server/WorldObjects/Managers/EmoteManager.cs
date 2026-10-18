@@ -2922,13 +2922,16 @@ public class EmoteManager
             //   percent     = fraction of MaxValue, 0.0-1.0 (matches CreatureVital.Percent's own
             //                 scale, and CastSpellInstant's damage-multiplier convention)
             //
+            // A creature that is already dead is left alone. Setting Health to 0 kills the creature
+            // (non-Player only) through the normal death sequence; Stamina/Mana at 0 do not.
+            //
             // Applied via UpdateVital (absolute set, clamped 0..MaxValue) - the same method the
             // core damage/heal paths already use (Monster_Combat.TakeDamage, Healer, Lifestone).
             // -----------------------------------------------------------------------------
 
             case EmoteType.SetVitalPercent:
 
-                if (creature != null && emote.Stat.HasValue && emote.Percent.HasValue)
+                if (creature != null && !creature.IsDead && emote.Stat.HasValue && emote.Percent.HasValue)
                 {
                     var vital = creature.GetCreatureVital((PropertyAttribute2nd)emote.Stat.Value);
 
@@ -2938,8 +2941,9 @@ public class EmoteManager
 
                         var delta = creature.UpdateVital(vital, newValue);
 
-                        // Keep DamageHistory in step (as HealSelf and /setvital do) so health bars
-                        // refresh immediately instead of on the next hit.
+                        // Refresh health bars now rather than on the next hit. A heal is recorded
+                        // (as HealSelf does); a drop is not, since it isn't damage dealt by anyone and
+                        // recording it would skew kill credit and XP shares.
                         if (vital == creature.Health)
                         {
                             if (delta > 0)
@@ -2948,7 +2952,16 @@ public class EmoteManager
                             }
                             else if (delta < 0)
                             {
-                                creature.DamageHistory.Add(creature, DamageType.Health, (uint)-delta);
+                                creature.OnHealthUpdate();
+                            }
+
+                            // Health at 0 kills it through the normal death sequence (Death emotes,
+                            // corpse, kill credit from real damagers), as TakeDamage does, rather than
+                            // leaving it alive at 0 HP. Players are left to their own death handling.
+                            if (creature.Health.Current == 0 && creature is not Player)
+                            {
+                                creature.OnDeath();
+                                creature.Die();
                             }
                         }
                     }
@@ -3090,6 +3103,8 @@ public class EmoteManager
             // radius, since Fellowship membership itself carries no proximity guarantee (confirmed
             // against StampQuestForAllFellows, which iterates every fellow regardless of location).
             //
+            // Dead players and cloaked admins are skipped, both as the anchor and as targets.
+            //
             // No skip-threshold, unlike CastSpellOnCohort - this isn't a beneficial "does anyone
             // need this" cast. No nearby player found is a silent no-op.
             // -----------------------------------------------------------------------------
@@ -3109,10 +3124,18 @@ public class EmoteManager
                         var landblocks = new List<Landblock> { creature.CurrentLandblock };
                         landblocks.AddRange(creature.CurrentLandblock.Adjacents.Where(lb => lb != null));
 
+                        // Dead players and cloaked admins (or unseen arena watchers) are never targets
+                        // or anchors.
+                        static bool IsCastable(Player p) =>
+                            !p.IsDead && !p.Visibility && p.CloakStatus != CloakStatus.On;
+
                         var anchor = landblocks
                             .SelectMany(lb => lb.GetAllWorldObjectsForDiagnostics())
                             .OfType<Player>()
-                            .Where(p => p.Location.SquaredDistanceTo(creature.Location) <= effectiveRadiusSquared)
+                            .Where(p =>
+                                IsCastable(p)
+                                && p.Location.SquaredDistanceTo(creature.Location) <= effectiveRadiusSquared
+                            )
                             .OrderBy(p => p.Location.SquaredDistanceTo(creature.Location))
                             .FirstOrDefault();
 
@@ -3127,7 +3150,8 @@ public class EmoteManager
                             // of the same landblock shares these coordinates - so match InstanceId too
                             // (same check as Fellowship.WithinRange).
                             var presentFellows = fellowshipMembers.Where(fellow =>
-                                fellow.InstanceId == creature.InstanceId
+                                IsCastable(fellow)
+                                && fellow.InstanceId == creature.InstanceId
                                 && fellow.Location.SquaredDistanceTo(creature.Location) <= effectiveRadiusSquared
                             );
 

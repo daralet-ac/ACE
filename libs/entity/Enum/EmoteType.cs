@@ -250,7 +250,7 @@ public enum EmoteType
     /// if unfellowshiped), re-filters the fellowship by that same radius (Fellowship membership
     /// itself carries no proximity guarantee), and casts on every survivor. No skip-threshold -
     /// unlike CastSpellOnCohort this isn't a beneficial "does anyone need this" cast. No nearby
-    /// player found is a silent no-op. Like CastSpellInstant, Message "noresist" skips the resist
+    /// player found is a silent no-op. Dead and cloaked players are skipped. Like CastSpellInstant, Message "noresist" skips the resist
     /// roll and Percent scales the spell.
     /// </summary>
     CastSpellOnFellowship = 10027,
@@ -259,6 +259,9 @@ public enum EmoteType
     /// Sets the emote's own WorldObject (must be a Creature) to an absolute percentage of one
     /// vital's MaxValue - Stat holds the raw PropertyAttribute2nd value (Health/Stamina/Mana),
     /// Percent is a fraction (0.0-1.0) of that vital's MaxValue. Self only, no target resolution.
+    /// A dead creature is left alone. A Health increase is recorded as a heal; a decrease is not recorded
+    /// as damage (so it does not affect kill credit or XP), but health bars still refresh. Setting Health to
+    /// 0 kills a non-Player creature through the normal death sequence.
     /// </summary>
     SetVitalPercent = 10028
 }
