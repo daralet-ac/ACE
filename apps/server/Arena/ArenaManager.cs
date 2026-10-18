@@ -1422,6 +1422,8 @@ public static partial class ArenaManager
         match.WinningSide = winningSide;
         match.EndedAt = UtcNow();
 
+        RememberResult(match);
+
         if (headline != null)
         {
             Tell(match, headline);
@@ -1621,6 +1623,12 @@ public static partial class ArenaManager
         match.State = ArenaMatchState.Ended;
         match.CalledOff = true;
         match.EndedAt = UtcNow();
+
+        // a challenge turned down, or one that never got as far as the arena, isn't a match worth listing
+        if (!beforeTheArena)
+        {
+            RememberResult(match);
+        }
 
         foreach (var fighter in match.Fighters)
         {

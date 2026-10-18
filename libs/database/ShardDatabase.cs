@@ -1699,6 +1699,21 @@ LEFT JOIN biota_properties_int tq
     }
 
     /// <summary>
+    /// The most recently completed capstone runs, newest first, with their fellowships. Throws if they can't be read.
+    /// </summary>
+    public virtual List<CapstoneRun> GetRecentCapstoneRuns(int count)
+    {
+        using var context = new ShardDbContext();
+
+        return context
+            .CapstoneRuns.AsNoTracking()
+            .Include(r => r.Members)
+            .OrderByDescending(r => r.CompletedAtUtc)
+            .Take(count)
+            .ToList();
+    }
+
+    /// <summary>
     /// Every quest stamped on an account (account_quest_registry). Throws if they can't be read.
     /// </summary>
     public virtual List<AccountQuestRegistry> GetAccountQuests(uint accountId)

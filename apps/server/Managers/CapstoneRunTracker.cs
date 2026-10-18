@@ -209,6 +209,8 @@ public static class CapstoneRunTracker
             run.DifficultyTier
         );
 
+        AddRecentRun(run);
+
         // the database work runs off the world thread
         _ = Task.Run(() =>
         {
@@ -227,5 +229,77 @@ public static class CapstoneRunTracker
                 }
             }
         });
+    }
+
+    /// <summary>
+    /// How many finished runs the admin plugin's Capstone tab lists
+    /// </summary>
+    private const int RecentRunsKept = 25;
+
+    private static readonly object recentRunsLock = new();
+
+    /// <summary>
+    /// The latest runs, newest first: the ones recorded since the server started, and once they have been read, the ones
+    /// before that from capstone_run.
+    /// </summary>
+    private static readonly List<CapstoneRun> recentRuns = new();
+
+    private static int _recentRunsLoadStarted;
+
+    private static void AddRecentRun(CapstoneRun run)
+    {
+        lock (recentRunsLock)
+        {
+            recentRuns.Insert(0, run);
+
+            if (recentRuns.Count > RecentRunsKept)
+            {
+                recentRuns.RemoveRange(RecentRunsKept, recentRuns.Count - RecentRunsKept);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The latest finished runs, newest first. The first call starts reading the older ones from the database, off the
+    /// world thread, so they show up on a later call.
+    /// </summary>
+    public static List<CapstoneRun> GetRecentRuns()
+    {
+        if (Interlocked.Exchange(ref _recentRunsLoadStarted, 1) == 0)
+        {
+            _ = Task.Run(LoadRecentRuns);
+        }
+
+        lock (recentRunsLock)
+        {
+            return recentRuns.ToList();
+        }
+    }
+
+    private static void LoadRecentRuns()
+    {
+        try
+        {
+            var saved = DatabaseManager.Shard.BaseDatabase.GetRecentCapstoneRuns(RecentRunsKept);
+
+            lock (recentRunsLock)
+            {
+                // a run recorded since the server started is in both lists
+                var merged = recentRuns
+                    .Concat(saved)
+                    .GroupBy(r => (r.Dungeon, r.RosterKey, r.CompletionSeconds))
+                    .Select(g => g.First())
+                    .OrderByDescending(r => r.CompletedAtUtc)
+                    .Take(RecentRunsKept)
+                    .ToList();
+
+                recentRuns.Clear();
+                recentRuns.AddRange(merged);
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.Warning(ex, "[CAPSTONE] Couldn't read the recent runs from capstone_run for the admin plugin");
+        }
     }
 }

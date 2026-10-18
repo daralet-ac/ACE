@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Linq;
 using ACE.Database.Models.World;
 using ACE.Server.WorldObjects;
@@ -28,7 +29,18 @@ public static class PlayerLocationInfo
         return location;
     }
 
+    /// <summary>
+    /// Landblock names don't change while the server is up, and the admin plugin asks for every online player's location
+    /// every few seconds, so each cell is only looked up once.
+    /// </summary>
+    private static readonly ConcurrentDictionary<uint, string> locationNameCache = new();
+
     private static string GetLocationName(uint cellId)
+    {
+        return locationNameCache.GetOrAdd(cellId, LookUpLocationName);
+    }
+
+    private static string LookUpLocationName(uint cellId)
     {
         using var ctx = new WorldDbContext();
 

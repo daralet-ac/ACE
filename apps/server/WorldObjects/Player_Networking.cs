@@ -40,6 +40,12 @@ partial class Player
             BarberActive = false;
         }
 
+        // logging out clears IsFrozen so the logout animation can play, so an @freeze that hasn't run out is put back here
+        if (IsAdminFrozen)
+        {
+            IsFrozen = true;
+        }
+
         if (AllegianceNode != null)
         {
             AllegianceRank = (int)AllegianceNode.Rank;
