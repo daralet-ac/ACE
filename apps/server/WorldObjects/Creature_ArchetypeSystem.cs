@@ -535,10 +535,16 @@ partial class Creature
             Coordination.StartingValue = (uint)Math.Max(1, NearestFiveNotExceeding((tweakedSkill - minInitLevel) * 2));
         }
 
-        // Self: WarMagic and LifeMagic both use Self.Base / 2 with the same magic multiplier
+        // Self: WarMagic and LifeMagic both use Self.Base / 2 with the same magic multiplier.
+        // MaxMana uses Self.Base directly, so Self must also not exceed the mana target.
         {
             var tweakedSkill = (int)(attackTarget * magic);
-            Self.StartingValue = (uint)Math.Max(1, NearestFiveNotExceeding((tweakedSkill - minInitLevel) * 2));
+            var fromSkill = NearestFiveNotExceeding((tweakedSkill - minInitLevel) * 2);
+
+            var manaTarget = enemyStaminaMana[tier] + (enemyStaminaMana[tier + 1] - enemyStaminaMana[tier]) * statWeight;
+            var fromMana = NearestFiveNotExceeding((int)(manaTarget * magic));
+
+            Self.StartingValue = (uint)Math.Max(1, Math.Min(fromSkill, fromMana));
         }
 
         // Focus: Perception and Deception both use Focus.Base / 2 with the same intelligence multiplier
@@ -983,7 +989,7 @@ partial class Creature
             );
         }
 
-        var newVital = tweakedVital - (uint)vitalFromAttributes;
+        var newVital = tweakedVital < vitalFromAttributes ? 1 : tweakedVital - (uint)vitalFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -1040,7 +1046,7 @@ partial class Creature
             );
         }
 
-        var newVital = tweakedVital - (uint)vitalFromAttributes;
+        var newVital = tweakedVital < vitalFromAttributes ? 1 : tweakedVital - (uint)vitalFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -1098,7 +1104,7 @@ partial class Creature
             );
         }
 
-        var newVital = tweakedVital - (uint)vitalFromAttributes;
+        var newVital = tweakedVital < vitalFromAttributes ? 1 : tweakedVital - (uint)vitalFromAttributes;
 
         if (DebugArchetypeSystem)
         {
