@@ -539,6 +539,11 @@ public enum PropertyFloat : ushort
     /// The same for a quest item's Ward Level, which rolls separately from its Armor Level.
     /// </summary>
     QuestItemWardRollQuality = 20054,
+
+    /// <summary>
+    /// Seconds left on an @freeze. Saved so logging out doesn't end the freeze early.
+    /// </summary>
+    AdminFreezeDuration = 20055,
 }
 
 public static class PropertyFloatExtensions

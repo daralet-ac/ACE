@@ -53,7 +53,7 @@ public class ArenaCommand
         + "/modifylong arena_dueling_minimum_level <level>: the lowest level that can duel.\n"
         + "/showprops: lists the other arena_ settings.";
 
-    private const AccessLevel StaffLevel = AccessLevel.Sentinel;
+    internal const AccessLevel StaffLevel = AccessLevel.Sentinel;
 
     [CommandHandler(
         "arena",

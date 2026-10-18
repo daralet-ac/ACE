@@ -371,6 +371,8 @@ partial class Player
 
         GagsTick();
 
+        AdminFreezeTick();
+
         PhysicsObj.ObjMaint.DestroyObjects();
 
         // Check if we're due for our periodic SavePlayer
