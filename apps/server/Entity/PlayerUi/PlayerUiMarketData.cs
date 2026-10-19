@@ -105,7 +105,12 @@ public static class PlayerUiMarketData
         {
             case "list":
             {
-                if (words.Length < 3 || !TryParseGuid(words[1], out var itemGuid) || !int.TryParse(words[2], NumberStyles.None, CultureInfo.InvariantCulture, out var price) || price <= 0)
+                if (
+                    words.Length < 3
+                    || !TryParseGuid(words[1], out var itemGuid)
+                    || !int.TryParse(words[2], NumberStyles.None, CultureInfo.InvariantCulture, out var price)
+                    || price <= 0
+                )
                 {
                     return "Usage: @playerui broker list <item guid> <price>";
                 }

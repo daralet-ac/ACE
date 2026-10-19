@@ -31,7 +31,8 @@ public class PlayerUi
         CommandHandlerFlag.RequiresWorld,
         1,
         "Data feed for the Daralet Decal plugin.",
-        "hello | fellowship | targets <guid> [guid] | position | bank | market | broker <list|cancel|claim|expired> ... | arena\n"
+        "hello | fellowship | targets <guid> [guid] | position | bank | market | broker <list|cancel|claim|expired> ... | arena"
+            + " | corpse <guid> | describe <guid>... | salvage <guid>...\n"
             + "The plugin sends these itself and hides the replies from chat. See PlayerUiProtocol for the reply format."
     )]
     public static void HandlePlayerui(Session session, params string[] parameters)
