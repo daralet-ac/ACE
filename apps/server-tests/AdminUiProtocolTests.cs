@@ -40,6 +40,19 @@ public class AdminUiProtocolTests
     }
 
     [TestMethod]
+    public void EveryChunkIsAShortLine()
+    {
+        // a long chat line could reach the chat window instead of being hidden (AdminUiProtocol.ChunkSize)
+        var json = new string('x', 5000);
+
+        var messages = AdminUiProtocol.BuildMessages("players", json, 9);
+
+        Assert.IsTrue(messages.All(m => m.Length < 260));
+        Assert.IsTrue(messages.All(m => m.StartsWith("DAA1|players|9|")));
+        Assert.AreEqual(json, messages.JoinedJson());
+    }
+
+    [TestMethod]
     public void BuildMessages_ChunksMayContainTheSeparator()
     {
         var json = "{\"name\":\"a|b\"}";

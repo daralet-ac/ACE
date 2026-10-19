@@ -10,14 +10,19 @@ namespace ACE.Server.Entity.AdminUi;
 ///
 ///     DAA1|kind|id|index|count|chunk
 ///
-/// so a big player list never goes out as one huge chat line. The plugin puts the chunks with the same id back together
+/// so no reply goes out as one long chat line. The plugin puts the chunks with the same id back together
 /// and hides these lines from the chat window. The id goes up by one for every reply so chunks from two replies never mix.
 /// </summary>
 public static class AdminUiProtocol
 {
     public const string Prefix = "DAA1";
 
-    public const int ChunkSize = 4000;
+    /// <summary>
+    /// Short, like PlayerUiProtocol's: a long DAA1 line (the player list, which some tabs refresh every few seconds) sometimes
+    /// reached the chat window instead of being hidden by the plugin, which looks for "DAA1|". Short lines keep every chunk
+    /// whole and starting with the prefix.
+    /// </summary>
+    public const int ChunkSize = 200;
 
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
