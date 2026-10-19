@@ -23,6 +23,17 @@ public class AdminUiReportTests
     }
 
     [TestMethod]
+    public void DifficultyTierComesFromTheChosenMods()
+    {
+        Assert.AreEqual(3, AdminUiCapstones.DifficultyTierFromMods(new[] { "Swarming", "Difficulty III" }));
+        Assert.AreEqual(14, AdminUiCapstones.DifficultyTierFromMods(new[] { "Difficulty XIV" }));
+        Assert.AreEqual(20, AdminUiCapstones.DifficultyTierFromMods(new[] { "Difficulty IX", "Difficulty XX" }));
+        Assert.AreEqual(4, AdminUiCapstones.DifficultyTierFromMods(new[] { "Difficulty IV" }));
+        Assert.AreEqual(0, AdminUiCapstones.DifficultyTierFromMods(new[] { "Swarming", "Inspired" }));
+        Assert.AreEqual(0, AdminUiCapstones.DifficultyTierFromMods(null));
+    }
+
+    [TestMethod]
     public void CampNamesMatchWorldDb()
     {
         Assert.AreEqual("olthoi_north_camp_north_supply_level", AdminUiRegions.SupplyProperty("North"));
