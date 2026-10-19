@@ -73,7 +73,7 @@ public class AdminUiReportTests
             }
         );
 
-        var json = AdminUiProtocol.BuildMessages("arenas", report).Single().Split('|', 6)[5];
+        var json = AdminUiProtocol.BuildMessages("arenas", report).JoinedJson();
 
         foreach (
             var name in new[]
@@ -126,7 +126,7 @@ public class AdminUiReportTests
             new Dictionary<string, int> { ["boot"] = 5 }
         );
 
-        var json = AdminUiProtocol.BuildMessages("hello", hello).Single().Split('|', 6)[5];
+        var json = AdminUiProtocol.BuildMessages("hello", hello).JoinedJson();
 
         StringAssert.Contains(json, "\"tabs\":{\"players\":2}");
         StringAssert.Contains(json, "\"commands\":{\"boot\":5}");
@@ -142,7 +142,7 @@ public class AdminUiReportTests
             new List<AdminUiEvent> { new AdminUiEvent("TideMageZone3", "On") }
         );
 
-        var json = AdminUiProtocol.BuildMessages("tidemage", report).Single().Split('|', 6)[5];
+        var json = AdminUiProtocol.BuildMessages("tidemage", report).JoinedJson();
 
         StringAssert.Contains(json, "\"stability\":7500");
         StringAssert.Contains(json, "\"band\":\"Mid\"");
