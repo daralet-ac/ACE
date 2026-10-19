@@ -37,7 +37,7 @@ public static class MarketBroker
                || item.ItemType == ItemType.Weapon;
     }
 
-    private static string? TryGetListingItemName(ACE.Database.Models.Shard.PlayerMarketListing listing)
+    internal static string? TryGetListingItemName(ACE.Database.Models.Shard.PlayerMarketListing listing)
     {
         if (listing == null)
         {
@@ -1213,68 +1213,11 @@ public static class MarketBroker
         item.Location = null;
         item.SaveBiotaToDatabase();
 
-        int? wieldReq = null;
-        int? itemTier = null;
-
-        // Determine tier so the listing can show up on the correct market vendor tier.
-        // Weapons/Armor: derive tier from WieldDifficulty.
-        // Clothing/Jewelry: derive tier from required level (wield difficulty if using level requirement).
-        switch (item.ItemType)
-        {
-            case ItemType.Weapon:
-            case ItemType.MeleeWeapon:
-            case ItemType.MissileWeapon:
-            case ItemType.Caster:
-            case ItemType.Armor:
-                if (item.WieldDifficulty.HasValue)
-                {
-                    wieldReq = item.WieldDifficulty.Value;
-                    itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(item.WieldDifficulty.Value);
-                }
-
-                break;
-
-            case ItemType.Clothing:
-            case ItemType.Jewelry:
-                // Sigil Trinkets store their required-level gate on the secondary fields.
-                if (item.WieldRequirements2 == WieldRequirement.Level && item.WieldDifficulty2.HasValue)
-                {
-                    wieldReq = item.WieldDifficulty2.Value;
-                    itemTier = LootGenerationFactory.GetTierFromRequiredLevel(item.WieldDifficulty2.Value);
-                    break;
-                }
-
-                // prefer explicit required level if present
-                if (item.WieldRequirements == WieldRequirement.Level && item.WieldDifficulty.HasValue)
-                {
-                    wieldReq = item.WieldDifficulty.Value;
-                    itemTier = LootGenerationFactory.GetTierFromRequiredLevel(item.WieldDifficulty.Value);
-                }
-                else if (item.WieldDifficulty.HasValue)
-                {
-                    // fallback: treat wield difficulty as the level requirement if that's all we have
-                    wieldReq = item.WieldDifficulty.Value;
-                    itemTier = LootGenerationFactory.GetTierFromRequiredLevel(item.WieldDifficulty.Value);
-                }
-
-                break;
-        }
+        var itemTier = GetItemTier(item, out var wieldReq);
 
         // Route the listing to the vendor tier that matches the item.
         // Do not fall back to the seller tier; if we can't classify, the listing fails.
-        var isNonTier = item.ItemType == ItemType.Misc
-                        || item.ItemType == ItemType.Useless
-                        || item.ItemType == ItemType.Food
-                        || item.ItemType == ItemType.CraftAlchemyBase
-                        || item.ItemType == ItemType.CraftAlchemyIntermediate
-                        || item.ItemType == ItemType.CraftCookingBase
-                        || item.ItemType == ItemType.CraftFletchingBase
-                        || item.ItemType == ItemType.CraftFletchingIntermediate
-                        || item.ItemType == ItemType.Gem
-                        || item.ItemType == ItemType.TinkeringMaterial
-                        || item.ItemType == ItemType.Writable
-                        || item.ItemType == ItemType.ManaStone
-                        || item.ItemType == ItemType.SpellComponents;
+        var isNonTier = IsNonTier(item);
 
         int vendorTier;
         if (isNonTier)
@@ -1396,6 +1339,80 @@ public static class MarketBroker
         }
 
         _stateByPlayerGuid.TryRemove(player.Guid.Full, out _);
+    }
+
+    /// <summary>
+    /// The loot tier a listing of this item goes under, and the wield requirement it came from. Weapons and armor take it
+    /// from WieldDifficulty; clothing and jewelry from the required level. Null when neither says. Also used by the Daralet
+    /// Player plugin's loot rules (PlayerUiCorpseData), so "tier 6" means the same there as on the market.
+    /// </summary>
+    internal static int? GetItemTier(WorldObject item, out int? wieldReq)
+    {
+        wieldReq = null;
+        int? itemTier = null;
+
+        switch (item.ItemType)
+        {
+            case ItemType.Weapon:
+            case ItemType.MeleeWeapon:
+            case ItemType.MissileWeapon:
+            case ItemType.Caster:
+            case ItemType.Armor:
+                if (item.WieldDifficulty.HasValue)
+                {
+                    wieldReq = item.WieldDifficulty.Value;
+                    itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(item.WieldDifficulty.Value);
+                }
+
+                break;
+
+            case ItemType.Clothing:
+            case ItemType.Jewelry:
+                // Sigil Trinkets store their required-level gate on the secondary fields.
+                if (item.WieldRequirements2 == WieldRequirement.Level && item.WieldDifficulty2.HasValue)
+                {
+                    wieldReq = item.WieldDifficulty2.Value;
+                    itemTier = LootGenerationFactory.GetTierFromRequiredLevel(item.WieldDifficulty2.Value);
+                    break;
+                }
+
+                // prefer explicit required level if present
+                if (item.WieldRequirements == WieldRequirement.Level && item.WieldDifficulty.HasValue)
+                {
+                    wieldReq = item.WieldDifficulty.Value;
+                    itemTier = LootGenerationFactory.GetTierFromRequiredLevel(item.WieldDifficulty.Value);
+                }
+                else if (item.WieldDifficulty.HasValue)
+                {
+                    // fallback: treat wield difficulty as the level requirement if that's all we have
+                    wieldReq = item.WieldDifficulty.Value;
+                    itemTier = LootGenerationFactory.GetTierFromRequiredLevel(item.WieldDifficulty.Value);
+                }
+
+                break;
+        }
+
+        return itemTier;
+    }
+
+    /// <summary>
+    /// Kinds of item listed without a tier (vendor tier 0).
+    /// </summary>
+    internal static bool IsNonTier(WorldObject item)
+    {
+        return item.ItemType == ItemType.Misc
+            || item.ItemType == ItemType.Useless
+            || item.ItemType == ItemType.Food
+            || item.ItemType == ItemType.CraftAlchemyBase
+            || item.ItemType == ItemType.CraftAlchemyIntermediate
+            || item.ItemType == ItemType.CraftCookingBase
+            || item.ItemType == ItemType.CraftFletchingBase
+            || item.ItemType == ItemType.CraftFletchingIntermediate
+            || item.ItemType == ItemType.Gem
+            || item.ItemType == ItemType.TinkeringMaterial
+            || item.ItemType == ItemType.Writable
+            || item.ItemType == ItemType.ManaStone
+            || item.ItemType == ItemType.SpellComponents;
     }
 
     public static void StartListingFromRefuse(Player player, WorldObject item)

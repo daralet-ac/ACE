@@ -1,3 +1,7 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+
 namespace ACE.MarketApi;
 
 public class MarketListing

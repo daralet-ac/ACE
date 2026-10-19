@@ -35,15 +35,23 @@ public static class AdminUiProtocol
 
     public static List<string> BuildMessages(string kind, string json, int replyId)
     {
-        var count = Math.Max(1, (json.Length + ChunkSize - 1) / ChunkSize);
+        return BuildMessages(Prefix, kind, json, replyId);
+    }
+
+    /// <summary>
+    /// The chunking itself, shared with PlayerUiProtocol, which sends the same lines with its own prefix.
+    /// </summary>
+    internal static List<string> BuildMessages(string prefix, string kind, string json, int replyId, int chunkSize = ChunkSize)
+    {
+        var count = Math.Max(1, (json.Length + chunkSize - 1) / chunkSize);
         var messages = new List<string>(count);
 
         for (var i = 0; i < count; i++)
         {
-            var start = i * ChunkSize;
-            var chunk = json.Substring(start, Math.Min(ChunkSize, json.Length - start));
+            var start = i * chunkSize;
+            var chunk = json.Substring(start, Math.Min(chunkSize, json.Length - start));
 
-            messages.Add($"{Prefix}|{kind}|{replyId}|{i + 1}|{count}|{chunk}");
+            messages.Add($"{prefix}|{kind}|{replyId}|{i + 1}|{count}|{chunk}");
         }
 
         return messages;

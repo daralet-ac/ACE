@@ -106,6 +106,17 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
             .ToList();
     }
 
+    public IEnumerable<PlayerMarketListing> GetSoldListingsForAccount(uint accountId, DateTime sinceUtc)
+    {
+        using var context = new ShardDbContext();
+
+        return context.PlayerMarketListings
+            .AsNoTracking()
+            .Where(l => l.SellerAccountId == accountId && l.IsSold && l.SoldAtUtc >= sinceUtc)
+            .OrderByDescending(l => l.SoldAtUtc)
+            .ToList();
+    }
+
     public IEnumerable<PlayerMarketListing> GetListingsForAccount(uint accountId, DateTime nowUtc)
     {
         using var context = new ShardDbContext();

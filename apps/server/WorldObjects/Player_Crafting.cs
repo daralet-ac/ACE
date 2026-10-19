@@ -152,6 +152,27 @@ partial class Player
         }
     }
 
+    /// <summary>
+    /// Whether salvaging could turn an item into salvage: it has a material and a workmanship, isn't salvage already, and
+    /// isn't retained or unstable. Also what the Daralet plugin's loot rules are told (PlayerUiCorpseData).
+    /// </summary>
+    public static bool IsSalvageable(WorldObject item)
+    {
+        return item.WeenieType != WeenieType.Salvage
+            && item.MaterialType != null
+            && item.Workmanship != null
+            && !item.Retained
+            && item.GetProperty(PropertyBool.IsUnstable) != true;
+    }
+
+    /// <summary>
+    /// The Ust in the player's packs, or null: what /salvage-style requests salvage with.
+    /// </summary>
+    public WorldObject FindUst()
+    {
+        return GetAllPossessions().FirstOrDefault(o => o.WeenieClassId == (uint)ACE.Entity.Enum.WeenieClassName.W_TINKERINGTOOL_CLASS);
+    }
+
     public void HandleSalvaging(uint tool, List<uint> salvageItems)
     {
         if (!ToolIsValidUst(tool))
@@ -169,27 +190,11 @@ partial class Player
         foreach (var itemGuid in salvageItems)
         {
             var item = GetInventoryItem(itemGuid);
-            if (item == null)
-            {
-                continue;
-            }
-            if (item.WeenieType == WeenieType.Salvage)
-            {
-                continue;
-            }
-            if (item.MaterialType == null)
+            if (item == null || !IsSalvageable(item))
             {
                 continue;
             }
             if (IsTrading && item.IsBeingTradedOrContainsItemBeingTraded(ItemsInTradeWindow))
-            {
-                continue;
-            }
-            if (item.Workmanship == null || item.Retained)
-            {
-                continue;
-            }
-            if (item.GetProperty(PropertyBool.IsUnstable) == true)
             {
                 continue;
             }

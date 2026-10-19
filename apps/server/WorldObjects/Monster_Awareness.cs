@@ -315,6 +315,22 @@ partial class Creature
     public List<Player> SkipThreatFromNextAttackTargets = [];
     public List<Player> DoubleThreatFromNextAttackTargets = [];
 
+    /// <summary>
+    /// A copy of the threat table, highest first, for the Daralet plugin's target window (PlayerUiTargets).
+    /// Null when this creature doesn't keep one: it uses the legacy threat system, or isn't a monster.
+    /// </summary>
+    public List<KeyValuePair<Creature, int>> GetThreatTable()
+    {
+        var table = ThreatLevel;
+
+        if (table == null || (UseLegacyThreatSystem ?? false))
+        {
+            return null;
+        }
+
+        return table.OrderByDescending(entry => entry.Value).ToList();
+    }
+
     public void IncreaseTargetThreatLevel(Creature targetCreature, int amount)
     {
         var modifiedAmount = Convert.ToSingle(amount);

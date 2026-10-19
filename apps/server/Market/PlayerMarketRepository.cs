@@ -23,6 +23,9 @@ public interface IPlayerMarketRepository
 
     IEnumerable<PlayerMarketListing> GetExpiredListingsForAccount(uint accountId, DateTime nowUtc);
 
+    /// <summary>An account's listings sold since a time, newest first (the Daralet plugin's Market tab).</summary>
+    IEnumerable<PlayerMarketListing> GetSoldListingsForAccount(uint accountId, DateTime sinceUtc);
+
     void MarkListingReturned(PlayerMarketListing listing, DateTime returnedAtUtc);
 
     PlayerMarketListing? GetListingByItemGuid(uint itemGuid);
@@ -143,6 +146,13 @@ public sealed class PlayerMarketRepository : IPlayerMarketRepository
             && !l.IsSold
             && l.ExpiresAtUtc <= nowUtc
             && !l.ReturnedAtUtc.HasValue);
+    }
+
+    public IEnumerable<PlayerMarketListing> GetSoldListingsForAccount(uint accountId, DateTime sinceUtc)
+    {
+        return _listingsById.Values
+            .Where(l => l.SellerAccountId == accountId && l.IsSold && l.SoldAtUtc >= sinceUtc)
+            .OrderByDescending(l => l.SoldAtUtc);
     }
 
     public PlayerMarketListing? GetListingByItemGuid(uint itemGuid)
