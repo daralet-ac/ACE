@@ -7,6 +7,7 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Entity.PlayerUi;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
@@ -1081,15 +1082,28 @@ public partial class Container : WorldObject
             }
         }
 
-        player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, this));
+        // the plugin's window instead of the game's (Player.PlayerUiLootWindow): every item still comes (CreateObject), so
+        // the plugin can show and loot them, but not the ViewContents that opens the game's window
+        var pluginWindow = player.UsesPlayerUiWindow(this);
 
-        // send sub-containers
-        foreach (var container in Inventory.Values.Where(i => i is Container))
+        if (!pluginWindow)
         {
-            player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, (Container)container));
+            player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, this));
+
+            // send sub-containers
+            foreach (var container in Inventory.Values.Where(i => i is Container))
+            {
+                player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, (Container)container));
+            }
         }
 
         player.Session.Network.EnqueueSend(itemsToSend);
+
+        if (pluginWindow)
+        {
+            // what opens the plugin's window: the client doesn't say a container opened without ViewContents
+            PlayerUiProtocol.Send(player.Session, "corpse", PlayerUiCorpseData.GetCorpse(player, Guid.Full), omitNulls: true);
+        }
     }
 
     private void SendDeletesForMyInventory(Player player)
@@ -1149,6 +1163,12 @@ public partial class Container : WorldObject
         if (player != null)
         {
             player.Session.Network.EnqueueSend(new GameEventCloseGroundContainer(player.Session, this));
+
+            // the plugin's Corpse window closes when it hears this has (the bank says so itself, in Storage.Close)
+            if (player.UsesPlayerUiWindow(this) && this is not Storage)
+            {
+                PlayerUiProtocol.Send(player.Session, "corpse", new PlayerUiCorpse(Guid.Full, "closed", Name, []), omitNulls: true);
+            }
 
             if (player.LastOpenedContainerId == Guid)
             {

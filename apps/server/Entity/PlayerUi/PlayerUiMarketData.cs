@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using ACE.Database.Models.Shard;
 using ACE.Entity;
+using ACE.MarketApi;
 using ACE.Server.Managers;
 using ACE.Server.Market;
 using ACE.Server.WorldObjects;
@@ -27,11 +28,12 @@ public static class PlayerUiMarketData
     private const int MaxSales = 100;
 
     /// <summary>
-    /// A listing's item name never changes, and working it out loads the item from the database, so each is looked up once.
+    /// A listing's item name and icon never change, and working them out loads the item from the database and reads its
+    /// snapshot, so each listing's is looked up once.
     /// </summary>
-    private static readonly ConcurrentDictionary<int, string> ItemNames = new();
+    private static readonly ConcurrentDictionary<int, (string Name, PlayerUiIcon Icon)> ItemLooks = new();
 
-    private const int MaxCachedNames = 5000;
+    private const int MaxCachedLooks = 5000;
 
     public static PlayerUiMarket GetMarket(Player player)
     {
@@ -44,7 +46,7 @@ public static class PlayerUiMarketData
             .GetListingsForAccount(accountId, now)
             .OrderBy(l => l.ExpiresAtUtc)
             .ThenBy(l => l.Id)
-            .Select(l => new PlayerUiListing(l.Id, Name(l), l.ItemWeenieClassId, l.ItemTier, l.ListedPrice, Seconds(l.ExpiresAtUtc - now)))
+            .Select(l => new PlayerUiListing(l.Id, Look(l).Name, l.ItemWeenieClassId, l.ItemTier, l.ListedPrice, Seconds(l.ExpiresAtUtc - now), Look(l).Icon))
             .ToList();
 
         var pending = repository.GetPendingPayouts(accountId).ToList();
@@ -58,7 +60,7 @@ public static class PlayerUiMarketData
                 var claimed = !pendingByListing.TryGetValue(l.Id, out var amount);
                 var payout = claimed ? MarketServiceLocator.CalculateNetAfterFee(l.ListedPrice) : amount;
 
-                return new PlayerUiSale(l.Id, Name(l), l.ItemWeenieClassId, l.ListedPrice, payout, claimed, Seconds(now - (l.SoldAtUtc ?? now)));
+                return new PlayerUiSale(l.Id, Look(l).Name, l.ItemWeenieClassId, l.ListedPrice, payout, claimed, Seconds(now - (l.SoldAtUtc ?? now)), Look(l).Icon);
             })
             .ToList();
 
@@ -66,7 +68,7 @@ public static class PlayerUiMarketData
             .GetExpiredListingsForAccount(accountId, now)
             .Where(l => !l.IsSold)
             .OrderBy(l => l.ExpiresAtUtc)
-            .Select(l => new PlayerUiExpired(l.Id, Name(l), l.ItemWeenieClassId, l.ListedPrice, Seconds(now - l.ExpiresAtUtc)))
+            .Select(l => new PlayerUiExpired(l.Id, Look(l).Name, l.ItemWeenieClassId, l.ListedPrice, Seconds(now - l.ExpiresAtUtc), Look(l).Icon))
             .ToList();
 
         return new PlayerUiMarket(
@@ -172,21 +174,45 @@ public static class PlayerUiMarketData
             .FirstOrDefault();
     }
 
-    private static string Name(PlayerMarketListing listing)
+    private static (string Name, PlayerUiIcon Icon) Look(PlayerMarketListing listing)
     {
-        if (ItemNames.TryGetValue(listing.Id, out var cached))
+        if (ItemLooks.TryGetValue(listing.Id, out var cached))
         {
             return cached;
         }
 
-        if (ItemNames.Count > MaxCachedNames)
+        if (ItemLooks.Count > MaxCachedLooks)
         {
-            ItemNames.Clear();
+            ItemLooks.Clear();
         }
 
-        var name = MarketBroker.TryGetListingItemName(listing) ?? $"Item {listing.ItemWeenieClassId}";
-        ItemNames[listing.Id] = name;
-        return name;
+        var look = (MarketBroker.TryGetListingItemName(listing) ?? $"Item {listing.ItemWeenieClassId}", Icon(listing));
+        ItemLooks[listing.Id] = look;
+        return look;
+    }
+
+    /// <summary>
+    /// The listing's icon, read from its snapshot by the Market API's own code, so it's the icon market search shows.
+    /// </summary>
+    private static PlayerUiIcon Icon(PlayerMarketListing listing)
+    {
+        if (string.IsNullOrWhiteSpace(listing.ItemSnapshotJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            var row = new Dictionary<string, object> { ["ItemWeenieClassId"] = listing.ItemWeenieClassId };
+            var (described, _) = MarketRepository.Describe(new SnapshotItemFacts(listing.ItemSnapshotJson, row));
+
+            return new PlayerUiIcon(described.IconHex, described.IconOverlayHex, described.IconUnderlay, described.IconEffect);
+        }
+        catch (Exception)
+        {
+            // a snapshot that can't be read only loses its icon
+            return null;
+        }
     }
 
     /// <summary>Whole seconds, never below zero.</summary>

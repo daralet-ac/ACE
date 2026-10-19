@@ -1544,12 +1544,9 @@ public class AppraiseInfo
         }
     }
 
-    /// <summary>
-    /// Quest items that roll on pickup, or rolled under the current rules (which baked in their tinks).
-    /// </summary>
     private static bool ShowsQuestItemRollRanges(WorldObject wo)
     {
-        return wo.MutableQuestItem || wo.QuestItemTinks != null;
+        return LootGenerationFactory.ShowsQuestItemRollRanges(wo);
     }
 
     private void SetForgeStageUseText(WorldObject wo)

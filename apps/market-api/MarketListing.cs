@@ -67,6 +67,10 @@ public class MarketListing
     // properties. See MarketRepository.ComputeMods for sourcing.
     public List<string> Properties { get; set; } = new();
 
+    // The amounts of the Properties that roll (Biting Strike, Crushing Blow, Stamina Cost Reduction, Armor and Ward
+    // Cleaving), by the same names, as whole percents worked out the way appraisal does. Null when none of them is on it.
+    public Dictionary<string, double>? PropertyValues { get; set; }
+
     // Spell names on the item (PropertiesSpellBook, resolved against ace_world.spell).
     public List<string> Spells { get; set; } = new();
 
@@ -76,9 +80,15 @@ public class MarketListing
     public int? BaseDamage { get; set; }
     public double? DamageVariance { get; set; }
     public double? AvgDamage { get; set; }
+    // The damage the weapon deals, from its DamageType flags: "Slashing", or "Slashing/Piercing" for more than one.
+    public string? DamageType { get; set; }
     // Anim speed multiplier (1.0-2.5, higher = faster) — clamp(2.0 - WeaponTime/100, 1.0, 2.5).
     // Null for casters (no WeaponTime property).
     public double? Speed { get; set; }
+    // The item's own WeaponTime property (lower is faster), as appraisal shows it. Null for casters.
+    public int? WeaponTime { get; set; }
+    // Attacks (or, for casters, bolts cast) a second at 0 Quickness: 1 / the cycle time Dps uses.
+    public double? AttacksPerSecond { get; set; }
     public double? DamageMod { get; set; }
     public double? ElementalDamageMod { get; set; }
     public double? RestorationMod { get; set; }
@@ -92,6 +102,11 @@ public class MarketListing
     public int? Spellcraft { get; set; }
     public int? Difficulty { get; set; }
     public int? Mana { get; set; }
+    // The item's ManaRate: mana it uses a second while its spells are on, as a negative number (-0.0333 is one point
+    // every 30 seconds). Null when it has none.
+    public double? ManaRate { get; set; }
+    // The chance a hit casts the weapon's proc spell (its ProcSpellRate, 0.125 for 12.5%), only when it has one.
+    public double? ProcChance { get; set; }
     public int? Workmanship { get; set; }
     public int? NumTimesTinkered { get; set; }
 

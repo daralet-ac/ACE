@@ -7,6 +7,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Entity.PlayerUi;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
@@ -297,15 +298,28 @@ public class Storage : Container
             }
         }
 
-        player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, this));
+        // the plugin's bank window instead of the game's: the client still gets every item (CreateObject), so the plugin can
+        // show and move them, but no ViewContents, which is what opens the game's bank window
+        var pluginWindow = player.PlayerUiBankWindow;
 
-        // send sub-containers, in slot order: the bank window seems to place a pack by when its list arrives
-        foreach (var container in Inventory.Values.OfType<Container>().OrderBy(c => c.PlacementPosition ?? int.MaxValue))
+        if (!pluginWindow)
         {
-            player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, container));
+            player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, this));
+
+            // send sub-containers, in slot order: the bank window seems to place a pack by when its list arrives
+            foreach (var container in Inventory.Values.OfType<Container>().OrderBy(c => c.PlacementPosition ?? int.MaxValue))
+            {
+                player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, container));
+            }
         }
 
         player.Session.Network.EnqueueSend(itemsToSend.ToArray());
+
+        if (pluginWindow)
+        {
+            // straight away, rather than when the plugin next asks: this is what opens its window
+            PlayerUiProtocol.Send(player.Session, "bank", PlayerUiData.GetBank(player));
+        }
     }
 
     public override void Close(Player player)
@@ -337,6 +351,12 @@ public class Storage : Container
         // }
         //
         // player.Session.Network.EnqueueSend(itemsToSend.ToArray());
+
+        // the plugin's bank window closes when it hears the bank has
+        if (_bankUser?.PlayerUiBankWindow == true)
+        {
+            PlayerUiProtocol.Send(_bankUser.Session, "bank", PlayerUiData.GetBank(_bankUser));
+        }
 
         _bankUser = null;
 

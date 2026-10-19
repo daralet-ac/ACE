@@ -14,7 +14,7 @@ public class PlayerUi
     /// <summary>
     /// Every request @playerui answers, sent in the hello reply.
     /// </summary>
-    internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "market", "broker", "arena", "corpse", "salvage", "describe"];
+    internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "bankwindow", "lootwindow", "market", "broker", "arena", "corpse", "salvage", "describe"];
 
     /// <summary>
     /// The plugin asks for fellowship and targets once a second. Asking faster than this (typing the command by hand, say)
@@ -31,8 +31,8 @@ public class PlayerUi
         CommandHandlerFlag.RequiresWorld,
         1,
         "Data feed for the Daralet Decal plugin.",
-        "hello | fellowship | targets <guid> [guid] | position | bank | market | broker <list|cancel|claim|expired> ... | arena"
-            + " | corpse <guid> | describe <guid>... | salvage <guid>...\n"
+        "hello | fellowship | targets <guid> [guid] | position | bank | bankwindow <on|off> | lootwindow <on|off>"
+            + " | market | broker <list|cancel|claim|expired> ... | arena | corpse <guid> | describe <guid>... | salvage <guid>...\n"
             + "The plugin sends these itself and hides the replies from chat. See PlayerUiProtocol for the reply format."
     )]
     public static void HandlePlayerui(Session session, params string[] parameters)
@@ -65,6 +65,16 @@ public class PlayerUi
                 break;
             case "bank":
                 payload = PlayerUiData.GetBank(player);
+                break;
+            case "bankwindow":
+                // only changes which messages this player's own client gets when they open a bank
+                player.PlayerUiBankWindow = OnOff(parameters, player.PlayerUiBankWindow);
+                payload = new PlayerUiWindowSetting(player.PlayerUiBankWindow);
+                break;
+            case "lootwindow":
+                // the same, for corpses and chests
+                player.PlayerUiLootWindow = OnOff(parameters, player.PlayerUiLootWindow);
+                payload = new PlayerUiWindowSetting(player.PlayerUiLootWindow);
                 break;
             case "market":
                 payload = PlayerUiMarketData.GetMarket(player);
@@ -116,6 +126,17 @@ public class PlayerUi
         {
             CommandHandlerHelper.WriteOutputInfo(session, message, ChatMessageType.Broadcast);
         }
+    }
+
+    /// <summary>"on" or "off" after the request's name, or what it was when it's neither (asking without changing it).</summary>
+    private static bool OnOff(string[] parameters, bool current)
+    {
+        return (parameters.Length > 1 ? parameters[1].ToLowerInvariant() : null) switch
+        {
+            "on" => true,
+            "off" => false,
+            _ => current,
+        };
     }
 
     private static bool TooSoon(uint player, string kind)

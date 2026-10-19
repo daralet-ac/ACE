@@ -325,6 +325,18 @@ public partial class MarketRepository
         [0x10] = "Fire", [0x20] = "Acid", [0x40] = "Electric", [0x400] = "Nether",
     };
 
+    // Every damage type in a DamageType's flags, by name: "Slashing", "Slashing/Piercing". Null for none.
+    private static string? DamageTypeNames(int? damageType)
+    {
+        if (damageType is not > 0)
+        {
+            return null;
+        }
+
+        var names = DamageTypeElementNames.Where(t => (damageType.Value & t.Key) != 0).Select(t => t.Value).ToList();
+        return names.Count > 0 ? string.Join("/", names) : null;
+    }
+
     // WieldRequirement enum (ACE.Entity.Enum.WieldRequirement) — this project has no reference to
     // the main ACE libs, so the ordinals are hardcoded here (verified against libs/entity/Enum/
     // WieldRequirement.cs). Only the types relevant to display (Level, primary Attrib, Skill) are named.
@@ -406,6 +418,26 @@ public partial class MarketRepository
         return (levelReq, reqAttribute, reqAttributeAmount, other);
     }
 
+    // WorldObject.CrushingBlowScale, which the server's tests check this matches: the Market API can't see WorldObject.
+    public const double CrushingBlowScale = 1.3;
+
+    // The amounts of the Properties loot generation rolls, as appraisal's long descriptions work them out
+    // (AppraiseInfo: Biting Strike, Crushing Blow, Stamina Cost Reduction, Armor and Ward Cleaving), with the same
+    // conditions ComputeProperties adds their names on.
+    private static Dictionary<string, double>? ComputePropertyValues(
+        double? staminaCostReductionMod, double? ignoreWard, double? ignoreArmor, double? criticalMultiplier, double? criticalFrequency)
+    {
+        var values = new Dictionary<string, double>();
+
+        if (staminaCostReductionMod is > 0.001) values["Stamina Cost Reduction"] = Math.Round(staminaCostReductionMod.Value * 100);
+        if (ignoreWard is { } ward and not 0) values["Ward Cleaving"] = 100 - Math.Round(ward * 100);
+        if (ignoreArmor is { } armor and not 0) values["Armor Cleaving"] = 100 - Math.Round(armor * 100);
+        if (criticalMultiplier is { } multiplier and > 1) values["Crushing Blow"] = Math.Round((multiplier - 1) * CrushingBlowScale * 100);
+        if (criticalFrequency is { } frequency and > 0) values["Biting Strike"] = Math.Round((frequency - 0.1) * 100);
+
+        return values.Count > 0 ? values : null;
+    }
+
     // Named mods/bonuses shown in the client's "Properties"/"Additional Properties" tooltip
     // sections (AppraiseInfo.BuildProperties/AddPropertyEnchantments) — Gear* ratings, imbue
     // effects (reusing the already-computed ImbuedEffects list), and the handful of threshold-
@@ -472,27 +504,6 @@ public partial class MarketRepository
         )
         """;
 
-    // Melee/thrown/missile animation timing constants — client/DAT-driven, not a stored item
-    // property, so these are hardcoded from the project's verified Weapon Damage/Power Tables
-    // spreadsheet (the same source as weapontierdata.js on the site) plus a Base/Moddable Anim
-    // Length (melee/thrown) or Anim/Reload Anim Length (missile) split. Every subtype/size within
-    // a WeaponType shares one constant except Dagger, where Large (Dirk/Jitte) and Small
-    // (Dagger/Jambiya/Khanjar) differ — that one case is keyed by item name.
-    private const double AnimLenSwordAxeMaceStaff = 1.33;
-    private const double AnimLenSpear = 1.38;
-    private const double AnimLenDaggerLarge = 1.33;
-    private const double AnimLenDaggerSmall = 1.31;
-    private const double AnimLenUnarmed = 1.1;
-    private const double AnimLenTwoHanded = 0.9375;
-    private const double AnimLenThrownFixed = 1.352; // Base 2.33 - Moddable 0.978
-    private const double AnimLenThrownModdable = 0.978;
-    private const double AnimLenBow = 1.057;
-    private const double ReloadLenBow = 0.32;
-    private const double AnimLenCrossbow = 1.59;
-    private const double ReloadLenCrossbow = 0.26;
-    private const double AnimLenAtlatl = 1.85;
-    private const double ReloadLenAtlatl = 0.73;
-
     // Launchers (Bow/Crossbow/Atlatl) carry no Damage/DamageVariance of their own — only a
     // DamageMod multiplier applied to whatever ammo is loaded, which isn't part of the item
     // snapshot. For a comparable DPS figure, we substitute the AmmoDam value from the matching
@@ -520,16 +531,12 @@ public partial class MarketRepository
     private static string WarMagicBoltDpsSqlCase() =>
         "CASE ItemTier " + string.Join(" ", BoltAvgDamageByTier.Select((dmg, i) => $"WHEN {i + 1} THEN {(dmg / BoltCastCycleTimeByTier[i]).ToString(System.Globalization.CultureInfo.InvariantCulture)}")) + " ELSE NULL END";
 
-    // DPS — a "weapon-only" reference figure (0 Quickness, so only the listing's own weapon Speed
-    // affects animation speed), since a market listing has no wielder to pull real Quickness from.
-    // Mirrors Creature_Combat.GetAnimSpeed() and MotionTable.GetAnimationLength() exactly, with the
-    // quickness term fixed at 0:
-    //   animSpeed = clamp(1.0 + (1 - weaponSpeed/100), 1.0, 2.5)
-    //   cycleTime = fixedAnimPortion + moddableAnimPortion / animSpeed   (melee/thrown)
-    //   cycleTime = animLength + reloadAnimLength / animSpeed           (missile launchers)
-    //   dps = avgDamage * damageMod * (1 / cycleTime)                  (melee/thrown)
-    //   dps = ammoDam(itemTier) * damageMod * (1 / cycleTime)          (missile launchers)
-    //   dps = boltAvgDamage(itemTier) * elementalDamageMod / boltCycleTime(itemTier)  (casters)
+    // DPS — a "weapon-only" reference figure, since a market listing has no wielder: one hit's damage times attacks a
+    // second, 60 / WeaponTime (so it agrees with the atk/s the player plugin shows):
+    //   dps = avgDamage * damageMod * 60 / weaponTime                  (melee/thrown)
+    //   dps = ammoDam(itemTier) * damageMod * 60 / weaponTime          (missile launchers)
+    //   dps = boltAvgDamage(itemTier) * elementalDamageMod / boltCycleTime(itemTier)  (casters, which have no WeaponTime)
+    // AnimSpeedSqlExpr (the client's animation speed, clamp(2 - weaponTime/100, 1, 2.5)) is still the "speed" sort.
     private static readonly string AnimSpeedSqlExpr =
         $"LEAST(2.5, GREATEST(1.0, 2.0 - CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponTime') AS DOUBLE) / 100.0))";
 
@@ -543,6 +550,11 @@ public partial class MarketRepository
     private static string MissileDamageSqlExpr(int[] ammoDamByTier) =>
         $"({AmmoDamSqlCase(ammoDamByTier)} * COALESCE(CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.DamageMod') AS DOUBLE), 1.0))";
 
+    // Attacks a second for a weapon: 60 / WeaponTime, so a WeaponTime of 60 is one a second (Daralet's rule, which the
+    // player plugin's tooltips show as atk/s). Null for a WeaponTime of 0 or none.
+    private const string AttacksPerSecondSqlExpr =
+        "(60.0 / NULLIF(CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponTime') AS DOUBLE), 0))";
+
     private static readonly string DpsSqlExpr = $"""
         (
           CASE
@@ -550,29 +562,19 @@ public partial class MarketRepository
               AND CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponSkill') AS SIGNED) IN ({SkillWarMagic},{SkillLifeMagic})
               THEN {WarMagicBoltDpsSqlCase()} * COALESCE(CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ElementalDamageMod') AS DOUBLE), 1.0)
             WHEN (CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.DefaultCombatStyle') AS UNSIGNED) & {CombatStyleThrownWeapon}) != 0
-              THEN {MeleeDamageSqlExpr} / ({AnimLenThrownFixed} + {AnimLenThrownModdable} / {AnimSpeedSqlExpr})
+              THEN {MeleeDamageSqlExpr} * {AttacksPerSecondSqlExpr}
             WHEN CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponType') AS SIGNED) = {WeaponTypeBow}
-              THEN {MissileDamageSqlExpr(AmmoDamByTierBow)} / ({AnimLenBow} + {ReloadLenBow} / {AnimSpeedSqlExpr})
+              THEN {MissileDamageSqlExpr(AmmoDamByTierBow)} * {AttacksPerSecondSqlExpr}
             WHEN CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponType') AS SIGNED) = {WeaponTypeCrossbow}
-              THEN {MissileDamageSqlExpr(AmmoDamByTierCrossbow)} / ({AnimLenCrossbow} + {ReloadLenCrossbow} / {AnimSpeedSqlExpr})
+              THEN {MissileDamageSqlExpr(AmmoDamByTierCrossbow)} * {AttacksPerSecondSqlExpr}
             WHEN (CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.DefaultCombatStyle') AS UNSIGNED) & {CombatStyleAtlatl}) != 0
-              THEN {MissileDamageSqlExpr(AmmoDamByTierAtlatl)} / ({AnimLenAtlatl} + {ReloadLenAtlatl} / {AnimSpeedSqlExpr})
-            WHEN CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponType') AS SIGNED) = {WeaponTypeDagger}
-              THEN {MeleeDamageSqlExpr} / ((CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesString.Name')) IN ('Dirk','Jitte') THEN {AnimLenDaggerLarge} ELSE {AnimLenDaggerSmall} END) / {AnimSpeedSqlExpr})
-            WHEN CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponType') AS SIGNED) = {WeaponTypeSpear}
-              THEN {MeleeDamageSqlExpr} / ({AnimLenSpear} / {AnimSpeedSqlExpr})
-            WHEN CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponType') AS SIGNED) = {WeaponTypeUnarmed}
-              THEN {MeleeDamageSqlExpr} / ({AnimLenUnarmed} / {AnimSpeedSqlExpr})
-            WHEN CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponType') AS SIGNED) = {WeaponTypeTwoHanded}
-              THEN {MeleeDamageSqlExpr} / ({AnimLenTwoHanded} / {AnimSpeedSqlExpr})
-            WHEN CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponType') AS SIGNED) IN ({WeaponTypeSword},{WeaponTypeAxe},{WeaponTypeMace},{WeaponTypeStaff})
-              THEN {MeleeDamageSqlExpr} / ({AnimLenSwordAxeMaceStaff} / {AnimSpeedSqlExpr})
-            WHEN (CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.ItemType') AS UNSIGNED) & {ItemTypeCaster}) = 0
-              AND (CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.AttackType') AS UNSIGNED) & {AttackTypeUnarmedMask}) != 0
-              THEN {MeleeDamageSqlExpr} / ({AnimLenUnarmed} / {AnimSpeedSqlExpr})
+              THEN {MissileDamageSqlExpr(AmmoDamByTierAtlatl)} * {AttacksPerSecondSqlExpr}
+            WHEN CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponType') AS SIGNED)
+                IN ({WeaponTypeDagger},{WeaponTypeSpear},{WeaponTypeUnarmed},{WeaponTypeTwoHanded},{WeaponTypeSword},{WeaponTypeAxe},{WeaponTypeMace},{WeaponTypeStaff})
+              THEN {MeleeDamageSqlExpr} * {AttacksPerSecondSqlExpr}
             WHEN (CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.ItemType') AS UNSIGNED) & {ItemTypeCaster}) = 0
               AND CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.AttackType') AS UNSIGNED) > 0
-              THEN {MeleeDamageSqlExpr} / ({AnimLenSwordAxeMaceStaff} / {AnimSpeedSqlExpr})
+              THEN {MeleeDamageSqlExpr} * {AttacksPerSecondSqlExpr}
             ELSE NULL
           END
         )
@@ -773,6 +775,8 @@ public partial class MarketRepository
             }
         }
 
+        var attack = ComputeAttack(weaponType, combatStyle, weaponTime, itemTier, baseDamage, damageVariance, damageMod, itemType, attackType, weaponSkill, elementalDamageMod);
+
         var listing = new MarketListing
         {
             Id = (facts.Int("Id") ?? 0),
@@ -795,13 +799,17 @@ public partial class MarketRepository
             BaseDamage = baseDamage,
             DamageVariance = damageVariance,
             AvgDamage = baseDamage.HasValue && damageVariance.HasValue ? baseDamage.Value * (1 - damageVariance.Value / 2) : null,
+            DamageType = DamageTypeNames(damageType),
             Speed = weaponTime.HasValue ? Math.Clamp(2.0 - weaponTime.Value / 100.0, 1.0, 2.5) : null,
+            WeaponTime = weaponTime,
             DamageMod = damageMod,
             ElementalDamageMod = elementalDamageMod,
             RestorationMod = facts.Double("RestorationModRaw"),
             Spellcraft = facts.Int("SpellcraftRaw"),
             Difficulty = facts.Int("DifficultyRaw"),
             Mana = facts.Int("ManaRaw"),
+            ManaRate = facts.Double("ManaRateRaw") is { } manaRate && manaRate != 0 ? manaRate : null,
+            ProcChance = facts.UInt("ProcSpellRaw") is > 0 && facts.Double("ProcSpellRateRaw") is { } procRate && procRate > 0 ? procRate : null,
             Workmanship = itemWorkmanship,
             NumTimesTinkered = facts.Int("NumTimesTinkeredRaw"),
             Sockets = sockets,
@@ -811,7 +819,8 @@ public partial class MarketRepository
             WeaponLifeMagicMod = facts.Double("WeaponLifeMagicModRaw"),
             WeaponPhysicalDefense = facts.Double("WeaponPhysicalDefenseRaw"),
             WeaponMagicalDefense = facts.Double("WeaponMagicalDefenseRaw"),
-            Dps = ComputeDps(itemName, weaponType, combatStyle, weaponTime, itemTier, baseDamage, damageVariance, damageMod, itemType, attackType, weaponSkill, elementalDamageMod),
+            Dps = ComputeDps(attack),
+            AttacksPerSecond = attack is { CycleTime: > 0 } ? 1 / attack.Value.CycleTime : null,
             ArmorSlots = armorSlots,
             ArmorLevel = facts.Int("ArmorLevelRaw"),
             WardLevel = facts.Int("WardLevelRaw"),
@@ -1048,6 +1057,7 @@ public partial class MarketRepository
         listing.Properties = ComputeProperties(
             allPropertiesIntRaw, listing.ImbuedEffects, staminaCostReductionMod, ignoreWard, ignoreArmor,
             criticalMultiplier, criticalFrequency, resistanceModifier, resistanceModifierType, noCompsRequiredForMagicSchool);
+        listing.PropertyValues = ComputePropertyValues(staminaCostReductionMod, ignoreWard, ignoreArmor, criticalMultiplier, criticalFrequency);
 
         return (listing, spellIds);
     }
@@ -1108,9 +1118,19 @@ public partial class MarketRepository
     // Mirrors DpsSqlExpr exactly (see its doc comment above for the formula/sourcing) — computed
     // here in C# for the response payload, and separately in SQL for server-side sort/filter
     // (which must run before LIMIT/OFFSET, so it can't just reuse this method's result).
-    private static double? ComputeDps(string? itemName, int? weaponType, uint? combatStyle, int? weaponTime, int? itemTier, int? baseDamage, double? damageVariance, double? damageMod, uint? itemType, uint? attackType, int? weaponSkill, double? elementalDamageMod)
+    private static double? ComputeDps((double? Damage, double CycleTime)? attack)
     {
-        if (itemType.HasValue && (itemType.Value & ItemTypeCaster) != 0 && weaponSkill is SkillWarMagic or SkillLifeMagic)
+        return attack is { Damage: { } damage, CycleTime: var cycleTime } ? damage / cycleTime : null;
+    }
+
+    // One attack's damage (null when it can't be worked out) and how long each attack takes, in seconds, for Dps and
+    // AttacksPerSecond: WeaponTime / 60 for a weapon (60 is one a second), the bolt's cast time for a caster. Null when
+    // the item isn't a weapon this can model.
+    private static (double? Damage, double CycleTime)? ComputeAttack(int? weaponType, uint? combatStyle, int? weaponTime, int? itemTier, int? baseDamage, double? damageVariance, double? damageMod, uint? itemType, uint? attackType, int? weaponSkill, double? elementalDamageMod)
+    {
+        var isCaster = itemType.HasValue && (itemType.Value & ItemTypeCaster) != 0;
+
+        if (isCaster && weaponSkill is SkillWarMagic or SkillLifeMagic)
         {
             if (!itemTier.HasValue || itemTier.Value < 1 || itemTier.Value > BoltAvgDamageByTier.Length)
             {
@@ -1118,92 +1138,49 @@ public partial class MarketRepository
             }
 
             var i = itemTier.Value - 1;
-            return BoltAvgDamageByTier[i] / BoltCastCycleTimeByTier[i] * (elementalDamageMod ?? 1.0);
+            return (BoltAvgDamageByTier[i] * (elementalDamageMod ?? 1.0), BoltCastCycleTimeByTier[i]);
         }
 
-        if (!weaponTime.HasValue)
+        if (weaponTime is not > 0)
         {
             return null;
         }
 
-        var animSpeed = Math.Clamp(2.0 - weaponTime.Value / 100.0, 1.0, 2.5);
+        var cycleTime = weaponTime.Value / 60.0;
         var meleeDamage = baseDamage.HasValue && damageVariance.HasValue
             ? baseDamage.Value * (1 - damageVariance.Value / 2) * (damageMod ?? 1.0)
             : (double?)null;
 
-        double? damage;
-        double cycleTime;
+        // the same order as DpsSqlExpr: what deals the damage, the weapon itself or a launcher's ammo
         if (combatStyle.HasValue && (combatStyle.Value & CombatStyleThrownWeapon) != 0)
         {
-            damage = meleeDamage;
-            cycleTime = AnimLenThrownFixed + AnimLenThrownModdable / animSpeed;
-        }
-        else if (weaponType == WeaponTypeBow)
-        {
-            damage = AmmoDamage(AmmoDamByTierBow, itemTier, damageMod);
-            cycleTime = AnimLenBow + ReloadLenBow / animSpeed;
-        }
-        else if (weaponType == WeaponTypeCrossbow)
-        {
-            damage = AmmoDamage(AmmoDamByTierCrossbow, itemTier, damageMod);
-            cycleTime = AnimLenCrossbow + ReloadLenCrossbow / animSpeed;
-        }
-        else if (combatStyle.HasValue && (combatStyle.Value & CombatStyleAtlatl) != 0)
-        {
-            damage = AmmoDamage(AmmoDamByTierAtlatl, itemTier, damageMod);
-            cycleTime = AnimLenAtlatl + ReloadLenAtlatl / animSpeed;
-        }
-        else if (weaponType == WeaponTypeDagger)
-        {
-            damage = meleeDamage;
-            var animLen = itemName is "Dirk" or "Jitte" ? AnimLenDaggerLarge : AnimLenDaggerSmall;
-            cycleTime = animLen / animSpeed;
-        }
-        else if (weaponType == WeaponTypeSpear)
-        {
-            damage = meleeDamage;
-            cycleTime = AnimLenSpear / animSpeed;
-        }
-        else if (weaponType == WeaponTypeUnarmed)
-        {
-            damage = meleeDamage;
-            cycleTime = AnimLenUnarmed / animSpeed;
-        }
-        else if (weaponType == WeaponTypeTwoHanded)
-        {
-            damage = meleeDamage;
-            cycleTime = AnimLenTwoHanded / animSpeed;
-        }
-        else if (weaponType is WeaponTypeSword or WeaponTypeAxe or WeaponTypeMace or WeaponTypeStaff)
-        {
-            damage = meleeDamage;
-            cycleTime = AnimLenSwordAxeMaceStaff / animSpeed;
-        }
-        else if (!itemType.HasValue || (itemType.Value & ItemTypeCaster) == 0)
-        {
-            // WeaponType fallback: some weenies genuinely lack it, but the small, reliably
-            // populated AttackType flag set (Punch/Thrust/Slash/Kick) is still present.
-            if (attackType.HasValue && (attackType.Value & AttackTypeUnarmedMask) != 0)
-            {
-                damage = meleeDamage;
-                cycleTime = AnimLenUnarmed / animSpeed;
-            }
-            else if (attackType is > 0)
-            {
-                damage = meleeDamage;
-                cycleTime = AnimLenSwordAxeMaceStaff / animSpeed;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        else
-        {
-            return null;
+            return (meleeDamage, cycleTime);
         }
 
-        return damage.HasValue ? damage.Value / cycleTime : null;
+        if (weaponType == WeaponTypeBow)
+        {
+            return (AmmoDamage(AmmoDamByTierBow, itemTier, damageMod), cycleTime);
+        }
+
+        if (weaponType == WeaponTypeCrossbow)
+        {
+            return (AmmoDamage(AmmoDamByTierCrossbow, itemTier, damageMod), cycleTime);
+        }
+
+        if (combatStyle.HasValue && (combatStyle.Value & CombatStyleAtlatl) != 0)
+        {
+            return (AmmoDamage(AmmoDamByTierAtlatl, itemTier, damageMod), cycleTime);
+        }
+
+        if (weaponType is WeaponTypeDagger or WeaponTypeSpear or WeaponTypeUnarmed or WeaponTypeTwoHanded
+            or WeaponTypeSword or WeaponTypeAxe or WeaponTypeMace or WeaponTypeStaff)
+        {
+            return (meleeDamage, cycleTime);
+        }
+
+        // WeaponType fallback: some weenies genuinely lack it, but the small, reliably populated AttackType flag set
+        // (Punch/Thrust/Slash/Kick) is still present.
+        return !isCaster && attackType is > 0 ? (meleeDamage, cycleTime) : null;
     }
 
     private static double? AmmoDamage(int[] ammoDamByTier, int? itemTier, double? damageMod)

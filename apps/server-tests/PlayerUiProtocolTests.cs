@@ -169,9 +169,9 @@ public class PlayerUiProtocolTests
     {
         var market = new PlayerUiMarket(
             true, "Market Broker", 4.5f, 0.05, 0.1, 9500,
-            [new PlayerUiListing(12, "Ono", 336, 6, 1000, 3600)],
-            [new PlayerUiSale(11, "Tachi", 337, 10000, 9500, false, 120)],
-            [new PlayerUiExpired(10, "Yari", 338, 500, 60)]
+            [new PlayerUiListing(12, "Ono", 336, 6, 1000, 3600, new PlayerUiIcon("06001234", null, "Weapon", "Fire"))],
+            [new PlayerUiSale(11, "Tachi", 337, 10000, 9500, false, 120, null)],
+            [new PlayerUiExpired(10, "Yari", 338, 500, 60, null)]
         );
 
         var json = PlayerUiProtocol.BuildMessages("market", market).JoinedJson();
@@ -179,9 +179,10 @@ public class PlayerUiProtocolTests
         Assert.AreEqual(
             "{\"nearBroker\":true,\"brokerName\":\"Market Broker\",\"brokerDistance\":4.5,\"payoutFee\":0.05,\"cancelFee\":0.1,"
                 + "\"pendingPayout\":9500,\"listings\":[{\"id\":12,\"name\":\"Ono\",\"weenieClassId\":336,\"tier\":6,\"price\":1000,"
-                + "\"expiresIn\":3600}],\"sales\":[{\"id\":11,\"name\":\"Tachi\",\"weenieClassId\":337,\"price\":10000,\"payout\":9500,"
-                + "\"claimed\":false,\"soldAgo\":120}],\"expired\":[{\"id\":10,\"name\":\"Yari\",\"weenieClassId\":338,\"price\":500,"
-                + "\"expiredAgo\":60}]}",
+                + "\"expiresIn\":3600,\"icon\":{\"icon\":\"06001234\",\"overlay\":null,\"underlay\":\"Weapon\",\"effect\":\"Fire\"}}],"
+                + "\"sales\":[{\"id\":11,\"name\":\"Tachi\",\"weenieClassId\":337,\"price\":10000,\"payout\":9500,"
+                + "\"claimed\":false,\"soldAgo\":120,\"icon\":null}],\"expired\":[{\"id\":10,\"name\":\"Yari\",\"weenieClassId\":338,"
+                + "\"price\":500,\"expiredAgo\":60,\"icon\":null}]}",
             json
         );
     }
@@ -215,6 +216,23 @@ public class PlayerUiProtocolTests
                 + "\"calledOff\":false,\"endedAgo\":90}],\"maps\":[\"The Pit\"]}",
             json
         );
+    }
+
+    [TestMethod]
+    public void CorpseItemRollQualityKeepsAppraisalsStatNames()
+    {
+        var listing = new ACE.MarketApi.MarketListing { WeaponTime = 40, AttacksPerSecond = 0.8 };
+        var item = new PlayerUiCorpseItem(
+            5, "Axe", 1, 100, 50, true, "Iron", 6.5, listing,
+            new() { ["Bonus to Attack Skill"] = 0.75 }
+        );
+
+        var json = PlayerUiProtocol.BuildMessages("describe", new[] { item }, omitNulls: true).JoinedJson();
+
+        // the plugin finds each quality by the stat's name, so the names must not be camelCased like the fields
+        StringAssert.Contains(json, "\"rollQuality\":{\"Bonus to Attack Skill\":0.75}");
+        StringAssert.Contains(json, "\"weaponTime\":40");
+        StringAssert.Contains(json, "\"attacksPerSecond\":0.8");
     }
 
     [TestMethod]
