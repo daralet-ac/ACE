@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ACE.Entity;
 using ACE.MarketApi;
+using ACE.Server.Factories;
 using ACE.Server.Market;
 using ACE.Server.WorldObjects;
 
@@ -21,34 +22,75 @@ public static class PlayerUiCorpseData
     /// <summary>The most items one @playerui describe may name.</summary>
     public const int MaxDescribeItems = 20;
 
+    /// <summary>
+    /// A container standing in the world that a player loots like a chest: a Chest, or a plain Container (the static corpses
+    /// and piles placed in dungeons are these, not Corpses). Not a corpse (checked on its own, by permission), the bank or
+    /// house storage (Storage), a house hook or slumlord, a creature, or anything in an inventory.
+    /// </summary>
+    public static bool IsLootableContainer(Container container)
+    {
+        if (container is Corpse or Storage or Hook or SlumLord or Creature)
+        {
+            return false;
+        }
+
+        return (container.ContainerId ?? 0) == 0 && (container.OwnerId ?? 0) == 0;
+    }
+
     public static PlayerUiCorpse GetCorpse(Player player, uint guid)
     {
         var landblock = player.CurrentLandblock;
         var found = landblock?.GetObject(new ObjectGuid(guid));
 
-        // near enough to use, as opening it is
-        if (found == null || !landblock.WithinUseRadius(player, found.Guid, out _))
+        if (found == null)
         {
             return new PlayerUiCorpse(guid, "gone", null, []);
         }
 
-        if (found is not Corpse corpse)
+        // near enough to use, as opening it is; except one this player has open, which the game let them open from where
+        // they stand (a corpse's use radius is small, and WithinUseRadius was stricter than the open), and which is closed
+        // when they walk away from it instead
+        var openByPlayer = found is Container { IsOpen: true } open && open.Viewer == player.Guid.Full;
+
+        if (!openByPlayer && !landblock.WithinUseRadius(player, found.Guid, out _))
+        {
+            return new PlayerUiCorpse(guid, "gone", null, []);
+        }
+
+        Container container;
+
+        if (found is Corpse corpse)
+        {
+            if (!corpse.HasPermission(player))
+            {
+                return new PlayerUiCorpse(guid, "denied", corpse.Name, []);
+            }
+
+            container = corpse;
+        }
+        else if (found is Container worldContainer && IsLootableContainer(worldContainer))
+        {
+            // only while this player has it open: what's in a chest is theirs to see once they've opened it (unlocked it,
+            // passed its quest gate), and not before
+            if (!worldContainer.IsOpen || worldContainer.Viewer != player.Guid.Full)
+            {
+                return new PlayerUiCorpse(guid, "denied", worldContainer.Name, []);
+            }
+
+            container = worldContainer;
+        }
+        else
         {
             return new PlayerUiCorpse(guid, "notcorpse", found.Name, []);
         }
 
-        if (!corpse.HasPermission(player))
-        {
-            return new PlayerUiCorpse(guid, "denied", corpse.Name, []);
-        }
-
-        var items = corpse.Inventory.Values
+        var items = container.Inventory.Values
             .OrderBy(i => i.PlacementPosition ?? int.MaxValue)
             .Select(Describe)
             .Where(i => i != null)
             .ToList();
 
-        return new PlayerUiCorpse(guid, "ok", corpse.Name, items);
+        return new PlayerUiCorpse(guid, "ok", container.Name, items);
     }
 
     /// <summary>
@@ -90,14 +132,34 @@ public static class PlayerUiCorpseData
             Player.IsSalvageable(item),
             item.MaterialType?.ToString(),
             item.Workmanship,
-            listing
+            listing,
+            RollQuality(item)
         );
     }
 
     /// <summary>
-    /// Items the player carries, or has in the bank they have open, described as a corpse's are: for the plugin's item
-    /// tooltips (the bank window) and its "test against my packs". Guids that are neither are skipped, so this only ever
-    /// describes the player's own things.
+    /// The qualities appraisal's Roll Quality section shows, by stat; null when there are none (most items, so the reply
+    /// leaves it out).
+    /// </summary>
+    private static Dictionary<string, double> RollQuality(WorldObject item)
+    {
+        var qualities = new Dictionary<string, double>();
+
+        foreach (var range in LootGenerationFactory.GetItemRollRanges(item))
+        {
+            if (range.Quality is { } quality)
+            {
+                qualities.TryAdd(range.Stat, quality);
+            }
+        }
+
+        return qualities.Count > 0 ? qualities : null;
+    }
+
+    /// <summary>
+    /// Items the player carries or wears, or has in the bank they have open, described as a corpse's are: for the plugin's
+    /// item tooltips (the bank window), its "test against my packs", and its appraisal's compare with what's equipped. Guids
+    /// that are none of these are skipped, so this only ever describes the player's own things.
     /// </summary>
     public static List<PlayerUiCorpseItem> DescribeCarried(Player player, IEnumerable<string> words)
     {
@@ -112,7 +174,7 @@ public static class PlayerUiCorpseData
 
         WorldObject Find(uint guid)
         {
-            var carried = player.FindObject(guid, Player.SearchLocations.MyInventory);
+            var carried = player.FindObject(guid, Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems);
 
             if (carried != null)
             {

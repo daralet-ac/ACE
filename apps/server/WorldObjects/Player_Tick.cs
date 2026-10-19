@@ -373,6 +373,8 @@ partial class Player
 
         AdminFreezeTick();
 
+        ClosePlayerUiContainerOutOfReach();
+
         PhysicsObj.ObjMaint.DestroyObjects();
 
         // Check if we're due for our periodic SavePlayer

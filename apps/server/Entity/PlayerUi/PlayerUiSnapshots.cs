@@ -54,6 +54,12 @@ public record PlayerUiFellow(
 public record PlayerUiPosition(float? MapX, float? MapY, bool InBuilding);
 
 /// <summary>
+/// Whether the plugin shows the player's bank (@playerui bankwindow, Player.PlayerUiBankWindow), or their corpses and chests
+/// (@playerui lootwindow, Player.PlayerUiLootWindow), in its own window instead of the game's.
+/// </summary>
+public record PlayerUiWindowSetting(bool On);
+
+/// <summary>
 /// The player's bank, for the plugin's bank window. Open: they have a bank open and are close enough to use it (what every
 /// /bank command but balance, log and intro needs). Loaded: its items have come from the database (a moment after opening).
 /// Guid is the bank chest's, so the plugin can find its items in what the client was sent. Packs are numbered as /bank packs
@@ -95,13 +101,20 @@ public record PlayerUiMarket(
 );
 
 /// <summary>An active listing. Id is the listing's own id, which "cancel" takes.</summary>
-public record PlayerUiListing(int Id, string Name, uint WeenieClassId, int? Tier, int Price, double ExpiresIn);
+public record PlayerUiListing(int Id, string Name, uint WeenieClassId, int? Tier, int Price, double ExpiresIn, PlayerUiIcon Icon);
 
 /// <summary>A sold listing. Payout is what the seller gets after the fee; Claimed: it's been collected from a broker.</summary>
-public record PlayerUiSale(int Id, string Name, uint WeenieClassId, int Price, int Payout, bool Claimed, double SoldAgo);
+public record PlayerUiSale(int Id, string Name, uint WeenieClassId, int Price, int Payout, bool Claimed, double SoldAgo, PlayerUiIcon Icon);
 
 /// <summary>A listing that ran out unsold, whose item is waiting at the broker.</summary>
-public record PlayerUiExpired(int Id, string Name, uint WeenieClassId, int Price, double ExpiredAgo);
+public record PlayerUiExpired(int Id, string Name, uint WeenieClassId, int Price, double ExpiredAgo, PlayerUiIcon Icon);
+
+/// <summary>
+/// A listed item's icon, as market search has it (MarketListing.IconHex, IconOverlayHex, IconUnderlay): portal.dat ids in
+/// hex, the underlay as the kind of item ("Weapon", "Misc"...), and the effect that colours its outline (MarketListing.IconEffect).
+/// Null when the listing has no snapshot to read it from.
+/// </summary>
+public record PlayerUiIcon(string Icon, string Overlay, string Underlay, string Effect);
 
 /// <summary>
 /// The arena as the player sees it, for the plugin's Arena tab. State is one of off, idle, queued, watching, defeated
@@ -132,14 +145,19 @@ public record PlayerUiArenaDuel(int Id, string Sides, int Size, bool Scaled, boo
 public record PlayerUiArenaResult(int Id, string Sides, int Size, bool Scaled, bool Rated, string Map, string Winners, bool CalledOff, double EndedAgo);
 
 /// <summary>
-/// A corpse's items, for the plugin's loot rules. Status: "ok"; "gone" (not near enough to use, or not there); "denied"
-/// (someone else's to loot); "notcorpse". Item is each item described the way the Market API describes a listing
-/// (ACE.MarketApi.MarketRepository.Describe), so the rules can use the market search's filters.
+/// A corpse's or an open chest's items, for the plugin's loot rules. Status: "ok"; "gone" (not near enough to use, or not
+/// there); "denied" (a corpse someone else's to loot, or a chest this player hasn't got open); "notcorpse" (neither);
+/// "closed" (sent unasked when it closes, with the plugin's loot window on, Player.PlayerUiLootWindow; also sent unasked,
+/// as the rest, when it opens). Item
+/// is each item described the way the Market API describes a listing (ACE.MarketApi.MarketRepository.Describe), so the
+/// rules can use the market search's filters.
 /// </summary>
 public record PlayerUiCorpse(uint Guid, string Status, string Name, List<PlayerUiCorpseItem> Items);
 
 /// <summary>
-/// An item on a corpse. Salvageable: salvaging could turn it into salvage (Player.IsSalvageable).
+/// An item on a corpse. Salvageable: salvaging could turn it into salvage (Player.IsSalvageable). RollQuality: where
+/// each rolled stat landed in its range, 0 to 1, by the stat's name in appraisal's Roll Quality section
+/// (LootGenerationFactory.GetItemRollRanges); null when nothing on it rolled.
 /// </summary>
 public record PlayerUiCorpseItem(
     uint Guid,
@@ -150,7 +168,8 @@ public record PlayerUiCorpseItem(
     bool Salvageable,
     string Material,
     double? Workmanship,
-    ACE.MarketApi.MarketListing Item
+    ACE.MarketApi.MarketListing Item,
+    Dictionary<string, double> RollQuality
 );
 
 /// <summary>

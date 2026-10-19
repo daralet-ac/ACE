@@ -2,7 +2,10 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
+using ACE.Entity.Enum;
+using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity.AdminUi;
+using ACE.Server.Network;
 
 namespace ACE.Server.Entity.PlayerUi;
 
@@ -51,5 +54,17 @@ public static class PlayerUiProtocol
     public static List<string> BuildMessages(string kind, string json, int replyId)
     {
         return AdminUiProtocol.BuildMessages(Prefix, kind, json, replyId, ChunkSize);
+    }
+
+    /// <summary>
+    /// Sends a reply to the player's plugin: for a request it made, or unasked, when something it shows changed (the bank
+    /// opening, with the plugin's bank window on). The plugin reads a reply the same way whether it asked or not.
+    /// </summary>
+    public static void Send(Session session, string kind, object payload, bool omitNulls = false)
+    {
+        foreach (var message in BuildMessages(kind, payload, omitNulls))
+        {
+            CommandHandlerHelper.WriteOutputInfo(session, message, ChatMessageType.Broadcast);
+        }
     }
 }

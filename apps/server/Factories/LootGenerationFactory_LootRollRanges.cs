@@ -26,6 +26,28 @@ public static partial class LootGenerationFactory
     }
 
     /// <summary>
+    /// The roll ranges appraisal shows for an item: a quest item's (ShowsQuestItemRollRanges), loot's (anything with
+    /// workmanship), or none
+    /// </summary>
+    public static List<QuestItemRollRange> GetItemRollRanges(WorldObject wo)
+    {
+        if (ShowsQuestItemRollRanges(wo))
+        {
+            return GetQuestItemRollRanges(wo, DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId));
+        }
+
+        return wo.Workmanship != null ? GetLootItemRollRanges(wo) : [];
+    }
+
+    /// <summary>
+    /// Quest items that roll on pickup, or rolled under the current rules (which baked in their tinks).
+    /// </summary>
+    public static bool ShowsQuestItemRollRanges(WorldObject wo)
+    {
+        return wo.MutableQuestItem || wo.QuestItemTinks != null;
+    }
+
+    /// <summary>
     /// The roll ranges of every stat loot generation rolled on this item, at its tier. Quality is where the untinkered
     /// stat sits in its range, 0 to 1.
     /// </summary>
