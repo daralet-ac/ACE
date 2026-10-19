@@ -103,7 +103,11 @@ public static class AdminUiCapstones
                     instance != null ? $"instance {instance.Id}" : $"copy 0x{dungeonLandblock.Landblock:X4}",
                     instance?.Id,
                     run != null ? (now - run.StartedUtc).TotalSeconds : null,
-                    landblock?.GetDifficultyTier() ?? 0,
+                    // the landblock only knows its mods while it's loaded; the fellowship keeps the ones its leader chose
+                    Math.Max(
+                        landblock?.GetDifficultyTier() ?? 0,
+                        DifficultyTierFromMods(fellowship.CapstoneDungeonMods)
+                    ),
                     fellowship.CapstoneDungeonMods?.ToList() ?? new List<string>(),
                     members.Select(AdminUiSnapshots.GetFellow).ToList(),
                     inside
@@ -128,6 +132,51 @@ public static class AdminUiCapstones
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The tier of the Dungeon: Difficulty mod among a fellowship's chosen mods (Landblock.LandblockMods names: "Difficulty III"
+    /// is 3), or 0 if there's none
+    /// </summary>
+    public static int DifficultyTierFromMods(IEnumerable<string> mods)
+    {
+        const string prefix = "Difficulty ";
+        var tier = 0;
+
+        foreach (var mod in mods ?? Enumerable.Empty<string>())
+        {
+            if (mod != null && mod.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                tier = Math.Max(tier, FromRoman(mod.Substring(prefix.Length)));
+            }
+        }
+
+        return tier;
+    }
+
+    private static int FromRoman(string numeral)
+    {
+        var values = new Dictionary<char, int>
+        {
+            ['I'] = 1,
+            ['V'] = 5,
+            ['X'] = 10,
+            ['L'] = 50
+        };
+        var total = 0;
+
+        for (var i = 0; i < numeral.Length; i++)
+        {
+            if (!values.TryGetValue(numeral[i], out var value))
+            {
+                return 0;
+            }
+
+            var next = i + 1 < numeral.Length && values.TryGetValue(numeral[i + 1], out var n) ? n : 0;
+            total += value < next ? -value : value;
+        }
+
+        return total;
     }
 
     private static List<AdminUiCapstoneCompletion> GetRecent()
