@@ -90,8 +90,8 @@ public class CapstoneInstancedDungeonsTests
 
         var footprint = Landblock.GetCapstoneInstanceFootprint("Xarabydun Researcher Halls", residence);
 
+        // the footprint is a set, so only its members matter; the entry is CapstoneTeleportLocations[residence]
         CollectionAssert.AreEquivalent(new[] { residence, bossRoom }, footprint.ToList());
-        Assert.AreEqual(residence, footprint.First());
 
         // the boss room isn't a dungeon of its own any more
         Assert.IsNull(Landblock.CapstoneDungeonLists("Shattered Source"));

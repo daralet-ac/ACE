@@ -2922,8 +2922,11 @@ public class EmoteManager
             //   percent     = fraction of MaxValue, 0.0-1.0 (matches CreatureVital.Percent's own
             //                 scale, and CastSpellInstant's damage-multiplier convention)
             //
-            // A creature that is already dead is left alone. Setting Health to 0 kills the creature
-            // (non-Player only) through the normal death sequence; Stamina/Mana at 0 do not.
+            // A creature that is already dead is left alone. Setting Health to exactly 0% kills the
+            // creature (non-Player only) through the normal death sequence; Stamina/Mana at 0 do not.
+            // A Health percent above 0 never takes it below 1 HP, however small the percent.
+            // Death runs inline, so any later actions in the same emote set still run against the dead
+            // creature: put a SetVitalPercent that sets Health to 0 last in its set.
             //
             // Applied via UpdateVital (absolute set, clamped 0..MaxValue) - the same method the
             // core damage/heal paths already use (Monster_Combat.TakeDamage, Healer, Lifestone).
@@ -2938,6 +2941,12 @@ public class EmoteManager
                     if (vital != null)
                     {
                         var newValue = (int)Math.Round(vital.MaxValue * emote.Percent.Value);
+
+                        // a tiny percent that rounds to 0 HP must not kill; only an exact 0% does
+                        if (vital == creature.Health && emote.Percent.Value > 0 && newValue < 1)
+                        {
+                            newValue = 1;
+                        }
 
                         var delta = creature.UpdateVital(vital, newValue);
 
@@ -2960,7 +2969,7 @@ public class EmoteManager
                             // leaving it alive at 0 HP. Players are left to their own death handling.
                             if (creature.Health.Current == 0 && creature is not Player)
                             {
-                                creature.OnDeath();
+                                creature.OnDeath(creature.DamageHistory.LastDamager, DamageType.Health);
                                 creature.Die();
                             }
                         }

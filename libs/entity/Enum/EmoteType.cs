@@ -263,7 +263,8 @@ public enum EmoteType
     /// Percent is a fraction (0.0-1.0) of that vital's MaxValue. Self only, no target resolution.
     /// A dead creature is left alone. A Health increase is recorded as a heal; a decrease is not recorded
     /// as damage (so it does not affect kill credit or XP), but health bars still refresh. Setting Health to
-    /// 0 kills a non-Player creature through the normal death sequence.
+    /// 0% kills a non-Player creature through the normal death sequence (a Health percent above 0 never
+    /// takes it below 1 HP). Death runs inline, so put a Health-to-0 SetVitalPercent last in its emote set.
     /// </summary>
     SetVitalPercent = 10028
 }
