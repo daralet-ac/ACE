@@ -838,6 +838,16 @@ public class BankCommand
     private static string DescribePack(Container pack)
     {
         var used = pack.Inventory.Values.Count(i => !i.UseBackpackSlot);
+
+        return $"{pack.Name} [{PackTags(pack)}] {used} of {pack.ItemCapacity ?? 0} slots used";
+    }
+
+    /// <summary>
+    /// What a pack collects, in words: its inscription's tags, after its name's kind for a named pack. Also sent to the
+    /// Daralet plugin's bank window (PlayerUiData.GetBank).
+    /// </summary>
+    internal static string PackTags(Container pack)
+    {
         var inscribed = BankCategories.ParseInscription(pack.Inscription);
         var tags = BankCategories.Describe(inscribed);
 
@@ -849,7 +859,7 @@ public class BankCommand
             tags = inscribed.IsEmpty ? byName : $"{byName}, {tags}";
         }
 
-        return $"{pack.Name} [{tags}] {used} of {pack.ItemCapacity ?? 0} slots used";
+        return tags;
     }
 
     // --- helpers ---

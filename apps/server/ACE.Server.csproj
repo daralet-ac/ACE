@@ -292,6 +292,15 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The Market API's item description, shared so a corpse's items are described exactly like market listings
+         (PlayerUiCorpseData, for the Daralet Player plugin's loot rules). Linked, not copied: one source for both. -->
+    <Compile Include="..\market-api\ItemFacts.cs" Link="Market\Shared\ItemFacts.cs" />
+    <Compile Include="..\market-api\MarketListing.cs" Link="Market\Shared\MarketListing.cs" />
+    <Compile Include="..\market-api\MarketRepository.Items.cs" Link="Market\Shared\MarketRepository.Items.cs" />
+    <None Include="..\market-api\Data\SpellSchools.json" Link="Data\SpellSchools.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- instances.json is the server's own configuration. The build puts the one that comes with the server next to it when there is none there yet,
        and leaves one that is already there alone, so that a rebuild can't undo what has been edited. Delete it and build to get the default back. -->
   <Target Name="CopyInstancesJsonOnce" AfterTargets="CopyFilesToOutputDirectory">

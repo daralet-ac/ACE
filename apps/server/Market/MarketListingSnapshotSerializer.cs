@@ -68,6 +68,52 @@ public static class MarketListingSnapshotSerializer
 
     }
 
+    /// <summary>
+    /// The same snapshot, made from the item as it is in memory rather than from the database: for an item that may not
+    /// have been saved yet, like loot on a corpse (the Daralet plugin's loot rules, PlayerUiCorpseData). Only the
+    /// properties the market reads are filled in; the looks (anim parts, palettes, textures, positions) are left out.
+    /// </summary>
+    public static string? TryCreateLiveSnapshotJson(WorldObject item)
+    {
+        var biota = item?.Biota;
+
+        if (biota == null)
+        {
+            return null;
+        }
+
+        item.BiotaDatabaseLock.EnterReadLock();
+
+        try
+        {
+            var snap = new MarketListingSnapshot
+            {
+                WeenieClassId = item.WeenieClassId,
+                BiotaId = item.Guid.Full,
+                WeenieType = biota.WeenieType,
+                PropertiesInt = biota.PropertiesInt != null ? new(biota.PropertiesInt) : new(),
+                PropertiesInt64 = biota.PropertiesInt64 != null ? new(biota.PropertiesInt64) : new(),
+                PropertiesBool = biota.PropertiesBool != null ? new(biota.PropertiesBool) : new(),
+                PropertiesFloat = biota.PropertiesFloat != null ? new(biota.PropertiesFloat) : new(),
+                PropertiesString = biota.PropertiesString != null ? new(biota.PropertiesString) : new(),
+                PropertiesDID = biota.PropertiesDID != null ? new(biota.PropertiesDID) : new(),
+                PropertiesIID = biota.PropertiesIID != null ? new(biota.PropertiesIID) : new(),
+                PropertiesSpellBook = biota.PropertiesSpellBook != null ? new(biota.PropertiesSpellBook) : new(),
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            return JsonSerializer.Serialize(snap, Options);
+        }
+        catch
+        {
+            return null;
+        }
+        finally
+        {
+            item.BiotaDatabaseLock.ExitReadLock();
+        }
+    }
+
     public static MarketListingSnapshot? TryDeserializeSnapshot(string snapshotJson)
     {
         if (string.IsNullOrWhiteSpace(snapshotJson))
