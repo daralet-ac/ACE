@@ -1734,7 +1734,15 @@ public static partial class LootGenerationFactory
         var weaponTime = weenie?.GetProperty(PropertyInt.WeaponTime) ?? wo.WeaponTime ?? 0;
         var variance = weenie?.GetProperty(PropertyFloat.DamageVariance) ?? wo.DamageVariance ?? 0.0;
 
-        var hitsPerSecond = GetWeaponHitsPerSecond(weaponTime, wo.IsRanged, tier);
+        return GetMeleeDamageRollRange(weaponTime, variance, wo.IsRanged, tier);
+    }
+
+    /// <summary>
+    /// The same range from a weapon's own speed and variance, and whether it's thrown
+    /// </summary>
+    internal static (double Minimum, double Maximum) GetMeleeDamageRollRange(int weaponTime, double variance, bool isRanged, int tier)
+    {
+        var hitsPerSecond = GetWeaponHitsPerSecond(weaponTime, isRanged, tier);
 
         if (hitsPerSecond <= 0)
         {

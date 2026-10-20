@@ -5,6 +5,7 @@ using ACE.Entity.Enum;
 using ACE.Server.Arena;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity.PlayerUi;
+using ACE.Server.Factories;
 using ACE.Server.Network;
 
 namespace ACE.Server.Commands.PlayerCommands;
@@ -14,7 +15,7 @@ public class PlayerUi
     /// <summary>
     /// Every request @playerui answers, sent in the hello reply.
     /// </summary>
-    internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "bankwindow", "lootwindow", "market", "broker", "arena", "corpse", "salvage", "describe", "character", "quests", "abandon"];
+    internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "bankwindow", "lootwindow", "market", "broker", "arena", "corpse", "salvage", "describe", "character", "quests", "abandon", "rollranges"];
 
     /// <summary>
     /// The plugin asks for fellowship and targets once a second. Asking faster than this (typing the command by hand, say)
@@ -32,7 +33,7 @@ public class PlayerUi
         1,
         "Data feed for the Daralet Decal plugin.",
         "hello | fellowship | targets <guid> [guid] | position | bank | bankwindow <on|off> | lootwindow <on|off>"
-            + " | market | broker <list|cancel|claim|expired> ... | arena | corpse <guid> | describe <guid>... | salvage <guid>... | character | quests | abandon <contract id>\n"
+            + " | market | broker <list|cancel|claim|expired> ... | arena | corpse <guid> | describe <guid>... | salvage <guid>... | character | quests | abandon <contract id> | rollranges\n"
             + "The plugin sends these itself and hides the replies from chat. See PlayerUiProtocol for the reply format."
     )]
     public static void HandlePlayerui(Session session, params string[] parameters)
@@ -88,6 +89,10 @@ public class PlayerUi
             case "character":
                 // the Combat Focus appraisal's Character Stats, without needing a Combat Focus
                 payload = new PlayerUiCharacter(player.GetStatsSheetSections());
+                break;
+            case "rollranges":
+                // the same table for everyone, worked out once (LootGenerationFactory.GetLootFilterRanges)
+                payload = new PlayerUiRollRanges(LootGenerationFactory.GetLootFilterRanges());
                 break;
             case "corpse":
                 payload = PlayerUiCorpseData.GetCorpse(player, PlayerUiCorpseData.ParseGuid(parameters.Length > 1 ? parameters[1] : null));
