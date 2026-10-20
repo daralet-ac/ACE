@@ -69,6 +69,11 @@ public class Session
     public DateTime BeginDDDSentTime;
 
     /// <summary>
+    /// Progress of the DAT patch started by the last BeginDDD sent to this client, used for diagnostic logging. Null if no patch was sent.
+    /// </summary>
+    public DDDPatchProgress DDDPatch;
+
+    /// <summary>
     /// Queue for data files missing at time of connection (Portal/Cell/Language DAT), and data files requested by client (Cell DAT)
     /// </summary>
     private Queue<(uint DatFileId, DatDatabaseType DatDatabaseType)> dddDataQueue;
@@ -395,6 +400,12 @@ public class Session
             }
         }
 
+        LogDDDPatchOnDrop(
+            PendingTermination.Reason != SessionTerminationReason.None
+                ? $" ({PendingTermination.Reason.GetDescription()})"
+                : ""
+        );
+
         if (Player != null)
         {
             LogOffPlayer();
@@ -497,8 +508,114 @@ public class Session
         if (success)
         {
             //Console.WriteLine($"{Account}.ProcessDDDQueue: 0x{dataFile.DatFileId:X8}, {dataFile.DatDatabaseType}; Remaining in Queue: {dddDataQueue.Count}");
-            Network.EnqueueSend(new GameMessageDDDDataMessage(dataFile.DatFileId, dataFile.DatDatabaseType));
+            var dataMessage = new GameMessageDDDDataMessage(dataFile.DatFileId, dataFile.DatDatabaseType);
+
+            // tracks the launch patch only, not cell files requested on demand once patching has ended
+            var patch = DDDPatch is { IsComplete: false } ? DDDPatch : null;
+
+            if (!dataMessage.HasData)
+            {
+                // a data message without a file would be malformed, and the client would never receive the bytes it was promised
+                _log.Error(
+                    "[DDD] client {Account} could not be sent 0x{FileId:X8} ({DatType}): file could not be read from the server's DAT",
+                    Account,
+                    dataFile.DatFileId,
+                    dataFile.DatDatabaseType
+                );
+
+                if (patch != null)
+                {
+                    patch.FailedFiles++;
+                }
+            }
+            else
+            {
+                Network.EnqueueSend(dataMessage);
+
+                if (patch != null)
+                {
+                    patch.RecordSent(dataFile.DatFileId, dataFile.DatDatabaseType, dataMessage.ContentLength);
+                    LogDDDPatchProgress(patch);
+                }
+            }
+
             dddDataQueueRateLimiter.RegisterEvent();
+        }
+    }
+
+    private void LogDDDPatchProgress(DDDPatchProgress patch)
+    {
+        var remainingFiles = DDDQueueCount;
+
+        if (patch.TryGetNewProgressMilestone() is { } milestone)
+        {
+            _log.Information(
+                "[DDD] client {Account} patch {Percent}% sent: {Summary} | {RemainingFiles:N0} files still queued",
+                Account,
+                milestone,
+                patch.Summary(),
+                remainingFiles
+            );
+        }
+
+        // the client ends patching once it has received the advertised byte total, anything still queued will not be applied
+        if (patch.SentBytes >= patch.ExpectedBytes && remainingFiles > 0 && !patch.ExpectedBytesReachedEarlyLogged)
+        {
+            patch.ExpectedBytesReachedEarlyLogged = true;
+
+            _log.Warning(
+                "[DDD] client {Account} has been sent the full BeginDDD byte total but {RemainingFiles:N0} files are still queued, the client will likely end patching before they arrive: {Summary}",
+                Account,
+                remainingFiles,
+                patch.Summary()
+            );
+        }
+    }
+
+    /// <summary>
+    /// Logs DAT patch state when a session ends, so patches that never finished, or clients that crash right after patching, show up in the logs.
+    /// </summary>
+    private void LogDDDPatchOnDrop(string reason)
+    {
+        var patch = DDDPatch;
+
+        if (patch == null)
+        {
+            return;
+        }
+
+        if (!patch.IsComplete)
+        {
+            var summary = patch.Summary();
+
+            _log.Warning(
+                "[DDD] client {Account} disconnected before it finished patching{Reason}: {Summary} | {RemainingFiles:N0} files still queued",
+                Account,
+                reason,
+                summary,
+                DDDQueueCount
+            );
+
+            DDDManager.RecordPatchOutcome(Account, $"disconnected mid-patch{reason}: {summary}");
+        }
+        else if (Player?.FirstEnterWorldDone != true)
+        {
+            var sinceEnd = DateTime.UtcNow - patch.EndTime.Value;
+
+            _log.Warning(
+                "[DDD] client {Account} disconnected {Seconds:N0}s after patching ended without completing a login{Reason} (player: {Player}). Possible client crash from an incomplete patch: {Summary}",
+                Account,
+                sinceEnd.TotalSeconds,
+                reason,
+                Player?.Name ?? "none",
+                patch.Summary()
+            );
+
+            DDDManager.RecordPatchOutcome(
+                Account,
+                $"disconnected {sinceEnd.TotalSeconds:N0}s after patching ended without completing a login{reason}",
+                append: true
+            );
         }
     }
 }

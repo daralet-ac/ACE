@@ -519,6 +519,128 @@ public static class DDDManager
     //    }
     //}
 
+    private class PatchHistory
+    {
+        public int Attempts;
+        public DateTime FirstAttempt;
+        public DateTime LastAttempt;
+        public string LastOutcome = "unknown";
+    }
+
+    /// <summary>
+    /// Recent patch attempts by account, so a client that is patched on every launch without ever becoming up to date can be spotted.
+    /// Entries are dropped once the client reports it is up to date, or after PatchHistoryWindow.
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, PatchHistory> patchHistory = new();
+
+    private static readonly TimeSpan PatchHistoryWindow = TimeSpan.FromHours(24);
+
+    /// <summary>
+    /// Records that a patch is starting for this account, and warns if it was already patched recently.
+    /// </summary>
+    public static void RecordPatchStart(string account, string missingIterationsSummary)
+    {
+        if (account == null)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+
+        var history = patchHistory.AddOrUpdate(
+            account,
+            _ => new PatchHistory { Attempts = 1, FirstAttempt = now, LastAttempt = now },
+            (_, existing) =>
+            {
+                lock (existing)
+                {
+                    if (now - existing.LastAttempt > PatchHistoryWindow)
+                    {
+                        return new PatchHistory { Attempts = 1, FirstAttempt = now, LastAttempt = now };
+                    }
+
+                    existing.Attempts++;
+                    existing.LastAttempt = now;
+                    return existing;
+                }
+            }
+        );
+
+        if (history.Attempts > 1)
+        {
+            _log.Warning(
+                "[DDD] client {Account} is being patched again, attempt {Attempts} since {FirstAttempt:u}. Previous attempt: {LastOutcome}. Still missing: {MissingIterations}",
+                account,
+                history.Attempts,
+                history.FirstAttempt,
+                history.LastOutcome,
+                missingIterationsSummary
+            );
+        }
+
+        PrunePatchHistory(now);
+    }
+
+    public static void RecordPatchOutcome(string account, string outcome, bool append = false)
+    {
+        if (account != null && patchHistory.TryGetValue(account, out var history))
+        {
+            lock (history)
+            {
+                history.LastOutcome = append ? $"{history.LastOutcome}, then {outcome}" : outcome;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Called when a client reports its DAT files are up to date. Logs if it took more than one patch to get there.
+    /// </summary>
+    public static void RecordUpToDate(string account)
+    {
+        if (account != null && patchHistory.TryRemove(account, out var history) && history.Attempts > 1)
+        {
+            _log.Information(
+                "[DDD] client {Account} is up to date after {Attempts} patch attempts since {FirstAttempt:u}",
+                account,
+                history.Attempts,
+                history.FirstAttempt
+            );
+        }
+    }
+
+    private static void PrunePatchHistory(DateTime now)
+    {
+        foreach (var entry in patchHistory)
+        {
+            if (now - entry.Value.LastAttempt > PatchHistoryWindow)
+            {
+                patchHistory.TryRemove(entry.Key, out _);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Describes the missing iterations and file counts per DAT, e.g. "Portal iterations 1001-1005 (1,234 files)"
+    /// </summary>
+    public static string DescribeMissingIterations(
+        Dictionary<DatDatabaseType, Dictionary<uint, List<uint>>> missingIterations
+    )
+    {
+        return string.Join(
+            " | ",
+            missingIterations.Select(dat =>
+            {
+                var ranges = string.Join(
+                    ",",
+                    dat.Value.Keys.OrderBy(i => i)
+                        .Ranges()
+                        .Select(r => r.end - r.begin == 1 ? $"{r.begin}" : $"{r.begin}-{r.end - 1}")
+                );
+                return $"{dat.Key} iterations {ranges} ({dat.Value.Values.Sum(f => f.Count):N0} files)";
+            })
+        );
+    }
+
     public static bool AddToQueue(Session session, uint datFileId, DatDatabaseType datDatabaseType)
     {
         //dddDataQueue.Enqueue((session, datFileId, datDatabaseType));
