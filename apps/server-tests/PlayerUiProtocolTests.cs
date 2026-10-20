@@ -158,6 +158,37 @@ public class PlayerUiProtocolTests
     }
 
     [TestMethod]
+    public void RollRangesJsonHasTheNamesThePluginReads()
+    {
+        var json = PlayerUiProtocol.BuildMessages("rollranges", new PlayerUiRollRanges([new("Weapon", "AttackMod", 7, 13.13, 27.5)])).JoinedJson();
+
+        Assert.AreEqual("{\"ranges\":[{\"category\":\"Weapon\",\"stat\":\"AttackMod\",\"tier\":7,\"min\":13.13,\"max\":27.5}]}", json);
+    }
+
+    [TestMethod]
+    public void RollRangesFollowTheLootFormulas()
+    {
+        // without weenies the weapons' damage is left out, but the tier-only ranges are all there
+        var ranges = ACE.Server.Factories.LootGenerationFactory.BuildLootFilterRanges(_ => null);
+        PlayerUiRollRange Range(string category, string stat, int tier) => ranges.Single(r => r.Category == category && r.Stat == stat && r.Tier == tier);
+
+        Assert.IsTrue(ranges.All(r => r.Min <= r.Max && r.Tier is >= 1 and <= 8));
+
+        // tier 8: 10-20% plus 10%, down to 75% when the defense rolled too
+        Assert.AreEqual(15.0, Range("Weapon", "AttackMod", 8).Min, 0.01);
+        Assert.AreEqual(30.0, Range("Weapon", "AttackMod", 8).Max, 0.01);
+
+        // a tier 7 ring or bracelet's ratings are 3 to 6; a necklace's healing boost 12 to 24
+        Assert.AreEqual(3.0, Range("Jewelry", "GearDamage", 7).Min);
+        Assert.AreEqual(6.0, Range("Jewelry", "GearDamage", 7).Max);
+        Assert.AreEqual(24.0, Range("Jewelry", "GearHealingBoost", 7).Max);
+
+        // tier 1 casters roll no elemental damage, and tier 1 jewelry no ratings
+        Assert.IsFalse(ranges.Any(r => r.Stat == "ElementalDamageMod" && r.Tier == 1));
+        Assert.IsFalse(ranges.Any(r => r.Stat == "GearDamage" && r.Tier == 1));
+    }
+
+    [TestMethod]
     public void BankJsonHasTheNamesThePluginReads()
     {
         var bank = new PlayerUiBank(

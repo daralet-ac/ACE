@@ -65,6 +65,18 @@ public record PlayerUiWindowSetting(bool On);
 /// </summary>
 public record PlayerUiCharacter(List<ACE.Server.WorldObjects.StatsSheetSection> Sections);
 
+/// <summary>
+/// The ranges loot rolls the plugin's filter stats in, for its loot rules' tooltips (LootGenerationFactory.GetLootFilterRanges).
+/// The same for everyone: nothing about the player.
+/// </summary>
+public record PlayerUiRollRanges(List<PlayerUiRollRange> Ranges);
+
+/// <summary>
+/// One stat's range at one tier (1-8, the market's): Category and Stat as the Market API names them (Weapon, AttackMod),
+/// Min and Max in the units its filter is typed in.
+/// </summary>
+public record PlayerUiRollRange(string Category, string Stat, int Tier, double Min, double Max);
+
 /// <summary>The player's contracts, for the plugin's Quests tab (PlayerUiQuestData).</summary>
 public record PlayerUiQuests(List<PlayerUiQuest> Quests);
 
