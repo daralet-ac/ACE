@@ -9,6 +9,12 @@ using ACE.Server.Entity;
 namespace ACE.Server.WorldObjects;
 
 /// <summary>
+/// A section of the character stats: its heading ("Gear Mods") and its lines ("Attack Skill: +5%"), none when it has
+/// nothing to show.
+/// </summary>
+public record StatsSheetSection(string Title, List<string> Lines);
+
+/// <summary>
 /// Builds the character stats text shown at the bottom of an owned Combat Focus appraisal.
 /// Values are totals from equipped gear and active buffs.
 /// </summary>
@@ -116,17 +122,44 @@ partial class Player
 
         sb.Append("---------- Character Stats ----------\n");
 
-        AppendStatsSheetGearMods(sb);
-        AppendStatsSheetRatings(sb);
-        AppendStatsSheetWard(sb);
-        AppendStatsSheetArmor(sb);
-        AppendStatsSheetResistances(sb);
-        AppendStatsSheetJewels(sb);
+        foreach (var section in GetStatsSheetSections())
+        {
+            sb.Append($"\n{section.Title}:\n");
+
+            if (section.Lines.Count == 0)
+            {
+                sb.Append("   None\n");
+                continue;
+            }
+
+            foreach (var line in section.Lines)
+            {
+                sb.Append($"   {line}\n");
+            }
+        }
 
         return sb.ToString();
     }
 
-    private void AppendStatsSheetGearMods(StringBuilder sb)
+    /// <summary>
+    /// The character stats, section by section: the Combat Focus appraisal's text, and the Daralet plugin's Character tab
+    /// (@playerui character), so the two always show the same.
+    /// </summary>
+    public List<StatsSheetSection> GetStatsSheetSections()
+    {
+        var sections = new List<StatsSheetSection>();
+
+        AppendStatsSheetGearMods(sections);
+        AppendStatsSheetRatings(sections);
+        AppendStatsSheetWard(sections);
+        AppendStatsSheetArmor(sections);
+        AppendStatsSheetResistances(sections);
+        AppendStatsSheetJewels(sections);
+
+        return sections;
+    }
+
+    private void AppendStatsSheetGearMods(List<StatsSheetSection> sections)
     {
         var lines = new List<string>();
 
@@ -166,10 +199,10 @@ partial class Player
             lines.Add($"Frigid Resistance: {frigidResistance}");
         }
 
-        AppendStatsSheetSection(sb, "Gear Mods", lines);
+        AddStatsSheetSection(sections, "Gear Mods", lines);
     }
 
-    private void AppendStatsSheetRatings(StringBuilder sb)
+    private void AppendStatsSheetRatings(List<StatsSheetSection> sections)
     {
         var lines = new List<string>();
 
@@ -182,23 +215,23 @@ partial class Player
         AddStatsSheetRating(lines, "Healing Boost", GetHealingBoostRating());
         AddStatsSheetRating(lines, "Max Health", GetGearMaxHealth());
 
-        AppendStatsSheetSection(sb, "Ratings", lines);
+        AddStatsSheetSection(sections, "Ratings", lines);
     }
 
-    private void AppendStatsSheetWard(StringBuilder sb)
+    private void AppendStatsSheetWard(List<StatsSheetSection> sections)
     {
         var wardLevel = (int)Math.Round(
             (GetWardLevel() + EnchantmentManager.GetWardAdditiveMod()) * EnchantmentManager.GetWardMultiplicativeMod()
         );
 
-        AppendStatsSheetSection(sb, "Ward", [$"Ward Level: {wardLevel}"]);
+        AddStatsSheetSection(sections, "Ward", [$"Ward Level: {wardLevel}"]);
     }
 
     /// <summary>
     /// Armor level vs. each damage type: the average across all body parts,
     /// with the lowest and highest body part in parentheses
     /// </summary>
-    private void AppendStatsSheetArmor(StringBuilder sb)
+    private void AppendStatsSheetArmor(List<StatsSheetSection> sections)
     {
         var lines = new List<string>();
         var bodyArmorMod = EnchantmentManager.GetBodyArmorMod();
@@ -227,13 +260,13 @@ partial class Player
             lines.Add($"{name}: {average}  ({lowest} - {highest})");
         }
 
-        AppendStatsSheetSection(sb, "Armor Level (average, lowest - highest)", lines);
+        AddStatsSheetSection(sections, "Armor Level (average, lowest - highest)", lines);
     }
 
     /// <summary>
     /// Percent of damage taken for each damage type, before armor
     /// </summary>
-    private void AppendStatsSheetResistances(StringBuilder sb)
+    private void AppendStatsSheetResistances(List<StatsSheetSection> sections)
     {
         var lines = new List<string>();
 
@@ -262,14 +295,14 @@ partial class Player
             lines.Add($"{name}: {Math.Round(damageTaken * 100)}%");
         }
 
-        AppendStatsSheetSection(sb, "Resistances (damage taken)", lines);
+        AddStatsSheetSection(sections, "Resistances (damage taken)", lines);
     }
 
     /// <summary>
     /// Totals for every jewel effect (and matching gear rating) on equipped items.
     /// Ramping effects show their maximum.
     /// </summary>
-    private void AppendStatsSheetJewels(StringBuilder sb)
+    private void AppendStatsSheetJewels(List<StatsSheetSection> sections)
     {
         var lines = new List<string>();
 
@@ -309,7 +342,7 @@ partial class Player
             lines.Add($"{info.Name} ({rating}): {text}");
         }
 
-        AppendStatsSheetSection(sb, "Jewel Effects", lines);
+        AddStatsSheetSection(sections, "Jewel Effects", lines);
     }
 
     private static void AddStatsSheetRating(List<string> lines, string name, int rating)
@@ -332,20 +365,9 @@ partial class Player
         lines.Add($"{name}: {FormatStatsSheetPercent(mod)}");
     }
 
-    private static void AppendStatsSheetSection(StringBuilder sb, string header, List<string> lines)
+    private static void AddStatsSheetSection(List<StatsSheetSection> sections, string header, List<string> lines)
     {
-        sb.Append($"\n{header}:\n");
-
-        if (lines.Count == 0)
-        {
-            sb.Append("   None\n");
-            return;
-        }
-
-        foreach (var line in lines)
-        {
-            sb.Append($"   {line}\n");
-        }
+        sections.Add(new StatsSheetSection(header, lines));
     }
 
     private static string FormatStatsSheetPercent(double mod)

@@ -52,6 +52,20 @@ public class Town
     }
 
     /// <summary>
+    /// Whether a cell has a place on the map: any outdoor cell, and a building's rooms (the landblock outside's place),
+    /// but not a dungeon's. For places that are only a cell (a contract's NPC), not an object in the world.
+    /// </summary>
+    public static bool IsOnMap(uint cell)
+    {
+        if (cell == 0)
+        {
+            return false;
+        }
+
+        return (cell & 0xFFFF) < 0x100 || !IsDungeonLandblock(new LandblockId(cell));
+    }
+
+    /// <summary>
     /// Mirrors <c>ACE.Server.Entity.Landblock.IsDungeon</c> (all terrain heights are 0, it has at
     /// least one interior cell, and it contains no buildings), but reads straight from the cell dat
     /// file instead of loading/activating the live landblock - safe to call for a display lookup.

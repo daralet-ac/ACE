@@ -60,6 +60,41 @@ public record PlayerUiPosition(float? MapX, float? MapY, bool InBuilding);
 public record PlayerUiWindowSetting(bool On);
 
 /// <summary>
+/// The player's character stats, for the plugin's Character tab: the sections the Combat Focus appraisal shows at its
+/// bottom (Player.GetStatsSheetSections), each with its title and lines; a section with nothing in it has no lines.
+/// </summary>
+public record PlayerUiCharacter(List<ACE.Server.WorldObjects.StatsSheetSection> Sections);
+
+/// <summary>The player's contracts, for the plugin's Quests tab (PlayerUiQuestData).</summary>
+public record PlayerUiQuests(List<PlayerUiQuest> Quests);
+
+/// <summary>
+/// One contract: its name and descriptions from the ContractTable, its stage (available, started, done), how many times
+/// its progress quest is solved and how many it takes, seconds until its timer is done (DoneIn) and until it can be done
+/// again (RepeatsIn), its NPCs, and where they and the quest area are on the map (null in a dungeon).
+/// </summary>
+public record PlayerUiQuest(
+    uint Id,
+    string Name,
+    string Description,
+    string Progress,
+    string Stage,
+    int? Solves,
+    int? MaxSolves,
+    double? DoneIn,
+    double? RepeatsIn,
+    string StartNpc,
+    string EndNpc,
+    PlayerUiPlace StartAt,
+    PlayerUiPlace EndAt,
+    PlayerUiPlace Area,
+    bool CanAbandon
+);
+
+/// <summary>A spot on the map, in the game's map coordinates (east and north positive).</summary>
+public record PlayerUiPlace(float MapX, float MapY);
+
+/// <summary>
 /// The player's bank, for the plugin's bank window. Open: they have a bank open and are close enough to use it (what every
 /// /bank command but balance, log and intro needs). Loaded: its items have come from the database (a moment after opening).
 /// Guid is the bank chest's, so the plugin can find its items in what the client was sent. Packs are numbered as /bank packs

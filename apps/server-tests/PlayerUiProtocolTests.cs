@@ -247,6 +247,58 @@ public class PlayerUiProtocolTests
     }
 
     [TestMethod]
+    public void CharacterSendsEachStatsSheetSection()
+    {
+        var character = new PlayerUiCharacter(
+            [
+                new ACE.Server.WorldObjects.StatsSheetSection("Ward", ["Ward Level: 3"]),
+                new ACE.Server.WorldObjects.StatsSheetSection("Jewel Effects", []),
+            ]
+        );
+
+        var json = PlayerUiProtocol.BuildMessages("character", character).JoinedJson();
+
+        // the plugin's CharacterInfo reads these names
+        Assert.AreEqual(
+            "{\"sections\":[{\"title\":\"Ward\",\"lines\":[\"Ward Level: 3\"]},{\"title\":\"Jewel Effects\",\"lines\":[]}]}",
+            json
+        );
+    }
+
+    [TestMethod]
+    public void QuestsSendEachContractWithoutItsEmptyFields()
+    {
+        var quests = new PlayerUiQuests(
+            [
+                new PlayerUiQuest(
+                    101, "Kill Tuskers", "Slay 10 tuskers.", "Tuskers slain", "started", 3, 10, null, null,
+                    "Guard Tobin", null, new PlayerUiPlace(42.1f, -33.5f), null, null, true
+                ),
+            ]
+        );
+
+        var json = PlayerUiProtocol.BuildMessages("quests", quests, omitNulls: true).JoinedJson();
+
+        // the plugin's QuestInfo reads these names
+        Assert.AreEqual(
+            "{\"quests\":[{\"id\":101,\"name\":\"Kill Tuskers\",\"description\":\"Slay 10 tuskers.\",\"progress\":\"Tuskers slain\","
+                + "\"stage\":\"started\",\"solves\":3,\"maxSolves\":10,\"startNpc\":\"Guard Tobin\","
+                + "\"startAt\":{\"mapX\":42.1,\"mapY\":-33.5},\"canAbandon\":true}]}",
+            json
+        );
+    }
+
+    [TestMethod]
+    public void AContractsStageIsOneWord()
+    {
+        Assert.AreEqual("available", PlayerUiQuestData.StageWord(ACE.Server.Network.Structure.ContractStage.Available));
+        Assert.AreEqual("started", PlayerUiQuestData.StageWord(ACE.Server.Network.Structure.ContractStage.InProgress));
+        // a progress counter is the stage plus the count
+        Assert.AreEqual("started", PlayerUiQuestData.StageWord(ACE.Server.Network.Structure.ContractStage.ProgressCounter + 3));
+        Assert.AreEqual("done", PlayerUiQuestData.StageWord(ACE.Server.Network.Structure.ContractStage.DoneOrPendingRepeat));
+    }
+
+    [TestMethod]
     public void NoFellowshipIsNull()
     {
         Assert.AreEqual("DAP2|fellowship|1|1|1|bnVsbA==", PlayerUiProtocol.BuildMessages("fellowship", "null", 1)[0]);
