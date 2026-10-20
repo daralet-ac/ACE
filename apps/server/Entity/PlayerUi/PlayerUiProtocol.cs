@@ -10,22 +10,20 @@ using ACE.Server.Network;
 namespace ACE.Server.Entity.PlayerUi;
 
 /// <summary>
-/// How @playerui sends data to the Daralet Decal plugin: the same chat lines as AdminUiProtocol,
+/// How @playerui sends data to the Daralet Decal plugin: the same chat lines as AdminUiProtocol, JSON in base64,
 ///
-///     DAP1|kind|id|index|count|chunk
+///     DAP2|kind|id|index|count|chunk
 ///
-/// with their own prefix, so a staff member running both plugins never has one read the other's replies.
+/// with their own prefix, so a staff member running both plugins never has one read the other's replies. Base64 for the
+/// same reason as there: Virindi Chat System posts its own copy of any line with coordinates in it (a fellow's location),
+/// which the plugin can't hide. DAP1 was the same lines with the JSON as it is.
 /// </summary>
 public static class PlayerUiProtocol
 {
-    public const string Prefix = "DAP1";
+    public const string Prefix = "DAP2";
 
-    /// <summary>
-    /// Much shorter than @adminui's 4,000: a chat line of a thousand characters or so (a fellowship's vitals, every second)
-    /// sometimes reached the chat window instead of being hidden by the plugin, which looks for lines that start with
-    /// "DAP1|". Short lines keep every chunk whole and starting with the prefix.
-    /// </summary>
-    public const int ChunkSize = 200;
+    /// <summary>Short lines, the same as AdminUiProtocol's.</summary>
+    public const int ChunkSize = AdminUiProtocol.ChunkSize;
 
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };

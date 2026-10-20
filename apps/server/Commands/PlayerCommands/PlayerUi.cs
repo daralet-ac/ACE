@@ -52,7 +52,7 @@ public class PlayerUi
         switch (kind)
         {
             case "hello":
-                payload = new PlayerUiHello(1, player.Name, player.Guid.Full, Kinds);
+                payload = new PlayerUiHello(2,player.Name, player.Guid.Full, Kinds);
                 break;
             case "fellowship":
                 payload = PlayerUiData.GetFellowship(player);
