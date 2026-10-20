@@ -34,6 +34,15 @@ partial class Player
         ContractId.Contract_362_Sigil_Slot__Blue
     };
 
+    /// <summary>
+    /// Whether a contract in this stage can be abandoned: any can once done, and all but the starter ones before that.
+    /// </summary>
+    public static bool CanAbandonContract(uint contractId, Network.Structure.ContractStage? stage)
+    {
+        return !NonAbandonableContracts.Contains((ContractId)contractId)
+            || stage == Network.Structure.ContractStage.DoneOrPendingRepeat;
+    }
+
     public void HandleActionAbandonContract(uint contractId)
     {
         // Check if this contract can be abandoned
@@ -41,7 +50,7 @@ partial class Player
         {
             // Allow abandoning if the contract is Done
             var contractTracker = ContractManager.GetContractTracker(contractId);
-            if (contractTracker == null || contractTracker.Stage != Network.Structure.ContractStage.DoneOrPendingRepeat)
+            if (!CanAbandonContract(contractId, contractTracker?.Stage))
             {
                 var datContract = ContractManager.GetContractFromDat(contractId);
                 var contractName = datContract?.ContractName ?? "This task";
