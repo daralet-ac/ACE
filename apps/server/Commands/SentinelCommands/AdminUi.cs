@@ -42,7 +42,7 @@ public class AdminUi
         {
             case "hello":
                 payload = new AdminUiHello(
-                    1,
+                    2,
                     session.Player.Name,
                     session.AccessLevel.ToString(),
                     (int)session.AccessLevel,

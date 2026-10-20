@@ -11,22 +11,21 @@ public class PlayerUiProtocolTests
     [TestMethod]
     public void BuildMessages_UsesThePlayerPrefix()
     {
-        var messages = PlayerUiProtocol.BuildMessages("hello", "{\"protocol\":1}", 7);
+        var messages = PlayerUiProtocol.BuildMessages("hello", "{\"protocol\":2}", 7);
 
         Assert.AreEqual(1, messages.Count);
-        Assert.AreEqual("DAP1|hello|7|1|1|{\"protocol\":1}", messages[0]);
+        Assert.AreEqual("DAP2|hello|7|1|1|eyJwcm90b2NvbCI6Mn0=", messages[0]);
     }
 
     [TestMethod]
     public void EveryChunkIsAShortLine()
     {
-        // a long chat line could reach the chat window instead of being hidden (PlayerUiProtocol.ChunkSize)
         var json = new string('x', 5000);
 
         var messages = PlayerUiProtocol.BuildMessages("fellowship", json, 9);
 
         Assert.IsTrue(messages.All(m => m.Length < 260));
-        Assert.IsTrue(messages.All(m => m.StartsWith("DAP1|fellowship|9|")));
+        Assert.IsTrue(messages.All(m => m.StartsWith("DAP2|fellowship|9|")));
         Assert.AreEqual(json, messages.JoinedJson());
     }
 
@@ -38,8 +37,20 @@ public class PlayerUiProtocolTests
         var messages = PlayerUiProtocol.BuildMessages("hello", json, 3);
 
         Assert.AreEqual(2, messages.Count);
-        Assert.IsTrue(messages.All(m => m.StartsWith("DAP1|hello|3|")));
-        Assert.AreEqual(json, string.Concat(messages.Select(m => m.Split('|', 6)[5])));
+        Assert.IsTrue(messages.All(m => m.StartsWith("DAP2|hello|3|")));
+        Assert.AreEqual(json, messages.JoinedJson());
+    }
+
+    [TestMethod]
+    public void BuildMessages_NoLineHasReadableText()
+    {
+        // Virindi Chat System posts its own copy of a chat line with coordinates in it, which the plugin can't hide
+        var json = "{\"members\":[{\"name\":\"+Spellsword\",\"location\":\"Hebian-to (39.0S, 83.0E)\"}]}";
+
+        var messages = PlayerUiProtocol.BuildMessages("fellowship", json, 1);
+
+        Assert.IsFalse(messages.Any(m => m.Contains("39.0S") || m.Contains("Hebian") || m.Contains("members")));
+        Assert.AreEqual(json, messages.JoinedJson());
     }
 
     /// <summary>
@@ -238,16 +249,20 @@ public class PlayerUiProtocolTests
     [TestMethod]
     public void NoFellowshipIsNull()
     {
-        Assert.AreEqual("DAP1|fellowship|1|1|1|null", PlayerUiProtocol.BuildMessages("fellowship", "null", 1)[0]);
+        Assert.AreEqual("DAP2|fellowship|1|1|1|bnVsbA==", PlayerUiProtocol.BuildMessages("fellowship", "null", 1)[0]);
         Assert.AreEqual("null", PlayerUiProtocol.BuildMessages("fellowship", (object)null).JoinedJson());
     }
 }
 
-internal static class PlayerUiMessages
+internal static class PluginReplyMessages
 {
-    /// <summary>A reply's JSON, its chunks joined again the way the plugin's ReplyAssembler does.</summary>
+    /// <summary>
+    /// A reply's JSON, its chunks joined and decoded again the way the plugins' ReplyAssembler does. For @adminui and @playerui.
+    /// </summary>
     public static string JoinedJson(this System.Collections.Generic.List<string> messages)
     {
-        return string.Concat(messages.Select(m => m.Split('|', 6)[5]));
+        return System.Text.Encoding.UTF8.GetString(
+            System.Convert.FromBase64String(string.Concat(messages.Select(m => m.Split('|', 6)[5])))
+        );
     }
 }
