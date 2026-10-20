@@ -5,6 +5,13 @@ namespace ACE.Server.Network.GameMessages.Messages;
 
 public class GameMessageDDDDataMessage : GameMessage
 {
+    /// <summary>
+    /// The number of DAT file bytes carried by this message, which the client counts toward the BeginDDD total. 0 if the file could not be read.
+    /// </summary>
+    public int ContentLength { get; }
+
+    public bool HasData => ContentLength > 0;
+
     public GameMessageDDDDataMessage(uint datFileId, DatDatabaseType datDatabaseType)
         : base(GameMessageOpcode.DDD_DataMessage, GameMessageGroup.DatabaseQueue)
     {
@@ -51,9 +58,10 @@ public class GameMessageDDDDataMessage : GameMessage
 
         if (datFileContents == null)
         {
-            // do something here?
             return;
         }
+
+        ContentLength = datFileContents.Length;
 
         var fileId = datFile.ObjectId;
         var fileType = datFile.GetFileType(datDatabaseType);

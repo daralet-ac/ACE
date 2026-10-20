@@ -117,6 +117,13 @@ public static class InboundMessageManager
                     })
                 );
             }
+            else if (opcode is >= GameMessageOpcode.DDD_DataMessage and <= GameMessageOpcode.DDD_EndDDD)
+            {
+                // DAT patch messages dropped here leave the client's patch in an unknown state
+                _log.Warning(
+                    $"[DDD] Dropped 0x{(int)opcode:X4}:{opcode} from account {session.Account}: session state is {session.State}, handler requires {messageHandlerInfo.Attribute.State}"
+                );
+            }
         }
         else
         {

@@ -219,9 +219,27 @@ public static class DDDHandler
             session.BeginDDDSentTime = DateTime.UtcNow;
             session.BeginDDDSent = true;
 
+            var patch = new DDDPatchProgress(totalMissingIterations, totalFileSize, missingIterations);
+            session.DDDPatch = patch;
+
+            var missingIterationsSummary = DDDManager.DescribeMissingIterations(missingIterations);
+
             _log.Information(
-                $"[DDD] client {session.Account} informed with BeginDDD payload:\n Total Missing Iterations: {totalMissingIterations} | Expected Data Transfer Size: {totalFileSize / 1024:N0} kB"
+                $"[DDD] client {session.Account} informed with BeginDDD payload:\n Total Missing Iterations: {totalMissingIterations} | Expected Data Transfer Size: {totalFileSize / 1024:N0} kB | Files: {patch.TotalExpectedFiles:N0}\n {missingIterationsSummary}"
             );
+
+            DDDManager.RecordPatchStart(session.Account, missingIterationsSummary);
+
+            void QueuePatchFile(uint fileId, DatDatabaseType datDatabaseType)
+            {
+                if (!DDDManager.AddToQueue(session, fileId, datDatabaseType))
+                {
+                    // its bytes are in the BeginDDD total but it will only be sent once, so the client will never reach the total
+                    _log.Warning(
+                        $"[DDD] DDD_InterrogationResponse: 0x{fileId:X8} ({datDatabaseType}) was already queued for client {session.Account}, it appears more than once in the patch list"
+                    );
+                }
+            }
 
             var hasPortalMissingIterations = missingIterations.TryGetValue(
                 DatDatabaseType.Portal,
@@ -279,17 +297,19 @@ public static class DDDHandler
                             if (DatManager.CellDat.AllFiles.TryGetValue(qdid_ID, out var datFile))
                             {
                                 //session.Network.EnqueueSend(new GameMessageDDDDataMessage(qdid_ID, DatDatabaseType.Cell));
-                                DDDManager.AddToQueue(session, qdid_ID, DatDatabaseType.Cell);
+                                QueuePatchFile(qdid_ID, DatDatabaseType.Cell);
                             }
-                            else if (qdid_type != DatFileType.LandBlockInfo)
+                            else
                             {
+                                patch.UnqueuedFiles++;
                                 _log.Warning(
-                                    $"[DDD] DDD_RequestDataMessage: The server does not have the requested data on 0x{qdid_ID:X8} | {qdid_type} to send to client {session.Account}."
+                                    $"[DDD] DDD_InterrogationResponse: The server does not have 0x{qdid_ID:X8} | {qdid_type} from the patch list to send to client {session.Account}."
                                 );
                             }
                         }
                         else
                         {
+                            patch.UnqueuedFiles++;
                             _log.Warning(
                                 $"[DDD] DDD_RequestDataMessage: client {session.Account} requested data on 0x{qdid_ID:X8} | {qdid_type} which has been ignored."
                             );
@@ -307,10 +327,11 @@ public static class DDDHandler
                         if (DatManager.PortalDat.AllFiles.TryGetValue(fileId, out _))
                         {
                             //session.Network.EnqueueSend(new GameMessageDDDDataMessage(fileId, DatDatabaseType.Portal));
-                            DDDManager.AddToQueue(session, fileId, DatDatabaseType.Portal);
+                            QueuePatchFile(fileId, DatDatabaseType.Portal);
                         }
                         else
                         {
+                            patch.UnqueuedFiles++;
                             _log.Warning(
                                 $"[DDD] DDD_InterrogationResponse: DDDManager.AddToQueue failed: DatManager.PortalDat.AllFiles does not contain 0x{fileId:X8}"
                             );
@@ -328,10 +349,11 @@ public static class DDDHandler
                         if (DatManager.LanguageDat.AllFiles.TryGetValue(fileId, out _))
                         {
                             //session.Network.EnqueueSend(new GameMessageDDDDataMessage(fileId, DatDatabaseType.Language));
-                            DDDManager.AddToQueue(session, fileId, DatDatabaseType.Language);
+                            QueuePatchFile(fileId, DatDatabaseType.Language);
                         }
                         else
                         {
+                            patch.UnqueuedFiles++;
                             _log.Warning(
                                 $"[DDD] DDD_InterrogationResponse: DDDManager.AddToQueue failed: DatManager.LanguageDat.AllFiles does not contain 0x{fileId:X8}"
                             );
@@ -348,10 +370,11 @@ public static class DDDHandler
                     {
                         if (DatManager.HighResDat.AllFiles.TryGetValue(fileId, out _))
                         {
-                            DDDManager.AddToQueue(session, fileId, DatDatabaseType.HighRes);
+                            QueuePatchFile(fileId, DatDatabaseType.HighRes);
                         }
                         else
                         {
+                            patch.UnqueuedFiles++;
                             _log.Warning(
                                 $"[DDD] DDD_InterrogationResponse: DDDManager.AddToQueue failed: DatManager.HighResDat.AllFiles does not contain 0x{fileId:X8}"
                             );
@@ -370,6 +393,7 @@ public static class DDDHandler
         }
         else // client dat files are up to date
         {
+            DDDManager.RecordUpToDate(session.Account);
             session.Network.EnqueueSend(new GameMessageDDDEndDDD());
         }
     }
@@ -390,17 +414,48 @@ public static class DDDHandler
             session.DatWarnLanguage = false;
             session.DatWarnHighRes = false;
 
-            _log.Information(
-                $"[DDD] client {session.Account} reported it successfully received and patched its DAT files with expected BeginDDD payload"
-            );
-
             var remainingFiles = session.DDDQueueCount;
-            if (remainingFiles > 0)
+            var patch = session.DDDPatch;
+            var summary = "no patch progress recorded";
+
+            if (patch != null)
+            {
+                patch.EndTime = DateTime.UtcNow;
+                summary = patch.Summary();
+            }
+
+            var incomplete =
+                remainingFiles > 0
+                || patch != null
+                    && (
+                        patch.TotalSentFiles != patch.TotalExpectedFiles
+                        || patch.SentBytes != patch.ExpectedBytes
+                        || patch.FailedFiles > 0
+                    );
+
+            if (incomplete)
             {
                 _log.Warning(
-                    $"[DDD] client {session.Account} ended patching with {remainingFiles:N0} DAT files still queued to send"
+                    $"[DDD] client {session.Account} ended patching but the patch does not match what was advertised, its DAT files are likely incomplete: {summary} | {remainingFiles:N0} files still queued"
+                );
+
+                DDDManager.RecordPatchOutcome(
+                    session.Account,
+                    $"client ended patching with an incomplete patch: {summary} | {remainingFiles:N0} files still queued"
                 );
             }
+            else
+            {
+                _log.Information(
+                    $"[DDD] client {session.Account} reported it successfully received and patched its DAT files with expected BeginDDD payload: {summary}"
+                );
+
+                DDDManager.RecordPatchOutcome(session.Account, $"client ended patching normally: {summary}");
+            }
+        }
+        else
+        {
+            _log.Debug($"[DDD] client {session.Account} sent EndDDD without a patch in progress");
         }
     }
 
