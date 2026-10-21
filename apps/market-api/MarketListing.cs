@@ -36,6 +36,9 @@ public class MarketListing
     // Category classification, computed server-side from the item snapshot.
     public string? ItemCategory { get; set; }
     public string? WeaponClass { get; set; }
+    // The weapon's own type (Sword, Atlatl, Orb...), which decides its special property. Only the game server sets it
+    // (PlayerUiWeaponType, for @playerui's descriptions): it needs the loot tables, which the Market API doesn't have.
+    public string? WeaponType { get; set; }
     public string? ArmorWeightClass { get; set; }
     public string? SigilTrinketType { get; set; }
     // Recovered from the " of <Effect>" suffix the loot factory bakes into ItemName — see

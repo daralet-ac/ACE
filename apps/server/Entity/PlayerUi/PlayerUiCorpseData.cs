@@ -120,6 +120,7 @@ public static class PlayerUiCorpseData
 
             var (described, spellIds) = MarketRepository.Describe(new SnapshotItemFacts(json, row));
             described.Spells = spellIds.Select(id => new Spell(id).Name ?? $"Spell {id}").ToList();
+            described.WeaponType = described.ItemCategory == "Weapon" ? PlayerUiWeaponType.Of(item) : null;
             listing = described;
         }
 
