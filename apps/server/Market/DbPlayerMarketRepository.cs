@@ -61,6 +61,7 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
         context.SaveChanges();
 
         MarketListingEvents.RaiseListingCreated(listing.Id);
+        MarketListingEvents.RaiseAccountChanged(listing.SellerAccountId);
 
         return listing;
     }
@@ -173,6 +174,8 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
                 .SetProperty(l => l.BuyerCharacterId, buyer.Character.Id)
                 .SetProperty(l => l.BuyerName, buyer.Name));
 
+        MarketListingEvents.RaiseAccountChanged(listing.SellerAccountId);
+
         return updated > 0;
     }
 
@@ -188,6 +191,8 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
 
         entity.IsCancelled = true;
         context.SaveChanges();
+
+        MarketListingEvents.RaiseAccountChanged(entity.SellerAccountId);
     }
 
     public void ExpireListings(DateTime nowUtc)
@@ -219,6 +224,8 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
         context.PlayerMarketPayouts.Add(payout);
         context.SaveChanges();
 
+        MarketListingEvents.RaiseAccountChanged(payout.SellerAccountId);
+
         return payout;
     }
 
@@ -246,6 +253,8 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
         entity.ClaimedAtUtc = DateTime.UtcNow;
 
         context.SaveChanges();
+
+        MarketListingEvents.RaiseAccountChanged(entity.SellerAccountId);
     }
 
     public PlayerMarketTransaction CreateTransaction(PlayerMarketListing listing, PlayerMarketPayout payout, Player buyer)
@@ -290,5 +299,7 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
             .ExecuteUpdate(setters => setters
                 .SetProperty(l => l.ReturnedAtUtc, returnedAtUtc)
                 .SetProperty(l => l.IsCancelled, true));
+
+        MarketListingEvents.RaiseAccountChanged(listing.SellerAccountId);
     }
 }

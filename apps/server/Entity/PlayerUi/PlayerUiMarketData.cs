@@ -3,9 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using ACE.Database.Models.Shard;
 using ACE.Entity;
 using ACE.MarketApi;
+using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Market;
 using ACE.Server.WorldObjects;
@@ -35,26 +37,150 @@ public static class PlayerUiMarketData
 
     private const int MaxCachedLooks = 5000;
 
-    public static PlayerUiMarket GetMarket(Player player)
+    /// <summary>
+    /// An account's market rows are read again only once they're this old, or sooner when one of them changes
+    /// (MarketListingEvents.AccountChanged). The plugin asks every 5 seconds while its Market tab is open, so this mostly
+    /// stops someone typing the command over and over from loading the database.
+    /// </summary>
+    public static readonly TimeSpan RowsFor = TimeSpan.FromSeconds(4);
+
+    /// <summary>What the market's four queries found for an account, and when.</summary>
+    private sealed class AccountRows
     {
-        var repository = MarketServiceLocator.PlayerMarketRepository;
+        public DateTime ReadAt;
+        public List<PlayerMarketListing> Listings;
+        public List<PlayerMarketPayout> Pending;
+        public List<PlayerMarketListing> Sales;
+        public List<PlayerMarketListing> Expired;
+    }
+
+    private static readonly ConcurrentDictionary<uint, AccountRows> Rows = new();
+
+    /// <summary>
+    /// Goes up each time an account's listings or payouts change, so rows read while one changed aren't kept.
+    /// </summary>
+    private static readonly ConcurrentDictionary<uint, int> Changes = new();
+
+    /// <summary>Accounts whose rows are being read now: a request meanwhile is answered by that read.</summary>
+    private static readonly ConcurrentDictionary<uint, bool> Reading = new();
+
+    static PlayerUiMarketData()
+    {
+        MarketListingEvents.AccountChanged += Changed;
+    }
+
+    private static void Changed(uint accountId)
+    {
+        Changes.AddOrUpdate(accountId, 1, (_, count) => count + 1);
+        Rows.TryRemove(accountId, out _);
+    }
+
+    /// <summary>At logout, so the account's rows aren't kept for nothing.</summary>
+    public static void Forget(uint accountId)
+    {
+        Rows.TryRemove(accountId, out _);
+        Changes.TryRemove(accountId, out _);
+    }
+
+    /// <summary>
+    /// Sends the player their market (@playerui market). The database is read on a thread of its own, never the world's:
+    /// the reply follows from the world thread once the rows are in, or at once when the rows read last are recent enough.
+    /// </summary>
+    public static void RequestMarket(Player player)
+    {
         var accountId = player.Character.AccountId;
+
+        if (Rows.TryGetValue(accountId, out var recent) && DateTime.UtcNow - recent.ReadAt < RowsFor)
+        {
+            SendMarket(player, recent);
+            return;
+        }
+
+        if (!Reading.TryAdd(accountId, true))
+        {
+            return;
+        }
+
+        var repository = MarketServiceLocator.PlayerMarketRepository;
+        var changesBefore = Changes.TryGetValue(accountId, out var count) ? count : 0;
+
+        _ = Task.Run(() =>
+        {
+            AccountRows rows = null;
+
+            try
+            {
+                rows = ReadRows(repository, accountId);
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Error(ex, "[PLAYERUI] Reading the market for account {AccountId} failed", accountId);
+            }
+            finally
+            {
+                Reading.TryRemove(accountId, out _);
+            }
+
+            if (rows == null)
+            {
+                return;
+            }
+
+            // finding the broker, looking items up and sending all belong to the world thread; logging out happens there too,
+            // so a player still online here hasn't had their account forgotten
+            WorldManager.EnqueueAction(new ActionEventDelegate(() =>
+            {
+                if (PlayerManager.GetOnlinePlayer(player.Guid.Full) != player)
+                {
+                    return;
+                }
+
+                if ((Changes.TryGetValue(accountId, out var changesNow) ? changesNow : 0) == changesBefore)
+                {
+                    Rows[accountId] = rows;
+                }
+
+                SendMarket(player, rows);
+            }));
+        });
+    }
+
+    private static AccountRows ReadRows(IPlayerMarketRepository repository, uint accountId)
+    {
+        var now = DateTime.UtcNow;
+
+        return new AccountRows
+        {
+            ReadAt = now,
+            Listings = repository.GetListingsForAccount(accountId, now).ToList(),
+            Pending = repository.GetPendingPayouts(accountId).ToList(),
+            Sales = repository.GetSoldListingsForAccount(accountId, now - SalesHistory).Take(MaxSales).ToList(),
+            Expired = repository.GetExpiredListingsForAccount(accountId, now).Where(l => !l.IsSold).ToList(),
+        };
+    }
+
+    private static void SendMarket(Player player, AccountRows rows)
+    {
+        PlayerUiProtocol.Send(player.Session, "market", GetMarket(player, rows));
+    }
+
+    private static PlayerUiMarket GetMarket(Player player, AccountRows rows)
+    {
         var now = DateTime.UtcNow;
         var broker = FindBroker(player);
 
-        var listings = repository
-            .GetListingsForAccount(accountId, now)
+        var listings = rows
+            .Listings
             .OrderBy(l => l.ExpiresAtUtc)
             .ThenBy(l => l.Id)
             .Select(l => new PlayerUiListing(l.Id, Look(l).Name, l.ItemWeenieClassId, l.ItemTier, l.ListedPrice, Seconds(l.ExpiresAtUtc - now), Look(l).Icon))
             .ToList();
 
-        var pending = repository.GetPendingPayouts(accountId).ToList();
+        var pending = rows.Pending;
         var pendingByListing = pending.GroupBy(p => p.ListingId).ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
 
-        var sales = repository
-            .GetSoldListingsForAccount(accountId, now - SalesHistory)
-            .Take(MaxSales)
+        var sales = rows
+            .Sales
             .Select(l =>
             {
                 var claimed = !pendingByListing.TryGetValue(l.Id, out var amount);
@@ -64,9 +190,8 @@ public static class PlayerUiMarketData
             })
             .ToList();
 
-        var expired = repository
-            .GetExpiredListingsForAccount(accountId, now)
-            .Where(l => !l.IsSold)
+        var expired = rows
+            .Expired
             .OrderBy(l => l.ExpiresAtUtc)
             .Select(l => new PlayerUiExpired(l.Id, Look(l).Name, l.ItemWeenieClassId, l.ListedPrice, Seconds(now - l.ExpiresAtUtc), Look(l).Icon))
             .ToList();
