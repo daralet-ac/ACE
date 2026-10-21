@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Server.Arena;
@@ -18,12 +17,10 @@ public class PlayerUi
     internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "bankwindow", "lootwindow", "market", "broker", "arena", "corpse", "salvage", "describe", "character", "quests", "abandon", "rollranges"];
 
     /// <summary>
-    /// The plugin asks for fellowship and targets once a second. Asking faster than this (typing the command by hand, say)
+    /// How often each player may ask (the playerui_ server properties). Asking faster (typing or scripting the command, say)
     /// gets no answer, so it can't be used to load the server.
     /// </summary>
-    private static readonly TimeSpan MinInterval = TimeSpan.FromMilliseconds(400);
-
-    private static readonly ConcurrentDictionary<(uint Player, string Kind), DateTime> LastRequest = new();
+    private static readonly PlayerUiLimits Limits = new();
 
     // playerui
     [CommandHandler(
@@ -43,7 +40,10 @@ public class PlayerUi
         var player = session.Player;
         var kind = parameters[0].ToLowerInvariant();
 
-        if (kind != "hello" && TooSoon(player.Guid.Full, kind))
+        // every word that isn't a kind counts as one, so made-up kinds can't each get a limit of their own
+        var limitKind = Kinds.Contains(kind) ? kind : "unknown";
+
+        if (!Limits.Allow(player.Guid.Full, limitKind, DateTime.UtcNow, PlayerUiLimits.Settings.FromProperties()))
         {
             return;
         }
@@ -78,8 +78,9 @@ public class PlayerUi
                 payload = new PlayerUiWindowSetting(player.PlayerUiLootWindow);
                 break;
             case "market":
-                payload = PlayerUiMarketData.GetMarket(player);
-                break;
+                // it reads the database, so it answers from another thread, or from the rows it read a moment ago
+                PlayerUiMarketData.RequestMarket(player);
+                return;
             case "arena":
                 payload = ArenaManager.GetPlayerUiReport(player);
                 break;
@@ -163,17 +164,9 @@ public class PlayerUi
         };
     }
 
-    private static bool TooSoon(uint player, string kind)
+    /// <summary>At logout: when the player last asked for each kind matters only while they're online.</summary>
+    public static void Forget(uint player)
     {
-        var now = DateTime.UtcNow;
-        var key = (player, kind);
-
-        if (LastRequest.TryGetValue(key, out var last) && now - last < MinInterval)
-        {
-            return true;
-        }
-
-        LastRequest[key] = now;
-        return false;
+        Limits.Forget(player);
     }
 }

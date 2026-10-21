@@ -864,9 +864,13 @@ public partial class Player : Creature, IPlayer
         SavePlayerToDatabase();
         PlayerManager.SwitchPlayerFromOnlineToOffline(this);
 
+        // what the Daralet plugin's requests kept about this player
+        Commands.PlayerCommands.PlayerUi.Forget(Guid.Full);
+
         if (!PlayerManager.GetAllOnline().Any(p => p.Account.AccountId == Account.AccountId))
         {
             AccountQuestManager.Unload(Account.AccountId);
+            ACE.Server.Entity.PlayerUi.PlayerUiMarketData.Forget(Account.AccountId);
         }
 
         _log.Debug(
