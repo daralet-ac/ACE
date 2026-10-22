@@ -77,10 +77,16 @@ public class AdminUi
             case "esper":
                 payload = AdminUiRegions.GetEsper();
                 break;
+            case "settings":
+                payload = AdminUiSettings.GetValues();
+                break;
+            case "settingdocs":
+                payload = AdminUiSettings.GetDocs();
+                break;
             default:
                 CommandHandlerHelper.WriteOutputInfo(
                     session,
-                    $"Unknown @adminui request: {parameters[0]}. Use hello, players, fellowships, pois, instances, capstones, arenas, olthoinorth, tidemage or esper.",
+                    $"Unknown @adminui request: {parameters[0]}. Use hello, players, fellowships, pois, instances, capstones, arenas, olthoinorth, tidemage, esper, settings or settingdocs.",
                     ChatMessageType.Broadcast
                 );
                 return;

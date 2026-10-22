@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Server.Entity.AdminUi;
+using ACE.Server.Managers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ACE.Server.Tests;
@@ -148,5 +150,77 @@ public class AdminUiReportTests
         StringAssert.Contains(json, "\"band\":\"Mid\"");
         StringAssert.Contains(json, "\"mageHouseLoaded\":true");
         StringAssert.Contains(json, "\"events\":[{\"name\":\"TideMageZone3\",\"state\":\"On\"}]");
+    }
+
+    /// <summary>
+    /// The plugin reads these names (daralet-admin-plugin src/DaraletAdmin/Feed/ReportModels.cs)
+    /// </summary>
+    [TestMethod]
+    public void SettingsJsonHasTheNamesThePluginReads()
+    {
+        var values = new List<AdminUiSetting> { AdminUiSettings.Value("long", "max_level", "275") };
+        var docs = new List<AdminUiSettingDoc>
+        {
+            new AdminUiSettingDoc("long", "max_level", "275", "Set the max character level.")
+        };
+
+        var valuesJson = AdminUiProtocol.BuildMessages("settings", values).JoinedJson();
+        var docsJson = AdminUiProtocol.BuildMessages("settingdocs", docs).JoinedJson();
+
+        Assert.AreEqual("[{\"type\":\"long\",\"key\":\"max_level\",\"value\":\"275\",\"secret\":false}]", valuesJson);
+        Assert.AreEqual(
+            "[{\"type\":\"long\",\"key\":\"max_level\",\"default\":\"275\",\"description\":\"Set the max character level.\"}]",
+            docsJson
+        );
+    }
+
+    [TestMethod]
+    public void SecretSettingsAreNeverSent()
+    {
+        Assert.IsTrue(AdminUiSettings.IsSecret("proxycheck_api_key"));
+        Assert.IsFalse(AdminUiSettings.IsSecret("offline_xp_passup_limit"));
+        Assert.IsFalse(AdminUiSettings.IsSecret("server_motd"));
+
+        var set = AdminUiSettings.Value("string", "proxycheck_api_key", "abc123");
+        var empty = AdminUiSettings.Value("string", "proxycheck_api_key", "");
+
+        Assert.IsTrue(set.Secret);
+        Assert.IsNull(set.Value);
+        Assert.AreEqual("", empty.Value);
+    }
+
+    /// <summary>
+    /// The plugin sends values back as they came, so they have to be what /modifybool, /modifylong and /modifydouble read
+    /// </summary>
+    [TestMethod]
+    public void SettingValuesParseBackToThemselves()
+    {
+        Assert.IsTrue(bool.Parse(AdminUiSettings.Format(true)));
+        Assert.AreEqual(1_000_000_000L, long.Parse(AdminUiSettings.Format(1_000_000_000L)));
+        Assert.AreEqual("0.04", AdminUiSettings.Format(0.04));
+        Assert.AreEqual(0.1 + 0.2, double.Parse(AdminUiSettings.Format(0.1 + 0.2), CultureInfo.InvariantCulture));
+    }
+
+    [TestMethod]
+    public void SettingDocsListEveryDefaultProperty()
+    {
+        var docs = AdminUiSettings.GetDocs();
+
+        var expected =
+            DefaultPropertyManager.DefaultBooleanProperties.Count
+            + DefaultPropertyManager.DefaultLongProperties.Count
+            + DefaultPropertyManager.DefaultDoubleProperties.Count
+            + DefaultPropertyManager.DefaultStringProperties.Count;
+
+        Assert.AreEqual(expected, docs.Count);
+        Assert.IsTrue(docs.Any(d => d.Type == "double" && d.Key == "xp_modifier" && d.Default == "1"));
+    }
+
+    [TestMethod]
+    public void SettingsAreAdminOnly()
+    {
+        Assert.AreEqual(AccessLevel.Admin, AdminUiAccess.Tabs["settings"]);
+        Assert.AreEqual(AccessLevel.Admin, AdminUiAccess.Requests["settings"]);
+        Assert.AreEqual(AccessLevel.Admin, AdminUiAccess.Requests["settingdocs"]);
     }
 }

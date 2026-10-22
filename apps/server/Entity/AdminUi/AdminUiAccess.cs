@@ -34,6 +34,9 @@ public static class AdminUiAccess
         // region controls
         ["olthoinorth"] = AccessLevel.Admin,
         ["tidemage"] = AccessLevel.Admin,
+
+        // server properties, which only Admins can change (/modifybool and the rest) or read (/fetchbool, /fetchlong)
+        ["settings"] = AccessLevel.Admin,
     };
 
     /// <summary>
@@ -51,6 +54,8 @@ public static class AdminUiAccess
         ["esper"] = Tabs["esper"],
         ["instances"] = Tabs["instances"],
         ["tidemage"] = Tabs["tidemage"],
+        ["settings"] = Tabs["settings"],
+        ["settingdocs"] = Tabs["settings"],
     };
 
     /// <summary>
@@ -76,7 +81,10 @@ public static class AdminUiAccess
         "save",
         "instance",
         "olthoisupply",
+        "modifybool",
         "modifylong",
+        "modifydouble",
+        "modifystring",
     };
 
     /// <summary>
