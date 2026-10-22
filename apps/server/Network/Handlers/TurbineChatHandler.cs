@@ -10,6 +10,7 @@ using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.WorldObjects;
 using Serilog;
 
 namespace ACE.Server.Network.Handlers;
@@ -428,60 +429,11 @@ public static class TurbineChatHandler
                     return;
                 }
 
-                if (PropertyManager.GetBool("chat_requires_account_15days").Item && !session.Player.Account15Days)
-                {
-                    HandleChatReject(
-                        session,
-                        contextId,
-                        chatType,
-                        gameMessageTurbineChat,
-                        "because this account is not 15 days old"
-                    );
-                    return;
-                }
+                var refusal = GlobalChatRefusal(session.Player);
 
-                var chat_requires_account_time_seconds = PropertyManager
-                    .GetLong("chat_requires_account_time_seconds")
-                    .Item;
-                if (
-                    chat_requires_account_time_seconds > 0
-                    && (DateTime.UtcNow - session.Player.Account.CreateTime).TotalSeconds
-                        < chat_requires_account_time_seconds
-                )
+                if (refusal != null)
                 {
-                    HandleChatReject(
-                        session,
-                        contextId,
-                        chatType,
-                        gameMessageTurbineChat,
-                        "because this account is not old enough"
-                    );
-                    return;
-                }
-
-                var chat_requires_player_age = PropertyManager.GetLong("chat_requires_player_age").Item;
-                if (chat_requires_player_age > 0 && session.Player.Age < chat_requires_player_age)
-                {
-                    HandleChatReject(
-                        session,
-                        contextId,
-                        chatType,
-                        gameMessageTurbineChat,
-                        "because this character has not been played enough"
-                    );
-                    return;
-                }
-
-                var chat_requires_player_level = PropertyManager.GetLong("chat_requires_player_level").Item;
-                if (chat_requires_player_level > 0 && session.Player.Level < chat_requires_player_level)
-                {
-                    HandleChatReject(
-                        session,
-                        contextId,
-                        chatType,
-                        gameMessageTurbineChat,
-                        $"because this character has not reached level {chat_requires_player_level}"
-                    );
+                    HandleChatReject(session, contextId, chatType, gameMessageTurbineChat, refusal);
                     return;
                 }
 
@@ -644,6 +596,98 @@ public static class TurbineChatHandler
                 }
             });
         }
+
+    /// <summary>
+    /// Why this player can't send to the global channels (general, trade, LFG, roleplay), as the end of "... is currently disabled
+    /// for you", or null if they can: the server's account and character age and level rules
+    /// </summary>
+    private static string GlobalChatRefusal(Player player)
+    {
+        if (PropertyManager.GetBool("chat_requires_account_15days").Item && !player.Account15Days)
+        {
+            return "because this account is not 15 days old";
+        }
+
+        var chat_requires_account_time_seconds = PropertyManager.GetLong("chat_requires_account_time_seconds").Item;
+        if (
+            chat_requires_account_time_seconds > 0
+            && (DateTime.UtcNow - player.Account.CreateTime).TotalSeconds < chat_requires_account_time_seconds
+        )
+        {
+            return "because this account is not old enough";
+        }
+
+        var chat_requires_player_age = PropertyManager.GetLong("chat_requires_player_age").Item;
+        if (chat_requires_player_age > 0 && player.Age < chat_requires_player_age)
+        {
+            return "because this character has not been played enough";
+        }
+
+        var chat_requires_player_level = PropertyManager.GetLong("chat_requires_player_level").Item;
+        if (chat_requires_player_level > 0 && player.Level < chat_requires_player_level)
+        {
+            return $"because this character has not reached level {chat_requires_player_level}";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Sends a line to everyone listening to the LFG channel, as if the player had typed it there (/lfgroup and /lfmore lines),
+    /// and returns null, or why it can't be sent: the same rules as for a line they type
+    /// </summary>
+    public static string PostToLfgChannel(Player sender, string text)
+    {
+        if (!PropertyManager.GetBool("use_turbine_chat").Item || PropertyManager.GetBool("chat_disable_lfg").Item)
+        {
+            return "LFG chat is turned off.";
+        }
+
+        if (sender.IsGagged || sender.IsOlthoiPlayer)
+        {
+            return "you can't send to it.";
+        }
+
+        var arenaRefusal = ArenaManager.WhyCantChat(sender);
+
+        if (arenaRefusal != null)
+        {
+            return arenaRefusal;
+        }
+
+        var refusal = GlobalChatRefusal(sender);
+
+        if (refusal != null)
+        {
+            return $"LFG is currently disabled for you {refusal}.";
+        }
+
+        var message = new GameMessageTurbineChat(
+            ChatNetworkBlobType.NETBLOB_EVENT_BINARY,
+            ChatNetworkBlobDispatchType.ASYNCMETHOD_SENDTOROOMBYNAME,
+            TurbineChatChannel.LFG,
+            sender.Name,
+            text,
+            sender.Guid.Full,
+            ChatType.LFG
+        );
+
+        foreach (var recipient in PlayerManager.GetAllOnline())
+        {
+            if (
+                !recipient.GetCharacterOption(CharacterOption.ListenToLFGChat)
+                || recipient.IsOlthoiPlayer
+                || recipient.SquelchManager.Squelches.Contains(sender, ChatMessageType.AllChannels)
+            )
+            {
+                continue;
+            }
+
+            recipient.Session.Network.EnqueueSend(message);
+        }
+
+        return null;
+    }
 
     private static void HandleChatReject(
         Session session,

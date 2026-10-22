@@ -192,6 +192,52 @@ public record PlayerUiArenaDuel(int Id, string Sides, int Size, bool Scaled, boo
 public record PlayerUiArenaResult(int Id, string Sides, int Size, bool Scaled, bool Rated, string Map, string Winners, bool CalledOff, double EndedAgo);
 
 /// <summary>
+/// Looking for group (@playerui lfg, LfgManager.GetPlayerUiReport). Mine: "seeking" (the player's lfg), "listing" (their
+/// fellowship's lfm) or "none"; Activity what for, and Since how many seconds ago. AskedBy: the leader being asked about the
+/// player, if any. CantSeek and CantList: why /lfgroup and /lfmore wouldn't work now, or null.
+/// </summary>
+public record PlayerUiLfg(
+    bool Enabled,
+    string Mine,
+    string Activity,
+    double Since,
+    bool AutoJoin,
+    string AskedBy,
+    string CantSeek,
+    string CantList,
+    bool Leader,
+    List<PlayerUiLfgListing> Listings,
+    List<PlayerUiLfgSeeker> Seekers,
+    List<PlayerUiLfgCapstone> Capstones
+);
+
+/// <summary>
+/// A fellowship looking for more, as /lfmore list shows it. Fits: /lfgroup join would put the player in it. Yours: the player's own.
+/// </summary>
+public record PlayerUiLfgListing(
+    string Leader,
+    string Activity,
+    int Size,
+    int MaxSize,
+    int MinLevel,
+    int MaxLevel,
+    bool AutoJoin,
+    double Waited,
+    bool Fits,
+    bool Yours
+);
+
+/// <summary>
+/// A player looking for a group. Fits: they'd be put in the player's fellowship by its lfm. You: the player themself.
+/// </summary>
+public record PlayerUiLfgSeeker(string Name, int Level, string Activity, double Waited, bool Fits, bool You);
+
+/// <summary>
+/// A capstone /lfgroup and /lfmore know by name: Short is what to type, Level the level its portal lets in from.
+/// </summary>
+public record PlayerUiLfgCapstone(string Name, string Short, int Level);
+
+/// <summary>
 /// A corpse's or an open chest's items, for the plugin's loot rules. Status: "ok"; "gone" (not near enough to use, or not
 /// there); "denied" (a corpse someone else's to loot, or a chest this player hasn't got open); "notcorpse" (neither);
 /// "closed" (sent unasked when it closes, with the plugin's loot window on, Player.PlayerUiLootWindow; also sent unasked,
