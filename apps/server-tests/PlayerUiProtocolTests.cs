@@ -289,7 +289,7 @@ public class PlayerUiProtocolTests
     {
         var listing = new ACE.MarketApi.MarketListing { WeaponTime = 40, AttacksPerSecond = 0.8 };
         var item = new PlayerUiCorpseItem(
-            5, "Axe", 1, 100, 50, true, "Iron", 6.5, listing,
+            5, "Axe", 1, 100, 50, true, false, "Iron", 6.5, listing,
             new() { ["Bonus to Attack Skill"] = 0.75 }
         );
 
@@ -299,6 +299,9 @@ public class PlayerUiProtocolTests
         StringAssert.Contains(json, "\"rollQuality\":{\"Bonus to Attack Skill\":0.75}");
         StringAssert.Contains(json, "\"weaponTime\":40");
         StringAssert.Contains(json, "\"attacksPerSecond\":0.8");
+
+        // false isn't a null, so it's sent: the plugin reads a missing one as an older server's
+        StringAssert.Contains(json, "\"sellable\":false");
     }
 
     [TestMethod]

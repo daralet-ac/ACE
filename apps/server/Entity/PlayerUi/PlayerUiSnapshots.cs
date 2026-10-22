@@ -248,8 +248,9 @@ public record PlayerUiLfgCapstone(string Name, string Short, int Level);
 public record PlayerUiCorpse(uint Guid, string Status, string Name, List<PlayerUiCorpseItem> Items);
 
 /// <summary>
-/// An item on a corpse. Salvageable: salvaging could turn it into salvage (Player.IsSalvageable). RollQuality: where
-/// each rolled stat landed in its range, 0 to 1, by the stat's name in appraisal's Roll Quality section
+/// An item on a corpse. Salvageable: salvaging could turn it into salvage (Player.IsSalvageable). Sellable: a Market
+/// Broker would list it (MarketBroker.IsSellable: not attuned, bound or unstable, and of a kind it takes). RollQuality:
+/// where each rolled stat landed in its range, 0 to 1, by the stat's name in appraisal's Roll Quality section
 /// (LootGenerationFactory.GetItemRollRanges); null when nothing on it rolled.
 /// </summary>
 public record PlayerUiCorpseItem(
@@ -259,6 +260,7 @@ public record PlayerUiCorpseItem(
     int Value,
     int Burden,
     bool Salvageable,
+    bool Sellable,
     string Material,
     double? Workmanship,
     ACE.MarketApi.MarketListing Item,
