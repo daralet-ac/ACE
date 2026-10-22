@@ -131,6 +131,7 @@ public static class PlayerUiCorpseData
             item.Value ?? 0,
             item.EncumbranceVal ?? 0,
             Player.IsSalvageable(item),
+            MarketBroker.IsSellable(item, out _),
             item.MaterialType?.ToString(),
             item.Workmanship,
             listing,
