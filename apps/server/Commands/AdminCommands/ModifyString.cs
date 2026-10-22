@@ -1,6 +1,7 @@
 using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
+using ACE.Server.Entity.AdminUi;
 using ACE.Server.Managers;
 using ACE.Server.Network;
 
@@ -23,9 +24,12 @@ public class ModifyString
         if (PropertyManager.ModifyString(parameters[0], value))
         {
             CommandHandlerHelper.WriteOutputInfo(session, "String property successfully updated!");
+            // the audit channel goes to every Admin online and into the logs, so a key like proxycheck_api_key isn't repeated
             PlayerManager.BroadcastToAuditChannel(
                 session?.Player,
-                $"Successfully changed server string property {parameters[0]} to {value}"
+                AdminUiSettings.IsSecret(parameters[0])
+                    ? $"Successfully changed server string property {parameters[0]} (a secret, so not shown)"
+                    : $"Successfully changed server string property {parameters[0]} to {value}"
             );
         }
         else
