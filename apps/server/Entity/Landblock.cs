@@ -2102,6 +2102,8 @@ public class Landblock : IActor
             // the clock for the capstone leaderboard starts with the instance (not for a second part, which carries on the first's run)
             CapstoneRunTracker.StartRun(fellowship, dungeonName);
 
+            LockForCapstone(fellowship, dungeonName);
+
             // set it up the way FindOpenInstanceFellowship does for a copy: which fellowship opened it, and the modifiers its leader chose
             var landblock = LandblockManager.TryGetLandblock(original, instance.Id);
 
@@ -2159,6 +2161,8 @@ public class Landblock : IActor
             // the clock for the capstone leaderboard starts with the copy (not for a second part, which carries on the first's run)
             CapstoneRunTracker.StartRun(fellowship, dungeonName);
 
+            LockForCapstone(fellowship, dungeonName);
+
             // before CapstoneDungeon is changed, since that's how SetLandblockMods knows which dungeon the fellowship's mods are for
             landblock.SetLandblockMods(fellowship, dungeonName);
 
@@ -2176,6 +2180,21 @@ public class Landblock : IActor
         );
 
         WorldManager.ThreadSafeTeleport(player, player.Sanctuary);
+    }
+
+    /// <summary>
+    /// Locks the fellowship when its run of a capstone starts, so nobody new joins partway through (LfgManager drops its lfm then too).
+    /// Members who leave can be recruited back for a while (Fellowship.DepartedMembers). It stays locked until it disbands, so a
+    /// second part, which starts a run of its own here, finds it locked already.
+    /// </summary>
+    private static void LockForCapstone(Fellowship fellowship, string dungeonName)
+    {
+        if (fellowship.IsLocked)
+        {
+            return;
+        }
+
+        fellowship.UpdateLock(true, InstanceTemplateConfig.ReservedPrefix + dungeonName);
     }
 
     /// <summary>

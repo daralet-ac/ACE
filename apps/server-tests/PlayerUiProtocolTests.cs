@@ -261,6 +261,30 @@ public class PlayerUiProtocolTests
     }
 
     [TestMethod]
+    public void LfgJsonHasTheNamesThePluginReads()
+    {
+        var lfg = new PlayerUiLfg(
+            true, "seeking", "Green Mire Grave d10", 65, false, "Arwen", null, "You need a fellowship.", false,
+            [new PlayerUiLfgListing("Arwen", "Green Mire Grave d10", 3, 9, 30, 35, false, 120, true, false)],
+            [new PlayerUiLfgSeeker("Brin", 31, "any capstone up to level 30", 720, false, true)],
+            [new PlayerUiLfgCapstone("Green Mire Grave", "gmg", 10)]
+        );
+
+        var json = PlayerUiProtocol.BuildMessages("lfg", lfg).JoinedJson();
+
+        Assert.AreEqual(
+            "{\"enabled\":true,\"mine\":\"seeking\",\"activity\":\"Green Mire Grave d10\",\"since\":65,\"autoJoin\":false,"
+                + "\"askedBy\":\"Arwen\",\"cantSeek\":null,\"cantList\":\"You need a fellowship.\",\"leader\":false,"
+                + "\"listings\":[{\"leader\":\"Arwen\",\"activity\":\"Green Mire Grave d10\",\"size\":3,\"maxSize\":9,\"minLevel\":30,"
+                + "\"maxLevel\":35,\"autoJoin\":false,\"waited\":120,\"fits\":true,\"yours\":false}],"
+                + "\"seekers\":[{\"name\":\"Brin\",\"level\":31,\"activity\":\"any capstone up to level 30\",\"waited\":720,"
+                + "\"fits\":false,\"you\":true}],"
+                + "\"capstones\":[{\"name\":\"Green Mire Grave\",\"short\":\"gmg\",\"level\":10}]}",
+            json
+        );
+    }
+
+    [TestMethod]
     public void CorpseItemRollQualityKeepsAppraisalsStatNames()
     {
         var listing = new ACE.MarketApi.MarketListing { WeaponTime = 40, AttacksPerSecond = 0.8 };
