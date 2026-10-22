@@ -231,5 +231,40 @@ public enum EmoteType
     /// silently kill this item's other, emote-driven Use functions. Requires peace mode - fails
     /// with WeenieError.YouMustBeInPeaceModeToTrade if the player is not in NonCombat mode.
     /// </summary>
-    TopOffEquippedItemsMana = 10025
+    TopOffEquippedItemsMana = 10025,
+
+    /// <summary>
+    /// Casts a spell on one member of the caster's own Cohort: another Creature sharing the same
+    /// Cohort value, within the spell's range, that is not dead or admin-only (Visibility). The
+    /// action's weenie_Class_Id optionally narrows the candidates to one creature type.
+    /// With Stat set, it picks the candidate lowest on that vital (a PropertyAttribute2nd value:
+    /// Health 2, Stamina 4, Mana 6); the cast is skipped if even that candidate is at or above the
+    /// action's max_Dbl threshold (nobody needs it). With Stat unset, it picks a candidate that
+    /// doesn't already have the spell. No candidates, or the caster has no Cohort set, is a silent no-op.
+    /// Like CastSpellInstant, Message "noresist" skips the resist roll and Percent scales the spell.
+    /// </summary>
+    CastSpellOnCohort = 10026,
+
+    /// <summary>
+    /// Casts a spell on every present member of a nearby player's Fellowship. Finds the closest
+    /// player within Math.Max(HomeRadius, 2 x the spell's own BaseRangeConstant) - searched across
+    /// the caster's landblock and its Adjacents - takes their Fellowship (or just that one player,
+    /// if unfellowshiped), re-filters the fellowship by that same radius (Fellowship membership
+    /// itself carries no proximity guarantee), and casts on every survivor. No skip-threshold -
+    /// unlike CastSpellOnCohort this isn't a beneficial "does anyone need this" cast. No nearby
+    /// player found is a silent no-op. Dead and cloaked players are skipped. Like CastSpellInstant, Message "noresist" skips the resist
+    /// roll and Percent scales the spell.
+    /// </summary>
+    CastSpellOnFellowship = 10027,
+
+    /// <summary>
+    /// Sets the emote's own WorldObject (must be a Creature) to an absolute percentage of one
+    /// vital's MaxValue - Stat holds the raw PropertyAttribute2nd value (Health/Stamina/Mana),
+    /// Percent is a fraction (0.0-1.0) of that vital's MaxValue. Self only, no target resolution.
+    /// A dead creature is left alone. A Health increase is recorded as a heal; a decrease is not recorded
+    /// as damage (so it does not affect kill credit or XP), but health bars still refresh. Setting Health to
+    /// 0% kills a non-Player creature through the normal death sequence (a Health percent above 0 never
+    /// takes it below 1 HP). Death runs inline, so put a Health-to-0 SetVitalPercent last in its emote set.
+    /// </summary>
+    SetVitalPercent = 10028
 }

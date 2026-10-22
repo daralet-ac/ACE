@@ -2925,6 +2925,279 @@ public class EmoteManager
                 }
                 break;
 
+            // -----------------------------------------------------------------------------
+            // EmoteType.SetVitalPercent
+            //
+            // Sets the emote's own WorldObject (must be a Creature) to an absolute percentage of
+            // one vital's MaxValue. Self only, like HealSelf - no target resolution.
+            //
+            //   stat        = raw PropertyAttribute2nd value (Health = 2, Stamina = 4, Mana = 6)
+            //   percent     = fraction of MaxValue, 0.0-1.0 (matches CreatureVital.Percent's own
+            //                 scale, and CastSpellInstant's damage-multiplier convention)
+            //
+            // A creature that is already dead is left alone. Setting Health to exactly 0% kills the
+            // creature (non-Player only) through the normal death sequence; Stamina/Mana at 0 do not.
+            // A Health percent above 0 never takes it below 1 HP, however small the percent.
+            // Death runs inline, so any later actions in the same emote set still run against the dead
+            // creature: put a SetVitalPercent that sets Health to 0 last in its set.
+            //
+            // Applied via UpdateVital (absolute set, clamped 0..MaxValue) - the same method the
+            // core damage/heal paths already use (Monster_Combat.TakeDamage, Healer, Lifestone).
+            // -----------------------------------------------------------------------------
+
+            case EmoteType.SetVitalPercent:
+
+                if (creature != null && !creature.IsDead && emote.Stat.HasValue && emote.Percent.HasValue)
+                {
+                    var vital = creature.GetCreatureVital((PropertyAttribute2nd)emote.Stat.Value);
+
+                    if (vital != null)
+                    {
+                        var newValue = (int)Math.Round(vital.MaxValue * emote.Percent.Value);
+
+                        // a tiny percent that rounds to 0 HP must not kill; only an exact 0% does
+                        if (vital == creature.Health && emote.Percent.Value > 0 && newValue < 1)
+                        {
+                            newValue = 1;
+                        }
+
+                        var delta = creature.UpdateVital(vital, newValue);
+
+                        // Refresh health bars now rather than on the next hit. A heal is recorded
+                        // (as HealSelf does); a drop is not, since it isn't damage dealt by anyone and
+                        // recording it would skew kill credit and XP shares.
+                        if (vital == creature.Health)
+                        {
+                            if (delta > 0)
+                            {
+                                creature.DamageHistory.OnHeal((uint)delta);
+                            }
+                            else if (delta < 0)
+                            {
+                                creature.OnHealthUpdate();
+                            }
+
+                            // Health at 0 kills it through the normal death sequence (Death emotes,
+                            // corpse, kill credit from real damagers), as TakeDamage does, rather than
+                            // leaving it alive at 0 HP. Players are left to their own death handling.
+                            if (creature.Health.Current == 0 && creature is not Player)
+                            {
+                                creature.OnDeath(creature.DamageHistory.LastDamager, DamageType.Health);
+                                creature.Die();
+                            }
+                        }
+                    }
+                }
+                break;
+
+            // -----------------------------------------------------------------------------
+            // EmoteType.CastSpellOnCohort
+            //
+            // Casts a spell on one member of the caster's own Cohort (see WorldObject.Cohort) -
+            // every other Creature within the spell's own range sharing the same Cohort value,
+            // excluding the caster itself. Which one gets picked depends on stat:
+            //
+            //   stat set (2/4/6)   - vital mode: pick whoever's lowest on that vital (raw
+            //                        PropertyAttribute2nd value - Health=2, Stamina=4, Mana=6).
+            //                        max_Dbl (0.0-1.0) is a skip threshold - if even the lowest
+            //                        candidate is already at or above it, the cast is skipped
+            //                        entirely rather than wasted on someone who doesn't need it.
+            //   stat unset         - missing-buff mode: pick any candidate that doesn't already
+            //                        have spell_Id active (EnchantmentManager.HasSpell) - no
+            //                        ranking, arbitrary first-found. No skip-threshold needed - if
+            //                        everyone already has it, the candidate list is simply empty.
+            //
+            //   spell_Id        = the spell to cast (same convention as CastSpellInstant)
+            //   message         = "noresist" skips the target's resist roll (as on CastSpellInstant)
+            //   percent         = spell effect multiplier, default 1.0 (as on CastSpellInstant)
+            //   weenie_Class_Id = optional secondary filter - if set, only candidates whose own
+            //                     WCID matches are considered, narrowing "anyone in my Cohort" down
+            //                     to "specifically this creature type". Needed whenever a Cohort
+            //                     group contains members that must never treat each other as valid
+            //                     targets (e.g. multiple support casters that each only tend one
+            //                     specific ally, not whichever Cohort-mate happens to be lowest).
+            //                     Left null, behavior is unchanged - anyone sharing the Cohort value
+            //                     is a candidate.
+            //
+            // Candidates are gathered from the caster's own landblock plus its Adjacents (same
+            // set Landblock.EmitSignalWithAdjacents() uses), since a valid target may be just
+            // across a landblock boundary outdoors. Position.SquaredDistanceTo() already accounts
+            // for the coordinate-origin shift between landblocks, so the same range check applies
+            // uniformly regardless of which landblock a candidate is actually in.
+            //
+            // Range uses the spell's own flat BaseRangeConstant, not the skill-scaled formula
+            // Monster_Magic/Creature_Magic use elsewhere - a scripted caster's skill value here
+            // is tuned for resist checks, not a meaningful measure of real casting range.
+            //
+            // Dead creatures and admin-only (Visibility) objects are never candidates.
+            //
+            // No candidates in range, or the caster having no Cohort set, is a silent no-op -
+            // same convention as an unregistered spell_Id on CastSpellInstant.
+            // -----------------------------------------------------------------------------
+
+            case EmoteType.CastSpellOnCohort:
+
+                if (creature != null && creature.Cohort.HasValue && creature.CurrentLandblock != null)
+                {
+                    var spell = new Spell((uint)emote.SpellId);
+
+                    if (!spell.NotFound)
+                    {
+                        var maxRangeSquared = spell.BaseRangeConstant * spell.BaseRangeConstant;
+
+                        var landblocks = new List<Landblock> { creature.CurrentLandblock };
+                        landblocks.AddRange(creature.CurrentLandblock.Adjacents.Where(lb => lb != null));
+
+                        var candidates = landblocks
+                            .SelectMany(lb => lb.GetAllWorldObjectsForDiagnostics())
+                            .OfType<Creature>()
+                            .Where(candidate =>
+                                candidate != creature
+                                && !candidate.IsDead
+                                && !candidate.Visibility
+                                && candidate.Cohort == creature.Cohort
+                                && (!emote.WeenieClassId.HasValue || candidate.WeenieClassId == emote.WeenieClassId.Value)
+                                && candidate.Location.SquaredDistanceTo(creature.Location) <= maxRangeSquared
+                            );
+
+                        Creature target = null;
+
+                        if (emote.Stat.HasValue)
+                        {
+                            // Vital mode: pick whoever's lowest on the named vital (raw
+                            // PropertyAttribute2nd value - Health=2, Stamina=4, Mana=6), skip if
+                            // even the lowest is already at or above the skip threshold.
+                            var vitalType = (PropertyAttribute2nd)emote.Stat.Value;
+
+                            var lowest = candidates
+                                .Select(candidate => (candidate, vital: candidate.GetCreatureVital(vitalType)))
+                                .Where(x => x.vital != null)
+                                .OrderBy(x => x.vital.Percent)
+                                .FirstOrDefault();
+
+                            if (lowest.vital != null && lowest.vital.Percent < (emote.MaxDbl ?? 1.0))
+                            {
+                                target = lowest.candidate;
+                            }
+                        }
+                        else
+                        {
+                            // Missing-buff mode: pick any candidate that doesn't already have this
+                            // spell active - no ranking, arbitrary first-found, same as a player
+                            // just noticing someone's unbuffed and casting rather than optimizing
+                            // for who needs it most. No skip-threshold needed - an empty result
+                            // (everyone already has it) is itself the natural "nothing to do" case.
+                            target = candidates.FirstOrDefault(candidate => !candidate.EnchantmentManager.HasSpell(spell.Id));
+                        }
+
+                        if (target != null)
+                        {
+                            WorldObject.TryCastSpell_WithRedirects(
+                                spell,
+                                target,
+                                WorldObject,
+                                null,
+                                false,
+                                false,
+                                emote.Message != "noresist",
+                                emote.Percent ?? 1.0
+                            );
+                        }
+                    }
+                }
+                break;
+
+            // -----------------------------------------------------------------------------
+            // EmoteType.CastSpellOnFellowship
+            //
+            // Casts a spell on every present member of a nearby player's Fellowship.
+            //
+            //   spell_Id    = the spell to cast (same convention as CastSpellInstant)
+            //   message     = "noresist" skips each fellow's resist roll (as on CastSpellInstant)
+            //   percent     = spell effect multiplier, default 1.0 (as on CastSpellInstant)
+            //
+            // "Present" means within Math.Max(HomeRadius, 2 x the spell's own BaseRangeConstant) -
+            // HomeRadius is reused here purely as a read (no write, no interaction with its own
+            // leash/homesick purpose - and satellites are all Stuck=True, so that purpose is
+            // already inert for them anyway). Falls back to 2x the spell's range if HomeRadius
+            // isn't set, so this never collapses to an unreasonably tight radius.
+            //
+            // Finds the closest player within that radius (searched across the caster's landblock
+            // and its Adjacents, same as CastSpellOnCohort), takes their Fellowship - or just that
+            // one player, if they're not in one - then re-filters the fellowship by the same
+            // radius, since Fellowship membership itself carries no proximity guarantee (confirmed
+            // against StampQuestForAllFellows, which iterates every fellow regardless of location).
+            //
+            // Dead players and cloaked admins are skipped, both as the anchor and as targets.
+            //
+            // No skip-threshold, unlike CastSpellOnCohort - this isn't a beneficial "does anyone
+            // need this" cast. No nearby player found is a silent no-op.
+            // -----------------------------------------------------------------------------
+
+            case EmoteType.CastSpellOnFellowship:
+
+                if (creature != null && creature.CurrentLandblock != null)
+                {
+                    var spell = new Spell((uint)emote.SpellId);
+
+                    if (!spell.NotFound)
+                    {
+                        var homeRadius = creature.HomeRadius ?? 0;
+                        var effectiveRadius = Math.Max(homeRadius, 2.0 * spell.BaseRangeConstant);
+                        var effectiveRadiusSquared = effectiveRadius * effectiveRadius;
+
+                        var landblocks = new List<Landblock> { creature.CurrentLandblock };
+                        landblocks.AddRange(creature.CurrentLandblock.Adjacents.Where(lb => lb != null));
+
+                        // Dead players and cloaked admins (or unseen arena watchers) are never targets
+                        // or anchors.
+                        static bool IsCastable(Player p) =>
+                            !p.IsDead && !p.Visibility && p.CloakStatus != CloakStatus.On;
+
+                        var anchor = landblocks
+                            .SelectMany(lb => lb.GetAllWorldObjectsForDiagnostics())
+                            .OfType<Player>()
+                            .Where(p =>
+                                IsCastable(p)
+                                && p.Location.SquaredDistanceTo(creature.Location) <= effectiveRadiusSquared
+                            )
+                            .OrderBy(p => p.Location.SquaredDistanceTo(creature.Location))
+                            .FirstOrDefault();
+
+                        if (anchor != null)
+                        {
+                            IEnumerable<Player> fellowshipMembers =
+                                anchor.Fellowship != null
+                                    ? anchor.Fellowship.GetFellowshipMembers().Values
+                                    : new List<Player> { anchor };
+
+                            // Fellowship membership carries no location guarantee, and another instance
+                            // of the same landblock shares these coordinates - so match InstanceId too
+                            // (same check as Fellowship.WithinRange).
+                            var presentFellows = fellowshipMembers.Where(fellow =>
+                                IsCastable(fellow)
+                                && fellow.InstanceId == creature.InstanceId
+                                && fellow.Location.SquaredDistanceTo(creature.Location) <= effectiveRadiusSquared
+                            );
+
+                            foreach (var fellow in presentFellows)
+                            {
+                                WorldObject.TryCastSpell_WithRedirects(
+                                    spell,
+                                    fellow,
+                                    WorldObject,
+                                    null,
+                                    false,
+                                    false,
+                                    emote.Message != "noresist",
+                                    emote.Percent ?? 1.0
+                                );
+                            }
+                        }
+                    }
+                }
+                break;
+
             default:
                 _log.Debug(
                     "EmoteManager.Execute - Encountered Unhandled EmoteType {EmoteType} for {WorldObjectName} ({WorldObjectWeenieClassId})",
