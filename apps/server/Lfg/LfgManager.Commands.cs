@@ -20,7 +20,7 @@ public static partial class LfgManager
         "Find a group, or more players for your fellowship.\n"
         + "\n"
         + "-- Looking for a group --\n"
-        + "/lfgroup <activity>: you join the first fellowship looking for more for it, as soon as there is one.\n"
+        + "/lfgroup <activity>: you join the first fellowship that is looking for more, as soon as there is one.\n"
         + "/lfgroup join <name>: join the fellowship that player is in, if it's looking for more and you fit (or ask, if it's "
         + "manual).\n"
         + "/lfgroup list: the players looking for a group.\n"
@@ -178,7 +178,7 @@ public static partial class LfgManager
 
         Tell(
             player,
-            $"You're looking for a group for {what}. You'll join the first fellowship looking for more for it, as soon as there is one. "
+            $"You're looking for a group for {what}. You'll join the first fellowship that is looking for more, as soon as there is one. "
                 + "/lfgroup stop to stop."
         );
 
