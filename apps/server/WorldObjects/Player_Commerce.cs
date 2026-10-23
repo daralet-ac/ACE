@@ -4,6 +4,7 @@ using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
+using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Market;
@@ -114,6 +115,8 @@ partial class Player
             }
         }
 
+        var boughtUniques = new List<WorldObject>();
+
         foreach (var item in uniqueItems)
         {
             // Non-market vendors: the unique item may have been bought/rotted after validation.
@@ -190,6 +193,8 @@ partial class Player
 
             if (TryCreateInInventoryWithNetworking(itemToCreate))
             {
+                boughtUniques.Add(itemToCreate);
+
                 // For market vendors, items are per-player snapshots and are not in UniqueItemsForSale.
                 if (!vendor.IsMarketVendor)
                 {
@@ -398,6 +403,40 @@ partial class Player
         var altCurrencySpent = vendor.AlternateCurrency != null ? cost : 0;
 
         vendor.ApproachVendor(this, VendorType.Buy, altCurrencySpent);
+
+        ResendBoughtUniques(boughtUniques);
+    }
+
+    /// <summary>
+    /// A unique item keeps its guid when bought, and Decal (the client plugin framework) knows that guid as one of the
+    /// vendor's items: when the vendor's list arrives again without it (ApproachVendor above), Decal drops the guid, and
+    /// the item just put in the player's pack with it, so plugins don't see the item until the next login. Sending the
+    /// item again once that list is out puts it back; the client itself only updates an object it already has.
+    /// </summary>
+    private void ResendBoughtUniques(List<WorldObject> items)
+    {
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        var resend = new ActionChain();
+        resend.AddDelaySeconds(0.1);
+        resend.AddAction(
+            this,
+            () =>
+            {
+                foreach (var item in items)
+                {
+                    // gone already (dropped, given, sold back): nothing to send
+                    if (Session != null && GetInventoryItem(item.Guid) != null)
+                    {
+                        Session.Network.EnqueueSend(new GameMessageCreateObject(item));
+                    }
+                }
+            }
+        );
+        resend.EnqueueChain();
     }
 
     private void CheckForQuestStampOnPurchase(WorldObject item)
