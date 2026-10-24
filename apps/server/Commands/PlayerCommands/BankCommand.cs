@@ -138,8 +138,8 @@ public class BankCommand
                 + "  /bank combine - Combines salvage bags in your bank that have the same material and workmanship.\n"
                 + "  /bank balance - Shows the pyreals and trade notes in your bank and across your account. Works anywhere.\n"
                 + "  /bank packs - Shows your bank space and how each pack is tagged.\n"
-                + "  /bank inscribe [number] <tags> - Inscribes a pack in your bank: the one with that number in /bank packs, "
-                + "or the one you last examined (\"/bank inscribe 2 clear\" clears pack 2).\n"
+                + "  /bank inscribe [number] <tags> - Inscribes a pack: a bank pack by its number in /bank packs, "
+                + "or the pack you last examined, carried or banked (\"/bank inscribe 2 clear\" clears pack 2).\n"
                 + "  /bank icon [number] <pack, sack, pouch or small pouch> <color> - Changes a pack's icon, for a bank pack by its number in /bank packs "
                 + "or the pack you last examined, carried or banked (\"/bank icon 2 sack blue\", \"/bank icon 2 default\"). /bank icon lists the colors.\n"
                 + "  /bank log [how many] - Your account's recent bank deposits, withdrawals and salvage combines, by any of your characters. Works anywhere.\n"
@@ -464,7 +464,8 @@ public class BankCommand
     // --- /bank inscribe ---
 
     // The client only lets a player type an inscription on something they carry (admins excepted), so a pack in the
-    // bank is inscribed with this. Carried packs are inscribed from the appraisal panel.
+    // bank is inscribed with this. A carried pack can be too, as the pack last examined: the Daralet plugin's Tags list
+    // examines one and sends this, since a plugin can't type in the appraisal panel.
     private static void HandleInscribe(Session session, string[] parameters)
     {
         var packNumber = TakePackNumber(ref parameters);
@@ -474,7 +475,7 @@ public class BankCommand
         {
             Send(
                 session,
-                "Usage: /bank inscribe <number> <tags>, with the pack's number from /bank packs, or examine a pack in your bank and use /bank inscribe <tags>. "
+                "Usage: /bank inscribe <number> <tags>, with the pack's number from /bank packs, or examine one of your packs and use /bank inscribe <tags>. "
                     + "For example: /bank inscribe 2 weapons, armor. Use /bank inscribe <number> clear to remove it."
             );
             return;
@@ -487,7 +488,7 @@ public class BankCommand
         }
 
         var player = session.Player;
-        var pack = FindPack(session, packNumber, carriedToo: false, "/bank inscribe <number> <tags>", out var which);
+        var pack = FindPack(session, packNumber, carriedToo: true, "/bank inscribe <number> <tags>", out var which);
         if (pack == null)
         {
             return;
