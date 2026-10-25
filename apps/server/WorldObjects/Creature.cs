@@ -222,7 +222,26 @@ public partial class Creature : Container
 
     public override bool EnterWorld()
     {
+        // a patroller sharing a route enters at its timetable slot instead of the route start
+        var routeStart = this is Player ? null : PlaceAtPatrolSlot();
+
         var result = base.EnterWorld();
+
+        if (routeStart != null)
+        {
+            if (result)
+            {
+                // entering the world made the slot spot its Home; the route start is where its patrol offsets are from
+                SetPosition(PositionType.Home, new Position(routeStart));
+            }
+            else
+            {
+                // couldn't enter at the slot: fall back to the route start
+                Location = routeStart;
+                PatrolStartWaypoint = null;
+                result = base.EnterWorld();
+            }
+        }
 
         if (result && !(this is Player))
         {

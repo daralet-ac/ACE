@@ -1294,6 +1294,17 @@ public enum PropertyInt : ushort
     /// </summary>
     SequenceState = 535,
 
+    /// <summary>
+    /// This patroller's slot (0-based) on a shared patrol route. Slot k of PatrolSlotCount keeps k/N of
+    /// a lap ahead of slot 0, on a timetable derived from the server clock - see PatrolTimetable.
+    /// </summary>
+    PatrolSlot = 536,
+
+    /// <summary>
+    /// How many patrollers share this patrol route (2+ turns on the timetable; see PatrolSlot).
+    /// </summary>
+    PatrolSlotCount = 537,
+
     PCAPRecordedAutonomousMovement = 8007,
     PCAPRecordedMaxVelocityEstimated = 8030,
     PCAPRecordedPlacement = 8041,

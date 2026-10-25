@@ -94,6 +94,11 @@ partial class Player
             {
                 creature.BroadcastMoveTo(this);
             }
+            else if (creature.HasPatrol && creature.LastMoveToPosition != null && creature.PhysicsObj?.IsMovingTo() == true)
+            {
+                // patrol legs use MoveTo(Position), which doesn't set IsMoving
+                Session.Network.EnqueueSend(new GameMessageUpdateMotion(creature, creature.LastMoveToPosition));
+            }
         }
     }
 

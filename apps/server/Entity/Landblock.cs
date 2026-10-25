@@ -1656,7 +1656,12 @@ public class Landblock : IActor
         {
             if (!wo.Value.BiotaOriginatedFromOrHasBeenSavedToDatabase())
             {
-                wo.Value.Destroy(false, true);
+                // An object whose generator is on another landblock that's staying loaded (a patrol that walked over
+                // the edge) frees its generator slot, or that generator would think it still exists and never replace it
+                var generator = wo.Value.Generator;
+                var notifyGenerator = generator != null && !generator.IsDestroyed && generator.CurrentLandblock != this;
+
+                wo.Value.Destroy(notifyGenerator, true);
             }
             else
             {
