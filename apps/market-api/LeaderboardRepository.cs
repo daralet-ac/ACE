@@ -12,7 +12,8 @@ namespace ACE.MarketApi;
 /// Every query joins ace_auth.account and filters to accessLevel &lt;= 1 (Player or Advocate) —
 /// Sentinel/Envoy/Developer/Admin accounts (2-5) have characters used for testing with
 /// server-granted stats, and must never show up on a player leaderboard. Advocate (1) is a
-/// player-facing volunteer role, not a testing account, so it stays included.
+/// player-facing volunteer role, not a testing account, so it stays included. The general boards also leave out
+/// characters an admin has excluded with @leaderboard exclude (LeaderboardExcluded).
 /// </summary>
 public class LeaderboardRepository
 {
@@ -37,6 +38,10 @@ public class LeaderboardRepository
     // On the capstone blacklist (@capstone blacklist in the game): a run with such a character in it is not shown.
     private const int PropertyBoolCapstoneTrackingExcluded = 9018;
 
+    // Taken off the general boards (@leaderboard exclude in the game): level, deaths, allegiance rank, town attunements,
+    // most dangerous creatures and trade skills. The arena and capstone boards have exclusions of their own.
+    private const int PropertyBoolLeaderboardExcluded = 9019;
+
     // ACE.Entity.Enum.Skill values, confirmed against the real enum (not counted by hand).
     private static readonly (string Name, int SkillId)[] TradeSkills =
     {
@@ -60,6 +65,11 @@ public class LeaderboardRepository
     private string PlayerAccountJoin => $"JOIN {_dbOptions.AuthDatabase}.account a ON a.accountId = c.account_Id";
     private const string PlayerAccountFilter = "a.accessLevel <= 1";
 
+    // The general boards also leave out characters an admin has excluded (the type is a constant, not user input).
+    private static readonly string GeneralBoardFilter =
+        $"{PlayerAccountFilter} AND NOT EXISTS (SELECT 1 FROM biota_properties_bool lx "
+        + $"WHERE lx.object_Id = c.id AND lx.type = {PropertyBoolLeaderboardExcluded} AND lx.value = 1)";
+
     public async Task<List<LevelLeaderboardEntry>> GetTopByLevelAsync(int limit, CancellationToken ct)
     {
         limit = Math.Clamp(limit, 1, 100);
@@ -74,7 +84,7 @@ public class LeaderboardRepository
             JOIN biota_properties_int lvl ON lvl.object_Id = c.id AND lvl.type = @levelType
             JOIN biota_properties_int64 xp ON xp.object_Id = c.id AND xp.type = @xpType
             {PlayerAccountJoin}
-            WHERE c.is_Deleted = 0 AND {PlayerAccountFilter}
+            WHERE c.is_Deleted = 0 AND {GeneralBoardFilter}
             ORDER BY xp.value DESC
             LIMIT @limit
             """;
@@ -111,7 +121,7 @@ public class LeaderboardRepository
             FROM `character` c
             JOIN biota_properties_int d ON d.object_Id = c.id AND d.type = @deathsType
             {PlayerAccountJoin}
-            WHERE c.is_Deleted = 0 AND {PlayerAccountFilter}
+            WHERE c.is_Deleted = 0 AND {GeneralBoardFilter}
             ORDER BY d.value DESC
             LIMIT @limit
             """;
@@ -146,7 +156,7 @@ public class LeaderboardRepository
             FROM `character` c
             JOIN biota_properties_int r ON r.object_Id = c.id AND r.type = @rankType
             {PlayerAccountJoin}
-            WHERE c.is_Deleted = 0 AND {PlayerAccountFilter}
+            WHERE c.is_Deleted = 0 AND {GeneralBoardFilter}
             ORDER BY r.value DESC
             LIMIT @limit
             """;
@@ -186,7 +196,7 @@ public class LeaderboardRepository
             FROM character_properties_quest_registry q
             JOIN `character` c ON c.id = q.character_Id
             {PlayerAccountJoin}
-            WHERE q.quest_Name LIKE 'Attuned%' AND c.is_Deleted = 0 AND {PlayerAccountFilter}
+            WHERE q.quest_Name LIKE 'Attuned%' AND c.is_Deleted = 0 AND {GeneralBoardFilter}
             GROUP BY c.id, c.name
             ORDER BY towns_attuned DESC
             LIMIT @limit
@@ -226,7 +236,7 @@ public class LeaderboardRepository
             FROM character_properties_quest_registry q
             JOIN `character` c ON c.id = q.character_Id
             {PlayerAccountJoin}
-            WHERE q.quest_Name LIKE 'KilledByTracking-%' AND c.is_Deleted = 0 AND {PlayerAccountFilter}
+            WHERE q.quest_Name LIKE 'KilledByTracking-%' AND c.is_Deleted = 0 AND {GeneralBoardFilter}
             GROUP BY creature_name
             ORDER BY deaths_caused DESC
             LIMIT @limit
@@ -266,7 +276,7 @@ public class LeaderboardRepository
                 FROM `character` c
                 JOIN biota_properties_skill s ON s.object_Id = c.id AND s.type = @skillId
                 {PlayerAccountJoin}
-                WHERE s.level_From_P_P > 0 AND c.is_Deleted = 0 AND {PlayerAccountFilter}
+                WHERE s.level_From_P_P > 0 AND c.is_Deleted = 0 AND {GeneralBoardFilter}
                 ORDER BY s.level_From_P_P DESC
                 LIMIT 1
                 """;
