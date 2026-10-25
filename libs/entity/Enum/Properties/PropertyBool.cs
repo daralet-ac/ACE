@@ -410,6 +410,13 @@ public enum PropertyBool : ushort
     /// not shown on the website's capstone leaderboard. The runs are still recorded, so taking them off brings theirs back.
     /// </summary>
     CapstoneTrackingExcluded = 9018,
+
+    /// <summary>
+    /// An admin has taken the character off the website's general leaderboards (@leaderboard exclude): level, deaths,
+    /// allegiance rank, town attunements, most dangerous creatures and trade skills. Nothing about the character changes,
+    /// so including them again puts them straight back.
+    /// </summary>
+    LeaderboardExcluded = 9019,
 }
 
 public static class PropertyBoolExtensions
