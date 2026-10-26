@@ -39,6 +39,13 @@ partial class Creature
                 continue;
             }
 
+            // Fellow defenders: creatures that only fight monsters (other guards, training recruits) or share
+            // this patroller's faction
+            if (c.Tolerance.HasFlag(Tolerance.Monster) || SameFaction(c))
+            {
+                continue;
+            }
+
             monsters.Add(c);
         }
 
