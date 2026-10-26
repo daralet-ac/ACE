@@ -48,7 +48,18 @@ public class TelePoi
                 return;
             }
             var weenie = DatabaseManager.World.GetCachedWeenie(teleportPOI.WeenieClassId);
-            var portalDest = new Position(weenie.GetPosition(PositionType.Destination));
+            var destination = weenie?.GetPosition(PositionType.Destination);
+            if (destination == null)
+            {
+                session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Location: \"{poi}\" points at portal {teleportPOI.WeenieClassId}, which doesn't exist or has no destination.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
+            var portalDest = new Position(destination);
             WorldObject.AdjustDungeon(portalDest);
             session.Player.Teleport(portalDest);
         }

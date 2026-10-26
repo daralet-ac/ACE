@@ -413,6 +413,7 @@ partial class Creature
         // build and send MoveToPosition message to client
         var motion = GetMoveToPosition(position, runRate, walkRunThreshold, speed);
         EnqueueBroadcastMotion(motion);
+        LastMoveToPosition = motion;
 
         if (!setLoc)
         {
@@ -431,7 +432,32 @@ partial class Creature
         AddMoveToTick();
     }
 
+    /// <summary>
+    /// The last MoveToPosition broadcast by MoveTo(Position), resent to players who start tracking this
+    /// creature mid-move - otherwise they see it slide along without its walk animation until the next MoveTo
+    /// </summary>
+    public ACE.Server.Entity.Motion LastMoveToPosition;
+
+    /// <summary>
+    /// True while a MoveTo tick chain is running for this creature
+    /// </summary>
+    private bool moveToTickActive;
+
     private void AddMoveToTick()
+    {
+        // One chain per creature. A MoveTo issued while the previous one is still moving (a patrol starting its
+        // next leg without a pause) would otherwise start another chain, and every chain keeps running physics
+        // and sending position updates for as long as the creature keeps moving.
+        if (moveToTickActive)
+        {
+            return;
+        }
+
+        moveToTickActive = true;
+        QueueMoveToTick();
+    }
+
+    private void QueueMoveToTick()
     {
         var actionChain = new ActionChain();
         actionChain.AddDelaySeconds(monsterTickInterval);
@@ -447,22 +473,23 @@ partial class Creature
 
                     if (PhysicsObj?.MovementManager?.MoveToManager?.FailProgressCount < 5)
                     {
-                        AddMoveToTick();
+                        QueueMoveToTick();
+                        return;
                     }
-                    else
+
+                    if (PhysicsObj?.MovementManager?.MoveToManager != null)
                     {
-                        if (PhysicsObj?.MovementManager?.MoveToManager != null)
-                        {
-                            PhysicsObj.MovementManager.MoveToManager.CancelMoveTo(WeenieError.ActionCancelled);
-                            PhysicsObj.MovementManager.MoveToManager.FailProgressCount = 0;
-                        }
-                        EnqueueBroadcastMotion(
-                            new ACE.Server.Entity.Motion(CurrentMotionState.Stance, MotionCommand.Ready)
-                        );
+                        PhysicsObj.MovementManager.MoveToManager.CancelMoveTo(WeenieError.ActionCancelled);
+                        PhysicsObj.MovementManager.MoveToManager.FailProgressCount = 0;
                     }
+                    EnqueueBroadcastMotion(
+                        new ACE.Server.Entity.Motion(CurrentMotionState.Stance, MotionCommand.Ready)
+                    );
 
                     //Console.WriteLine($"{Name}.Position: {Location}");
                 }
+
+                moveToTickActive = false;
             }
         );
         actionChain.EnqueueChain();
