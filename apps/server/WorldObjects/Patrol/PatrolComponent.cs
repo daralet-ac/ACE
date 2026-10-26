@@ -18,6 +18,7 @@ public sealed class PatrolComponent
     private double _nextMoveTime;
     private Position _currentDest;
     private Position _finalDest;
+    private int _finalIndex;
 
     // Pause handling (applied only on real waypoints, not detours)
     private float _pauseOnArrivalSeconds;
@@ -32,6 +33,21 @@ public sealed class PatrolComponent
     private bool _needsRejoin;
     private const float ArriveDistance = 1.5f;
 
+    // No progress toward the current waypoint for this long (nudges included) blips the patroller onto it
+    private const double BlipAfterSeconds = 10.0;
+    private float _bestDistToFinal;
+    private double _bestDistTime;
+
+    // Shared-route timetable (PatrolSlot / PatrolSlotCount), null for a patroller walking a route alone
+    private PatrolTimetable _timetable;
+    private bool _running;
+    private int _lastReachedWaypoint = -1;
+    private double _nextTimetableCheck;
+    private const double RunWhenBehindSeconds = 5.0;
+    private const double WalkWhenBehindSeconds = 1.0;
+    private const double HoldWhenAheadSeconds = 1.0;
+    private const float RejoinSameLegDistance = 10.0f;
+
     public PatrolComponent(Creature creature)
     {
         if (creature == null)
@@ -45,6 +61,14 @@ public sealed class PatrolComponent
         _patrolHome = new Position(homePos);
 
         ReloadPath();
+
+        // spawned straight into its timetable slot partway round the route (Creature.PlaceAtPatrolSlot):
+        // head on along the leg it was put on, not back to the route start
+        if (_creature.PatrolStartWaypoint is int start && _path != null && _path.Count > 0)
+        {
+            _index = start % _path.Count;
+        }
+        _creature.PatrolStartWaypoint = null;
     }
 
 
@@ -65,6 +89,17 @@ public sealed class PatrolComponent
 
         _pauseOnArrivalSeconds = 0f;
         _nextMoveTime = 0;
+
+        var slot = _creature.GetProperty(PropertyInt.PatrolSlot) ?? 0;
+        var slotCount = _creature.GetProperty(PropertyInt.PatrolSlotCount) ?? 0;
+
+        _timetable =
+            _path != null && slotCount >= 2 && slot >= 0 && slot < slotCount
+                ? new PatrolTimetable(_path, _patrolHome.ToGlobal(), slot, slotCount)
+                : null;
+
+        _running = false;
+        _lastReachedWaypoint = -1;
     }
 
     /// <summary>
@@ -120,17 +155,42 @@ public sealed class PatrolComponent
         // If we have an in-flight destination, see if we've arrived or if we're stuck.
         if (_currentDest != null)
         {
-            var dx = _creature.Location.Pos.X - _currentDest.Pos.X;
-            var dy = _creature.Location.Pos.Y - _currentDest.Pos.Y;
-            var dz = _creature.Location.Pos.Z - _currentDest.Pos.Z;
-
-            var distSq = (dx * dx) + (dy * dy) + (dz * dz);
+            // SquaredDistanceTo accounts for the destination being in a neighbouring landblock
+            var distSq = _creature.Location.SquaredDistanceTo(_currentDest);
 
             if (distSq > (ArriveDistance * ArriveDistance))
             {
+                // Mid-leg on a shared route: start or stop running as the patroller falls behind or catches up.
+                if (_timetable != null && !_detouring && currentUnixTime >= _nextTimetableCheck)
+                {
+                    _nextTimetableCheck = currentUnixTime + 1.0;
+
+                    var leg = (_finalIndex + _path.Count - 1) % _path.Count;
+                    var behind = _timetable.SecondsBehindOnLeg(leg, _creature.Location.ToGlobal(), currentUnixTime);
+                    if (UpdateRunning(behind))
+                    {
+                        IssueMove(_currentDest, currentUnixTime);
+                    }
+                }
+
                 if (currentUnixTime >= _nextProgressSampleTime)
                 {
                     _nextProgressSampleTime = currentUnixTime + 0.5;
+
+                    if (_finalDest != null)
+                    {
+                        var distToFinal = (float)Math.Sqrt(_creature.Location.SquaredDistanceTo(_finalDest));
+                        if (distToFinal < _bestDistToFinal - 0.5f)
+                        {
+                            _bestDistToFinal = distToFinal;
+                            _bestDistTime = currentUnixTime;
+                        }
+                        else if (currentUnixTime - _bestDistTime >= BlipAfterSeconds)
+                        {
+                            BlipToWaypoint(currentUnixTime);
+                            return;
+                        }
+                    }
 
                     if (_lastSamplePos == null)
                     {
@@ -139,24 +199,19 @@ public sealed class PatrolComponent
                     }
                     else
                     {
-                        var mx = _creature.Location.Pos.X - _lastSamplePos.Pos.X;
-                        var my = _creature.Location.Pos.Y - _lastSamplePos.Pos.Y;
-                        var mz = _creature.Location.Pos.Z - _lastSamplePos.Pos.Z;
-
-                        var movedSq = (mx * mx) + (my * my) + (mz * mz);
+                        var movedSq = _creature.Location.SquaredDistanceTo(_lastSamplePos);
 
                         // ~10cm movement threshold
                         if (movedSq < 0.01f)
                         {
                             if ((currentUnixTime - _stuckSinceTime) >= 2.0)
                             {
-                                TryDetourOrSkip(currentUnixTime);
+                                TryDetour(currentUnixTime);
                             }
                         }
                         else
                         {
                             _stuckSinceTime = currentUnixTime;
-                            _stuckAttempts = 0;
                             _lastSamplePos = new Position(_creature.Location);
                         }
                     }
@@ -182,6 +237,7 @@ public sealed class PatrolComponent
             if (_finalDest != null)
             {
                 _finalDest = null;
+                _lastReachedWaypoint = _finalIndex;
 
                 if (_pauseOnArrivalSeconds > 0f)
                 {
@@ -199,42 +255,70 @@ public sealed class PatrolComponent
             return;
         }
 
+        // Shared route: wait here while ahead of schedule, and run the next leg while behind it.
+        if (_timetable != null)
+        {
+            // not at a waypoint (just spawned, or back from combat): on the leg leading to the next one
+            var behind =
+                _lastReachedWaypoint >= 0
+                    ? _timetable.SecondsBehindLeaving(_lastReachedWaypoint, currentUnixTime)
+                    : _timetable.SecondsBehindOnLeg((_index + _path.Count - 1) % _path.Count, _creature.Location.ToGlobal(), currentUnixTime);
+
+            if (behind < -HoldWhenAheadSeconds)
+            {
+                _nextMoveTime = currentUnixTime + Math.Min(-behind, 1.0);
+                return;
+            }
+
+            UpdateRunning(behind);
+        }
+
         // Select next offset (looping)
+        _finalIndex = _index;
         var offset = _path[_index];
         _index = (_index + 1) % _path.Count;
 
         // Base position is the cached patrol center (original spawn/home).
         var basePos = new Position(_patrolHome);
-        var nextPos = new Position(basePos);
-
-        // 2D-only movement: compute XY from home + offsets, Z from terrain.
-        nextPos.PositionX = basePos.Pos.X + offset.Dx;
-        nextPos.PositionY = basePos.Pos.Y + offset.Dy;
-
-        // Update cell before terrain lookup.
-        nextPos.LandblockId = new LandblockId(nextPos.GetCell(_creature.InstanceId));
-
-        // Terrain height accounts for hills.
-        nextPos.PositionZ = nextPos.GetTerrainZ(_creature.InstanceId);
-
-        // Update cell again after Z assignment.
-        nextPos.LandblockId = new LandblockId(nextPos.GetCell(_creature.InstanceId));
+        var nextPos = BuildWaypoint(basePos, offset, _creature.InstanceId);
 
         // Pause: fixed override on waypoint, otherwise weenie random default range.
-        _pauseOnArrivalSeconds = offset.PauseSeconds ?? GetDefaultPauseSeconds();
+        // A shared route's timetable owns the pacing, so it only takes fixed pauses.
+        _pauseOnArrivalSeconds = offset.PauseSeconds ?? (_timetable != null ? 0f : GetDefaultPauseSeconds());
 
         _finalDest = nextPos;
         _currentDest = nextPos;
+        _lastReachedWaypoint = -1;
 
         _detouring = false;
         _stuckAttempts = 0;
         _stuckSinceTime = currentUnixTime;
         _lastSamplePos = new Position(_creature.Location);
+        _bestDistToFinal = float.MaxValue;
+        _bestDistTime = currentUnixTime;
 
         IssueMove(nextPos, currentUnixTime);
 
         // Small pacing guard (pause is applied on arrival).
         _nextMoveTime = currentUnixTime + 0.75;
+        _nextTimetableCheck = currentUnixTime + 1.0;
+    }
+
+    /// <summary>
+    /// Runs while well behind schedule and walks again once nearly caught up.
+    /// Returns true if that changed, so an in-flight move needs reissuing at the new pace.
+    /// </summary>
+    private bool UpdateRunning(double secondsBehind)
+    {
+        var running = _running ? secondsBehind > WalkWhenBehindSeconds : secondsBehind > RunWhenBehindSeconds;
+
+        if (running == _running)
+        {
+            return false;
+        }
+
+        _running = running;
+        return true;
     }
 
     private float GetDefaultPauseSeconds()
@@ -291,6 +375,22 @@ public sealed class PatrolComponent
 
         _pauseOnArrivalSeconds = 0f;
         _nextMoveTime = currentUnixTime;
+        _lastReachedWaypoint = -1;
+
+        // Shared route: pick the route back up on the leg it was walking if it's still close to it (on a road
+        // walked out and back the nearest leg may be the one going the other way), else on the nearest leg.
+        // The timetable restores the spacing.
+        if (_timetable != null)
+        {
+            var pos = _creature.Location.ToGlobal();
+            var interruptedLeg = (_finalIndex + _path.Count - 1) % _path.Count;
+
+            _index =
+                _timetable.DistanceToLeg(interruptedLeg, pos) <= RejoinSameLegDistance
+                    ? _finalIndex
+                    : _timetable.NextWaypointFrom(pos);
+            return;
+        }
 
         // Base position is the cached patrol center (original spawn/home).
         var basePos = new Position(_patrolHome);
@@ -303,11 +403,7 @@ public sealed class PatrolComponent
         {
             var wp = BuildWaypoint(basePos, _path[i], _creature.InstanceId);
 
-            var dx = _creature.Location.Pos.X - wp.Pos.X;
-            var dy = _creature.Location.Pos.Y - wp.Pos.Y;
-            var dz = _creature.Location.Pos.Z - wp.Pos.Z;
-
-            var distSq = (dx * dx) + (dy * dy) + (dz * dz);
+            var distSq = _creature.Location.SquaredDistanceTo(wp);
 
             if (distSq < bestDistSq)
             {
@@ -345,13 +441,30 @@ public sealed class PatrolComponent
 
     private static Position BuildWaypoint(Position basePos, PatrolOffset offset, uint instance)
     {
-        var nextPos = new Position(basePos);
+        // 2D-only movement: compute XY from home + offsets, Z from terrain.
+        return BuildOutdoorPosition(basePos, offset.Dx, offset.Dy, instance);
+    }
 
-        nextPos.PositionX = basePos.Pos.X + offset.Dx;
-        nextPos.PositionY = basePos.Pos.Y + offset.Dy;
+    /// <summary>
+    /// Offsets a position in XY and snaps it to the terrain. Offsets may run past the landblock edge
+    /// (routes that follow a road out of town), so the position is carried into the neighbouring landblock.
+    /// </summary>
+    internal static Position BuildOutdoorPosition(Position from, float dx, float dy, uint instance)
+    {
+        var nextPos = new Position(from);
 
+        nextPos.PositionX = from.Pos.X + dx;
+        nextPos.PositionY = from.Pos.Y + dy;
+
+        nextPos.SetLandblock();
+
+        // Update cell before terrain lookup.
         nextPos.LandblockId = new LandblockId(nextPos.GetCell(instance));
+
+        // Terrain height accounts for hills.
         nextPos.PositionZ = nextPos.GetTerrainZ(instance);
+
+        // Update cell again after Z assignment.
         nextPos.LandblockId = new LandblockId(nextPos.GetCell(instance));
 
         return nextPos;
@@ -363,7 +476,17 @@ public sealed class PatrolComponent
 
         // In Creature_Navigation.GetMoveToPosition():
         // runRate <= 0 => clears MovementParams.CanRun (forces walk)
-        var runRate = forceWalk ? 0.0f : _creature.GetRunRate();
+        // Catching up to a shared route's timetable overrides PatrolForceWalk.
+        var runRate = forceWalk && !_running ? 0.0f : _creature.GetRunRate();
+
+        // MoveTo always turns to the destination's heading on arrival. Face along the leg being
+        // walked, so arriving doesn't add a turn toward whatever rotation the waypoint copied from home.
+        var dir = dest.ToGlobal() - _creature.Location.ToGlobal();
+        dir.Z = 0;
+        if (dir.LengthSquared() > 0.01f)
+        {
+            dest.Rotate(dir);
+        }
 
         // last parameter is optional "speed" override; keep null to use default weenie locomotion
         _creature.MoveTo(dest, runRate, true, null, null);
@@ -371,22 +494,13 @@ public sealed class PatrolComponent
         // After issuing a move, sample soon for stuck detection.
         _nextProgressSampleTime = currentUnixTime + 0.5;
     }
-    private void TryDetourOrSkip(double currentUnixTime)
+
+    /// <summary>
+    /// Nudges the patroller off whatever it's caught on, cycling through small detours. If none of that
+    /// gets it closer to its waypoint, the progress check in Update blips it there after BlipAfterSeconds.
+    /// </summary>
+    private void TryDetour(double currentUnixTime)
     {
-        // If we're already detouring and still stuck, abort this leg and continue patrol.
-        if (_detouring)
-        {
-            _currentDest = null;
-            _finalDest = null;
-
-            _stuckAttempts = 0;
-            _pauseOnArrivalSeconds = 0f;
-            _nextMoveTime = currentUnixTime + 0.25;
-            return;
-        }
-
-        _stuckAttempts++;
-
         (float x, float y)[] offsets =
         {
             ( 2.0f,  0.0f),
@@ -399,41 +513,47 @@ public sealed class PatrolComponent
             (-1.5f, -1.5f),
         };
 
-        if (_stuckAttempts <= offsets.Length)
-        {
-            var (ox, oy) = offsets[_stuckAttempts - 1];
+        var (ox, oy) = offsets[_stuckAttempts % offsets.Length];
+        _stuckAttempts++;
 
-            var detour = new Position(_creature.Location);
-            detour.PositionX = detour.Pos.X + ox;
-            detour.PositionY = detour.Pos.Y + oy;
+        var detour = BuildOutdoorPosition(_creature.Location, ox, oy, _creature.InstanceId);
 
-            detour.LandblockId = new LandblockId(detour.GetCell(_creature.InstanceId));
-            detour.PositionZ = detour.GetTerrainZ(_creature.InstanceId);
-            detour.LandblockId = new LandblockId(detour.GetCell(_creature.InstanceId));
+        _detouring = true;
+        _currentDest = detour;
 
-            _detouring = true;
-            _currentDest = detour;
+        // If we're stuck on top of/against an object, detach before trying the detour move.
+        _creature.PhysicsObj?.unstick_from_object();
 
-            // Never pause on detours.
-            _pauseOnArrivalSeconds = 0f;
+        IssueMove(detour, currentUnixTime);
 
-            // If we're stuck on top of/against an object, detach before trying the detour move.
-            _creature.PhysicsObj?.unstick_from_object();
+        _stuckSinceTime = currentUnixTime;
+        _lastSamplePos = new Position(_creature.Location);
+    }
 
-            IssueMove(detour, currentUnixTime);
-
-            _stuckSinceTime = currentUnixTime;
-            _lastSamplePos = new Position(_creature.Location);
-            return;
-
-        }
-
-        // Too many attempts: abandon this waypoint and continue patrol.
-        _currentDest = null;
-        _finalDest = null;
-
+    /// <summary>
+    /// The patroller is stuck short of its waypoint: blip onto it. FakeTeleport can't cross landblocks,
+    /// so a waypoint in another landblock is skipped instead (a shared route's timetable then catches up).
+    /// </summary>
+    private void BlipToWaypoint(double currentUnixTime)
+    {
         _detouring = false;
         _stuckAttempts = 0;
+        _lastSamplePos = null;
+        _bestDistToFinal = float.MaxValue;
+        _bestDistTime = currentUnixTime;
+
+        if (_finalDest != null && _finalDest.Landblock == _creature.Location.Landblock)
+        {
+            _creature.CancelMoveToForEmote();
+            _creature.FakeTeleport(_finalDest);
+
+            // arrives on the next update
+            _currentDest = _finalDest;
+            return;
+        }
+
+        _currentDest = null;
+        _finalDest = null;
         _pauseOnArrivalSeconds = 0f;
         _nextMoveTime = currentUnixTime + 0.25;
     }
