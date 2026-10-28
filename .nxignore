@@ -1,0 +1,3 @@
+# Claude Code worktrees are whole copies of this repo: without this Nx finds every project twice
+# (MultipleProjectsWithSameNameError), and the build's module boundary check fails
+.claude/worktrees/
