@@ -87,6 +87,7 @@ partial class Creature
     private bool TryRollSpell()
     {
         CurrentSpell = null;
+        CurrentSpellAlly = null;
 
         // monster spellbooks have probabilities with base 2.0
         // ie. a 5% chance would be 2.05 instead of 0.05
@@ -107,6 +108,42 @@ partial class Creature
             var probability = MagicFormulas.GetSpellbookCastChance(spell.Value);
 
             var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+            // a support spell (a heal or buff for another creature) is only cast when an ally in range needs it
+            if (IsSupportSpell(spell.Key))
+            {
+                if (spell.Value != 2.0f && rng >= probability)
+                {
+                    continue;
+                }
+
+                var supportSpell = new Spell(spell.Key);
+                var ally = FindSupportTarget(supportSpell);
+                if (ally == null)
+                {
+                    continue;
+                }
+
+                if (spell.Value == 2.0f)
+                {
+                    probability = GetSupportHealthCastChance(supportSpell, ally);
+                }
+
+                if (rng < probability)
+                {
+                    CurrentSpell = supportSpell;
+                    CurrentSpellAlly = ally;
+                    return true;
+                }
+
+                continue;
+            }
+
+            // any other beneficial spell for someone else would land on the monster's foe
+            if (IsAllyOnlySpell(spell.Key))
+            {
+                continue;
+            }
 
             // Simplified Ai-Acquire Health - place heals/drains at top of Spellbook with probability of 2, as health decreases prob of casting increases.
 
@@ -129,9 +166,23 @@ partial class Creature
     /// </summary>
     private float GetSpellMaxRange()
     {
-        var skill = GetMagicSkillForRangeCheck();
+        // a support spell is cast from where the monster stands, on an ally already in range: it doesn't close on its target
+        if (CurrentSpellAlly != null)
+        {
+            return float.PositiveInfinity;
+        }
 
-        var maxRange = CurrentSpell.GetMaxCastRange(skill);
+        return GetSpellRange(CurrentSpell);
+    }
+
+    /// <summary>
+    /// The maximum range of a spell for this monster, infinite for a spell without one
+    /// </summary>
+    private float GetSpellRange(Spell spell)
+    {
+        var skill = GetMagicSkillForRangeCheck(spell);
+
+        var maxRange = spell.GetMaxCastRange(skill);
 
         if (maxRange == 0.0f)
         {
@@ -170,6 +221,7 @@ partial class Creature
         }
 
         var spell = CurrentSpell;
+        var ally = CurrentSpellAlly;
 
         // turn to?
         if (AiUsesMana && !UseMana())
@@ -204,7 +256,7 @@ partial class Creature
                     return;
                 }
 
-                CastSpell(spell);
+                CastSpell(spell, ally);
 
                 PostCastMotion();
             }
@@ -225,7 +277,7 @@ partial class Creature
     private bool UseMana()
     {
         // do any monsters have mana conversion?
-        var target = GetSpellMaxRange() < float.PositiveInfinity ? AttackTarget : this;
+        var target = CurrentSpellAlly ?? (GetSpellMaxRange() < float.PositiveInfinity ? AttackTarget : this);
 
         var manaUsed = CalculateManaUsage(CurrentSpell, target, out var manaRefund);
 
@@ -321,11 +373,23 @@ partial class Creature
     }
 
     /// <summary>
-    /// Casts the current monster spell on target
+    /// Casts the current monster spell on target, or a support spell on the ally it was rolled for
     /// </summary>
-    public void CastSpell(Spell spell)
+    public void CastSpell(Spell spell, Creature ally = null)
     {
         if (AttackTarget == null)
+        {
+            return;
+        }
+
+        if (ally != null)
+        {
+            CastSupportSpell(spell, ally);
+            return;
+        }
+
+        // never buff or heal a foe
+        if (IsAllyOnlySpell((int)spell.Id))
         {
             return;
         }
@@ -485,14 +549,23 @@ partial class Creature
     /// (initial points + points due to directly raising the skill)
     /// </summary>
     /// <returns></returns>
-    private uint GetMagicSkillForRangeCheck()
+    private uint GetMagicSkillForRangeCheck(Spell spell)
     {
-        var skill = GetCreatureSkill(CurrentSpell.School);
+        var skill = GetCreatureSkill(spell.School);
 
         // verify this - should it be using base?
         // seems like it could be off, player formula uses current + cap?
 
-        return skill.InitLevel + skill.Ranks;
+        var level = skill.InitLevel + skill.Ranks;
+
+        // most monsters have no Item or Creature magic: they cast a support spell from those schools at their Life Magic range
+        if (level == 0 && spell.School != MagicSchool.LifeMagic && IsSupportSpell(spell))
+        {
+            var lifeMagic = GetCreatureSkill(Skill.LifeMagic);
+            level = lifeMagic.InitLevel + lifeMagic.Ranks;
+        }
+
+        return level;
     }
 
     public void TryHandleFactionMob(WorldObject target)
