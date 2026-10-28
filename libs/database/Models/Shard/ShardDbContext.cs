@@ -99,6 +99,10 @@ public partial class ShardDbContext : DbContext
 
     public virtual DbSet<CapstoneRunMember> CapstoneRunMembers { get; set; }
 
+    public virtual DbSet<TownEventLog> TownEventLogs { get; set; }
+
+    public virtual DbSet<TownEventLogParticipant> TownEventLogParticipants { get; set; }
+
     public virtual DbSet<AccountQuestRegistry> AccountQuestRegistry { get; set; }
 
     public DbSet<ResonanceZoneRow> ResonanceZoneEntries { get; set; }
@@ -1460,6 +1464,74 @@ public partial class ShardDbContext : DbContext
                 .HasForeignKey(e => e.RunId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("fk_capstone_run_member_run");
+        });
+
+        modelBuilder.Entity<TownEventLog>(entity =>
+        {
+            entity.ToTable("town_event");
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.HasIndex(e => e.Uid, "idx_town_event_uid").IsUnique();
+            entity.HasIndex(e => new { e.Town, e.EndedAtUtc }, "idx_town_event_town");
+            entity.HasIndex(e => e.EndedAtUtc, "idx_town_event_ended");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Uid).HasColumnName("uid").HasMaxLength(32);
+            entity.Property(e => e.Town).HasColumnName("town").HasMaxLength(40);
+            entity.Property(e => e.Tier).HasColumnName("tier");
+            entity.Property(e => e.StartedBy).HasColumnName("started_by").HasMaxLength(10);
+            entity.Property(e => e.Outcome).HasColumnName("outcome").HasMaxLength(10);
+            entity.Property(e => e.Family).HasColumnName("family").HasMaxLength(60);
+            entity.Property(e => e.MinorFamily).HasColumnName("minor_family").HasMaxLength(60);
+            entity.Property(e => e.Roads).HasColumnName("roads").HasMaxLength(100);
+            entity.Property(e => e.ChestRaid).HasColumnName("chest_raid");
+            entity.Property(e => e.ChestLootedPercent).HasColumnName("chest_looted_percent");
+            entity.Property(e => e.SupplyLevelStart).HasColumnName("supply_level_start");
+            entity.Property(e => e.SupplyLevelEnd).HasColumnName("supply_level_end");
+            entity.Property(e => e.WavesReached).HasColumnName("waves_reached");
+            entity.Property(e => e.WaveCount).HasColumnName("wave_count");
+            entity.Property(e => e.AttackersSpawned).HasColumnName("attackers_spawned");
+            entity.Property(e => e.Participants).HasColumnName("participants");
+            entity.Property(e => e.Rewarded).HasColumnName("rewarded");
+            entity.Property(e => e.WarlordPyreals).HasColumnName("warlord_pyreals");
+            entity.Property(e => e.WarlordPaid).HasColumnName("warlord_paid");
+            entity.Property(e => e.StartedAtUtc).HasColumnName("started_at_utc");
+            entity.Property(e => e.EndedAtUtc).HasColumnName("ended_at_utc");
+            entity.Property(e => e.DurationSeconds).HasColumnName("duration_seconds");
+        });
+
+        modelBuilder.Entity<TownEventLogParticipant>(entity =>
+        {
+            entity.ToTable("town_event_participant");
+            entity.HasKey(e => new { e.EventId, e.CharacterId }).HasName("PRIMARY");
+            entity.HasIndex(e => e.CharacterId, "idx_town_event_participant_character");
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+            entity.Property(e => e.CharacterId).HasColumnName("character_id");
+            entity.Property(e => e.CharacterName).HasColumnName("character_name").HasMaxLength(50);
+            entity.Property(e => e.Level).HasColumnName("level");
+            entity.Property(e => e.MemberAtEnd).HasColumnName("member_at_end");
+            entity.Property(e => e.Damage).HasColumnName("damage");
+            entity.Property(e => e.Healing).HasColumnName("healing");
+            entity.Property(e => e.DamageTaken).HasColumnName("damage_taken");
+            entity.Property(e => e.KillingBlows).HasColumnName("killing_blows");
+            entity.Property(e => e.RankDamage).HasColumnName("rank_damage");
+            entity.Property(e => e.RankHealing).HasColumnName("rank_healing");
+            entity.Property(e => e.RankDamageTaken).HasColumnName("rank_damage_taken");
+            entity.Property(e => e.RankKillingBlows).HasColumnName("rank_killing_blows");
+            entity.Property(e => e.CategoriesTopped).HasColumnName("categories_topped");
+            entity.Property(e => e.OverLevelKills).HasColumnName("over_level_kills");
+            entity.Property(e => e.PromptsRefused).HasColumnName("prompts_refused");
+            entity.Property(e => e.KillsAfterRefusal).HasColumnName("kills_after_refusal");
+            entity.Property(e => e.CreditLost).HasColumnName("credit_lost");
+            entity.Property(e => e.Reward).HasColumnName("reward").HasMaxLength(10);
+            entity.Property(e => e.RewardMod).HasColumnName("reward_mod");
+            entity.Property(e => e.Xp).HasColumnName("xp");
+            entity.Property(e => e.WarlordPyreals).HasColumnName("warlord_pyreals");
+            entity.Property(e => e.ClaimedAtUtc).HasColumnName("claimed_at_utc");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(r => r.Participations)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_town_event_participant_event");
         });
 
         modelBuilder.Entity<AccountQuestRegistry>(entity =>
