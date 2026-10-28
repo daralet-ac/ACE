@@ -338,6 +338,17 @@ public partial class Creature : Container
 
             ApplyDungeonMods(ref toughness, ref lethality, ref healthMultiplier, ref skillMultiplier);
 
+            // a town event variant (a Raider, a leader), and a leader's scaling for its town's supply level
+            healthMultiplier *= TownEventHealthMod;
+            lethality *= TownEventLethalityMod;
+
+            toughness *= TownEventArchetypeMods.Toughness;
+            physicality *= TownEventArchetypeMods.Physicality;
+            dexterity *= TownEventArchetypeMods.Dexterity;
+            magic = Math.Max(magic, TownEventMinMagic) * TownEventArchetypeMods.Magic;
+            intelligence *= TownEventArchetypeMods.Intelligence;
+            lethality *= TownEventArchetypeMods.Lethality;
+
             SetSkills(tier, statWeight, toughness, physicality, dexterity, magic, intelligence);
 
             SetVitals(tier, statWeight, toughness, physicality, dexterity, magic);

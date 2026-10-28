@@ -19,6 +19,7 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
 using MarketBroker = ACE.Server.Market.MarketBroker;
+using TownCaptain = ACE.Server.TownEvents.TownCaptain;
 
 namespace ACE.Server.WorldObjects;
 
@@ -5555,6 +5556,12 @@ partial class Player
             Session.Network.EnqueueSend(
                 new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.TradeItemBeingTraded)
             );
+            return;
+        }
+
+        if (TownCaptain.IsCaptain(target))
+        {
+            GiveToTownCaptain(target, item, itemFoundInContainer, itemRootOwner, itemWasEquipped, amount);
             return;
         }
 

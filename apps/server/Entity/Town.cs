@@ -111,6 +111,67 @@ public class Town
         return tier;
     }
 
+    /// <summary>
+    /// Every town GetNearestTown can answer with
+    /// </summary>
+    public static IEnumerable<string> TownNames => TownPositions.Keys;
+
+    /// <summary>
+    /// The town's centre in global coordinates (meters from the map's south-west corner), or null for an unknown town
+    /// </summary>
+    public static Vector2? GetTownCenterGlobal(string townName)
+    {
+        if (!TownPositions.TryGetValue(townName, out var mapCoords))
+        {
+            return null;
+        }
+
+        return (mapCoords + Vector2.One * 102) * 240;
+    }
+
+    /// <summary>
+    /// The landblock the town's centre is in
+    /// </summary>
+    public static LandblockId GetTownCenterLandblock(string townName) =>
+        new LandblockId(MapCoordsToLandblockId(TownPositions[townName]));
+
+    /// <summary>
+    /// The highest level a town's tier is for, by the same level bands GetCreatureTier uses for creatures (tier 0: up to 9,
+    /// tier 1: up to 19 ... tier 5: up to 74, tier 6: up to 99)
+    /// </summary>
+    public static int GetTownMaxLevel(string townName)
+    {
+        return GetTownTier(townName) switch
+        {
+            0 => 9,
+            1 => 19,
+            2 => 29,
+            3 => 39,
+            4 => 49,
+            5 => 74,
+            6 => 99,
+            _ => int.MaxValue
+        };
+    }
+
+    /// <summary>
+    /// The lowest level of a town's tier band (0 for tier 0)
+    /// </summary>
+    public static int GetTownMinLevel(string townName)
+    {
+        return GetTownTier(townName) switch
+        {
+            0 => 0,
+            1 => 10,
+            2 => 20,
+            3 => 30,
+            4 => 40,
+            5 => 50,
+            6 => 75,
+            _ => 100
+        };
+    }
+
     private static readonly Dictionary<string, Vector2> TownPositions = new ()
     {
         {"Al-Arqas", new Vector2(13.7f, -31.2f) },
@@ -119,7 +180,7 @@ public class Town
         {"Baishi", new Vector2(62.9f, -49.3f) },
         {"Bandit Castle", new Vector2(50.0f, 66.5f) },
         {"Bluespire", new Vector2(-75.4f, 39.4f) },
-        {"Cragstone", new Vector2(49.1f, -26.0f) },
+        {"Cragstone", new Vector2(49.1f, 26.0f) },
         {"Crater", new Vector2(13.5f, 64.9f) },
         {"Danby's Outpost", new Vector2(-28.7f, 23.4f) },
         {"Dryreach", new Vector2(73.0f, -8.1f) },

@@ -5,6 +5,7 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.WorldObjects;
 
+using ACE.Server.TownEvents;
 namespace ACE.Server.Entity;
 
 /// <summary>
@@ -115,6 +116,8 @@ public class DamageHistory
         AddInternal(attacker, amount);
 
         Creature.OnHealthUpdate();
+
+        TownEventManager.OnDamage(Creature, attacker, amount);
 
         if (!Creature.StruckByUnshrouded)
         {

@@ -20,6 +20,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using MarketBroker = ACE.Server.Market.MarketBroker;
+using TownCaptain = ACE.Server.TownEvents.TownCaptain;
 using Serilog;
 
 namespace ACE.Server.WorldObjects.Managers;
@@ -3873,6 +3874,11 @@ public class EmoteManager
         {
             MarketBroker.SendHelp(player);
         }
+
+        if (activator is Player captainUser && TownCaptain.IsCaptain(WorldObject))
+        {
+            TownCaptain.OnUse(captainUser, WorldObject);
+        }
     }
 
 
@@ -4018,6 +4024,11 @@ public class EmoteManager
         if (MarketBroker.IsMarketBroker(WorldObject))
         {
             MarketBroker.HandleTalkDirect(player, WorldObject, message);
+        }
+
+        if (TownCaptain.IsCaptain(WorldObject))
+        {
+            TownCaptain.OnTalkDirect(player, WorldObject, message);
         }
     }
 

@@ -798,6 +798,7 @@ public static class DefaultPropertyManager
         ("suicide_instant_death", new Property<bool>(false, "if enabled, @die command kills player instantly. defaults to disabled, as in retail")),
         ("taboo_table", new Property<bool>(true, "if enabled, taboo table restricts player names during character creation")),
         ("tailoring_intermediate_uieffects", new Property<bool>(false, "If true, tailoring intermediate icons retain the magical/elemental highlight of the original item")),
+        ("town_events_enabled", new Property<bool>(false, "(non-retail function) If enabled, players questing and hunting around a town stir up unrest there, and once a town's unrest passes its threshold the town may come under attack (TownEventManager). Turning it off starts no new attacks; @townevent start still does, for testing")),
         ("trajectory_alt_solver", new Property<bool>(false, "use the alternate trajectory solver for missiles and spell projectiles")),
         ("universal_masteries", new Property<bool>(true, "if TRUE, matches end of retail masteries - players wielding almost any weapon get +5 DR, except if the weapon \"seems tough to master\". " +
                                                          "" + "if FALSE, players start with mastery of 1 melee and 1 ranged weapon type based on heritage, and can later re-select these 2 masteries")),
@@ -918,7 +919,8 @@ public static class DefaultPropertyManager
         ("mana_cost_multiplier", new Property<double>(1.0, "scales mana costs for spells")),
         ("player_spell_damage_multiplier", new Property<double>(1.0, "scales damage for player spells")),
         ("monster_spell_damage_multiplier", new Property<double>(1.0, "scales damage for monster spells")),
-        ("heal_spell_multiplier", new Property<double>(1.0, "scales the health restored by heal spells")));
+        ("heal_spell_multiplier", new Property<double>(1.0, "scales the health restored by heal spells")),
+        ("town_events_base_threshold", new Property<double>(150, "(non-retail function) The unrest a town needs before it can be attacked (TownEventManager). Each town's threshold is rolled between this and double it, after every attack, then lowered 5% for each guard supply level. A change counts at once, keeping each town's roll")));
 
     public static readonly ReadOnlyDictionary<string, Property<string>> DefaultStringProperties = DictOf(
         ("content_folder", new Property<string>("Content", "for content creators to live edit weenies. defaults to Content folder found in same directory as ACE.Server.dll")),
@@ -931,6 +933,7 @@ public static class DefaultPropertyManager
         ("popup_motd", new Property<string>("", "Popup message of the day")),
         ("proxycheck_api_key", new Property<string>("", "optional proxycheck.io API key used when block_vpn_connections is enabled. Without a key, proxycheck.io allows a limited number of lookups per day")),
         ("server_motd", new Property<string>("", "Server message of the day")),
+        ("town_events_supply", new Property<string>("", "(non-retail function) Every town's guard supply for town events, as JSON, kept by the server (TownSupply). Set a town's with @townevent supply rather than editing this")),
         ("vpn_account_whitelist", new Property<string>("", "comma separated list of account names that are allowed to connect from a VPN / proxy when block_vpn_connections is enabled"))
     );
 }

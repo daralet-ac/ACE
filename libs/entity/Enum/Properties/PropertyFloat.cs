@@ -544,6 +544,12 @@ public enum PropertyFloat : ushort
     /// Seconds left on an @freeze. Saved so logging out doesn't end the freeze early.
     /// </summary>
     AdminFreezeDuration = 20055,
+
+    /// <summary>
+    /// Seconds left on the XP buff a donation to a town's Captain of the Guard gives. Saved, and counted down only while
+    /// the player is online.
+    /// </summary>
+    TownDonorXpBuffDuration = 20056,
 }
 
 public static class PropertyFloatExtensions

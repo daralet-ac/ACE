@@ -8,7 +8,7 @@ public class GameEventFellowshipUpdateFellow : GameEventMessage
 {
     public GameEventFellowshipUpdateFellow(
         Session session,
-        Player player,
+        Creature player,
         bool shareLoot,
         FellowUpdateType fellowUpdateType = FellowUpdateType.Full
     )

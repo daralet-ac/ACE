@@ -1644,23 +1644,27 @@ partial class Player
         }
         else
         {
-            var spell = new Spell((int)SpellId.Shrouded);
-            var addResult = EnchantmentManager.Add(spell, null, null, true);
-            Session.Network.EnqueueSend(
-                new GameEventMagicUpdateEnchantment(
-                    Session,
-                    new Enchantment(this, addResult.Enchantment)
-                )
-            );
-            HandleSpellHooks(spell);
-            PlayParticleEffect(PlayScript.SkillDownVoid, Guid);
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"You activate the crystal, shrouding yourself and reducing your innate power.",
-                    ChatMessageType.Broadcast
-                )
-            );
+            ApplyShroud("You activate the crystal, shrouding yourself and reducing your innate power.");
         }
+    }
+
+    /// <summary>
+    /// Shrouds the player, as a Stone of Shrouding does (and joining a Town Defense fellowship over its town's level)
+    /// </summary>
+    public void ApplyShroud(string message)
+    {
+        var spell = new Spell((int)SpellId.Shrouded);
+        var addResult = EnchantmentManager.Add(spell, null, null, true);
+        Session.Network.EnqueueSend(
+            new GameEventMagicUpdateEnchantment(
+                Session,
+                new Enchantment(this, addResult.Enchantment)
+            )
+        );
+        HandleSpellHooks(spell);
+        PlayParticleEffect(PlayScript.SkillDownVoid, Guid);
+        Fellowship?.OnFellowShroudChanged();
+        Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.Broadcast));
     }
 
     private bool VerifyCombatFocus(CombatAbility combatAbility)

@@ -32,6 +32,11 @@ partial class Player
 
     public void HandleActionFellowshipChangeOpenness(bool openness)
     {
+        if (RefuseTownDefenseAction("change who can recruit into"))
+        {
+            return;
+        }
+
         if (Fellowship != null)
         {
             if (Guid.Full != Fellowship.FellowshipLeaderGuid)
@@ -61,6 +66,11 @@ partial class Player
 
     public void FellowshipQuit(bool disband)
     {
+        if (disband && RefuseTownDefenseAction("disband"))
+        {
+            return;
+        }
+
         if (disband)
         {
             foreach (var member in Fellowship.GetFellowshipMembers())
@@ -89,6 +99,11 @@ partial class Player
 
     public void FellowshipDismissPlayer(uint dismissGuid)
     {
+        if (RefuseTownDefenseAction("dismiss anyone from"))
+        {
+            return;
+        }
+
         if (Fellowship == null)
         {
             return;
@@ -120,6 +135,11 @@ partial class Player
 
     public void FellowshipRecruit(Player newPlayer)
     {
+        if (RefuseTownDefenseAction("recruit into"))
+        {
+            return;
+        }
+
         if (newPlayer == null)
         {
             return;
@@ -163,6 +183,11 @@ partial class Player
 
     public void FellowshipNewLeader(uint newLeaderGuid)
     {
+        if (RefuseTownDefenseAction("pass the lead of"))
+        {
+            return;
+        }
+
         if (Fellowship == null || Guid.Full == newLeaderGuid)
         {
             return;
@@ -195,6 +220,27 @@ partial class Player
         }
 
         Fellowship.AssignNewLeader(this, newLeader);
+    }
+
+    /// <summary>
+    /// A Town Defense fellowship can only be left: TownEventManager adds its members and disbands it. Tells the player
+    /// and returns true if they're in one.
+    /// </summary>
+    /// <param name="action">What they tried to do, to finish "You can't ... the Town Defense"</param>
+    private bool RefuseTownDefenseAction(string action)
+    {
+        if (Fellowship is not { IsTownDefense: true })
+        {
+            return false;
+        }
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"You can't {action} the Town Defense. You can only leave it, and it disbands when the attack is over.",
+                ChatMessageType.Broadcast
+            )
+        );
+        return true;
     }
 
     public bool FellowshipPanelOpen { get; set; }

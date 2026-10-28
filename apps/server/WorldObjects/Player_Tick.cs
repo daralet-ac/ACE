@@ -373,6 +373,8 @@ partial class Player
 
         AdminFreezeTick();
 
+        TownDonorXpBuffTick();
+
         ClosePlayerUiContainerOutOfReach();
 
         PhysicsObj.ObjMaint.DestroyObjects();

@@ -49,6 +49,13 @@ public static partial class LfgManager
         var rest = words.Where(w => !string.IsNullOrWhiteSpace(w)).ToList();
         var first = rest.Count > 0 ? rest[0].ToLowerInvariant() : "";
 
+        // TownEventManager alone adds members to a Town Defense fellowship
+        if (lfm && player.Fellowship is { IsTownDefense: true })
+        {
+            Tell(player, "The Town Defense takes its defenders from the town itself, so it can't look for more.");
+            return;
+        }
+
         // inviting is the game's own, so it works whether or not looking for group is turned on
         if (lfm && first == "invite" && rest.Count > 1)
         {
