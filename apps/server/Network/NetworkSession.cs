@@ -119,6 +119,16 @@ public class NetworkSession
     }
 
     /// <summary>
+    /// The network side of a session with no client behind it (a fake player's, FakePlayerManager): released from the
+    /// start, so everything sent to it is dropped
+    /// </summary>
+    public NetworkSession(Session session)
+    {
+        this.session = session;
+        isReleased = true;
+    }
+
+    /// <summary>
     /// Enequeues a GameMessage for sending to this client.
     /// This may be called from many threads.
     /// </summary>

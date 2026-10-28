@@ -11,11 +11,14 @@ using ACE.Entity.Models;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Factories;
 
 public static class PlayerFactoryEx
 {
+    private static readonly ILogger _log = Log.ForContext(typeof(PlayerFactoryEx));
+
     private static readonly Random rand = new Random();
 
     /// <summary>
@@ -483,6 +486,28 @@ public static class PlayerFactoryEx
         characterCreateInfo.Appearance.Mouth = (uint)rand.Next(0, sex.MouthStripList.Count);
 
         // todo randomize skin
+    }
+
+    /// <summary>
+    /// A new character of a random heritage and look, for a fake player (FakePlayerManager); null if it couldn't be made
+    /// </summary>
+    public static Player CreateFake(Weenie weenie, ObjectGuid guid, uint accountId, string name)
+    {
+        var characterCreateInfo = CreateCharacterCreateInfo(name, 100, 10, 100, 100, 10, 10);
+
+        // a fake player doesn't need skills, and the Gear Knight's trained skills can't be paid for by every heritage. The
+        // saved Gear Knight also has fewer skills than the 50 a character is created with, so the whole list is replaced.
+        characterCreateInfo.SkillAdvancementClasses = Enumerable.Repeat(SkillAdvancementClass.Inactive, 50).ToList();
+
+        var result = PlayerFactory.Create(characterCreateInfo, weenie, guid, accountId, WeenieType.Creature, out var player);
+
+        if (result != PlayerFactory.CreateResult.Success)
+        {
+            _log.Warning("[FAKE PLAYER] {Name} ({Heritage}) couldn't be made: {Result}", name, characterCreateInfo.Heritage, result);
+            return null;
+        }
+
+        return player;
     }
 
     /// <summary>

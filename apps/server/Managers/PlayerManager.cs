@@ -549,6 +549,36 @@ public static class PlayerManager
     }
 
     /// <summary>
+    /// Puts a fake player (FakePlayerManager) online. It never has an offline record, by name or by account, since it
+    /// was never saved and is gone once removed.
+    /// </summary>
+    public static bool AddFakePlayer(Player player)
+    {
+        playersLock.EnterWriteLock();
+        try
+        {
+            return onlinePlayers.TryAdd(player.Guid.Full, player);
+        }
+        finally
+        {
+            playersLock.ExitWriteLock();
+        }
+    }
+
+    public static void RemoveFakePlayer(Player player)
+    {
+        playersLock.EnterWriteLock();
+        try
+        {
+            onlinePlayers.Remove(player.Guid.Full);
+        }
+        finally
+        {
+            playersLock.ExitWriteLock();
+        }
+    }
+
+    /// <summary>
     /// Called when a character is initially deleted on the character select screen
     /// </summary>
     public static void HandlePlayerDelete(uint characterGuid)
