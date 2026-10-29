@@ -49,7 +49,7 @@ public static class PlayerUiData
             fellowship.EvenShare,
             fellowship.IsLocked,
             members,
-            fellowship.MaxMembers
+            Fellowship.MaxFellows
         );
     }
 

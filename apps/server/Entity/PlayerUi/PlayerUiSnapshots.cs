@@ -12,8 +12,8 @@ namespace ACE.Server.Entity.PlayerUi;
 public record PlayerUiHello(int Protocol, string Name, uint Guid, string[] Kinds);
 
 /// <summary>
-/// The player's fellowship. Leader is the leader's guid. MaxMembers is how many it can hold (Fellowship.MaxMembers: no
-/// cap for a Town Defense fellowship, sent as int.MaxValue).
+/// The player's fellowship. Leader is the leader's guid. MaxMembers is how many it can hold (Fellowship.MaxFellows; a
+/// fellowship with no cap would send int.MaxValue, which the plugin reads as no cap).
 /// </summary>
 public record PlayerUiFellowship(
     string Name,
