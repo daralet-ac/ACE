@@ -933,7 +933,8 @@ public static class DefaultPropertyManager
         ("popup_motd", new Property<string>("", "Popup message of the day")),
         ("proxycheck_api_key", new Property<string>("", "optional proxycheck.io API key used when block_vpn_connections is enabled. Without a key, proxycheck.io allows a limited number of lookups per day")),
         ("server_motd", new Property<string>("", "Server message of the day")),
-        ("town_events_supply", new Property<string>("", "(non-retail function) Every town's guard supply for town events, as JSON, kept by the server (TownSupply). Set a town's with @townevent supply rather than editing this")),
+        ("town_events_unrest", new Property<string>("", "(non-retail function) Every town's unrest for town events, its threshold roll and its cooldown, as JSON, kept by the server (TownEventManager) so a restart doesn't reset them. Set a town's with @townevent unrest rather than editing this")),
+        ("town_events_supply", new Property<string>("","(non-retail function) Every town's guard supply for town events, as JSON, kept by the server (TownSupply). Set a town's with @townevent supply rather than editing this")),
         ("vpn_account_whitelist", new Property<string>("", "comma separated list of account names that are allowed to connect from a VPN / proxy when block_vpn_connections is enabled"))
     );
 }

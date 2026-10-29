@@ -66,7 +66,7 @@ public partial class CombatPet : Pet
     {
         var creature = AttackTarget as Creature;
 
-        if (creature == null || creature.IsDead || !IsVisibleTarget(creature))
+        if (creature == null || creature.IsDead || !IsVisibleTarget(creature) || creature.TownEventIgnores(this))
         {
             FindNextTarget(false);
         }
@@ -110,6 +110,12 @@ public partial class CombatPet : Pet
             if (creature.IsDead || !creature.Attackable || creature.Visibility)
             {
                 //Console.WriteLine($"{Name}.GetNearbyMonsters(): refusing to add dead creature {creature.Name} ({creature.Guid})");
+                continue;
+            }
+
+            // a town event attacker is only for the Town Defense, and the pets of its members
+            if (creature.TownEventIgnores(this))
+            {
                 continue;
             }
 

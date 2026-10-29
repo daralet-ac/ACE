@@ -3833,6 +3833,22 @@ partial class WorldObject
         }
     }
 
+    public int? UseRequiresMaxLevel
+    {
+        get => GetProperty(PropertyInt.UseRequiresMaxLevel);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.UseRequiresMaxLevel);
+            }
+            else
+            {
+                SetProperty(PropertyInt.UseRequiresMaxLevel, value.Value);
+            }
+        }
+    }
+
     public int? UseRequiresSkill
     {
         get => GetProperty(PropertyInt.UseRequiresSkill);

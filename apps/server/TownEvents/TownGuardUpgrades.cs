@@ -25,11 +25,44 @@ namespace ACE.Server.TownEvents;
 /// </summary>
 public static class TownGuardUpgrades
 {
+    private static readonly Serilog.ILogger _log = Serilog.Log.ForContext(typeof(TownGuardUpgrades));
+
     // the colours, as decided in the design doc for platemail, scalemail and yoroi. A clothing table without one of these
     // palettes falls back to its first, so an odd kit piece shows its own default colour rather than nothing.
     private static readonly (PaletteTemplate Palette, double Shade) Bronze = (PaletteTemplate.Copper, 0.49);
     private static readonly (PaletteTemplate Palette, double Shade) BrightSilver = (PaletteTemplate.Silver, 0.943);
     private static readonly (PaletteTemplate Palette, double Shade) Gold = (PaletteTemplate.Gold, 0.49);
+
+    /// <summary>
+    /// The level 40 kits, which have their own colours (bronze, silver, gold): Celdon dark silver with bronze, white and gold
+    /// trim, Koujia bronze, silver and gold with black, and Amuli bronze, silver and gold with blue shoulders
+    /// </summary>
+    public enum KitStyle
+    {
+        Standard,
+        Celdon,
+        Koujia,
+        Amuli
+    }
+
+    private static readonly Dictionary<KitStyle, (PaletteTemplate Palette, double Shade)[]> KitColors = new()
+    {
+        { KitStyle.Standard, new[] { Bronze, BrightSilver, Gold } },
+        { KitStyle.Celdon, new[] { (PaletteTemplate.Black, 0.636), (PaletteTemplate.Black, 1.0), (PaletteTemplate.Silver, 0.236) } },
+        { KitStyle.Koujia, new[] { (PaletteTemplate.Copper, 0.746), (PaletteTemplate.Silver, 0.718), (PaletteTemplate.Gold, 0.718) } },
+        { KitStyle.Amuli, new[] { (PaletteTemplate.Copper, 0.619), (PaletteTemplate.Silver, 0.239), (PaletteTemplate.Gold, 0.239) } },
+    };
+
+    // a kit's own pieces, which tell which it is (the helmet, gauntlets, sollerets and turban are shared with other kits)
+    private static readonly Dictionary<uint, KitStyle> KitPieces = new()
+    {
+        { 6043, KitStyle.Celdon }, { 6044, KitStyle.Celdon }, { 6045, KitStyle.Celdon }, { 6048, KitStyle.Celdon },
+        { 6003, KitStyle.Koujia }, { 6004, KitStyle.Koujia }, { 6005, KitStyle.Koujia },
+        { 6046, KitStyle.Amuli }, { 6047, KitStyle.Amuli },
+    };
+
+    public static KitStyle GetKitStyle(IEnumerable<uint> kitWcids) =>
+        kitWcids.Select(w => KitPieces.TryGetValue(w, out var style) ? style : KitStyle.Standard).FirstOrDefault(s => s != KitStyle.Standard);
 
     private const double WeaponShade = 0.5;
 
@@ -50,14 +83,15 @@ public static class TownGuardUpgrades
     };
 
     /// <summary>
-    /// The kit's colour at a supply level: none at 0 (the chainmail is worn), bronze from 1, bright silver from 3, gold from 5
+    /// The kit's colour at a supply level: none at 0 (the chainmail is worn), bronze from 1, silver from 3, gold from 5, in
+    /// the kit's own colours
     /// </summary>
-    public static (PaletteTemplate Palette, double Shade)? GetArmorColor(int level) =>
+    public static (PaletteTemplate Palette, double Shade)? GetArmorColor(int level, KitStyle style = KitStyle.Standard) =>
         level switch
         {
-            >= 5 => Gold,
-            >= 3 => BrightSilver,
-            >= 1 => Bronze,
+            >= 5 => KitColors[style][2],
+            >= 3 => KitColors[style][1],
+            >= 1 => KitColors[style][0],
             _ => null
         };
 
@@ -187,15 +221,22 @@ public static class TownGuardUpgrades
     private static readonly ConditionalWeakTable<WorldObject, Tuple<int?, double?>> OriginalColor = new();
 
     /// <summary>
-    /// Dresses every loaded guard of the town that isn't dressed for its supply level yet. Call on the world thread; the
-    /// dressing itself runs on each guard's landblock.
+    /// Dresses every loaded guard of the town, and its Captain of the Guard, that isn't dressed for its supply level yet.
+    /// Call on the world thread; the dressing itself runs on each guard's landblock.
     /// </summary>
     public static void Refresh(string town, bool force = false)
     {
         var level = TownSupply.GetLevel(town);
         var tier = Town.GetTownTier(town);
 
-        foreach (var guard in TownGeography.FindGuards(town))
+        var guards = TownGeography.FindGuards(town);
+        var captain = TownCaptain.Find(town);
+        if (captain != null && !guards.Contains(captain))
+        {
+            guards.Add(captain);
+        }
+
+        foreach (var guard in guards)
         {
             if (!force && DressedFor.TryGetValue(guard, out var dressed) && dressed.Level == level)
             {
@@ -205,6 +246,41 @@ public static class TownGuardUpgrades
             var chain = new ActionChain();
             chain.AddAction(guard, () => Dress(guard, level, tier));
             chain.EnqueueChain();
+        }
+    }
+
+    /// <summary>
+    /// Dresses a town guard, or Captain of the Guard, for its town's supply level as it enters the world, so it's seen dressed from the start. Dressed
+    /// later, the swap and recolour are sent to the players nearby, and a player still loading in (through a portal) can
+    /// get an update for a wielded item their client hasn't made yet, which crashes it. Call before it enters the world;
+    /// the 10-second sweep (Refresh) dresses any guard this misses, and dresses this one again for its stats.
+    /// </summary>
+    public static void DressOnSpawn(Creature guard)
+    {
+        if (guard is Player || !(guard.HasPatrol || guard.IsTownCaptain) || guard.Location == null)
+        {
+            return;
+        }
+
+        try
+        {
+            var town = Town.GetNearestTown(guard);
+            if (TownGeography.DistanceToCenter(town, guard.Location) > TownGeography.GuardSearchRadius)
+            {
+                return;
+            }
+
+            Dress(guard, TownSupply.GetLevel(town), Town.GetTownTier(town));
+
+            // the archetype system sets its ward once it's in the world: the sweep dresses it again then, to scale that ward,
+            // with nothing left to show
+            DressedFor.Remove(guard);
+            OriginalWard.Remove(guard);
+        }
+        catch (Exception ex)
+        {
+            // the supply is kept on the world thread, and this runs on the guard's landblock: the sweep dresses it instead
+            _log.Warning(ex, "[TOWN EVENT] Couldn't dress {Guard} as it spawned", guard.Name);
         }
     }
 
@@ -306,7 +382,7 @@ public static class TownGuardUpgrades
             }
         }
 
-        var kitColor = GetArmorColor(level);
+        var kitColor = GetArmorColor(level, GetKitStyle(kit.Select(k => k.WeenieClassId)));
         foreach (var item in kit)
         {
             var original = OriginalColor.GetValue(item, i => Tuple.Create(i.PaletteTemplate, i.Shade));

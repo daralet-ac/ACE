@@ -57,7 +57,7 @@ partial class Creature
                 NextMonsterTargetScanTime = currentUnixTime + monsterTargetScanInterval;
             }
 
-            if (IsFactionMob || HasFoeType)
+            if ((IsFactionMob || HasFoeType) && !IsTownCaptain)
             {
                 FactionMob_CheckMonsters();
             }
@@ -115,8 +115,9 @@ partial class Creature
             PatrolResetDestination();
         }
         // Patrol: prevent getting stuck targeting a dead creature (required so patrol can resume)
-        // A town event attacker does the same, so it can march on
-        if ((HasPatrol || TownEvent != null) && AttackTarget is Creature at && at.IsDead)
+        // A town event attacker does the same, so it can march on, and drops anyone outside the Town Defense (however it
+        // came to target them: an alert, an appraisal, a player who left the fellowship)
+        if ((HasPatrol || TownEvent != null) && AttackTarget is Creature at && (at.IsDead || TownEventIgnores(at)))
         {
             AttackTarget = null;
             CurrentAttack = null;
@@ -199,7 +200,8 @@ partial class Creature
         }
 
         if (
-            creatureTarget != null && (creatureTarget.IsDead || (combatPet == null && !TownCaptainOnDuty && !IsVisibleTarget(creatureTarget)))
+            creatureTarget != null
+                && (creatureTarget.IsDead || (combatPet == null && !TownCaptainOnDuty && !IsVisibleTarget(creatureTarget) && !IsTownEventGuardTarget(creatureTarget)))
             || (playerTarget != null && playerTarget.IsStealthed)
         )
         {

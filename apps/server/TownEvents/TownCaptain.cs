@@ -31,6 +31,12 @@ public static class TownCaptain
     public const double DonorBuffSeconds = 60 * 60;
     public const double DonorBuffMinimumShareOfLevelOne = 1.0;
 
+    // a Supply Requisition (the Commendation Quartermaster's, for 1 token) adds this much to the supply of the town whose
+    // Captain it's given to: twice a 1,000 trade note's worth, so tokens spent on a town go further than pyreals. It doesn't
+    // count toward Guard's Gratitude, which a Writ of Gratitude buys instead.
+    public const uint SupplyRequisitionWcid = 1057553;
+    public const long SupplyPerRequisition = 2000;
+
     // the Captain counts as the town's this far from its centre
     private const float CaptainSearchRadius = 300f;
 
@@ -53,6 +59,12 @@ public static class TownCaptain
     /// <summary>
     /// The least donation that earns the donor buff in this town
     /// </summary>
+    /// <summary>
+    /// The pyreals a player has given toward Guard's Gratitude after a gift: what they had, plus the gift. It's earned once
+    /// they reach the minimum of the town they give in, so a higher tier's dearer minimum needs that many more.
+    /// </summary>
+    public static double GetDonorProgress(double given, long pyreals) => Math.Max(0, given) + Math.Max(0, pyreals);
+
     public static double GetDonorBuffMinimum(string town) => TownSupply.GetThreshold(town, 1) * DonorBuffMinimumShareOfLevelOne;
 
     /// <summary>
@@ -110,12 +122,12 @@ public static class TownCaptain
     }
 
     /// <summary>
-    /// The pyreals an item is worth as a donation: coins and trade notes at face value, for the amount given out of the
-    /// stack. Anything else is worth nothing to the Captain.
+    /// The pyreals an item is worth as a donation: coins and trade notes at face value, and Supply Requisitions at
+    /// SupplyPerRequisition each, for the amount given out of the stack. Anything else is worth nothing to the Captain.
     /// </summary>
     public static long GetDonationValue(WorldObject item, int amount)
     {
-        if (item == null || item.WeenieType != WeenieType.Coin && !item.IsTradeNote)
+        if (item == null || item.WeenieType != WeenieType.Coin && !item.IsTradeNote && !IsSupplyRequisition(item))
         {
             return 0;
         }
@@ -123,14 +135,21 @@ public static class TownCaptain
         var stack = Math.Max(1, item.StackSize ?? 1);
         var given = Math.Clamp(amount, 1, stack);
 
+        if (IsSupplyRequisition(item))
+        {
+            return SupplyPerRequisition * given;
+        }
+
         return (long)(item.Value ?? 0) * given / stack;
     }
 
+    public static bool IsSupplyRequisition(WorldObject item) => item?.WeenieClassId == SupplyRequisitionWcid;
+
     /// <summary>
     /// A donation has been taken from the player's inventory: add it to the town's supply, and give the buff if it
-    /// earns one. Queued to the world thread.
+    /// earns one (a Supply Requisition never does). Queued to the world thread.
     /// </summary>
-    public static void OnDonation(Player player, WorldObject captain, long pyreals)
+    public static void OnDonation(Player player, WorldObject captain, long pyreals, bool requisition = false)
     {
         var town = GetTown(captain);
         if (town == null || pyreals <= 0)
@@ -143,23 +162,41 @@ public static class TownCaptain
             var before = TownSupply.GetLevel(town);
             var after = TownSupply.Add(town, pyreals);
 
-            _log.Information("[TOWN EVENT] {Town}: {Player} donated {Pyreals:N0} pyreals (supply level {Before} -> {After})", town, player.Name, pyreals, before, after);
+            _log.Information("[TOWN EVENT] {Town}: {Player} donated {Pyreals:N0} pyreals{Requisition} (supply level {Before} -> {After})", town, player.Name, pyreals, requisition ? " of requisitions" : "", before, after);
 
             var ownTier = IsOwnTier(player, town);
-            var earnsBuff = ownTier && pyreals >= GetDonorBuffMinimum(town);
+            var minimum = GetDonorBuffMinimum(town);
 
             var thanks = after > before
                 ? $"Thank you! That brings {town}'s guards up to supply level {after}."
                 : $"Thank you. Every pyreal keeps {town}'s guards fed and armed.";
 
-            if (earnsBuff)
+            if (requisition)
             {
-                player.GrantTownDonorXpBuff(DonorBuffSeconds);
-                thanks += $" Go with the town's gratitude: you'll learn {Player.TownDonorXpBonus * 100:N0}% faster for the next hour.";
+                // requisitions are supply only: the gratitude is a Writ's, or a gift of pyreals
             }
             else if (ownTier)
             {
-                thanks += $" A gift of {GetDonorBuffMinimum(town):N0} or more earns the town's gratitude: faster learning for an hour.";
+                // gifts add up toward Guard's Gratitude, in pyreals against this town's minimum, and start again once it's
+                // earned
+                var given = GetDonorProgress(player.TownDonorProgress, pyreals);
+
+                if (given >= minimum)
+                {
+                    player.TownDonorProgress = 0;
+
+                    var chain = new ACE.Server.Entity.Actions.ActionChain();
+                    chain.AddAction(player, player.GrantTownDonorXpBuff);
+                    chain.EnqueueChain();
+
+                    thanks += $" Go with the guards' gratitude: you'll learn {Player.TownDonorXpBonus * 100:N0}% faster for the next hour.";
+                }
+                else
+                {
+                    player.TownDonorProgress = given;
+                    thanks += $" Your gifts of {given:N0} pyreals go toward the guards' gratitude, faster learning for an hour: "
+                        + $"{Math.Ceiling(minimum - given):N0} more here earns it.";
+                }
             }
             else
             {
@@ -201,7 +238,16 @@ public static class TownCaptain
 
         if (player.HasTownDonorXpBuff)
         {
-            lines.Add($"The town's gratitude stays with you for {Describe(player.TownDonorXpBuffDuration)} more.");
+            lines.Add($"The guards' gratitude stays with you for {Describe(player.TownDonorXpBuffSecondsLeft)} more.");
+        }
+        else if (IsOwnTier(player, town) && player.TownDonorProgress > 0)
+        {
+            var minimum = GetDonorBuffMinimum(town);
+            lines.Add(
+                player.TownDonorProgress >= minimum
+                    ? $"Your gifts of {player.TownDonorProgress:N0} pyreals will earn the guards' gratitude with your next one here."
+                    : $"Your gifts of {player.TownDonorProgress:N0} pyreals go toward the guards' gratitude: {Math.Ceiling(minimum - player.TownDonorProgress):N0} more here earns it."
+            );
         }
 
         foreach (var line in lines)

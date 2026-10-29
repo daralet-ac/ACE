@@ -148,6 +148,17 @@ public partial class DamageEvent
 
         damageEvent.HandleLogging(attacker, defender);
 
+        // the town event combat log: raiders against the players, guards and Captain, and back
+        TownEventManager.OnSwing(
+            attacker,
+            defender,
+            damageEvent.Evaded,
+            damageEvent.Blocked,
+            damageEvent.Parried,
+            damageEvent._damageBeforeMitigation,
+            damageEvent.Damage
+        );
+
         // a town event attacker's hits on a player, before mitigation: what a tank takes on for the others
         if (defender is Player playerDefender && damageEvent.HasDamage && !damageEvent.Blocked && !damageEvent.Parried)
         {

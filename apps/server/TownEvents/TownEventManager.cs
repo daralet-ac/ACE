@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
+using ACE.Entity.Enum.Properties;
+using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.AdminUi;
 using ACE.Server.Managers;
@@ -62,9 +64,31 @@ public static class TownEventManager
 
     private static readonly List<TownEvent> Events = new();
 
+    // the towns under attack, for the generators (any thread): their guards don't respawn until the attack ends
+    private static readonly ConcurrentDictionary<string, byte> TownsUnderAttack = new();
+
+    /// <summary>
+    /// Whether a generator's spawn is held back: a town guard, while their town is under attack. The spawn stays queued, so
+    /// the guard comes back once the attack is over. Called from any thread.
+    /// </summary>
+    public static bool HoldsGuardRespawn(WorldObject generator, Weenie spawn)
+    {
+        if (TownsUnderAttack.IsEmpty || spawn == null || generator?.Location == null)
+        {
+            return false;
+        }
+
+        if (spawn.GetProperty(PropertyBool.PatrolEnabled) != true)
+        {
+            return false;
+        }
+
+        return TownsUnderAttack.ContainsKey(Town.GetNearestTown(generator));
+    }
+
     // rewards waiting at a town's Captain of the Guard: town, then player guid. Kept in memory only, so a restart in the
     // half hour after a defense loses them.
-    private record TownRewardClaim(double Mod, double ExpiresAt, string EventUid);
+    private record TownRewardClaim(double Mod, int Tokens, double ExpiresAt, string EventUid);
 
     private static readonly Dictionary<string, Dictionary<uint, TownRewardClaim>> Claims = new();
 
@@ -82,6 +106,12 @@ public static class TownEventManager
 
     public static void Tick()
     {
+        if (!unrestLoaded)
+        {
+            unrestLoaded = true;
+            LoadUnrest();
+        }
+
         while (Queue.TryDequeue(out var work))
         {
             try
@@ -115,6 +145,7 @@ public static class TownEventManager
                 if (townEvent.Phase == TownEventPhase.Ended)
                 {
                     Events.Remove(townEvent);
+                    TownsUnderAttack.TryRemove(townEvent.TownName, out _);
                     CooldownUntil[townEvent.TownName] = now + CooldownSeconds;
                     Unrest[townEvent.TownName] = 0;
                     Thresholds.Remove(townEvent.TownName);
@@ -152,6 +183,78 @@ public static class TownEventManager
             {
                 CheckTriggers(now);
             }
+
+            SaveUnrest();
+        }
+    }
+
+    // ---------------------------------------------------------------- saving unrest
+
+    public const string UnrestPropertyName = "town_events_unrest";
+
+    private static bool unrestLoaded;
+
+    /// <summary>
+    /// A town's unrest as saved across restarts: the unrest, its threshold's roll (0 for none yet), and when its cooldown
+    /// after an attack runs out (unix time)
+    /// </summary>
+    private sealed record SavedUnrest(double Unrest, double Roll, double CooldownUntil);
+
+    private static void LoadUnrest()
+    {
+        var json = PropertyManager.GetString(UnrestPropertyName).Item;
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return;
+        }
+
+        try
+        {
+            var saved = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, SavedUnrest>>(json);
+
+            // towns renamed or removed since are dropped
+            foreach (var (town, state) in saved.Where(kv => Town.TownNames.Contains(kv.Key)))
+            {
+                Unrest[town] = Math.Max(0, state.Unrest);
+
+                if (state.Roll > 0)
+                {
+                    Thresholds[town] = state.Roll;
+                }
+
+                if (state.CooldownUntil > 0)
+                {
+                    CooldownUntil[town] = state.CooldownUntil;
+                }
+            }
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            _log.Error(ex, "[TOWN EVENT] {Property} couldn't be read, so every town's unrest starts at 0", UnrestPropertyName);
+        }
+    }
+
+    /// <summary>
+    /// Writes to the property cache, once a minute. PropertyManager saves it to the database every 5 minutes and at shutdown.
+    /// </summary>
+    private static void SaveUnrest()
+    {
+        var now = Time.GetUnixTime();
+
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            Town.TownNames.OrderBy(t => t)
+                .Select(t => (Town: t, State: new SavedUnrest(
+                    Math.Round(Unrest.GetValueOrDefault(t), 1),
+                    Math.Round(Thresholds.GetValueOrDefault(t), 4),
+                    CooldownUntil.GetValueOrDefault(t) > now ? Math.Round(CooldownUntil[t]) : 0
+                )))
+                .Where(x => x.State.Unrest > 0 || x.State.Roll > 0 || x.State.CooldownUntil > 0)
+                .ToDictionary(x => x.Town, x => x.State)
+        );
+
+        if (json != PropertyManager.GetString(UnrestPropertyName).Item)
+        {
+            PropertyManager.ModifyString(UnrestPropertyName, json);
         }
     }
 
@@ -262,6 +365,7 @@ public static class TownEventManager
     {
         var townEvent = new TownEvent(town, chestRaid, startedBy);
         Events.Add(townEvent);
+        TownsUnderAttack[town] = 0;
 
         _log.Information("[TOWN EVENT] {Town}: attack starting (unrest {Unrest:N0})", town, Unrest.GetValueOrDefault(town));
         return townEvent;
@@ -273,12 +377,15 @@ public static class TownEventManager
     /// A creature died. An event attacker's killing blow is scored; any other kill by a player, of a creature at or
     /// above the nearest town's tier, stirs up unrest there (less from a dungeon)
     /// </summary>
-    public static void OnCreatureDeath(Creature creature, Player killer)
+    /// <param name="killedBy">The killer, or the player whose pet it was</param>
+    public static void OnCreatureDeath(Creature creature, WorldObject killedBy)
     {
+        var killer = killedBy as Player;
+
         var townEvent = creature.TownEvent;
         if (townEvent != null)
         {
-            Queue.Enqueue(() => townEvent.OnAttackerDeath(creature, killer));
+            Queue.Enqueue(() => townEvent.OnAttackerDeath(creature, killer, killedBy));
             return;
         }
 
@@ -315,12 +422,25 @@ public static class TownEventManager
     }
 
     /// <summary>
-    /// A player (or their pet) damaged a creature
+    /// Something damaged a creature: an event attacker's damage is scored for a player (or their pet), and counted for
+    /// the guards and Captain
     /// </summary>
     public static void OnDamage(Creature target, WorldObject attacker, uint amount)
     {
+        if (amount == 0)
+        {
+            return;
+        }
+
+        // the combat log, either way between a raider and a defender
+        var fight = target.TownEvent ?? (attacker as Creature)?.TownEvent;
+        if (fight != null)
+        {
+            Queue.Enqueue(() => fight.OnDealt(attacker, target, amount));
+        }
+
         var townEvent = target.TownEvent;
-        if (townEvent == null || amount == 0)
+        if (townEvent == null)
         {
             return;
         }
@@ -328,10 +448,28 @@ public static class TownEventManager
         var player = attacker as Player ?? (attacker as CombatPet)?.P_PetOwner;
         if (player == null)
         {
+            if (attacker is Creature creature)
+            {
+                Queue.Enqueue(() => townEvent.OnAttackerDamagedByCreature(target, creature, amount));
+            }
             return;
         }
 
         Queue.Enqueue(() => townEvent.OnAttackerDamaged(target, player, amount));
+    }
+
+    /// <summary>
+    /// A melee or missile attack, for the combat log when a raider is on either end of it
+    /// </summary>
+    public static void OnSwing(Creature attacker, Creature defender, bool evaded, bool blocked, bool parried, float raw, float mitigated)
+    {
+        var townEvent = defender.TownEvent ?? attacker.TownEvent;
+        if (townEvent == null)
+        {
+            return;
+        }
+
+        Queue.Enqueue(() => townEvent.OnSwing(attacker, defender, evaded, blocked, parried, raw, mitigated));
     }
 
     /// <summary>
@@ -376,7 +514,7 @@ public static class TownEventManager
     /// Holds a defender's reward at the town's Captain for TownCaptain.ClaimSeconds. A second defense before they claim
     /// adds to it.
     /// </summary>
-    public static void AddClaim(string town, Player player, double mod, string eventUid)
+    public static void AddClaim(string town, Player player, double mod, int tokens, string eventUid)
     {
         if (!Claims.TryGetValue(town, out var claims))
         {
@@ -384,8 +522,13 @@ public static class TownEventManager
             Claims[town] = claims;
         }
 
-        var waiting = claims.GetValueOrDefault(player.Guid.Full)?.Mod ?? 0;
-        claims[player.Guid.Full] = new TownRewardClaim(waiting + mod, Time.GetUnixTime() + TownCaptain.ClaimSeconds, eventUid);
+        var waiting = claims.GetValueOrDefault(player.Guid.Full);
+        claims[player.Guid.Full] = new TownRewardClaim(
+            (waiting?.Mod ?? 0) + mod,
+            (waiting?.Tokens ?? 0) + tokens,
+            Time.GetUnixTime() + TownCaptain.ClaimSeconds,
+            eventUid
+        );
     }
 
     /// <summary>
@@ -403,6 +546,7 @@ public static class TownEventManager
         claims.Remove(player.Guid.Full);
 
         var xp = TownEvent.PayReward(player, town, claim.Mod, true, false);
+        TownEvent.GiveCommendationTokens(player, claim.Tokens);
         TownEventRecorder.RecordClaim(claim.EventUid, player.Guid.Full, "claimed", xp);
         TownCaptain.Tell(player, captain, $"{town} is in your debt. Go with the town's thanks.");
 

@@ -17,6 +17,15 @@ partial class Creature
     /// </summary>
     public bool TownCaptainOnDuty { get; private set; }
 
+    private bool? isTownCaptain;
+
+    /// <summary>
+    /// A town's Captain of the Guard (TownCaptain.IsCaptain). Though a faction mob like the guards, it never hunts on its
+    /// own: off duty it picks no targets and isn't woken by monsters passing by, so it doesn't go after the town's mice
+    /// and hens.
+    /// </summary>
+    public bool IsTownCaptain => isTownCaptain ??= TownEvents.TownCaptain.IsCaptain(this);
+
     private Position townCaptainPost;
     private double townCaptainNextMoveTime;
     private double townCaptainReturnSince;

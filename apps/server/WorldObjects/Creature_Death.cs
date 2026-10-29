@@ -109,7 +109,7 @@ partial class Creature
         // a town event attacker's killing blow, or a kill that stirs up unrest around a town
         if (this is not Player)
         {
-            TownEventManager.OnCreatureDeath(this, lastDamager?.TryGetPetOwnerOrAttacker() as Player);
+            TownEventManager.OnCreatureDeath(this, lastDamager?.TryGetPetOwnerOrAttacker());
         }
 
         return GetDeathMessage(lastDamager, damageType, criticalHit);

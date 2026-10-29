@@ -57,7 +57,7 @@ public sealed class TownEvent
     public readonly string TownName;
 
     /// <summary>
-    /// The town's tier counted from 1 (Holtburg is 1), which rewards scale with
+    /// The town's tier counted from 1 (Holtburg is 1), the archetype tier of a raider scaled to the town
     /// </summary>
     public readonly int TierFromOne;
 
@@ -113,6 +113,31 @@ public sealed class TownEvent
     public int WarlordPaid { get; private set; }
 
     /// <summary>
+    /// Who killed the Warlord (TownDefender), or null if it didn't fall
+    /// </summary>
+    public string WarlordKilledBy { get; private set; }
+
+    /// <summary>
+    /// The damage dealt to attackers and the attackers killed by the players (and their pets), the Captain and the other
+    /// guards, for how much of the fight the guards do on their own. Players count as they do in their scores: members of
+    /// the Town Defense at the town's level. OtherKills are by anything else, or nothing (an attacker dying with no
+    /// damager known).
+    /// </summary>
+    public double PlayerDamage { get; private set; }
+
+    public double CaptainDamage { get; private set; }
+    public double GuardDamage { get; private set; }
+    public int PlayerKills { get; private set; }
+    public int CaptainKills { get; private set; }
+    public int GuardKills { get; private set; }
+    public int OtherKills { get; private set; }
+
+    /// <summary>
+    /// The swings and damage between the raiders and the players, guards and Captain
+    /// </summary>
+    public readonly TownCombatStats Combat = new();
+
+    /// <summary>
     /// This attack is after the town's Supply Chest: its attackers march on to it, and the attack fails if they loot it
     /// </summary>
     public bool ChestRaid { get; private set; }
@@ -146,6 +171,17 @@ public sealed class TownEvent
 
     public readonly HashSet<Creature> Attackers = new();
 
+    // the rallied guards and the Captain, for the attackers to go after (read from the landblock threads)
+    private volatile Creature[] guardTargets = Array.Empty<Creature>();
+
+    /// <summary>
+    /// The guards and the Captain the attackers fight when they see them, ahead of marching on (Monster.GetAttackTargets)
+    /// </summary>
+    public IReadOnlyList<Creature> GuardTargets => guardTargets;
+
+    private void RefreshGuardTargets() =>
+        guardTargets = rallied.Keys.Append(Captain).Where(g => g != null).Distinct().ToArray();
+
     public int AttackersAlive => Attackers.Count(a => !a.IsDead && a.CurrentLandblock != null);
 
     /// <summary>
@@ -164,6 +200,10 @@ public sealed class TownEvent
     private const float CaptainLeashRange = 45f;
     private const double WarningSeconds = 120;
     private const int WarningMinutes = (int)(WarningSeconds / 60);
+
+    // reminders to those warned, this many seconds before the attackers arrive
+    private static readonly int[] WarningReminderSeconds = { 60, 30 };
+    private int warningRemindersSent;
     private const double BreakSeconds = 25;
     private const double WaveTimeoutSeconds = 6 * 60;
     private const double EventTimeoutSeconds = 30 * 60;
@@ -184,6 +224,9 @@ public sealed class TownEvent
 
     private const int WaveBaseBudget = 10;
 
+    // the Warlord's health grows by this share for each member of the Town Defense past the first, when it spawns
+    public const double LeaderHealthPerDefender = 0.2;
+
     // a wave's share of casters, when its families have both casters and fighters, and of creatures from the main family
     private const double CasterShare = 0.35;
 
@@ -194,12 +237,21 @@ public sealed class TownEvent
 
     // --- the Supply Chest ---
 
-    // the chance an attack on a town with a Supply Chest goes for it
-    private const double ChestRaidChance = 0.5;
+    // the chance an attack on a town with a Supply Chest goes for it: every one, for now, as an attack without an objective
+    // stops at the town centre once its road runs out
+    private const double ChestRaidChance = 1.0;
 
-    // attackers this close to the chest loot it, and it's gone once they have spent this long at it between them
+    // one attacker this close to the chest loots it at a time, and it's gone once they have spent this long at it between
+    // them
     private const float ChestLootRadius = 4f;
-    private const double ChestLootSeconds = 30;
+    private const double ChestLootSeconds = 60;
+
+    // a member or a guard this close to the looter pulls it off the chest to fight; the looter is chosen and checked this
+    // often, rummages in the chest this often, and the region is told it was driven off once no one has looted for this long
+    private const float ChestDefendRange = 12f;
+    private const double ChestLooterCheckSeconds = 0.5;
+    private const double ChestLootMotionSeconds = 3;
+    private const double ChestDrivenOffSeconds = 3;
     private const int MaxAlive = 40;
     private const float SpawnJitter = 4f;
 
@@ -245,9 +297,17 @@ public sealed class TownEvent
 
     private readonly bool? forceChestRaid;
     private Position chestPosition;
+    private WorldObject chestObject;
     private double lootProgress;
     private bool lootStartWarned;
-    private bool lootHalfWarned;
+    private int lootStepsWarned;
+
+    // the attacker looting the chest, whether it's being looted (for the region's messages), and when
+    private Creature chestLooter;
+    private bool lootingNow;
+    private double lastLootTime;
+    private double nextLooterCheck;
+    private double nextLootMotion;
 
     /// <param name="startedBy">unrest or admin, for the log</param>
     /// <param name="chestRaid">true makes it a chest raid if the town has a chest, false never, null rolls (ChestRaidChance)</param>
@@ -311,10 +371,15 @@ public sealed class TownEvent
     }
 
     /// <summary>
-    /// Players a wave is sized for: in the region, on the map (not in a dungeon), at the town's level or Shrouded, and not AFK
+    /// The members of the Town Defense, which a wave and its Warlord are sized for when they spawn
     /// </summary>
-    private int CountEligiblePlayers() =>
-        PlayerManager.GetAllOnline().Count(p => InRegion(p) && Town.IsOnMap(p.Location.Cell) && !IsOverLevel(p) && !p.IsAfk);
+    public int Defenders => Fellowship?.TotalMembers ?? 0;
+
+    /// <summary>
+    /// The Warlord's health multiplier, from its variant's and the Town Defense's size
+    /// </summary>
+    public static double GetLeaderHealthMod(double variantHealth, int defenders) =>
+        variantHealth * (1 + LeaderHealthPerDefender * Math.Max(0, defenders - 1));
 
     private static void Tell(Player player, string text) =>
         player.Session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
@@ -358,6 +423,13 @@ public sealed class TownEvent
                 if (now >= phaseEndTime)
                 {
                     BeginDefense(now);
+                    break;
+                }
+
+                if (warningRemindersSent < WarningReminderSeconds.Length && phaseEndTime - now <= WarningReminderSeconds[warningRemindersSent])
+                {
+                    var seconds = WarningReminderSeconds[warningRemindersSent++];
+                    TellWarned($"Attackers will arrive at {TownName} in about {(seconds >= 60 ? $"{seconds / 60} minute{(seconds >= 120 ? "s" : "")}" : $"{seconds} seconds")}!");
                 }
                 break;
 
@@ -412,6 +484,7 @@ public sealed class TownEvent
             {
                 Captain = TownCaptain.Find(TownName);
                 nextCaptainSearch = now + CaptainSearchSeconds;
+                RefreshGuardTargets();
 
                 // where it stands, to fight around and go back to: taken while it's still there, not mid-fight
                 if (Captain is { TownCaptainOnDuty: false })
@@ -546,6 +619,7 @@ public sealed class TownEvent
                 {
                     ChestRaid = true;
                     chestPosition = new Position(chest.Location);
+                    chestObject = chest;
                 }
                 else
                 {
@@ -694,6 +768,16 @@ public sealed class TownEvent
             + (ChestRaid ? "They're after the guards' Supply Chest! " : "")
             + $"Attackers will arrive in about {WarningMinutes} minute{(WarningMinutes == 1 ? "" : "s")}.";
 
+        TellWarned(text);
+
+        _log.Information("[TOWN EVENT] {TownName}: {Family} attack warned, {Waves} waves from {Roads}{Chest}", TownName, Family, WaveCount, directions, ChestRaid ? ", a chest raid" : "");
+    }
+
+    /// <summary>
+    /// Tells those the scouts warn: everyone in the town's region, and every at-level player anywhere attuned to it
+    /// </summary>
+    private void TellWarned(string text)
+    {
         var attuned = $"Attuned{TownName}";
 
         foreach (var player in PlayerManager.GetAllOnline())
@@ -703,8 +787,6 @@ public sealed class TownEvent
                 Tell(player, text);
             }
         }
-
-        _log.Information("[TOWN EVENT] {TownName}: {Family} attack warned, {Waves} waves from {Roads}{Chest}", TownName, Family, WaveCount, directions, ChestRaid ? ", a chest raid" : "");
     }
 
     private string Compass(Position entry)
@@ -755,8 +837,9 @@ public sealed class TownEvent
         Phase = TownEventPhase.Wave;
         waveStartTime = now;
 
-        // a better-supplied town draws bigger attacks, checked each wave so a level lost mid-attack counts at once
-        var budget = (int)Math.Round((WaveBaseBudget + CountEligiblePlayers()) * TownSupply.GetWaveBudgetMultiplier(TownName));
+        // a bigger Town Defense, and a better-supplied town, draw bigger attacks: both checked as each wave spawns, so a
+        // level lost or a defender joining mid-attack counts at once
+        var budget = (int)Math.Round((WaveBaseBudget + Defenders) * TownSupply.GetWaveBudgetMultiplier(TownName));
         var spawned = SpawnWave(budget, Wave == WaveCount);
 
         TellRegion(
@@ -765,7 +848,15 @@ public sealed class TownEvent
                 : $"Wave {Wave} of {WaveCount} reaches {TownName}!"
         );
 
-        _log.Information("[TOWN EVENT] {TownName}: wave {Wave}/{WaveCount}, budget {Budget}, {Spawned} attackers", TownName, Wave, WaveCount, budget, spawned);
+        _log.Information(
+            "[TOWN EVENT] {TownName}: wave {Wave}/{WaveCount}, {Defenders} defenders, budget {Budget}, {Spawned} attackers",
+            TownName,
+            Wave,
+            WaveCount,
+            Defenders,
+            budget,
+            spawned
+        );
     }
 
     private void TickWave(double now)
@@ -938,7 +1029,7 @@ public sealed class TownEvent
         }
 
         attacker.TownEvent = this;
-        attacker.TownEventHealthMod = mods.Health;
+        attacker.TownEventHealthMod = variant == Variant.Leader ? GetLeaderHealthMod(mods.Health, Defenders) : mods.Health;
         attacker.TownEventLethalityMod = mods.Lethality;
 
         // a richer town's attackers are stronger: the Warlord most, Elites and Raiders a share of it
@@ -1014,6 +1105,8 @@ public sealed class TownEvent
             guard.SetVisualAwarenessRange(RallyAwarenessRange);
             guard.SetProperty(PropertyBool.PatrolForceWalk, false);
         }
+
+        RefreshGuardTargets();
     }
 
     private void StandDownGuards()
@@ -1038,14 +1131,16 @@ public sealed class TownEvent
         }
 
         rallied.Clear();
+        guardTargets = Array.Empty<Creature>();
     }
 
     // ---------------------------------------------------------------- the Town Defense
 
     /// <summary>
-    /// Asks the player to join the Town Defense, unless they're in it or already being asked
+    /// Asks the player to join the Town Defense, unless they're in it or already being asked. The question can be given,
+    /// for a player asked because of something they did (attacking a raider while outside it).
     /// </summary>
-    public void Prompt(Player player)
+    public void Prompt(Player player, string question = null)
     {
         if (Phase == TownEventPhase.Ended || IsMember(player))
         {
@@ -1064,7 +1159,7 @@ public sealed class TownEvent
             return;
         }
 
-        var question = Phase is TownEventPhase.Preparing or TownEventPhase.Warning
+        question ??= Phase is TownEventPhase.Preparing or TownEventPhase.Warning
             ? $"{TownName} is about to be attacked! Join the Town Defense?"
             : $"{TownName} is under attack! Join the Town Defense?";
 
@@ -1075,7 +1170,7 @@ public sealed class TownEvent
 
         if (IsOverLevel(player))
         {
-            question += $"\n\nYou are above {TownName}'s level. Joining Shrouds you; without the Shroud you earn no credit or rewards, and your kills don't count.";
+            question += $"\n\nYou are above {TownName}'s level. Joining Shrouds you, so you fight at the town's level.";
         }
 
         var guid = player.Guid.Full;
@@ -1187,7 +1282,8 @@ public sealed class TownEvent
     }
 
     /// <summary>
-    /// Takes the player out of the Town Defense (they keep what they've earned), and tells them how to get back in
+    /// Takes the player out of the Town Defense, and tells them how to get back in. Their scores are kept, for if they
+    /// rejoin: only members are rewarded.
     /// </summary>
     private void Remove(Player player, string reason)
     {
@@ -1199,7 +1295,10 @@ public sealed class TownEvent
         Fellowship.QuitFellowship(player, false);
         Forget(player.Guid.Full);
 
-        Tell(player, $"{reason} You have been removed from the Town Defense of {TownName}. Use /towndefense join in {TownName} to rejoin.");
+        Tell(
+            player,
+            $"{reason} You have been removed from the Town Defense of {TownName}, and won't be rewarded unless you rejoin with /towndefense join in {TownName}."
+        );
     }
 
     private void Forget(uint guid)
@@ -1309,12 +1408,79 @@ public sealed class TownEvent
 
     // ---------------------------------------------------------------- combat (from the manager's queue)
 
+    /// <summary>
+    /// Who a defender is, for the guards' share of the fight: player, captain, guard or other
+    /// </summary>
+    private string TownDefender(WorldObject defender) =>
+        defender switch
+        {
+            Player => "player",
+            Creature c when c == Captain || TownCaptain.IsCaptain(c) => "captain",
+            Creature c when rallied.ContainsKey(c) || c is { HasPatrol: true, TownEvent: null } => "guard",
+            _ => "other"
+        };
+
+    /// <summary>
+    /// Which side of the fight something is on: raider (this event's attacker), player (or their pet), captain, guard or
+    /// other
+    /// </summary>
+    private string Side(WorldObject wo) =>
+        wo switch
+        {
+            Creature c when c.TownEvent == this => "raider",
+            CombatPet => "player",
+            _ => TownDefender(wo)
+        };
+
+    /// <summary>
+    /// A melee or missile attack between a raider and a player, guard or the Captain, either way
+    /// </summary>
+    public void OnSwing(WorldObject attacker, WorldObject defender, bool evaded, bool blocked, bool parried, double raw, double mitigated)
+    {
+        var key = $"{Side(attacker)}>{Side(defender)}";
+        if (TownCombatStats.Tracked(key))
+        {
+            Combat.AddSwing(key, evaded, blocked, parried, raw, mitigated);
+        }
+    }
+
+    /// <summary>
+    /// Damage done between a raider and a player, guard or the Captain, either way, by any means
+    /// </summary>
+    public void OnDealt(WorldObject attacker, WorldObject target, double amount)
+    {
+        var key = $"{Side(attacker)}>{Side(target)}";
+        if (TownCombatStats.Tracked(key))
+        {
+            Combat.AddDealt(key, amount);
+        }
+    }
+
+    /// <summary>
+    /// A creature that isn't a player's damaged an attacker: a guard, the Captain, or another attacker
+    /// </summary>
+    public void OnAttackerDamagedByCreature(Creature attacker, Creature damager, double amount)
+    {
+        switch (TownDefender(damager))
+        {
+            case "captain":
+                CaptainDamage += amount;
+                break;
+            case "guard":
+                GuardDamage += amount;
+                break;
+        }
+    }
+
     public void OnAttackerDamaged(Creature attacker, Player player, double amount)
     {
-        if (IsOverLevel(player))
+        // only the Town Defense can harm attackers (Player.CheckPKStatusVsTarget), but a player may have left it since
+        if (!IsMember(player) || IsOverLevel(player))
         {
             return;
         }
+
+        PlayerDamage += amount;
 
         var score = Score(player);
         score.Damage += amount;
@@ -1323,7 +1489,7 @@ public sealed class TownEvent
 
     public void OnPlayerHit(Player player, double unmitigated)
     {
-        if (IsOverLevel(player))
+        if (!IsMember(player) || IsOverLevel(player))
         {
             return;
         }
@@ -1335,13 +1501,8 @@ public sealed class TownEvent
 
     public void OnLifeHeal(Player healer, Player target, double amount)
     {
-        if (IsOverLevel(healer) || IsOverLevel(target) || !InRegion(target))
-        {
-            return;
-        }
-
-        // healing only counts on someone taking part
-        if (!IsMember(target) && !(Scores.TryGetValue(target.Guid.Full, out var targetScore) && targetScore.HasContributed))
+        // healing only counts by and on the Town Defense
+        if (!IsMember(healer) || !IsMember(target) || IsOverLevel(healer) || IsOverLevel(target))
         {
             return;
         }
@@ -1351,13 +1512,40 @@ public sealed class TownEvent
         score.LastActive = Time.GetUnixTime();
     }
 
-    public void OnAttackerDeath(Creature attacker, Player killer)
+    /// <param name="killer">The player who killed it, themselves or with their pet</param>
+    /// <param name="killedBy">What killed it: the player, a guard, the Captain, another creature, or null</param>
+    public void OnAttackerDeath(Creature attacker, Player killer, WorldObject killedBy)
     {
-        // the Warlord's spoils, unless an over-level kill (below) raises it again
-        if (attacker == leader && (killer == null || !IsOverLevel(killer)))
+        // a kill by someone outside the Town Defense, or over-level, doesn't count: the attacker rises again (below)
+        var defender = killer != null ? "player" : TownDefender(killedBy);
+        var counts = killer == null || IsMember(killer) && !IsOverLevel(killer);
+
+        if (counts)
+        {
+            switch (defender)
+            {
+                case "player":
+                    PlayerKills++;
+                    break;
+                case "captain":
+                    CaptainKills++;
+                    break;
+                case "guard":
+                    GuardKills++;
+                    break;
+                default:
+                    OtherKills++;
+                    break;
+            }
+        }
+
+        // the Warlord's spoils are shared out when the attack ends, by what each defender did; unless a kill that doesn't
+        // count (below) raises it again
+        if (attacker == leader && counts)
         {
             leader = null;
-            PayLeaderReward();
+            WarlordKilledBy = defender;
+            TellRegion($"The Warlord falls! Its spoils will be shared among the defenders of {TownName} when the attack ends.");
         }
 
         if (killer == null)
@@ -1365,36 +1553,41 @@ public sealed class TownEvent
             return;
         }
 
-        if (!IsOverLevel(killer))
+        if (counts)
         {
             Score(killer).KillingBlows++;
             return;
         }
 
-        // an over-level, unshrouded kill doesn't count: the attacker rises again at a road into town
-        var score = Score(killer);
-        score.OverLevelKills++;
-
-        if (score.PromptsRefused > 0)
+        // a kill outside the Town Defense (a player who left it with the blow on its way), or an over-level, unshrouded
+        // one, doesn't count: the attacker rises again at a road into town
+        var overLevel = IsOverLevel(killer);
+        if (overLevel)
         {
-            score.KillsAfterRefusal++;
-        }
+            var score = Score(killer);
+            score.OverLevelKills++;
 
-        // one who earned credit in the Town Defense, left, and fights on unshrouded loses it
-        if (leftTownDefense.Contains(killer.Guid.Full) && score.HasContributed)
-        {
-            score.CreditLost = true;
-        }
+            if (score.PromptsRefused > 0)
+            {
+                score.KillsAfterRefusal++;
+            }
 
-        _log.Information(
-            "[TOWN EVENT] {TownName}: over-level kill by {Player} (level {Level}) of {Creature}; refused {Refused}, kills after refusing {After}",
-            TownName,
-            killer.Name,
-            killer.Level,
-            attacker.Name,
-            score.PromptsRefused,
-            score.KillsAfterRefusal
-        );
+            // one who earned credit in the Town Defense, left, and fights on unshrouded loses it
+            if (leftTownDefense.Contains(killer.Guid.Full) && score.HasContributed)
+            {
+                score.CreditLost = true;
+            }
+
+            _log.Information(
+                "[TOWN EVENT] {TownName}: over-level kill by {Player} (level {Level}) of {Creature}; refused {Refused}, kills after refusing {After}",
+                TownName,
+                killer.Name,
+                killer.Level,
+                attacker.Name,
+                score.PromptsRefused,
+                score.KillsAfterRefusal
+            );
+        }
 
         if (Phase == TownEventPhase.Wave)
         {
@@ -1413,44 +1606,136 @@ public sealed class TownEvent
             }
         }
 
-        Tell(killer, $"Your kill doesn't count: you are above {TownName}'s level and unshrouded. The {attacker.Name} rises again!");
+        Tell(
+            killer,
+            overLevel
+                ? $"Your kill doesn't count: you are above {TownName}'s level and unshrouded. The {attacker.Name} rises again!"
+                : $"Your kill doesn't count: you aren't defending {TownName}. The {attacker.Name} rises again!"
+        );
         Prompt(killer);
     }
 
     // ---------------------------------------------------------------- the Supply Chest
 
     /// <summary>
-    /// Every attacker standing at the chest loots it for the time it's there; once they have spent ChestLootSeconds at it
-    /// between them, it's gone
+    /// One attacker at a time loots the chest, one with no one to fight; once attackers have spent ChestLootSeconds at it
+    /// between them, it's gone. A member or a guard who comes near the attackers at the chest pulls them off it to fight,
+    /// and a free one takes over once they're gone, so the chest is saved by keeping the raiders at it busy.
     /// </summary>
     private void TickChest(double dt)
     {
-        var radiusSquared = ChestLootRadius * ChestLootRadius;
-        var looters = Attackers.Count(a => !a.IsDead && a.Location != null && a.Location.SquaredDistanceTo(chestPosition) <= radiusSquared);
+        var now = Time.GetUnixTime();
 
-        if (looters == 0)
+        if (now >= nextLooterCheck)
         {
+            nextLooterCheck = now + ChestLooterCheckSeconds;
+
+            // the attackers idle at the chest: any with a member or a guard close by go and fight them, and the rest are
+            // free to loot
+            var free = new List<Creature>();
+
+            foreach (var attacker in Attackers.Where(CanLoot))
+            {
+                var defender = NearestChestDefender(attacker);
+
+                if (defender == null)
+                {
+                    free.Add(attacker);
+                    continue;
+                }
+
+                var chain = new ActionChain();
+                chain.AddAction(attacker, () => attacker.TownEventFight(defender));
+                chain.EnqueueChain();
+            }
+
+            if (!free.Contains(chestLooter))
+            {
+                chestLooter = free.MinBy(a => a.Location.SquaredDistanceTo(chestPosition));
+                nextLootMotion = now;
+            }
+        }
+
+        if (chestLooter == null || !CanLoot(chestLooter))
+        {
+            if (lootingNow && now - lastLootTime >= ChestDrivenOffSeconds)
+            {
+                lootingNow = false;
+                TellRegion($"The raiders are driven from {TownName}'s Supply Chest, {ChestLooted:P0} emptied!");
+            }
+
             return;
         }
 
-        lootProgress += dt * looters;
+        lootProgress += dt;
+        lastLootTime = now;
 
-        if (!lootStartWarned)
+        if (!lootingNow)
         {
+            lootingNow = true;
+            TellRegion(
+                lootStartWarned
+                    ? $"Raiders are back at {TownName}'s Supply Chest, {ChestLooted:P0} emptied! Drive them off!"
+                    : $"Raiders are at {TownName}'s Supply Chest! Drive them off before they empty it!"
+            );
             lootStartWarned = true;
-            TellRegion($"Raiders are at {TownName}'s Supply Chest! Drive them off before they empty it!");
         }
 
-        if (!lootHalfWarned && lootProgress >= ChestLootSeconds / 2)
+        if (now >= nextLootMotion)
         {
-            lootHalfWarned = true;
-            TellRegion($"{TownName}'s Supply Chest is half emptied!");
+            nextLootMotion = now + ChestLootMotionSeconds;
+
+            var looter = chestLooter;
+            var chest = chestObject;
+            var chain = new ActionChain();
+            chain.AddAction(looter, () => looter.TownEventLootMotion(chest));
+            chain.EnqueueChain();
+        }
+
+        var step = GetChestLootStep(lootProgress, ChestLootSeconds);
+        if (step > lootStepsWarned)
+        {
+            lootStepsWarned = step;
+            TellRegion($"{TownName}'s Supply Chest is {step * 25}% emptied!");
         }
 
         if (lootProgress >= ChestLootSeconds)
         {
             LootChest();
         }
+    }
+
+    /// <summary>
+    /// The quarters of the chest looted so far, 0 to 3 (the region is told at each), for the progress and the time it takes
+    /// </summary>
+    public static int GetChestLootStep(double progress, double lootSeconds) =>
+        lootSeconds <= 0 ? 3 : Math.Clamp((int)Math.Floor(4 * progress / lootSeconds), 0, 3);
+
+    /// <summary>
+    /// An attacker at the chest with no one to fight
+    /// </summary>
+    private bool CanLoot(Creature attacker) =>
+        attacker is { IsDead: false, CurrentLandblock: not null, Location: not null, AttackTarget: null }
+        && Attackers.Contains(attacker)
+        && attacker.Location.SquaredDistanceTo(chestPosition) <= ChestLootRadius * ChestLootRadius;
+
+    /// <summary>
+    /// The nearest member of the Town Defense, or guard or Captain, within ChestDefendRange of the attacker, or null
+    /// </summary>
+    private Creature NearestChestDefender(Creature attacker)
+    {
+        var rangeSquared = ChestDefendRange * ChestDefendRange;
+        var members = Fellowship?.GetFellowshipMembers().Values ?? Enumerable.Empty<Player>();
+
+        return members
+            .Cast<Creature>()
+            .Concat(guardTargets)
+            .Where(d => d is { IsDead: false, Teleporting: false, CurrentLandblock: not null, Location: not null })
+            .Select(d => (Defender: d, DistSq: d.Location.SquaredDistanceTo(attacker.Location)))
+            .Where(d => d.DistSq <= rangeSquared)
+            .OrderBy(d => d.DistSq)
+            .Select(d => d.Defender)
+            .FirstOrDefault();
     }
 
     /// <summary>
@@ -1496,23 +1781,37 @@ public sealed class TownEvent
         // yet), and for a fallen town, they're paid now
         var claimFromCaptain = success && TownCaptain.HasCaptain(TownName);
 
+        var tier = (int)Town.GetTownTier(TownName);
+        var tokens = success ? GetCommendationTokens(tier) : 0;
+
         var rewarded = 0;
         foreach (var score in winners)
         {
             var player = PlayerManager.GetOnlinePlayer(score.PlayerGuid);
-            if (player == null || IsOverLevel(player) || !IsMember(player) && !TownGeography.InTownArea(player, TownName))
+            if (player == null || IsOverLevel(player) || !IsMember(player))
             {
                 continue;
             }
 
             score.CategoriesTopped = tops.Count(t => t == score);
-            var mod = GetRewardMod(TownName, success, score.CategoriesTopped);
+            score.Contribution = GetContributionMultiplier(
+                new[]
+                {
+                    (score.Damage, topDamage?.Damage ?? 0),
+                    (score.Healing, topHealing?.Healing ?? 0),
+                    (score.DamageTaken, topTank?.DamageTaken ?? 0),
+                    ((double)score.KillingBlows, (double)(topKills?.KillingBlows ?? 0))
+                }
+            );
+
+            var mod = GetRewardMod(TownName, success, score.Contribution);
             score.RewardMod = mod;
+            score.CommendationTokens = tokens;
 
             if (claimFromCaptain)
             {
                 score.Reward = "claim";
-                TownEventManager.AddClaim(TownName, player, mod, Uid);
+                TownEventManager.AddClaim(TownName, player, mod, tokens, Uid);
                 Tell(
                     player,
                     $"The people of {TownName} thank you for your defense. See the Captain of the Guard within {TownCaptain.ClaimSeconds / 60:N0} minutes for your reward."
@@ -1522,6 +1821,13 @@ public sealed class TownEvent
             {
                 score.Reward = "paid";
                 score.Xp = PayReward(player, TownName, mod, success);
+                GiveCommendationTokens(player, tokens);
+            }
+
+            // the Warlord's spoils, by what each did
+            if (WarlordKilledBy != null)
+            {
+                PayWarlordSpoils(player, score, tier);
             }
 
             rewarded++;
@@ -1548,28 +1854,83 @@ public sealed class TownEvent
 
         TellRegion(highlights.Count > 0 ? $"{summary} {Capitalize(string.Join(", ", highlights))}." : summary);
 
-        _log.Information("[TOWN EVENT] {TownName}: {Result} after {Waves} waves, {Rewarded} rewarded", TownName, success ? "held" : "fell", Wave, rewarded);
+        _log.Information(
+            "[TOWN EVENT] {TownName}: {Result} after {Waves} waves, {Rewarded} rewarded; {Defenders}",
+            TownName,
+            success ? "held" : "fell",
+            Wave,
+            rewarded,
+            DescribeDefenders() + "; " + string.Join("; ", Combat.Describe())
+        );
 
         Finish();
     }
 
     private static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
-    /// <summary>
-    /// How much of a full reward a player earned: each category they topped adds half again, the town's supply level adds
-    /// to match its harder attacks (as it stands when the attack ends), and a failed defence pays a quarter
-    /// </summary>
-    public static double GetRewardMod(string town, bool success, int categoriesTopped) =>
-        (success ? 1.0 : 0.25) * (1.0 + 0.5 * categoriesTopped) * TownSupply.GetRewardMultiplier(town);
+    // --- rewards ---
+
+    // a category's top scorer earns this many times the town's base reward, and everyone else their share of it, in each
+    // category; added up, a player's contribution is capped at the same, so one category won is the most there is
+    public const double CategoryBonus = 10.0;
+    public const double MaxContribution = 10.0;
+
+    // the Warlord's spoils: this many pyreals per tier (tier 0 counting as 1) for each point of contribution
+    public const int WarlordPyrealsPerContribution = 50;
+
+    // what the Captain gives with a held town's reward, spent at the capitals' commendation vendors
+    public const uint CommendationTokenWcid = 1057552;
 
     /// <summary>
-    /// XP (a share of a level, capped at the town's top level) and pyreals by the town's tier, times the reward mod.
-    /// Returns the pyreals.
+    /// The XP reward, as a share of a level, for a contribution of 1: 1% at tier 0 (Holtburg, Shoushi, Yaraq), 0.1% less for
+    /// each tier above. A full contribution (10) is ten times this.
+    /// </summary>
+    public static double GetBaseLevelShare(int tier) => Math.Max(0, 0.01 * (1 - 0.1 * tier));
+
+    /// <summary>
+    /// How much a player did, 0 to MaxContribution: in each category (damage, healing, damage taken, killing blows) their
+    /// share of the top score, times CategoryBonus, added up. A late joiner or a light hitter gets a small share.
+    /// </summary>
+    public static double GetContributionMultiplier(IEnumerable<(double Mine, double Top)> categories) =>
+        Math.Min(MaxContribution, categories.Where(c => c.Top > 0).Sum(c => CategoryBonus * Math.Clamp(c.Mine / c.Top, 0, 1)));
+
+    /// <summary>
+    /// How many base rewards a player earned: their contribution, times the town's supply bonus (as it stands when the attack
+    /// ends), and a quarter for a failed defence
+    /// </summary>
+    public static double GetRewardMod(string town, bool success, double contribution) =>
+        (success ? 1.0 : 0.25) * contribution * TownSupply.GetRewardMultiplier(town);
+
+    /// <summary>
+    /// The Warlord's spoils for one defender: 50 per tier (tier 0 counting as 1) for each point of contribution, and 10% more
+    /// for each supply level
+    /// </summary>
+    public static int GetWarlordPyreals(int tier, double contribution, double supplyMultiplier) =>
+        (int)Math.Round(WarlordPyrealsPerContribution * Math.Max(1, tier) * contribution * supplyMultiplier);
+
+    /// <summary>
+    /// The commendation tokens for a held town: one per tier, so none at tier 0
+    /// </summary>
+    public static int GetCommendationTokens(int tier) => Math.Max(0, tier);
+
+    public static void GiveCommendationTokens(Player player, int tokens)
+    {
+        if (tokens <= 0)
+        {
+            return;
+        }
+
+        player.TryCreateOrMergeStackInInventoryWithNetworking(CommendationTokenWcid, tokens);
+        Tell(player, $"You receive {tokens} Defense Commendation Token{(tokens == 1 ? string.Empty : "s")}.");
+    }
+
+    /// <summary>
+    /// XP: the town's base share of a level times the reward mod, capped at what a player at the town's top level would get
     /// </summary>
     /// <returns>The XP granted, before the player's own XP bonuses (worked out as GrantLevelProportionalXp does)</returns>
     public static long PayReward(Player player, string town, double mod, bool success, bool tell = true)
     {
-        const double levelShare = 0.10;
+        var levelShare = GetBaseLevelShare((int)Town.GetTownTier(town));
 
         var capLevel = Math.Min(player.Level ?? 1, Town.GetTownMaxLevel(town));
         var maxXp = (long)(player.GetXPBetweenLevels(capLevel, capLevel + 1) * levelShare * mod);
@@ -1588,32 +1949,23 @@ public sealed class TownEvent
     }
 
     /// <summary>
-    /// The Warlord's spoils, a placeholder for the leader-corpse reward: pyreals by the town's tier and supply level, to
-    /// everyone who has taken part and would be rewarded at the end (the attack's pyreals come only from here)
+    /// The Warlord's spoils for one defender, once the attack is over and every score is in (the attack's pyreals come only
+    /// from here)
     /// </summary>
-    private void PayLeaderReward()
+    private void PayWarlordSpoils(Player player, TownDefenseScore score, int tier)
     {
-        var pyreals = (int)(1000 * TierFromOne * TierFromOne * TownSupply.GetRewardMultiplier(TownName));
-
-        var paid = 0;
-        foreach (var score in Scores.Values.Where(s => s.HasContributed && !s.CreditLost))
+        var pyreals = GetWarlordPyreals(tier, score.Contribution, TownSupply.GetRewardMultiplier(TownName));
+        if (pyreals <= 0)
         {
-            var player = PlayerManager.GetOnlinePlayer(score.PlayerGuid);
-            if (player == null || IsOverLevel(player) || !IsMember(player) && !TownGeography.InTownArea(player, TownName))
-            {
-                continue;
-            }
-
-            player.TryCreateOrMergeStackInInventoryWithNetworking((uint)ACE.Server.Factories.Enum.WeenieClassName.coinstack, pyreals);
-            Tell(player, $"The Warlord falls! You take {pyreals:N0} pyreals from its spoils.");
-            score.WarlordPyreals += pyreals;
-            paid++;
+            return;
         }
 
-        WarlordPyreals = pyreals;
-        WarlordPaid += paid;
+        player.TryCreateOrMergeStackInInventoryWithNetworking((uint)ACE.Server.Factories.Enum.WeenieClassName.coinstack, pyreals);
+        Tell(player, $"Your share of the Warlord's spoils: {pyreals:N0} pyreals found on its body.");
 
-        _log.Information("[TOWN EVENT] {TownName}: the Warlord fell, {Pyreals:N0} pyreals to {Paid} defenders", TownName, pyreals, paid);
+        score.WarlordPyreals = pyreals;
+        WarlordPyreals = Math.Max(WarlordPyreals, pyreals);
+        WarlordPaid++;
     }
 
     /// <summary>
@@ -1676,8 +2028,10 @@ public sealed class TownEvent
         {
             $"{TownName} (#{Id}): {Phase}, wave {Wave}/{WaveCount}, {Family ?? "family not picked yet"}, {AttackersAlive} attackers alive, "
                 + $"{Fellowship?.TotalMembers ?? 0} defenders, {(int)(Time.GetUnixTime() - StartTime)}s in"
-                + (ChestRaid ? $", a chest raid ({ChestLooted:P0} looted)" : "")
+                + (ChestRaid ? $", a chest raid ({ChestLooted:P0} looted)" : ""),
+            "  " + DescribeDefenders()
         };
+        lines.AddRange(Combat.Describe().Select(l => "  " + l));
 
         foreach (var score in Scores.Values.OrderByDescending(s => s.Damage))
         {
@@ -1690,5 +2044,31 @@ public sealed class TownEvent
         }
 
         return string.Join("\n", lines);
+    }
+
+    /// <summary>
+    /// How the fight's split between the guards and the players: damage dealt to attackers and kills
+    /// </summary>
+    public string DescribeDefenders() =>
+        DescribeDefenders(PlayerDamage, GuardDamage, CaptainDamage, PlayerKills, GuardKills, CaptainKills, OtherKills, WarlordKilledBy);
+
+    public static string DescribeDefenders(
+        double playerDamage,
+        double guardDamage,
+        double captainDamage,
+        int playerKills,
+        int guardKills,
+        int captainKills,
+        int otherKills,
+        string warlordKilledBy
+    )
+    {
+        var total = playerDamage + guardDamage + captainDamage;
+        string Share(double damage) => total > 0 ? $"{damage / total:P0}" : "0%";
+
+        return $"damage dealt: players {playerDamage:N0} ({Share(playerDamage)}), guards {guardDamage:N0} ({Share(guardDamage)}), "
+            + $"Captain {captainDamage:N0} ({Share(captainDamage)}); kills: players {playerKills}, guards {guardKills}, Captain {captainKills}"
+            + (otherKills > 0 ? $", other {otherKills}" : "")
+            + (warlordKilledBy != null ? $"; Warlord killed by {(warlordKilledBy == "captain" ? "the Captain" : warlordKilledBy)}" : "");
     }
 }

@@ -79,7 +79,10 @@ public static class TownEventRecorder
             {
                 if (Interlocked.Exchange(ref _writeFailureReported, 1) == 0)
                 {
-                    _log.Error(ex, "[TOWN EVENT] Couldn't save to town_event; the log stays empty until it can. Has the 2026-10-26-00-Town-Event-Log.sql update run?");
+                    _log.Error(
+                        ex,
+                        "[TOWN EVENT] Couldn't save to town_event; the log stays empty until it can. Have the 2026-10-26-00-Town-Event-Log.sql, 2026-10-28-00-Town-Event-Defenders.sql and 2026-10-28-01-Town-Event-Combat.sql updates run?"
+                    );
                 }
             }
         });
@@ -115,6 +118,15 @@ public static class TownEventRecorder
             Rewarded = (ushort)scores.Count(s => s.Reward != "none"),
             WarlordPyreals = (uint)e.WarlordPyreals,
             WarlordPaid = (ushort)e.WarlordPaid,
+            WarlordKilledBy = e.WarlordKilledBy,
+            PlayerDamage = (uint)Math.Min(uint.MaxValue, Math.Round(e.PlayerDamage)),
+            GuardDamage = (uint)Math.Min(uint.MaxValue, Math.Round(e.GuardDamage)),
+            CaptainDamage = (uint)Math.Min(uint.MaxValue, Math.Round(e.CaptainDamage)),
+            PlayerKills = (ushort)Math.Min(ushort.MaxValue, e.PlayerKills),
+            GuardKills = (ushort)Math.Min(ushort.MaxValue, e.GuardKills),
+            CaptainKills = (ushort)Math.Min(ushort.MaxValue, e.CaptainKills),
+            OtherKills = (ushort)Math.Min(ushort.MaxValue, e.OtherKills),
+            Combat = e.Combat.Lines.Count > 0 ? System.Text.Json.JsonSerializer.Serialize(e.Combat.Lines) : null,
             StartedAtUtc = endedAt.AddSeconds(-duration),
             EndedAtUtc = endedAt,
             DurationSeconds = (uint)Math.Round(duration),
@@ -189,7 +201,7 @@ public static class TownEventRecorder
         catch (Exception ex)
         {
             _log.Error(ex, "[TOWN EVENT] Couldn't read town_event");
-            return "Couldn't read the town event log. Has the 2026-10-26-00-Town-Event-Log.sql update run?";
+            return "Couldn't read the town event log. Have the 2026-10-26-00-Town-Event-Log.sql, 2026-10-28-00-Town-Event-Defenders.sql and 2026-10-28-01-Town-Event-Combat.sql updates run?";
         }
 
         if (logs.Count == 0)
@@ -210,6 +222,35 @@ public static class TownEventRecorder
                     + (top != null ? $", top damage {top}" : "")
                     + $" ({log.StartedBy})"
             );
+            lines.Add(
+                "    "
+                    + TownEvent.DescribeDefenders(
+                        log.PlayerDamage,
+                        log.GuardDamage,
+                        log.CaptainDamage,
+                        log.PlayerKills,
+                        log.GuardKills,
+                        log.CaptainKills,
+                        log.OtherKills,
+                        log.WarlordKilledBy
+                    )
+            );
+
+            if (!string.IsNullOrEmpty(log.Combat))
+            {
+                try
+                {
+                    var combat = new TownCombatStats
+                    {
+                        Lines = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, TownCombatLine>>(log.Combat)
+                    };
+                    lines.AddRange(combat.Describe().Select(l => "    " + l));
+                }
+                catch (System.Text.Json.JsonException)
+                {
+                    lines.Add("    (combat log unreadable)");
+                }
+            }
         }
 
         return string.Join("\n", lines);

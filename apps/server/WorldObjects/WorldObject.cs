@@ -371,6 +371,12 @@ public abstract partial class WorldObject : IActor
             return false;
         }
 
+        // a sight ray passes through an ethereal object (a town guard), so look from its spot back to this one instead
+        if (wo.Ethereal == true && wo.Location != null)
+        {
+            return IsDirectVisible(wo.Location);
+        }
+
         var SightObj = PhysicsObj.makeSightObject(0x02000124, PhysicsObj.Instance);
 
         var startPos = new Physics.Common.Position(PhysicsObj.Position);

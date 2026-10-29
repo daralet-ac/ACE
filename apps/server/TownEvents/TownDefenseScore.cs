@@ -54,6 +54,14 @@ public sealed class TownDefenseScore
     public string Reward = "none";
 
     public double RewardMod;
+
+    /// <summary>
+    /// How much they did, 0 to 10: each category's share of its top score, times TownEvent.CategoryBonus, added up and
+    /// capped (TownEvent.GetContributionMultiplier)
+    /// </summary>
+    public double Contribution;
+
+    public int CommendationTokens;
     public long Xp;
     public int CategoriesTopped;
     public int WarlordPyreals;

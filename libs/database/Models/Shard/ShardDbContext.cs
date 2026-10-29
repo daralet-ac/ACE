@@ -1493,6 +1493,15 @@ public partial class ShardDbContext : DbContext
             entity.Property(e => e.Rewarded).HasColumnName("rewarded");
             entity.Property(e => e.WarlordPyreals).HasColumnName("warlord_pyreals");
             entity.Property(e => e.WarlordPaid).HasColumnName("warlord_paid");
+            entity.Property(e => e.WarlordKilledBy).HasColumnName("warlord_killed_by").HasMaxLength(10);
+            entity.Property(e => e.PlayerDamage).HasColumnName("player_damage");
+            entity.Property(e => e.GuardDamage).HasColumnName("guard_damage");
+            entity.Property(e => e.CaptainDamage).HasColumnName("captain_damage");
+            entity.Property(e => e.PlayerKills).HasColumnName("player_kills");
+            entity.Property(e => e.GuardKills).HasColumnName("guard_kills");
+            entity.Property(e => e.CaptainKills).HasColumnName("captain_kills");
+            entity.Property(e => e.OtherKills).HasColumnName("other_kills");
+            entity.Property(e => e.Combat).HasColumnName("combat");
             entity.Property(e => e.StartedAtUtc).HasColumnName("started_at_utc");
             entity.Property(e => e.EndedAtUtc).HasColumnName("ended_at_utc");
             entity.Property(e => e.DurationSeconds).HasColumnName("duration_seconds");

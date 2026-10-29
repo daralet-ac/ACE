@@ -356,4 +356,132 @@ public class TownEventTests
         Assert.IsTrue(TownRaidThemes.RaiderTypes.Contains(CreatureType.Virindi));
         Assert.AreEqual(0, TownRaidThemes.ForTown("Nowhere").Count);
     }
+
+    [TestMethod]
+    public void Rewards_MatchTheTierThreeExamples()
+    {
+        // a tier 3 town: 0.7% of a level a point of contribution
+        var tierThree = TownEvent.GetBaseLevelShare(3);
+        Assert.AreEqual(0.007, tierThree, 1e-12);
+        Assert.AreEqual(0.01, TownEvent.GetBaseLevelShare(0), 1e-12);
+        Assert.AreEqual(0.005, TownEvent.GetBaseLevelShare(5), 1e-12);
+
+        // A wins damage: x10, 7%
+        var a = TownEvent.GetContributionMultiplier(new[] { (1000.0, 1000.0), (0.0, 0.0), (0.0, 0.0), (0.0, 0.0) });
+        Assert.AreEqual(10, a, 1e-9);
+        Assert.AreEqual(0.07, tierThree * a, 1e-12);
+
+        // B does half A's damage and nothing else: x5, 3.5%
+        var b = TownEvent.GetContributionMultiplier(new[] { (500.0, 1000.0), (0.0, 400.0), (0.0, 800.0), (0.0, 12.0) });
+        Assert.AreEqual(5, b, 1e-9);
+        Assert.AreEqual(0.035, tierThree * b, 1e-12);
+
+        // C: half the top healing and three quarters of the top killing blows, 12.5, capped at x10
+        var c = TownEvent.GetContributionMultiplier(new[] { (0.0, 1000.0), (200.0, 400.0), (0.0, 800.0), (9.0, 12.0) });
+        Assert.AreEqual(10, c, 1e-9);
+    }
+
+    [TestMethod]
+    public void ChestLootStep_TellsEachQuarter()
+    {
+        // a 60-second chest: told at 15, 30 and 45 seconds, and never past the third quarter (looted ends the attack)
+        Assert.AreEqual(0, TownEvent.GetChestLootStep(14.9, 60));
+        Assert.AreEqual(1, TownEvent.GetChestLootStep(15, 60));
+        Assert.AreEqual(2, TownEvent.GetChestLootStep(30, 60));
+        Assert.AreEqual(3, TownEvent.GetChestLootStep(45, 60));
+        Assert.AreEqual(3, TownEvent.GetChestLootStep(60, 60));
+        Assert.AreEqual(0, TownEvent.GetChestLootStep(-1, 60));
+    }
+
+    [TestMethod]
+    public void DonorProgress_AddsUpInPyreals()
+    {
+        // two 250-pyreal gifts reach Holtburg's 500
+        var given = TownCaptain.GetDonorProgress(0, 250);
+        Assert.AreEqual(250, given, 1e-9);
+        Assert.AreEqual(500, TownCaptain.GetDonorProgress(given, 250), 1e-9);
+
+        // 250 given counts as 250, not as a half, toward a dearer town's minimum
+        Assert.AreEqual(1250, TownCaptain.GetDonorProgress(given, 1000), 1e-9);
+        Assert.AreEqual(0, TownCaptain.GetDonorProgress(-5, 0), 1e-9);
+    }
+
+    [TestMethod]
+    public void Rewards_WarlordSpoilsAndTokens()
+    {
+        // 50 per tier, tier 0 counting as 1, a point of contribution, +10% a supply level
+        Assert.AreEqual(500, TownEvent.GetWarlordPyreals(0, 10, 1.0));
+        Assert.AreEqual(1500, TownEvent.GetWarlordPyreals(3, 10, 1.0));
+        Assert.AreEqual(975, TownEvent.GetWarlordPyreals(3, 5, 1.3));
+
+        Assert.AreEqual(0, TownEvent.GetCommendationTokens(0));
+        Assert.AreEqual(3, TownEvent.GetCommendationTokens(3));
+    }
+
+    [TestMethod]
+    public void KitColors_LevelFortyKitsHaveTheirOwn()
+    {
+        var celdon = TownGuardUpgrades.GetKitStyle(new uint[] { 75, 6044 });
+        Assert.AreEqual(TownGuardUpgrades.KitStyle.Celdon, celdon);
+        Assert.AreEqual((PaletteTemplate.Black, 0.636), TownGuardUpgrades.GetArmorColor(1, celdon));
+        Assert.AreEqual((PaletteTemplate.Silver, 0.236), TownGuardUpgrades.GetArmorColor(5, celdon));
+
+        Assert.AreEqual((PaletteTemplate.Copper, 0.746), TownGuardUpgrades.GetArmorColor(2, TownGuardUpgrades.KitStyle.Koujia));
+        Assert.AreEqual((PaletteTemplate.Silver, 0.239), TownGuardUpgrades.GetArmorColor(3, TownGuardUpgrades.KitStyle.Amuli));
+        Assert.IsNull(TownGuardUpgrades.GetArmorColor(0, TownGuardUpgrades.KitStyle.Amuli));
+
+        // platemail, scalemail and yoroi keep the standard colours
+        Assert.AreEqual(TownGuardUpgrades.KitStyle.Standard, TownGuardUpgrades.GetKitStyle(new uint[] { 72, 82, 57 }));
+    }
+
+    [TestMethod]
+    public void CombatStats_CountSwingsAndMisses()
+    {
+        var stats = new TownCombatStats();
+        stats.AddSwing("raider>guard", true, false, false, 0, 0);
+        stats.AddSwing("raider>guard", false, true, false, 0, 0);
+        stats.AddSwing("raider>guard", false, false, false, 20, 8);
+        stats.AddSwing("raider>guard", false, false, false, 10, 4);
+        stats.AddDealt("raider>guard", 12);
+
+        var line = stats.Lines["raider>guard"];
+        Assert.AreEqual(4, line.Swings);
+        Assert.AreEqual(2, line.Landed);
+        Assert.AreEqual(30, line.Raw, 1e-9);
+
+        var text = stats.Describe().Single();
+        StringAssert.Contains(text, "raider vs guard: 4 swings, evaded 25%, blocked 25%, parried 0%, landed 2");
+        StringAssert.Contains(text, "avg 15.0 before armor, 6.0 after");
+        StringAssert.Contains(text, "dealt 12");
+
+        Assert.IsTrue(TownCombatStats.Tracked("captain>raider"));
+        Assert.IsFalse(TownCombatStats.Tracked("guard>player"));
+    }
+
+    [TestMethod]
+    public void LeaderHealth_GrowsWithTheTownDefense()
+    {
+        Assert.AreEqual(4.0, TownEvent.GetLeaderHealthMod(4.0, 0), 1e-9);
+        Assert.AreEqual(4.0, TownEvent.GetLeaderHealthMod(4.0, 1), 1e-9);
+        Assert.AreEqual(4.8, TownEvent.GetLeaderHealthMod(4.0, 2), 1e-9);
+        Assert.AreEqual(11.2, TownEvent.GetLeaderHealthMod(4.0, 10), 1e-9);
+    }
+
+    [TestMethod]
+    public void DescribeDefenders_SplitsTheDamageAndKills()
+    {
+        var text = TownEvent.DescribeDefenders(250, 600, 150, 3, 9, 2, 1, "captain");
+
+        StringAssert.Contains(text, "players 250 (25%)");
+        StringAssert.Contains(text, "guards 600 (60%)");
+        StringAssert.Contains(text, "Captain 150 (15%)");
+        StringAssert.Contains(text, "kills: players 3, guards 9, Captain 2, other 1");
+        StringAssert.Contains(text, "Warlord killed by the Captain");
+
+        // nothing dealt yet, and no Warlord down
+        var none = TownEvent.DescribeDefenders(0, 0, 0, 0, 0, 0, 0, null);
+        StringAssert.Contains(none, "players 0 (0%)");
+        Assert.IsFalse(none.Contains("Warlord"));
+        Assert.IsFalse(none.Contains("other"));
+    }
 }

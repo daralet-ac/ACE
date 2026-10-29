@@ -52,11 +52,35 @@ public class TownEventLog
     public ushort Rewarded { get; set; }
 
     /// <summary>
-    /// What each defender got when the Warlord fell (0 if it didn't), and how many got it
+    /// The most any defender got from the Warlord's spoils (0 if it didn't fall), and how many got some; each defender's
+    /// share is in their participation
     /// </summary>
     public uint WarlordPyreals { get; set; }
 
     public ushort WarlordPaid { get; set; }
+
+    /// <summary>
+    /// player, guard, captain or other, or null if the Warlord didn't fall
+    /// </summary>
+    public string WarlordKilledBy { get; set; }
+
+    /// <summary>
+    /// The damage dealt to attackers and the attackers killed by the players (and their pets), the Captain and the other
+    /// guards. Other kills are by anything else, or with no damager known.
+    /// </summary>
+    public uint PlayerDamage { get; set; }
+
+    public uint GuardDamage { get; set; }
+    public uint CaptainDamage { get; set; }
+    public ushort PlayerKills { get; set; }
+    public ushort GuardKills { get; set; }
+    public ushort CaptainKills { get; set; }
+    public ushort OtherKills { get; set; }
+
+    /// <summary>
+    /// The swings and damage between the raiders and the players, guards and Captain, as JSON (TownCombatStats.Lines)
+    /// </summary>
+    public string Combat { get; set; }
 
     public DateTime StartedAtUtc { get; set; }
     public DateTime EndedAtUtc { get; set; }

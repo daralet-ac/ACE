@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using ACE.Common;
+using ACE.Database;
+using TreasureDeath = ACE.Database.Models.World.TreasureDeath;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -336,6 +339,14 @@ public class Gem : Stackable
             }
         }
 
+        if (GetProperty(PropertyDataId.DeathTreasureType) is uint lootProfile)
+        {
+            if (!HandleUseCreateLoot(player, lootProfile))
+            {
+                return;
+            }
+        }
+
         if (UseSound > 0)
         {
             player.Session.Network.EnqueueSend(new GameMessageSound(player.Guid, UseSound));
@@ -413,6 +424,63 @@ public class Gem : Stackable
             player.SendTransientError($"Unable to use {Name} at this time!");
             return false;
         }
+        return true;
+    }
+
+    /// <summary>
+    /// CUSTOM: a loot crate (a Commendation Quartermaster's) opens into loot rolled from its treasure profile
+    /// (DeathTreasureType), at the crate's Tier and LootQualityMod in place of the profile's own
+    /// </summary>
+    public bool HandleUseCreateLoot(Player player, uint lootProfile)
+    {
+        var profile = DatabaseManager.World.GetCachedDeathTreasure(lootProfile);
+        if (profile == null)
+        {
+            player.SendTransientError($"Unable to use {Name} at this time!");
+            return false;
+        }
+
+        var maxItems = Math.Max(1, profile.ItemMaxAmount + profile.MagicItemMaxAmount + profile.MundaneItemMaxAmount);
+        if (player.GetFreeInventorySlots() < maxItems)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameEventCommunicationTransientString(player.Session, "You do not have enough pack space to use that!")
+            );
+            return false;
+        }
+
+        var treasure = new TreasureDeath(profile);
+
+        if (Tier is int tier)
+        {
+            treasure.Tier = tier;
+        }
+
+        if (LootQualityMod is double qualityMod)
+        {
+            treasure.LootQualityMod = (float)qualityMod;
+        }
+
+        var loot = LootGenerationFactory.CreateRandomLootObjects(treasure, null) ?? new List<WorldObject>();
+
+        foreach (var item in loot)
+        {
+            if (!player.TryCreateInInventoryWithNetworking(item))
+            {
+                item.Destroy();
+                continue;
+            }
+
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You find {item.GetNameWithMaterial(item.StackSize ?? 1)} in the {Name}.", ChatMessageType.Broadcast)
+            );
+        }
+
+        if (loot.Count == 0)
+        {
+            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {Name} is empty.", ChatMessageType.Broadcast));
+        }
+
         return true;
     }
 

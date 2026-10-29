@@ -459,6 +459,17 @@ partial class WorldObject
             }
         }
 
+        // CUSTOM: and not too high a level (a Writ of Gratitude, for one town tier's level band)
+        if (UseRequiresMaxLevel != null && (player.Level ?? 1) > UseRequiresMaxLevel.Value)
+        {
+            return new ActivationResult(
+                new GameEventCommunicationTransientString(
+                    player.Session,
+                    $"Only those of level {UseRequiresMaxLevel.Value} or lower can use that!"
+                )
+            );
+        }
+
         // verify attribute / vital limits
         if (ItemAttributeLimit != null)
         {

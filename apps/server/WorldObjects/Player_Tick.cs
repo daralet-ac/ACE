@@ -373,7 +373,6 @@ partial class Player
 
         AdminFreezeTick();
 
-        TownDonorXpBuffTick();
 
         ClosePlayerUiContainerOutOfReach();
 

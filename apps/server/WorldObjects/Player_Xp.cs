@@ -1090,10 +1090,8 @@ partial class Player
             augBonus += Jewel.GetJewelEffectMod(this, PropertyInt.GearExperienceGain);
         }
 
-        // a donation to a town's Captain of the Guard
-        var townDonorBonus = HasTownDonorXpBuff ? TownDonorXpBonus : 0.0f;
-
-        var modifier = 1.0f + enchantmentBonus + augBonus + townDonorBonus;
+        // Guard's Gratitude, from a donation to a town's Captain of the Guard, is an enchantment: it's in enchantmentBonus
+        var modifier = 1.0f + enchantmentBonus + augBonus;
         //Console.WriteLine($"XPAndLuminanceModifier: {modifier}");
 
         return modifier;

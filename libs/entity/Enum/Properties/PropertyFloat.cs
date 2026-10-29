@@ -546,10 +546,16 @@ public enum PropertyFloat : ushort
     AdminFreezeDuration = 20055,
 
     /// <summary>
-    /// Seconds left on the XP buff a donation to a town's Captain of the Guard gives. Saved, and counted down only while
-    /// the player is online.
+    /// No longer used: the donor's XP buff is the Guard's Gratitude spell now (SpellId.GuardsGratitude). Was the seconds
+    /// left on it.
     /// </summary>
     TownDonorXpBuffDuration = 20056,
+
+    /// <summary>
+    /// The pyreals a player has given Captains of the Guard toward Guard's Gratitude: reaching the minimum of the town they
+    /// give in earns it, and starts it again from 0. Saved.
+    /// </summary>
+    TownDonorProgress = 20057,
 }
 
 public static class PropertyFloatExtensions

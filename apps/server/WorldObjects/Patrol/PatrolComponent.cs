@@ -458,13 +458,16 @@ public sealed class PatrolComponent
 
         nextPos.SetLandblock();
 
-        // Update cell before terrain lookup.
-        nextPos.LandblockId = new LandblockId(nextPos.GetCell(instance));
+        // The outdoor cell first, then the terrain height: looking the cell up at the height this was built from (the
+        // route start, or wherever the creature stood) can find the point below the ground and put it in a cellar or cave
+        // cell under it, which then kept that cell at the terrain height, outside the cell's walls. A client loading in
+        // walks that cell's geometry for an object it doesn't fit, and crashes.
+        nextPos.LandblockId = new LandblockId(nextPos.GetOutdoorCell());
 
         // Terrain height accounts for hills.
         nextPos.PositionZ = nextPos.GetTerrainZ(instance);
 
-        // Update cell again after Z assignment.
+        // At the terrain height, the cell it's really in: the landscape, or a building it stands in.
         nextPos.LandblockId = new LandblockId(nextPos.GetCell(instance));
 
         return nextPos;

@@ -2,50 +2,73 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 using ACE.Server.TownEvents;
+using Spell = ACE.Server.Entity.Spell;
 
 namespace ACE.Server.WorldObjects;
 
 partial class Player
 {
     /// <summary>
-    /// What the town donor buff adds to XP, on top of trinkets and the like (TownCaptain)
+    /// What Guard's Gratitude, the town donor buff, adds to XP (its GlobalXpMod in the spell table), for the Captain to tell
     /// </summary>
     public const float TownDonorXpBonus = 0.10f;
 
     /// <summary>
-    /// Seconds left on the XP buff from donating to a Captain of the Guard, or 0. It isn't a spell (a new spell would need
-    /// the client's dat), so it shows no icon; the Captain says how long is left.
+    /// The pyreals this player has given toward Guard's Gratitude since they last earned it
     /// </summary>
-    public double TownDonorXpBuffDuration
+    public double TownDonorProgress
     {
-        get => GetProperty(PropertyFloat.TownDonorXpBuffDuration) ?? 0;
+        get => GetProperty(PropertyFloat.TownDonorProgress) ?? 0;
         set
         {
             if (value <= 0)
             {
-                RemoveProperty(PropertyFloat.TownDonorXpBuffDuration);
+                RemoveProperty(PropertyFloat.TownDonorProgress);
             }
             else
             {
-                SetProperty(PropertyFloat.TownDonorXpBuffDuration, value);
+                SetProperty(PropertyFloat.TownDonorProgress, value);
             }
         }
     }
 
-    public bool HasTownDonorXpBuff => TownDonorXpBuffDuration > 0;
+    public bool HasTownDonorXpBuff => EnchantmentManager.HasSpell((uint)SpellId.GuardsGratitude);
 
     /// <summary>
-    /// Starts the buff, or tops it back up to the full time: donations don't stack the time
+    /// Seconds left on Guard's Gratitude, or 0
     /// </summary>
-    public void GrantTownDonorXpBuff(double seconds)
+    public double TownDonorXpBuffSecondsLeft
     {
-        TownDonorXpBuffDuration = System.Math.Max(TownDonorXpBuffDuration, seconds);
+        get
+        {
+            var enchantment = EnchantmentManager.GetEnchantment((uint)SpellId.GuardsGratitude);
+            return enchantment == null ? 0 : System.Math.Max(0, enchantment.Duration + enchantment.StartTime);
+        }
     }
 
     /// <summary>
-    /// Giving something to a Captain of the Guard: pyreals and trade notes are donated to the town's supply, any amount,
-    /// and anything else is handed back
+    /// Casts Guard's Gratitude on the player, or tops it back up to its full hour: it doesn't stack
+    /// </summary>
+    public void GrantTownDonorXpBuff()
+    {
+        var spell = new Spell((int)SpellId.GuardsGratitude);
+        if (spell.NotFound)
+        {
+            _log.Error("[TOWN EVENT] Guard's Gratitude ({SpellId}) isn't in the spell table or the dat", (int)SpellId.GuardsGratitude);
+            return;
+        }
+
+        var addResult = EnchantmentManager.Add(spell, null, null, true);
+        Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, addResult.Enchantment)));
+        HandleSpellHooks(spell);
+        PlayParticleEffect(PlayScript.SkillUpYellow, Guid);
+    }
+
+    /// <summary>
+    /// Giving something to a Captain of the Guard: pyreals, trade notes and Supply Requisitions are donated to the town's
+    /// supply, any amount, and anything else is handed back
     /// </summary>
     private void GiveToTownCaptain(
         WorldObject captain,
@@ -58,13 +81,14 @@ partial class Player
     {
         // worked out before the stack is split, while the item still holds the whole stack's value
         var pyreals = TownCaptain.GetDonationValue(item, amount);
+        var requisition = TownCaptain.IsSupplyRequisition(item);
 
         if (pyreals <= 0)
         {
             Session.Network.EnqueueSend(
                 new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.TradeAiRefuseEmote)
             );
-            TownCaptain.Tell(this, captain, "I can't use that. Pyreals or trade notes keep the guards supplied.");
+            TownCaptain.Tell(this, captain, "I can't use that. Pyreals, trade notes or supply requisitions keep the guards supplied.");
             return;
         }
 
@@ -88,24 +112,6 @@ partial class Player
 
         itemToGive.Destroy();
 
-        TownCaptain.OnDonation(this, captain, pyreals);
-    }
-
-    public void TownDonorXpBuffTick()
-    {
-        if (!HasTownDonorXpBuff)
-        {
-            return;
-        }
-
-        var remaining = TownDonorXpBuffDuration - CachedHeartbeatInterval;
-        TownDonorXpBuffDuration = remaining;
-
-        if (remaining <= 0)
-        {
-            Session?.Network.EnqueueSend(
-                new GameMessageSystemChat("The town's gratitude fades: your donor's XP bonus has ended.", ChatMessageType.Magic)
-            );
-        }
+        TownCaptain.OnDonation(this, captain, pyreals, requisition);
     }
 }

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using ACE.Entity;
+using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.TownEvents;
 using ACE.Server.WorldObjects.Patrol;
@@ -18,6 +20,25 @@ partial class Creature
     /// The town event this creature attacks in, or null. Runtime only: event creatures are never saved.
     /// </summary>
     public TownEvent TownEvent;
+
+    /// <summary>
+    /// A town event attacker fights only the Town Defense: a player outside it, and their pet, are left alone (and can't
+    /// harm the attacker, Player.CheckPKStatusVsTarget)
+    /// </summary>
+    public bool TownEventIgnores(Creature target) =>
+        TownEvent != null
+        && target switch
+        {
+            Player player => !TownEvent.IsMember(player),
+            CombatPet pet => pet.P_PetOwner == null || !TownEvent.IsMember(pet.P_PetOwner),
+            _ => false
+        };
+
+    /// <summary>
+    /// A guard or the Captain a town event attacker may fight: never one of its visible targets (those are players and
+    /// pets), so it's kept by this instead
+    /// </summary>
+    public bool IsTownEventGuardTarget(Creature target) => TownEvent != null && TownEvent.GuardTargets.Contains(target);
 
     /// <summary>
     /// The archetype health and lethality multipliers of a town event variant (a Raider, a leader), applied by
@@ -139,6 +160,47 @@ partial class Creature
 
         // reissued now and then, in case a fight or a collision dropped the move
         townEventNextMoveTime = currentUnixTime + 5.0;
+    }
+
+    /// <summary>
+    /// A town event attacker idle at the Supply Chest goes after a member or a guard who came near it
+    /// (TownEvent.TickChest). Call on this creature's landblock thread.
+    /// </summary>
+    public void TownEventFight(Creature target)
+    {
+        if (IsDead || TownEvent == null || AttackTarget != null || target == null || target.IsDead)
+        {
+            return;
+        }
+
+        AttackTarget = target;
+        CurrentAttack = null;
+        firstUpdate = true;
+        IsAwake = true;
+        MonsterState = State.Awake;
+    }
+
+    /// <summary>
+    /// The attacker looting the Supply Chest turns to it and rummages in it: the pick up motion, or crouching for a creature
+    /// whose motion table has none. Call on this creature's landblock thread.
+    /// </summary>
+    public void TownEventLootMotion(WorldObject chest)
+    {
+        if (IsDead || AttackTarget != null)
+        {
+            return;
+        }
+
+        if (chest?.Location != null && chest.Location.Landblock == Location.Landblock)
+        {
+            Rotate(chest);
+        }
+
+        var motion = Physics.Animation.MotionTable.GetAnimationLength(MotionTableId, MotionStance.NonCombat, MotionCommand.Pickup) > 0
+            ? MotionCommand.Pickup
+            : MotionCommand.Crouch;
+
+        EnqueueBroadcastMotion(new Motion(this, motion));
     }
 
     /// <summary>

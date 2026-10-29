@@ -213,6 +213,12 @@ public static class WeenieExtensions
             case WeenieType.BezelTool:
             case WeenieType.BezelFragment:
             case WeenieType.WeaponRelic:
+            // CUSTOM: these stack too (their classes are Stackable): Tailoring and Armor Style Kits, Dungeon Mods,
+            // Destabilizers and Spell Dust
+            case WeenieType.TailoringKit:
+            case WeenieType.DungeonModder:
+            case WeenieType.Destabilizer:
+            case WeenieType.SpellDust:
 
                 return true;
         }

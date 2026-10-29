@@ -218,6 +218,12 @@ public class GeneratorProfile
     /// </summary>
     public void ProcessQueue(int? tier = null)
     {
+        // a town's guards don't come back while it's under attack (their first spawn, as a landblock loads, still happens)
+        if (!FirstSpawn && TownEvents.TownEventManager.HoldsGuardRespawn(Generator, DatabaseManager.World.GetCachedWeenie(Biota.WeenieClassId)))
+        {
+            return;
+        }
+
         var index = 0;
 
         while (index < SpawnQueue.Count)

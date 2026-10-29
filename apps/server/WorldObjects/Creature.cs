@@ -225,6 +225,9 @@ public partial class Creature : Container
         // a patroller sharing a route enters at its timetable slot instead of the route start
         var routeStart = this is Player ? null : PlaceAtPatrolSlot();
 
+        // a town guard is dressed for its town's supply level before anyone sees it
+        TownEvents.TownGuardUpgrades.DressOnSpawn(this);
+
         var result = base.EnterWorld();
 
         if (routeStart != null)

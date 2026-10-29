@@ -35,13 +35,26 @@ public static class TownGeography
     public const float TownAreaRadius = 150f;
 
     // guards this far from the centre count as the town's
-    private const float GuardSearchRadius = 300f;
+    internal const float GuardSearchRadius = 300f;
 
     // a route whose far end is closer than this to the centre doesn't leave town, so it's no road in
     private const float MinEntryDistance = 60f;
 
     // entry points closer together than this are the same road
     private const float SameEntryDistance = 30f;
+
+    // a lead-in this close to a road's entry, and farther out, becomes the road's new entry
+    private const float LeadInReach = 120f;
+
+    /// <summary>
+    /// Where a road should start when the guards' patrol ends too close to town: a landblock cell and its local x, y. The
+    /// road begins here and joins the guards' route at its far end.
+    /// </summary>
+    private static readonly Dictionary<string, (uint Cell, float X, float Y)[]> RoadLeadIns = new()
+    {
+        // the north-western road, just past the town sign (0x97220016 [50.3 142.1])
+        { "Qalaba'r", new[] { (0x9722000Fu, 37.8f, 150.4f) } },
+    };
 
     public static float DistanceToCenter(string town, Position position)
     {
@@ -201,6 +214,23 @@ public static class TownGeography
             }
 
             routes.Add(new TownEntryRoute { Waypoints = way });
+        }
+
+        if (RoadLeadIns.TryGetValue(town, out var leadIns) && routes.Count > 0)
+        {
+            var instance = guards.FirstOrDefault()?.InstanceId ?? 0;
+
+            foreach (var (cell, x, y) in leadIns)
+            {
+                var start = new Position(cell, new Vector3(x, y, 0), Quaternion.Identity);
+                start = PatrolComponent.BuildOutdoorPosition(start, 0, 0, instance);
+
+                var route = routes.MinBy(r => r.Entry.DistanceTo(start));
+                if (route.Entry.DistanceTo(start) <= LeadInReach && DistanceToCenter(town, start) > DistanceToCenter(town, route.Entry))
+                {
+                    route.Waypoints.Insert(0, start);
+                }
+            }
         }
 
         return routes;

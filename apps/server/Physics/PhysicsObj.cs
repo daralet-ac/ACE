@@ -467,7 +467,11 @@ public class PhysicsObj
     {
         var ethereal = false;
 
-        if (State.HasFlag(PhysicsState.Ethereal) && State.HasFlag(PhysicsState.IgnoreCollisions))
+        // CUSTOM: a projectile aimed at an ethereal object (a town guard, which players walk through) still reaches it, as
+        // it would any other target: the collision below is ethereal, so it's reported and the projectile hits
+        var isProjectileTarget = transition.ObjectInfo.Object.ProjectileTarget == this;
+
+        if (State.HasFlag(PhysicsState.Ethereal) && State.HasFlag(PhysicsState.IgnoreCollisions) && !isProjectileTarget)
         {
             return TransitionState.OK;
         }
