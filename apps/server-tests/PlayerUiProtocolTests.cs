@@ -59,11 +59,12 @@ public class PlayerUiProtocolTests
     [TestMethod]
     public void HelloJsonHasTheNamesThePluginReads()
     {
-        var hello = new PlayerUiHello(1, "Bob Smith", 0x50000001, PlayerUi.Kinds);
+        var hello = new PlayerUiHello(1, "Bob Smith", 0x50000001, PlayerUi.Kinds, PlayerUi.Features);
 
         var json = PlayerUiProtocol.BuildMessages("hello", hello).JoinedJson();
 
         StringAssert.StartsWith(json, "{\"protocol\":1,\"name\":\"Bob Smith\",\"guid\":1342177281,\"kinds\":[\"hello\",");
+        StringAssert.EndsWith(json, ",\"features\":[\"packid\"]}");
     }
 
     [TestMethod]

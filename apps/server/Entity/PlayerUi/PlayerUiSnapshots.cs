@@ -6,10 +6,11 @@ namespace ACE.Server.Entity.PlayerUi;
 // pin the names.
 
 /// <summary>
-/// Who the plugin is talking for, and every request this server answers (Kinds), so a newer plugin can tell which of its
-/// tabs this server doesn't have yet.
+/// Who the plugin is talking for, every request this server answers (Kinds), so a newer plugin can tell which of its
+/// tabs this server doesn't have yet, and what else this server's commands take that older ones didn't (Features,
+/// PlayerUi.Features), so the plugin only sends a command in a form the server reads.
 /// </summary>
-public record PlayerUiHello(int Protocol, string Name, uint Guid, string[] Kinds);
+public record PlayerUiHello(int Protocol, string Name, uint Guid, string[] Kinds, string[] Features);
 
 /// <summary>
 /// The player's fellowship. Leader is the leader's guid. MaxMembers is how many it can hold (Fellowship.MaxFellows; a
