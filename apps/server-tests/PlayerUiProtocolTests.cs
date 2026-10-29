@@ -197,7 +197,8 @@ public class PlayerUiProtocolTests
     {
         var bank = new PlayerUiBank(
             true, true, 0x7A000001, 40, 120, 5000, 250000, 3, true,
-            [new PlayerUiBankPack(1, 0x80000010, "Backpack", "weapons, swords t6", "weapons, swords t6", 12, 24)]
+            [new PlayerUiBankPack(1, 0x80000010, "Backpack", "weapons, swords t6", "weapons, swords t6", 12, 24)],
+            [new PlayerUiBankPack(0, 0x80000020, "Sack", "none", null, 3, 24)]
         );
 
         var json = PlayerUiProtocol.BuildMessages("bank", bank).JoinedJson();
@@ -205,7 +206,9 @@ public class PlayerUiProtocolTests
         Assert.AreEqual(
             "{\"open\":true,\"loaded\":true,\"guid\":2046820353,\"used\":40,\"capacity\":120,\"coins\":5000,\"notes\":250000,"
                 + "\"noteCount\":3,\"autoSort\":true,\"packs\":[{\"number\":1,\"guid\":2147483664,\"name\":\"Backpack\","
-                + "\"tags\":\"weapons, swords t6\",\"inscription\":\"weapons, swords t6\",\"used\":12,\"capacity\":24}]}",
+                + "\"tags\":\"weapons, swords t6\",\"inscription\":\"weapons, swords t6\",\"used\":12,\"capacity\":24}],"
+                + "\"carried\":[{\"number\":0,\"guid\":2147483680,\"name\":\"Sack\",\"tags\":\"none\",\"inscription\":null,"
+                + "\"used\":3,\"capacity\":24}]}",
             json
         );
     }

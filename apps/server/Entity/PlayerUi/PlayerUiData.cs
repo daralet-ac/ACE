@@ -130,15 +130,16 @@ public static class PlayerUiData
     public static PlayerUiBank GetBank(Player player)
     {
         var bank = player.GetOpenBank();
+        var carried = GetCarriedPacks(player);
 
         if (bank == null)
         {
-            return new PlayerUiBank(false, false, 0, 0, 0, 0, 0, 0, player.BankAutoSort, []);
+            return new PlayerUiBank(false, false, 0, 0, 0, 0, 0, 0, player.BankAutoSort, [], carried);
         }
 
         if (!bank.BankInventoryLoaded)
         {
-            return new PlayerUiBank(true, false, bank.Guid.Full, 0, 0, 0, 0, 0, player.BankAutoSort, []);
+            return new PlayerUiBank(true, false, bank.Guid.Full, 0, 0, 0, 0, 0, player.BankAutoSort, [], carried);
         }
 
         var (used, capacity, _) = player.GetBankSpace(bank);
@@ -146,18 +147,33 @@ public static class PlayerUiData
 
         var packs = player
             .GetBankPacks(bank)
-            .Select((pack, index) => new PlayerUiBankPack(
-                index + 1,
-                pack.Guid.Full,
-                pack.Name,
-                BankCommand.PackTags(pack),
-                pack.Inscription,
-                pack.Inventory.Values.Count(i => !i.UseBackpackSlot),
-                pack.ItemCapacity ?? 0
-            ))
+            .Select((pack, index) => BankPack(index + 1, pack))
             .ToList();
 
-        return new PlayerUiBank(true, true, bank.Guid.Full, used, capacity, coins, notes, noteCount, player.BankAutoSort, packs);
+        return new PlayerUiBank(true, true, bank.Guid.Full, used, capacity, coins, notes, noteCount, player.BankAutoSort, packs, carried);
+    }
+
+    /// <summary>The side packs the player carries, in the order they're in, with their inscriptions as the server has them.</summary>
+    private static List<PlayerUiBankPack> GetCarriedPacks(Player player)
+    {
+        return player.Inventory.Values
+            .OfType<Container>()
+            .OrderBy(p => p.PlacementPosition ?? int.MaxValue)
+            .Select(p => BankPack(0, p))
+            .ToList();
+    }
+
+    private static PlayerUiBankPack BankPack(int number, Container pack)
+    {
+        return new PlayerUiBankPack(
+            number,
+            pack.Guid.Full,
+            pack.Name,
+            BankCommand.PackTags(pack),
+            pack.Inscription,
+            pack.Inventory.Values.Count(i => !i.UseBackpackSlot),
+            pack.ItemCapacity ?? 0
+        );
     }
 
     public static PlayerUiPosition GetPosition(Player player)
