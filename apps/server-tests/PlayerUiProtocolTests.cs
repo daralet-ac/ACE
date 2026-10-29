@@ -121,7 +121,8 @@ public class PlayerUiProtocolTests
         var fellowship = new PlayerUiFellowship(
             "Raiders", 0x50000001, true, true, false, false,
             [
-                new PlayerUiFellow(0x50000001, "Bob", 126, 1, 2, 3, 4, 5, 6, null, "Holtburg (42.1N, 33.6E)", 33.5f, 42.25f, true),
+                new PlayerUiFellow(0x50000001, "Bob", 126, 1, 2, 3, 4, 5, 6, null, "Holtburg (42.1N, 33.6E)", 33.5f, 42.25f, true,
+                    new PlayerUiFocus("Combat Focus", 0x06001234, 0, 1), [2, 3], [4]),
                 new PlayerUiFellow(0x50000002, "Al", 50, 1, 2, 3, 4, 5, 6, 3, "Indoors", null, null, false),
             ]
         );
@@ -132,9 +133,11 @@ public class PlayerUiProtocolTests
             "{\"name\":\"Raiders\",\"leader\":1342177281,\"open\":true,\"shareXp\":true,\"evenShare\":false,\"locked\":false,"
                 + "\"members\":[{\"guid\":1342177281,\"name\":\"Bob\",\"level\":126,\"health\":1,\"maxHealth\":2,\"stamina\":3,"
                 + "\"maxStamina\":4,\"mana\":5,\"maxMana\":6,\"distance\":null,\"location\":\"Holtburg (42.1N, 33.6E)\","
-                + "\"mapX\":33.5,\"mapY\":42.25,\"inBuilding\":true},"
+                + "\"mapX\":33.5,\"mapY\":42.25,\"inBuilding\":true,\"focus\":{\"name\":\"Combat Focus\",\"icon\":100667956,"
+                + "\"underlay\":0,\"overlay\":1},\"buffs\":[2,3],\"debuffs\":[4]},"
                 + "{\"guid\":1342177282,\"name\":\"Al\",\"level\":50,\"health\":1,\"maxHealth\":2,\"stamina\":3,"
-                + "\"maxStamina\":4,\"mana\":5,\"maxMana\":6,\"distance\":3,\"location\":\"Indoors\",\"mapX\":null,\"mapY\":null,\"inBuilding\":false}]}",
+                + "\"maxStamina\":4,\"mana\":5,\"maxMana\":6,\"distance\":3,\"location\":\"Indoors\",\"mapX\":null,\"mapY\":null,\"inBuilding\":false,"
+                + "\"focus\":null,\"buffs\":null,\"debuffs\":null}],\"maxMembers\":0}",
             json
         );
     }
@@ -280,6 +283,36 @@ public class PlayerUiProtocolTests
                 + "\"seekers\":[{\"name\":\"Brin\",\"level\":31,\"activity\":\"any capstone up to level 30\",\"waited\":720,"
                 + "\"fits\":false,\"you\":true}],"
                 + "\"capstones\":[{\"name\":\"Green Mire Grave\",\"short\":\"gmg\",\"level\":10}]}",
+            json
+        );
+    }
+
+    [TestMethod]
+    public void SocialJsonHasTheNamesThePluginReads()
+    {
+        var social = new PlayerUiSocial(
+            true, false, true, true, false,
+            [new PlayerUiFriend(0x50000002, "Al", true)],
+            [new PlayerUiSquelch(0x50000003, "Cy", true)],
+            new PlayerUiAllegiance(
+                "Order", 3, 7, 1000, 2000,
+                new PlayerUiAllegianceMember(0x50000004, "Mo", 200, 6, false, 0),
+                null,
+                [new PlayerUiAllegianceMember(0x50000005, "Vi", 40, 1, true, 50)]
+            )
+        );
+
+        var json = PlayerUiProtocol.BuildMessages("social", social).JoinedJson();
+
+        Assert.AreEqual(
+            "{\"appearOffline\":true,\"ignoreFellowshipRequests\":false,\"autoAcceptFellowshipRequests\":true,"
+                + "\"shareFellowshipXp\":true,\"shareFellowshipLoot\":false,"
+                + "\"friends\":[{\"guid\":1342177282,\"name\":\"Al\",\"online\":true}],"
+                + "\"squelches\":[{\"guid\":1342177283,\"name\":\"Cy\",\"account\":true}],"
+                + "\"allegiance\":{\"name\":\"Order\",\"rank\":3,\"followers\":7,\"xpGenerated\":1000,\"xpReceived\":2000,"
+                + "\"monarch\":{\"guid\":1342177284,\"name\":\"Mo\",\"level\":200,\"rank\":6,\"online\":false,\"xpGenerated\":0},"
+                + "\"patron\":null,"
+                + "\"vassals\":[{\"guid\":1342177285,\"name\":\"Vi\",\"level\":40,\"rank\":1,\"online\":true,\"xpGenerated\":50}]}}",
             json
         );
     }

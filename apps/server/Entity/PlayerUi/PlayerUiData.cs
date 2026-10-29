@@ -21,7 +21,11 @@ public static class PlayerUiData
     /// <summary>The most creatures one @playerui targets request may ask about (the plugin asks about two).</summary>
     public const int MaxTargets = 4;
 
-    public static PlayerUiFellowship GetFellowship(Player player)
+    /// <summary>
+    /// The player's fellowship, or null. With spells, each fellow's buffs and debuffs too (only when the plugin shows them:
+    /// a buffed character has dozens, and this is asked for every second).
+    /// </summary>
+    public static PlayerUiFellowship GetFellowship(Player player, bool spells = false)
     {
         var fellowship = player.Fellowship;
 
@@ -34,7 +38,7 @@ public static class PlayerUiData
             .GetFellowshipMembers()
             .Values.OrderByDescending(m => m.Guid.Full == fellowship.FellowshipLeaderGuid)
             .ThenBy(m => m.Name)
-            .Select(m => GetFellow(player, m))
+            .Select(m => GetFellow(player, m, spells))
             .ToList();
 
         return new PlayerUiFellowship(
@@ -44,13 +48,22 @@ public static class PlayerUiData
             fellowship.ShareXP,
             fellowship.EvenShare,
             fellowship.IsLocked,
-            members
+            members,
+            fellowship.MaxMembers
         );
     }
 
-    private static PlayerUiFellow GetFellow(Player player, Player fellow)
+    private static PlayerUiFellow GetFellow(Player player, Player fellow, bool spells)
     {
         var mapCoords = GetMapCoords(fellow, out var inBuilding);
+        var focus = fellow.GetEquippedCombatFocus();
+        List<int> buffs = null;
+        List<int> debuffs = null;
+
+        if (spells)
+        {
+            (buffs, debuffs) = GetSpellIds(fellow);
+        }
 
         return new PlayerUiFellow(
             fellow.Guid.Full,
@@ -66,8 +79,52 @@ public static class PlayerUiData
             PlayerLocationInfo.GetDisplayString(fellow),
             mapCoords?.X,
             mapCoords?.Y,
-            inBuilding
+            inBuilding,
+            focus == null ? null : new PlayerUiFocus(focus.Name, focus.IconId, focus.IconUnderlayId ?? 0, focus.IconOverlayId ?? 0),
+            buffs,
+            debuffs
         );
+    }
+
+    /// <summary>
+    /// The spell in effect in each category on a fellow, as ids, split into helpful and harmful, the helpful ones only
+    /// with a duration: as GetEnchantments, without the rest of what a target's spells say, since the plugin only draws
+    /// their icons.
+    /// </summary>
+    private static (List<int> Buffs, List<int> Debuffs) GetSpellIds(Creature creature)
+    {
+        var buffs = new List<int>();
+        var debuffs = new List<int>();
+
+        var entries = creature.Biota.PropertiesEnchantmentRegistry.GetEnchantmentsTopLayer(
+            creature.BiotaDatabaseLock,
+            SpellSet.SetSpells
+        );
+
+        foreach (var entry in entries ?? [])
+        {
+            if (entry.SpellId > EnchantmentManager.SpellCategory_Cooldown)
+            {
+                continue;
+            }
+
+            var spell = new Spell(entry.SpellId);
+
+            if (spell.NotFound)
+            {
+                continue;
+            }
+
+            // a buff that never runs out (an item's cantrip, an aura) is always there: only timed ones are worth showing
+            if (spell.IsBeneficial && entry.Duration < 0)
+            {
+                continue;
+            }
+
+            (spell.IsBeneficial ? buffs : debuffs).Add(entry.SpellId);
+        }
+
+        return (buffs, debuffs);
     }
 
     public static PlayerUiBank GetBank(Player player)
