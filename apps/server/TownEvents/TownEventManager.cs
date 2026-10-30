@@ -669,6 +669,48 @@ public static class TownEventManager
     }
 
     /// <summary>
+    /// What a town's Captain of the Guard says of its unrest: how near it is to an attack, without the numbers. Call on the
+    /// world thread (Enqueue).
+    /// </summary>
+    public static string GetCaptainUnrestReport(string town)
+    {
+        var share = Unrest.GetValueOrDefault(town) / Threshold(town);
+
+        // with attacks off, none is coming, however high the unrest
+        return DescribeUnrestToPlayer(
+            town,
+            Enabled ? share : Math.Min(share, 0.99),
+            Events.Any(e => e.TownName == town),
+            Time.GetUnixTime() < CooldownUntil.GetValueOrDefault(town)
+        );
+    }
+
+    /// <summary>
+    /// A town's unrest in words, from its share of the threshold that lets an attack start
+    /// </summary>
+    public static string DescribeUnrestToPlayer(string town, double shareOfThreshold, bool underAttack, bool coolingDown)
+    {
+        if (underAttack)
+        {
+            return $"{town} is under attack! Every able hand is needed.";
+        }
+
+        if (coolingDown)
+        {
+            return $"The raiders have pulled back from {town} for now, after the last attack. It won't last forever.";
+        }
+
+        return shareOfThreshold switch
+        {
+            < 0.25 => $"All is quiet around {town}. The roads are calm.",
+            < 0.5 => $"There's some stirring in the wilds around {town}, but nothing to lose sleep over.",
+            < 0.75 => $"My scouts report growing unrest around {town}. Something is gathering out there.",
+            < 1 => $"Unrest around {town} is running high. My scouts don't like what they're seeing.",
+            _ => $"{town} is on a knife's edge. An attack could come at any time."
+        };
+    }
+
+    /// <summary>
     /// @townevent unrest: every town's unrest against its threshold. Call on the world thread (Enqueue).
     /// </summary>
     public static string DescribeUnrest()

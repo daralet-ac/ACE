@@ -382,6 +382,86 @@ public class TownEventTests
     }
 
     [TestMethod]
+    public void SupplyWords_OneForEachLevel()
+    {
+        var words = Enumerable.Range(0, TownSupply.MaxLevel + 1).Select(TownSupply.DescribeLevel).ToList();
+
+        Assert.AreEqual(TownSupply.MaxLevel + 1, words.Distinct().Count());
+        Assert.AreEqual("bare", TownSupply.DescribeLevel(0));
+        Assert.AreEqual("overflowing", TownSupply.DescribeLevel(TownSupply.MaxLevel));
+
+        // anything out of range still has a word
+        Assert.AreEqual("bare", TownSupply.DescribeLevel(-1));
+        Assert.AreEqual("overflowing", TownSupply.DescribeLevel(TownSupply.MaxLevel + 5));
+    }
+
+    [TestMethod]
+    public void CaptainUnrestReport_IsVagueAndFollowsTheThreshold()
+    {
+        string Say(double share, bool attack = false, bool cooling = false) =>
+            TownEventManager.DescribeUnrestToPlayer("Holtburg", share, attack, cooling);
+
+        StringAssert.Contains(Say(0), "quiet");
+        StringAssert.Contains(Say(0.24), "quiet");
+        StringAssert.Contains(Say(0.25), "stirring");
+        StringAssert.Contains(Say(0.5), "growing");
+        StringAssert.Contains(Say(0.75), "running high");
+        StringAssert.Contains(Say(1), "any time");
+        StringAssert.Contains(Say(3), "any time");
+
+        // an attack or the quiet after one says so, whatever the unrest
+        StringAssert.Contains(Say(0, attack: true), "under attack");
+        StringAssert.Contains(Say(2, cooling: true), "pulled back");
+
+        // no numbers
+        Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(Say(0.6), "[0-9]"));
+    }
+
+    [TestMethod]
+    public void CrateLoot_RollsAtTheCratesTierAndQuality()
+    {
+        var profile = new ACE.Database.Models.World.TreasureDeath { TreasureType = 10059, Tier = 2, LootQualityMod = 0, MagicItemChance = 100 };
+
+        var treasure = ACE.Server.WorldObjects.Gem.GetCrateTreasure(profile, 8, 0.5);
+
+        Assert.AreEqual(8, treasure.Tier);
+        Assert.AreEqual(0.5f, treasure.LootQualityMod, 1e-6f);
+        Assert.AreEqual(100, treasure.MagicItemChance);
+
+        // the shared profile isn't touched
+        Assert.AreEqual(2, profile.Tier);
+        Assert.AreEqual(0f, profile.LootQualityMod, 1e-6f);
+
+        // and quality raises the rolls loot uses for its stats: 0.5 lifts the floor from 0 to about 0.155
+        var low = float.MaxValue;
+        var sum = 0.0;
+        var plainSum = 0.0;
+        const int rolls = 20000;
+
+        for (var i = 0; i < rolls; i++)
+        {
+            var roll = ACE.Server.Factories.LootGenerationFactory.GetDiminishingRoll(treasure);
+            low = System.Math.Min(low, roll);
+            sum += roll;
+            plainSum += ACE.Server.Factories.LootGenerationFactory.GetDiminishingRoll(profile);
+        }
+
+        Assert.IsTrue(low >= 0.154f, $"lowest roll {low}");
+        Assert.IsTrue(sum / rolls > plainSum / rolls + 0.1, $"average {sum / rolls} against {plainSum / rolls}");
+    }
+
+    [TestMethod]
+    public void CrateLoot_MustRequireTheCratesAttribute()
+    {
+        Assert.IsTrue(ACE.Server.WorldObjects.Gem.RequiresAttribute(ACE.Entity.Enum.WieldRequirement.RawAttrib, 1, 1));
+        Assert.IsFalse(ACE.Server.WorldObjects.Gem.RequiresAttribute(ACE.Entity.Enum.WieldRequirement.RawAttrib, 4, 1));
+
+        // clothing has a level requirement, jewelry and trinkets none
+        Assert.IsFalse(ACE.Server.WorldObjects.Gem.RequiresAttribute(ACE.Entity.Enum.WieldRequirement.Level, 0, 1));
+        Assert.IsFalse(ACE.Server.WorldObjects.Gem.RequiresAttribute(ACE.Entity.Enum.WieldRequirement.Invalid, null, 6));
+    }
+
+    [TestMethod]
     public void ChestLootStep_TellsEachQuarter()
     {
         // a 60-second chest: told at 15, 30 and 45 seconds, and never past the third quarter (looted ends the attack)

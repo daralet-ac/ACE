@@ -6874,7 +6874,7 @@ public enum SpellId : uint
     Warmth,
 
     // a donation to a town's Captain of the Guard: +10% XP for an hour (TownCaptain.OnDonation)
-    GuardsGratitude = 6865,
+    GuardsGratitude = 6864,
 
     NumSpells = 8192,
 

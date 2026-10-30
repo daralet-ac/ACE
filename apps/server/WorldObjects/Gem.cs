@@ -449,19 +449,16 @@ public class Gem : Stackable
             return false;
         }
 
-        var treasure = new TreasureDeath(profile);
+        var treasure = GetCrateTreasure(profile, Tier, LootQualityMod);
 
-        if (Tier is int tier)
+        var requiredAttribute = GetProperty(PropertyInt.UseCreateLootAttribute);
+        var loot = RollCrateLoot(treasure, requiredAttribute);
+
+        if (loot.Count == 0 && requiredAttribute != null)
         {
-            treasure.Tier = tier;
+            player.SendTransientError($"Unable to use {Name} at this time!");
+            return false;
         }
-
-        if (LootQualityMod is double qualityMod)
-        {
-            treasure.LootQualityMod = (float)qualityMod;
-        }
-
-        var loot = LootGenerationFactory.CreateRandomLootObjects(treasure, null) ?? new List<WorldObject>();
 
         foreach (var item in loot)
         {
@@ -474,6 +471,16 @@ public class Gem : Stackable
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat($"You find {item.GetNameWithMaterial(item.StackSize ?? 1)} in the {Name}.", ChatMessageType.Broadcast)
             );
+
+            _log.Debug(
+                "[LOOT CRATE] {Player} opened {Crate}: tier {Tier}, quality {Quality}, found {Item} (workmanship {Workmanship})",
+                player.Name,
+                Name,
+                treasure.Tier,
+                treasure.LootQualityMod,
+                item.Name,
+                item.ItemWorkmanship
+            );
         }
 
         if (loot.Count == 0)
@@ -483,6 +490,73 @@ public class Gem : Stackable
 
         return true;
     }
+
+    /// <summary>
+    /// A copy of a crate's treasure profile at the crate's own Tier and LootQualityMod, which every roll of its loot reads.
+    /// The profile itself is shared, so it's left as it is.
+    /// </summary>
+    public static TreasureDeath GetCrateTreasure(TreasureDeath profile, int? tier, double? qualityMod)
+    {
+        var treasure = new TreasureDeath(profile);
+
+        if (tier is int crateTier)
+        {
+            treasure.Tier = crateTier;
+        }
+
+        if (qualityMod is double crateQuality)
+        {
+            treasure.LootQualityMod = (float)crateQuality;
+        }
+
+        return treasure;
+    }
+
+    /// <summary>
+    /// Rolls a crate's loot, again if need be until it requires the crate's attribute: the class loot tables have a few
+    /// items that don't (a Swordstaff among the spears, Shoes among the Amuli armor).
+    /// </summary>
+    private static List<WorldObject> RollCrateLoot(TreasureDeath treasure, int? requiredAttribute)
+    {
+        for (var i = 0; i < MaxCrateLootRolls; i++)
+        {
+            var loot = LootGenerationFactory.CreateRandomLootObjects(treasure, null) ?? new List<WorldObject>();
+
+            if (requiredAttribute == null)
+            {
+                return loot;
+            }
+
+            var kept = new List<WorldObject>();
+
+            foreach (var item in loot)
+            {
+                if (RequiresAttribute(item.WieldRequirements, item.WieldSkillType, requiredAttribute.Value))
+                {
+                    kept.Add(item);
+                }
+                else
+                {
+                    item.Destroy();
+                }
+            }
+
+            if (kept.Count > 0)
+            {
+                return kept;
+            }
+        }
+
+        return new List<WorldObject>();
+    }
+
+    private const int MaxCrateLootRolls = 20;
+
+    /// <summary>
+    /// Whether an item's wield requirement is that attribute
+    /// </summary>
+    public static bool RequiresAttribute(WieldRequirement requirement, int? wieldSkillType, int attribute) =>
+        requirement == WieldRequirement.RawAttrib && wieldSkillType == attribute;
 
     public int? RareId
     {

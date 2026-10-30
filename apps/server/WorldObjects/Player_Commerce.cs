@@ -106,6 +106,12 @@ partial class Player
                         _log.Warning(ex, "[VENDOR] EmoteManager.OnPickup threw for {Item} during FinalizeBuyTransaction", item.Name);
                     }
 
+                    // CUSTOM: opens into what it holds right away
+                    if (item is Gem gem && (gem.GetProperty(PropertyBool.OpensOnPurchase) ?? false))
+                    {
+                        gem.UseGem(this);
+                    }
+
                     vendor.NumItemsSold++;
                 }
             }

@@ -61,6 +61,14 @@ public static class TownSupply
     /// <summary>
     /// What level 1 costs in a town of this tier (from 0): 500 at tier 0, then 1,000 × tier²
     /// </summary>
+    // how a Captain of the Guard speaks of each supply level, from 0 to MaxLevel: players never hear the number
+    private static readonly string[] LevelWords =
+    {
+        "bare", "threadbare", "meager", "sparse", "modest", "adequate", "sound", "ample", "plentiful", "abundant", "overflowing"
+    };
+
+    public static string DescribeLevel(int level) => LevelWords[Math.Clamp(level, 0, MaxLevel)];
+
     public static double GetLevelOneCost(int tier) => tier <= 0 ? TierZeroLevelOne : LevelOneBase * tier * tier;
 
     /// <summary>

@@ -371,6 +371,12 @@ public enum PropertyBool : ushort
     /// </summary>
     ArenaSpectating = 186,
 
+    /// <summary>
+    /// A Gem bought from a vendor is used as soon as it's in the buyer's pack (Player.FinalizeBuyTransaction): a Commendation
+    /// Quartermaster's stack of crafting supplies. One that can't open, for a full pack, stays there to be used later.
+    /// </summary>
+    OpensOnPurchase = 187,
+
     /* custom */
     LinkedPortalOneSummon = 9001,
     LinkedPortalTwoSummon = 9002,

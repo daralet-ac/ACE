@@ -168,7 +168,7 @@ public static class TownCaptain
             var minimum = GetDonorBuffMinimum(town);
 
             var thanks = after > before
-                ? $"Thank you! That brings {town}'s guards up to supply level {after}."
+                ? $"Thank you! {town}'s stores are now {TownSupply.DescribeLevel(after)}."
                 : $"Thank you. Every pyreal keeps {town}'s guards fed and armed.";
 
             if (requisition)
@@ -216,24 +216,24 @@ public static class TownCaptain
     {
         var level = TownSupply.GetLevel(town);
         var supply = TownSupply.GetSupply(town);
-        var lines = new List<string>();
+        var lines = new List<string> { TownEventManager.GetCaptainUnrestReport(town) };
 
         lines.Add(
             level == 0
-                ? $"{town}'s guards have no supply level to speak of. Pyreals given to me buy them food, arms and armor."
-                : $"{town}'s guards are at supply level {level} of {TownSupply.MaxLevel}."
+                ? $"{town}'s stores are {TownSupply.DescribeLevel(level)}. Pyreals given to me buy the guards food, arms and armor."
+                : $"{town}'s stores are {TownSupply.DescribeLevel(level)}."
         );
 
         if (level < TownSupply.MaxLevel)
         {
             var toNext = Math.Ceiling(TownSupply.GetThreshold(town, level + 1) - supply);
-            lines.Add($"{toNext:N0} more pyreals would bring them to level {level + 1}.");
+            lines.Add($"{toNext:N0} more pyreals would make them {TownSupply.DescribeLevel(level + 1)}.");
         }
 
         var loss = TownSupply.GetHourlyLoss(town);
         if (level > 0 && loss > 0)
         {
-            lines.Add($"We go through {loss:N0} pyreals of supply an hour, so level {level} lasts {Describe(TownSupply.GetSecondsUntilLevelDrops(town))} more.");
+            lines.Add($"We go through {loss:N0} pyreals of supply an hour, so they'll stay {TownSupply.DescribeLevel(level)} for {Describe(TownSupply.GetSecondsUntilLevelDrops(town))} more.");
         }
 
         if (player.HasTownDonorXpBuff)

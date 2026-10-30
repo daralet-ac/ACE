@@ -299,6 +299,27 @@ public static class TreasureProfile_MagicItem
     };
 
     // Balanced Profile
+    // Warrior Only Profile: armor and weapons that require Strength (a Warrior Loot Crate)
+    private static ChanceTable<TreasureItemType_Orig> magicItemProfile31 = new ChanceTable<TreasureItemType_Orig>()
+    {
+        (TreasureItemType_Orig.ArmorWarrior, 0.5f),
+        (TreasureItemType_Orig.WeaponWarrior, 0.5f),
+    };
+
+    // Rogue Only Profile: armor and weapons that require Coordination (a Rogue Loot Crate)
+    private static ChanceTable<TreasureItemType_Orig> magicItemProfile32 = new ChanceTable<TreasureItemType_Orig>()
+    {
+        (TreasureItemType_Orig.ArmorRogue, 0.5f),
+        (TreasureItemType_Orig.WeaponRogue, 0.5f),
+    };
+
+    // Caster Only Profile: armor and casters that require Self (a Caster Loot Crate)
+    private static ChanceTable<TreasureItemType_Orig> magicItemProfile33 = new ChanceTable<TreasureItemType_Orig>()
+    {
+        (TreasureItemType_Orig.ArmorCaster, 0.5f),
+        (TreasureItemType_Orig.WeaponCaster, 0.5f),
+    };
+
     private static ChanceTable<TreasureItemType_Orig> magicItemProfile30 = new ChanceTable<TreasureItemType_Orig>()
     {
         // armor (30%)
@@ -356,6 +377,9 @@ public static class TreasureProfile_MagicItem
         magicItemProfile28,
         magicItemProfile29,
         magicItemProfile30,
+        magicItemProfile31,
+        magicItemProfile32,
+        magicItemProfile33,
     };
 
     /// <summary>
