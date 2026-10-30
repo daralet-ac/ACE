@@ -30,9 +30,14 @@ public partial class MarketRepository
     // Icon underlay DAT ids — the real client always renders one of these colored background
     // tiles behind an item's icon art, chosen by broad ItemType category (distinct from the
     // elemental/magical outline recolor above the icon art, computed in ComputeIconEffect).
+    // The client's table is portal.dat's 0x25000008, by ItemType's bit number plus one: melee
+    // weapons and missile weapons have tiles of their own, and casters the plain Misc one.
+    // "Weapon" is the missile tile, a name kept so older plugins still draw those right.
     private static readonly (uint Mask, string Category)[] IconUnderlayCategories =
     {
-        (ItemTypeWeaponMask, "Weapon"),
+        (ItemTypeMeleeWeapon, "MeleeWeapon"),
+        (ItemTypeMissileWeapon, "Weapon"),
+        (ItemTypeCaster, "Caster"),
         (ItemTypeArmor, "Armor"),
         (ItemTypeClothing, "Clothing"),
         (ItemTypeJewelry, "Jewelry"),

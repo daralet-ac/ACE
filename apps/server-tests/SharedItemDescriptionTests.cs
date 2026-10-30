@@ -67,6 +67,21 @@ public class SharedItemDescriptionTests
     }
 
     [TestMethod]
+    [DataRow(1u, "MeleeWeapon")]
+    [DataRow(256u, "Weapon")]
+    [DataRow(32768u, "Caster")]
+    [DataRow(2u, "Armor")]
+    [DataRow(128u, "Misc")]
+    public void AnItemsIconUnderlayGoesByItsItemType(uint itemType, string underlay)
+    {
+        var json = "{\"WeenieType\":6,\"PropertiesInt\":{\"ItemType\":" + itemType + "},\"PropertiesString\":{\"Name\":\"Thing\"}}";
+
+        var (listing, _) = MarketRepository.Describe(new SnapshotItemFacts(json, new Dictionary<string, object> { ["ItemWeenieClassId"] = 351u }));
+
+        Assert.AreEqual(underlay, listing.IconUnderlay);
+    }
+
+    [TestMethod]
     public void AWeaponIsDescribedFromItsSnapshotLikeAListing()
     {
         // ItemType 1 is MeleeWeapon, WeaponType 2 Sword
