@@ -139,7 +139,8 @@ public class BankCommand
                 + "  /bank balance - Shows the pyreals and trade notes in your bank and across your account. Works anywhere.\n"
                 + "  /bank packs - Shows your bank space and how each pack is tagged.\n"
                 + "  /bank inscribe [number] <tags> - Inscribes a pack: a bank pack by its number in /bank packs, "
-                + "or the pack you last examined, carried or banked (\"/bank inscribe 2 clear\" clears pack 2).\n"
+                + "or the pack you last examined, carried or banked (\"/bank inscribe 2 clear\" clears pack 2). "
+                + "Add-ons name a pack by its id instead (\"/bank inscribe #8000ABCD weapons\").\n"
                 + "  /bank icon [number] <pack, sack, pouch or small pouch> <color> - Changes a pack's icon, for a bank pack by its number in /bank packs "
                 + "or the pack you last examined, carried or banked (\"/bank icon 2 sack blue\", \"/bank icon 2 default\"). /bank icon lists the colors.\n"
                 + "  /bank log [how many] - Your account's recent bank deposits, withdrawals and salvage combines, by any of your characters. Works anywhere.\n"
@@ -464,11 +465,13 @@ public class BankCommand
     // --- /bank inscribe ---
 
     // The client only lets a player type an inscription on something they carry (admins excepted), so a pack in the
-    // bank is inscribed with this. A carried pack can be too, as the pack last examined: the Daralet plugin's Tags list
-    // examines one and sends this, since a plugin can't type in the appraisal panel.
+    // bank is inscribed with this. A carried pack can be too, as the pack last examined, or by its id ("#8000ABCD"): the
+    // Daralet plugin's Tags list sends the id, since a plugin can't type in the appraisal panel, and what was examined
+    // last can be another pack by the time the command arrives (see FindPack).
     private static void HandleInscribe(Session session, string[] parameters)
     {
-        var packNumber = TakePackNumber(ref parameters);
+        var packId = TakePackId(ref parameters);
+        var packNumber = packId == null ? TakePackNumber(ref parameters) : null;
         var text = string.Join(" ", parameters).Trim();
 
         if (text.Length == 0)
@@ -488,7 +491,7 @@ public class BankCommand
         }
 
         var player = session.Player;
-        var pack = FindPack(session, packNumber, carriedToo: true, "/bank inscribe <number> <tags>", out var which);
+        var pack = FindPack(session, packNumber, packId, carriedToo: true, "/bank inscribe <number> <tags>", out var which);
         if (pack == null)
         {
             return;
@@ -525,7 +528,8 @@ public class BankCommand
 
     private static void HandleIcon(Session session, string[] parameters)
     {
-        var packNumber = TakePackNumber(ref parameters);
+        var packId = TakePackId(ref parameters);
+        var packNumber = packId == null ? TakePackNumber(ref parameters) : null;
 
         if (parameters.Length == 0)
         {
@@ -539,7 +543,7 @@ public class BankCommand
             return;
         }
 
-        var pack = FindPack(session, packNumber, carriedToo: true, "/bank icon <number> <style> <color>", out var which);
+        var pack = FindPack(session, packNumber, packId, carriedToo: true, "/bank icon <number> <style> <color>", out var which);
         if (pack == null)
         {
             return;
@@ -933,7 +937,43 @@ public class BankCommand
     }
 
     /// <summary>
-    /// The pack a command is for: the bank pack with that number in /bank packs, or else the pack last examined, which
+    /// Takes a leading pack id ("#8000ABCD", hex, as the Daralet plugin sends it) off the parameters, if there is one.
+    /// </summary>
+    private static uint? TakePackId(ref string[] parameters)
+    {
+        if (parameters.Length > 0 && TryParsePackId(parameters[0], out var id))
+        {
+            parameters = parameters.Skip(1).ToArray();
+            return id;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// A pack id as /bank inscribe and /bank icon take it: "#" and the object's guid in hex ("#8000ABCD", "#0x8000ABCD").
+    /// </summary>
+    internal static bool TryParsePackId(string word, out uint id)
+    {
+        id = 0;
+
+        if (string.IsNullOrEmpty(word) || word[0] != '#')
+        {
+            return false;
+        }
+
+        var hex = word[1..];
+        if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        {
+            hex = hex[2..];
+        }
+
+        return uint.TryParse(hex, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out id) && id != 0;
+    }
+
+    /// <summary>
+    /// The pack a command is for: the pack with that id (packId), one you carry or one in your open bank; the bank pack
+    /// with that number in /bank packs; or else the pack last examined, which
     /// must be in the open bank, or with carriedToo also one of the player's own side packs. Says why not and returns
     /// null if there isn't one. which names the pack and where it is, so the player can check it was the one they meant.
     ///
@@ -941,11 +981,17 @@ public class BankCommand
     /// ones an add-on sends when it scans items. So a bank pack can also be named by its number, which no scan can
     /// change, and a last-examined item that isn't one of your packs is refused with its name.
     /// </summary>
-    private static Container FindPack(Session session, int? packNumber, bool carriedToo, string numberUsage, out string which)
+    private static Container FindPack(Session session, int? packNumber, uint? packId, bool carriedToo, string numberUsage, out string which)
     {
         which = null;
 
         var player = session.Player;
+
+        if (packId != null)
+        {
+            return FindPackById(session, packId.Value, carriedToo, out which);
+        }
+
         var targetGuid = player.RequestedAppraisalTarget;
 
         if (
@@ -1004,6 +1050,44 @@ public class BankCommand
             (name == null ? $"Examine {packs} first" : $"The last thing you examined was {name}, not {packs}")
                 + $". Use {numberUsage} with the pack's number from /bank packs; add-ons that examine items can change what you examined last."
         );
+        return null;
+    }
+
+    /// <summary>
+    /// The pack with this id: a side pack you carry (with carriedToo), or a pack in your open bank. Nothing else, so an id
+    /// can't reach anyone else's things.
+    /// </summary>
+    private static Container FindPackById(Session session, uint packId, bool carriedToo, out string which)
+    {
+        which = null;
+
+        var player = session.Player;
+
+        if (carriedToo && player.Inventory.TryGetValue(new ObjectGuid(packId), out var carried) && carried is Container carriedPack)
+        {
+            which = $"{carriedPack.Name} (carried)";
+            return carriedPack;
+        }
+
+        if (player.GetOpenBank() != null)
+        {
+            var bank = GetReadyBank(session);
+            if (bank == null)
+            {
+                return null;
+            }
+
+            var bankPacks = player.GetBankPacks(bank);
+            var banked = bankPacks.FirstOrDefault(p => p.Guid.Full == packId);
+
+            if (banked != null)
+            {
+                which = $"{banked.Name} (bank pack {bankPacks.IndexOf(banked) + 1})";
+                return banked;
+            }
+        }
+
+        Send(session, carriedToo ? "That isn't one of your packs, or a pack in your open bank." : "That isn't a pack in your open bank.");
         return null;
     }
 
