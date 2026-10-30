@@ -141,7 +141,7 @@ public static class PlayerFactory
             {
                 if (characterCreateInfo.Appearance.HeadgearStyle < uint.MaxValue) // No headgear is max UINT
                 {
-                    var hat = GetClothingObject(
+                    var hat = GetUnarmoredClothingObject(
                         sex.GetHeadgearWeenie(characterCreateInfo.Appearance.HeadgearStyle),
                         characterCreateInfo.Appearance.HeadgearColor,
                         characterCreateInfo.Appearance.HeadgearHue
@@ -186,7 +186,7 @@ public static class PlayerFactory
                     player.TryAddToInventory(CreateIOU(sex.GetPantsWeenie(characterCreateInfo.Appearance.PantsStyle)));
                 }
 
-                var shoes = GetClothingObject(
+                var shoes = GetUnarmoredClothingObject(
                     sex.GetFootwearWeenie(characterCreateInfo.Appearance.FootwearStyle),
                     characterCreateInfo.Appearance.FootwearColor,
                     characterCreateInfo.Appearance.FootwearHue
@@ -370,7 +370,7 @@ public static class PlayerFactory
 
                         if (isDualWieldTrainedOrSpecialized && loot != null)
                         {
-                            if (loot.WeenieType == WeenieType.MeleeWeapon)
+                            if (loot.WeenieType == WeenieType.MeleeWeapon && !loot.IsTwoHanded)
                             {
                                 var dualloot = WorldObjectFactory.CreateNewWorldObject(item.WeenieId);
                                 if (dualloot != null)
@@ -428,7 +428,7 @@ public static class PlayerFactory
 
                             if (isDualWieldTrainedOrSpecialized && loot != null)
                             {
-                                if (loot.WeenieType == WeenieType.MeleeWeapon)
+                                if (loot.WeenieType == WeenieType.MeleeWeapon && !loot.IsTwoHanded)
                                 {
                                     var dualloot = WorldObjectFactory.CreateNewWorldObject(item.WeenieId);
                                     if (dualloot != null)
@@ -551,6 +551,22 @@ public static class PlayerFactory
         CharacterCreateSetDefaultCharacterOptions(player);
 
         return CreateResult.Success;
+    }
+
+    /// <summary>
+    /// The chargen headgear and footwear weenies are also sold and looted with armor, so only the copy given to the
+    /// new character loses it. Set to 0 rather than removed, like shirts and pants, so armor patches still reject it.
+    /// </summary>
+    private static WorldObject GetUnarmoredClothingObject(uint weenieClassId, uint palette, double shade)
+    {
+        var worldObject = GetClothingObject(weenieClassId, palette, shade);
+
+        if (worldObject != null)
+        {
+            worldObject.ArmorLevel = 0;
+        }
+
+        return worldObject;
     }
 
     private static WorldObject GetClothingObject(uint weenieClassId, uint palette, double shade)
