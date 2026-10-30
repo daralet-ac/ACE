@@ -92,6 +92,12 @@ public sealed class TownCombatStats
     public void AddDealt(string key, double amount) => Line(key).Dealt += amount;
 
     /// <summary>
+    /// A share as a whole percent, the same under every culture: the P0 format gives "25 %" under the invariant culture a
+    /// Linux server can run in, and "25%" under en-US
+    /// </summary>
+    public static string FormatPercent(double share) => $"{share * 100:0}%";
+
+    /// <summary>
     /// One line per side that fought: swings, how many missed and how, the average landed hit before and after
     /// mitigation, and the damage done
     /// </summary>
@@ -100,7 +106,7 @@ public sealed class TownCombatStats
         foreach (var key in Keys.Where(Lines.ContainsKey))
         {
             var l = Lines[key];
-            string Share(int n) => l.Swings > 0 ? $"{(double)n / l.Swings:P0}" : "0%";
+            string Share(int n) => l.Swings > 0 ? FormatPercent((double)n / l.Swings) : "0%";
 
             yield return $"{key.Replace(">", " vs ")}: {l.Swings} swings, evaded {Share(l.Evaded)}, blocked {Share(l.Blocked)}, "
                 + $"parried {Share(l.Parried)}, landed {l.Landed} "

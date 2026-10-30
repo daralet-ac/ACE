@@ -1661,7 +1661,7 @@ public sealed class TownEvent
             if (lootingNow && now - lastLootTime >= ChestDrivenOffSeconds)
             {
                 lootingNow = false;
-                TellRegion($"The raiders are driven from {TownName}'s Supply Chest, {ChestLooted:P0} emptied!");
+                TellRegion($"The raiders are driven from {TownName}'s Supply Chest, {TownCombatStats.FormatPercent(ChestLooted)} emptied!");
             }
 
             return;
@@ -1675,7 +1675,7 @@ public sealed class TownEvent
             lootingNow = true;
             TellRegion(
                 lootStartWarned
-                    ? $"Raiders are back at {TownName}'s Supply Chest, {ChestLooted:P0} emptied! Drive them off!"
+                    ? $"Raiders are back at {TownName}'s Supply Chest, {TownCombatStats.FormatPercent(ChestLooted)} emptied! Drive them off!"
                     : $"Raiders are at {TownName}'s Supply Chest! Drive them off before they empty it!"
             );
             lootStartWarned = true;
@@ -2028,7 +2028,7 @@ public sealed class TownEvent
         {
             $"{TownName} (#{Id}): {Phase}, wave {Wave}/{WaveCount}, {Family ?? "family not picked yet"}, {AttackersAlive} attackers alive, "
                 + $"{Fellowship?.TotalMembers ?? 0} defenders, {(int)(Time.GetUnixTime() - StartTime)}s in"
-                + (ChestRaid ? $", a chest raid ({ChestLooted:P0} looted)" : ""),
+                + (ChestRaid ? $", a chest raid ({TownCombatStats.FormatPercent(ChestLooted)} looted)" : ""),
             "  " + DescribeDefenders()
         };
         lines.AddRange(Combat.Describe().Select(l => "  " + l));
@@ -2064,7 +2064,7 @@ public sealed class TownEvent
     )
     {
         var total = playerDamage + guardDamage + captainDamage;
-        string Share(double damage) => total > 0 ? $"{damage / total:P0}" : "0%";
+        string Share(double damage) => total > 0 ? TownCombatStats.FormatPercent(damage / total) : "0%";
 
         return $"damage dealt: players {playerDamage:N0} ({Share(playerDamage)}), guards {guardDamage:N0} ({Share(guardDamage)}), "
             + $"Captain {captainDamage:N0} ({Share(captainDamage)}); kills: players {playerKills}, guards {guardKills}, Captain {captainKills}"

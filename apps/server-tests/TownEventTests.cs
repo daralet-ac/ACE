@@ -382,6 +382,36 @@ public class TownEventTests
     }
 
     [TestMethod]
+    public void Percents_ReadTheSameUnderEveryCulture()
+    {
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+
+        // a culture that writes percents with a space before the % and one without, made by hand: named cultures like en-US
+        // aren't available on a runner in invariant globalization mode
+        var spaced = (System.Globalization.CultureInfo)System.Globalization.CultureInfo.InvariantCulture.Clone();
+        spaced.NumberFormat.PercentPositivePattern = 0;
+
+        var unspaced = (System.Globalization.CultureInfo)System.Globalization.CultureInfo.InvariantCulture.Clone();
+        unspaced.NumberFormat.PercentPositivePattern = 1;
+
+        try
+        {
+            foreach (var test in new[] { spaced, unspaced })
+            {
+                System.Globalization.CultureInfo.CurrentCulture = test;
+
+                Assert.AreEqual("25%", TownCombatStats.FormatPercent(0.25));
+                Assert.AreEqual("0%", TownCombatStats.FormatPercent(0));
+                Assert.AreEqual("100%", TownCombatStats.FormatPercent(1));
+            }
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = culture;
+        }
+    }
+
+    [TestMethod]
     public void SupplyWords_OneForEachLevel()
     {
         var words = Enumerable.Range(0, TownSupply.MaxLevel + 1).Select(TownSupply.DescribeLevel).ToList();
