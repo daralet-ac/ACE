@@ -57,7 +57,7 @@ partial class WorldObject
         LastRequestedDatabaseSave = DateTime.UtcNow;
         ChangesDetected = false;
 
-        if (enqueueSave)
+        if (enqueueSave && !BelongsToFakePlayer())
         {
             CheckpointTimestamp = Time.GetUnixTime();
             //DatabaseManager.Shard.SaveBiota(Biota, BiotaDatabaseLock, null);
@@ -78,6 +78,12 @@ partial class WorldObject
             );
         }
     }
+
+    /// <summary>
+    /// A fake player (FakePlayerManager), or something one is wielding or carrying (in a pack too): never saved
+    /// </summary>
+    private bool BelongsToFakePlayer() =>
+        (this as Player ?? Wielder as Player ?? Container as Player ?? Container?.Container as Player) is { IsFakePlayer: true };
 
     /// <summary>
     /// This will set the LastRequestedDatabaseSave to MinValue and ChangesDetected to true.<para />

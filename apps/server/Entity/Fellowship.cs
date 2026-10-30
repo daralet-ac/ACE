@@ -36,6 +36,19 @@ public class Fellowship
     public bool Open; // indicates if non-leaders can invite new fellowship members
     public bool IsLocked; // only set through emotes. if a fellowship is locked, new fellowship members cannot be added
 
+    /// <summary>
+    /// The town event this is the Town Defense fellowship of, or null for an ordinary fellowship. A Town Defense fellowship
+    /// has no size cap, its members can only leave it (TownEventManager adds them), and it disbands when the event ends.
+    /// </summary>
+    public TownEvents.TownEvent TownDefense;
+
+    public bool IsTownDefense => TownDefense != null;
+
+    /// <summary>
+    /// How many members this fellowship can have: MaxFellows, or no cap for a Town Defense fellowship
+    /// </summary>
+    public int MaxMembers => IsTownDefense ? int.MaxValue : MaxFellows;
+
     public Dictionary<uint, WeakReference<Player>> FellowshipMembers;
 
     public Dictionary<uint, int> DepartedMembers;
@@ -145,7 +158,7 @@ public class Fellowship
             }
         }
 
-        if (FellowshipMembers.Count >= MaxFellows)
+        if (FellowshipMembers.Count >= MaxMembers)
         {
             inviter.Session.Network.EnqueueSend(
                 new GameEventWeenieError(inviter.Session, WeenieError.YourFellowshipIsFull)
@@ -217,7 +230,7 @@ public class Fellowship
             return;
         }
 
-        if (FellowshipMembers.Count >= MaxFellows)
+        if (FellowshipMembers.Count >= MaxMembers)
         {
             inviter.Session.Network.EnqueueSend(
                 new GameEventWeenieError(inviter.Session, WeenieError.YourFellowshipIsFull)
@@ -744,6 +757,15 @@ public class Fellowship
     }
 
     /// <summary>
+    /// A fellow Shrouded (or lost the Shroud) while in the fellowship, which changes who counts toward the level spread
+    /// </summary>
+    public void OnFellowShroudChanged()
+    {
+        CalculateXPSharing();
+        UpdateAllMembers();
+    }
+
+    /// <summary>
     /// Calculates fellowship XP sharing (ShareXP, EvenShare) from fellow levels
     /// </summary>
     private void CalculateXPSharing()
@@ -754,10 +776,18 @@ public class Fellowship
 
         // - If members are all within ten levels of the founder, XP will be shared proportionally.
 
-        var fellows = GetFellowshipMembers();
+        // Shrouded fellows never receive shared XP (SplitXp), so they're left out of the level spread too: one of
+        // them can't switch sharing off for everyone else. With only Shrouded fellows, everyone counts.
+        var members = GetFellowshipMembers().Values.ToList();
+        var fellows = members.Where(f => !IsShrouded(f)).ToList();
+
+        if (fellows.Count == 0)
+        {
+            fellows = members;
+        }
 
         var allEvenShareLevel = PropertyManager.GetLong("fellowship_even_share_level").Item;
-        var allOverEvenShareLevel = !fellows.Values.Any(f => (f.Level ?? 1) < allEvenShareLevel);
+        var allOverEvenShareLevel = !fellows.Any(f => (f.Level ?? 1) < allEvenShareLevel);
 
         if (allOverEvenShareLevel)
         {
@@ -772,25 +802,10 @@ public class Fellowship
             return;
         }
 
-        //var maxLevelDiff = fellows.Values.Max(f => Math.Abs((leader.Level ?? 1) - (f.Level ?? 1)));
+        // instead of comparing to leader level, we now find the lowest level in the fellowship and compare to it
+        var lowestLevel = fellows.Min(f => f.Level ?? 1);
 
-        // instead of comparing to leader level, we now find the lowest level in the fellowship and compare to it.
-        // Anyone with scaling and no more than 25 levels higher is reduced to their level for the purposes of comparison.
-        // If there are non-scaled higher level players in the fellow, it will share unevenly as intended
-        var lowestLevel = fellows.Values.Min(f => f.Level ?? 1);
-
-        var maxLevelDiff = fellows.Values.Max(f =>
-        {
-            var fLevel = f.Level ?? 1;
-            var fromMax = fLevel - lowestLevel;
-
-            if (fromMax <= 25 && f.EnchantmentManager.HasSpell((int)SpellId.Shrouded))
-            {
-                fLevel = lowestLevel;
-            }
-
-            return Math.Abs(lowestLevel - fLevel);
-        });
+        var maxLevelDiff = fellows.Max(f => (f.Level ?? 1) - lowestLevel);
 
         if (maxLevelDiff <= 5)
         {
@@ -837,6 +852,11 @@ public class Fellowship
 
             foreach (var member in fellowshipMembers.Values)
             {
+                if (!ReceivesShare(member, player))
+                {
+                    continue;
+                }
+
                 var fellowXpType = player == member ? XpType.Quest : XpType.Fellowship;
 
                 member.GrantXP(perAmount, fellowXpType, xpSourceLevel, shareType, player == member ? xpMessage : "");
@@ -850,6 +870,11 @@ public class Fellowship
 
             foreach (var member in fellowshipMembers.Values)
             {
+                if (!ReceivesShare(member, player))
+                {
+                    continue;
+                }
+
                 var shareAmount = (ulong)Math.Round(totalAmount * GetDistanceScalar(player, member, xpType));
 
                 var fellowXpType = player == member ? xpType : XpType.Fellowship;
@@ -869,11 +894,21 @@ public class Fellowship
         // based on each fellowship member's level
         else
         {
-            var levelXPSum = fellowshipMembers.Values.Select(p => p.GetXPToNextLevel(p.Level.Value)).Sum();
+            // Shrouded fellows take no part in the proportional split. A Shrouded fellow's own kill still gives them an
+            // even share of it, which GrantXP's overlevel penalty cuts to what their real level would earn.
+            var levelXPSum = fellowshipMembers.Values.Where(p => !IsShrouded(p)).Select(p => p.GetXPToNextLevel(p.Level.Value)).Sum();
 
             foreach (var member in fellowshipMembers.Values)
             {
-                var levelXPScale = (double)member.GetXPToNextLevel(member.Level.Value) / levelXPSum;
+                if (!ReceivesShare(member, player))
+                {
+                    continue;
+                }
+
+                var levelXPScale =
+                    IsShrouded(member) || levelXPSum == 0
+                        ? GetMemberSharePercent()
+                        : (double)member.GetXPToNextLevel(member.Level.Value) / levelXPSum;
 
                 var playerTotal = (ulong)Math.Round(amount * levelXPScale * GetDistanceScalar(player, member, xpType));
 
@@ -931,11 +966,14 @@ public class Fellowship
         }
     }
 
-    internal double GetMemberSharePercent()
-    {
-        var fellowshipMembers = GetFellowshipMembers();
+    internal double GetMemberSharePercent() => GetMemberSharePercent(GetFellowshipMembers().Count);
 
-        switch (fellowshipMembers.Count)
+    /// <summary>
+    /// The share of each kill's XP each fellow gets when XP is shared evenly, by the number of fellows
+    /// </summary>
+    internal static double GetMemberSharePercent(int memberCount)
+    {
+        switch (memberCount)
         {
             case 1:
                 return 1.0;
@@ -954,11 +992,20 @@ public class Fellowship
             case 8:
                 return .35;
             case 9:
+            case 10:
                 return .3;
-            // TODO: handle fellowship mods with > 9 players?
         }
-        return 1.0;
+
+        // past 10 (Town Defense fellowships): 10 fellows share 300% between them, and so does any larger fellowship
+        return memberCount > 10 ? 3.0 / memberCount : 1.0;
     }
+
+    private static bool IsShrouded(Player player) => player.EnchantmentManager.HasSpell((int)SpellId.Shrouded);
+
+    /// <summary>
+    /// A Shrouded fellow gets no XP from the others' kills, only their own share of their own
+    /// </summary>
+    private static bool ReceivesShare(Player member, Player earner) => member == earner || !IsShrouded(member);
 
     public const int MaxDistance = 600;
 

@@ -1714,6 +1714,47 @@ LEFT JOIN biota_properties_int tq
     }
 
     /// <summary>
+    /// Saves a town attack that ended, with its participants (town_event). Throws if it can't be saved.
+    /// </summary>
+    public virtual void AddTownEventLog(TownEventLog log)
+    {
+        using var context = new ShardDbContext();
+
+        context.TownEventLogs.Add(log);
+        context.SaveChanges();
+    }
+
+    /// <summary>
+    /// Records what became of a participant's reward waiting at the Captain: claimed (with its XP) or expired
+    /// </summary>
+    public virtual void UpdateTownEventReward(string uid, uint characterId, string reward, ulong xp, DateTime? claimedAtUtc)
+    {
+        using var context = new ShardDbContext();
+
+        context.Database.ExecuteSqlInterpolated(
+            $@"UPDATE town_event_participant p JOIN town_event e ON e.id = p.event_id
+               SET p.reward = {reward}, p.xp = {xp}, p.claimed_at_utc = {claimedAtUtc}
+               WHERE e.uid = {uid} AND p.character_id = {characterId}"
+        );
+    }
+
+    /// <summary>
+    /// The most recent town attacks, newest first, with their participants. Throws if they can't be read.
+    /// </summary>
+    public virtual List<TownEventLog> GetRecentTownEventLogs(int count, string town = null)
+    {
+        using var context = new ShardDbContext();
+
+        var query = context.TownEventLogs.AsNoTracking().Include(e => e.Participations).AsQueryable();
+        if (town != null)
+        {
+            query = query.Where(e => e.Town == town);
+        }
+
+        return query.OrderByDescending(e => e.EndedAtUtc).Take(count).ToList();
+    }
+
+    /// <summary>
     /// Every quest stamped on an account (account_quest_registry). Throws if they can't be read.
     /// </summary>
     public virtual List<AccountQuestRegistry> GetAccountQuests(uint accountId)

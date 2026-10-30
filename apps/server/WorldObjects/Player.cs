@@ -37,7 +37,7 @@ public partial class Player : Creature, IPlayer
 
     public Character Character { get; }
 
-    public Session Session { get; }
+    public Session Session { get; private set; }
 
     public ContractManager ContractManager;
 
@@ -646,6 +646,13 @@ public partial class Player : Creature, IPlayer
     /// </summary>
     public bool LogOut(bool clientSessionTerminatedAbruptly = false, bool forceImmediate = false)
     {
+        // a fake player is never saved: it's simply taken out of the world
+        if (IsFakePlayer)
+        {
+            FakePlayerManager.Remove(this);
+            return true;
+        }
+
         if (PKLogoutActive && !forceImmediate)
         {
             //Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouHaveBeenInPKBattleTooRecently));
@@ -851,6 +858,13 @@ public partial class Player : Creature, IPlayer
     private void FinalizeLogout()
     {
         PlayerManager.RemovePlayerFromFinalLogoffQueue(this);
+
+        if (IsFakePlayer)
+        {
+            FakePlayerManager.Remove(this);
+            return;
+        }
+
         CurrentLandblock?.RemoveWorldObject(Guid, false);
 
         // someone who logs out in a duel gives it up, and gets back the player killer status they had before it

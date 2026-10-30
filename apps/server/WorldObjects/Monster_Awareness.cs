@@ -62,7 +62,7 @@ partial class Creature
     /// </summary>
     protected virtual void Sleep()
     {
-        if (HasPatrol)
+        if (HasPatrol || TownEvent != null || TownCaptainOnDuty)
         {
             return;
         }
@@ -101,6 +101,22 @@ partial class Creature
             }
         }
     }
+
+    /// <summary>
+    /// Returns TRUE for a monster that doesn't attack on sight (never, or only once appraised or attacked), such as a chicken
+    /// </summary>
+    public bool IsHarmless => (Tolerance & (Tolerance.NoAttack | Tolerance.Appraise | Tolerance.Retaliate)) != 0;
+
+    /// <summary>
+    /// Returns TRUE if this faction mob (a town guard, a Captain of the Guard) should leave a monster alone: one that's
+    /// harmless, unless it attacked this one
+    /// </summary>
+    private bool FactionMobIgnores(Creature creature) =>
+        IsFactionMob
+        && creature is not Player
+        && creature is not CombatPet
+        && creature.IsHarmless
+        && !PhysicsObj.ObjMaint.RetaliateTargetsContainsKey(creature.Guid.Full);
 
     /// <summary>
     /// When set, this monster will only ever consider creatures of this specific WeenieClassId
@@ -184,6 +200,12 @@ partial class Creature
     {
         if (MonsterState == State.Return)
         {
+            return;
+        }
+
+        if (TownEvent != null)
+        {
+            TownEventResumeMarch();
             return;
         }
 
@@ -505,6 +527,12 @@ partial class Creature
             {
                 SetNextTargetTime();
                 return PatrolFindNextTarget();
+            }
+
+            if (TownCaptainOnDuty || IsTownCaptain)
+            {
+                SetNextTargetTime();
+                return TownCaptainKeepTarget();
             }
 
             SelectTargetingTactic();
@@ -942,6 +970,21 @@ partial class Creature
             }
         }
 
+        // a town event attacker goes after the guards and the Captain in range, as it does players, not only those who hit
+        // it: a monster's visible targets are players and pets. No line of sight test: guards are ethereal, so a sight ray
+        // never reaches them.
+        if (TownEvent != null)
+        {
+            foreach (var guard in TownEvent.GuardTargets)
+            {
+                if (!guard.IsDead && guard.PhysicsObj != null && !candidates.Contains(guard)
+                    && PhysicsObj.get_distance_sq_to_object(guard.PhysicsObj, true) <= VisualAwarenessRangeSq)
+                {
+                    candidates.Add(guard);
+                }
+            }
+        }
+
         // cached once per call rather than re-read from the property dictionary per candidate
         var targetSpecificWcid = TargetSpecificWcid;
 
@@ -1001,6 +1044,18 @@ partial class Creature
                 {
                     continue;
                 }
+            }
+
+            // a faction mob doesn't go after chickens and the like
+            if (FactionMobIgnores(creature))
+            {
+                continue;
+            }
+
+            // a town event attacker only goes after the Town Defense
+            if (TownEventIgnores(creature))
+            {
+                continue;
             }
 
             // cannot switch AttackTargets with Tolerance.Target
@@ -1372,6 +1427,12 @@ partial class Creature
 
             // ensure another faction
             if (SameFaction(creature) && !PotentialFoe(creature))
+            {
+                continue;
+            }
+
+            // a faction mob doesn't pick fights with chickens and the like
+            if (FactionMobIgnores(creature))
             {
                 continue;
             }

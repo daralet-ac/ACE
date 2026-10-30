@@ -6873,6 +6873,9 @@ public enum SpellId : uint
     Frostbite,
     Warmth,
 
+    // a donation to a town's Captain of the Guard: +10% XP for an hour (TownCaptain.OnDonation)
+    GuardsGratitude = 6864,
+
     NumSpells = 8192,
 
     // shared cooldowns, (0x8000 | shared cooldown id)

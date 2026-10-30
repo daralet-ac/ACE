@@ -71,10 +71,13 @@ public class Creature_BodyPart
 
         if (Creature is { IsMonster: true, CreatureArmorEffectsDamageReduction: true })
         {
+            var worn = 0.0f;
             foreach (var armorLayer in armorLayers)
             {
-                baseArmor += GetArmorMod(armorLayer, damageType, ignoreMagicArmor: true);
+                worn += GetArmorMod(armorLayer, damageType, ignoreMagicArmor: true);
             }
+
+            baseArmor = Creature.ArmorTakesHigher ? Math.Max(baseArmor, worn) : baseArmor + worn;
         }
 
         return baseArmor;
@@ -110,10 +113,13 @@ public class Creature_BodyPart
         // handle monsters w/ multiple layers of armor
         if (Creature is {IsMonster: true, CreatureArmorEffectsDamageReduction: true})
         {
+            var worn = 0.0f;
             foreach (var armorLayer in armorLayers)
             {
-                effectiveAL += GetArmorMod(armorLayer, damageType, ignoreMagicArmor);
+                worn += GetArmorMod(armorLayer, damageType, ignoreMagicArmor);
             }
+
+            effectiveAL = Creature.ArmorTakesHigher ? Math.Max(effectiveAL, worn) : effectiveAL + worn;
         }
 
         return effectiveAL;

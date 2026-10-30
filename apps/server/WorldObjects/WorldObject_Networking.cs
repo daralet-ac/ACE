@@ -2314,6 +2314,17 @@ partial class WorldObject
 
     public static bool EnqueueBroadcastMotion_Physics = true;
 
+    /// <summary>
+    /// How far from the player the client keeps animating an object (CPhysicsObj::update_object)
+    /// </summary>
+    public const float ClientAnimationRange = 96f;
+
+    private const uint MotionCommandActionClass = 0x10000000;
+
+    private static bool IsActionMotion(Motion motion) =>
+        motion.MotionState != null
+        && (((uint)motion.MotionState.ForwardCommand & MotionCommandActionClass) != 0 || motion.MotionState.Commands is { Count: > 0 });
+
     public void EnqueueBroadcastMotion(Motion motion, float? maxRange = null, bool? applyPhysics = null)
     {
         if (applyPhysics == null)
@@ -2329,6 +2340,14 @@ partial class WorldObject
         }
 
         var msg = new GameMessageUpdateMotion(this, motion);
+
+        // the client stops animating an object farther than 96 m away but still queues its actions (attack swings,
+        // shots), and plays them all back once the player comes close, long after the fight. A creature's actions only
+        // go to the players close enough to see them.
+        if (maxRange == null && this is not Player && IsActionMotion(motion))
+        {
+            maxRange = ClientAnimationRange;
+        }
 
         if (maxRange == null)
         {

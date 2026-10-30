@@ -79,6 +79,13 @@ partial class Player
     /// </summary>
     public void SavePlayerToDatabase()
     {
+        // a fake player (FakePlayerManager) and what it carries are never saved
+        if (IsFakePlayer)
+        {
+            LastRequestedDatabaseSave = DateTime.UtcNow;
+            return;
+        }
+
         if (CharacterChangesDetected)
         {
             SaveCharacterToDatabase();
@@ -125,6 +132,11 @@ partial class Player
     {
         CharacterLastRequestedDatabaseSave = DateTime.UtcNow;
         CharacterChangesDetected = false;
+
+        if (IsFakePlayer)
+        {
+            return;
+        }
 
         //DatabaseManager.Shard.SaveCharacter(Character, CharacterDatabaseLock, null);
         DatabaseManager.Shard.SaveCharacter(

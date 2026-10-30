@@ -3,6 +3,7 @@ using ACE.Server.Arena;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity.AdminUi;
 using ACE.Server.Network;
+using ACE.Server.TownEvents;
 using Serilog;
 
 namespace ACE.Server.Commands.SentinelCommands;
@@ -18,7 +19,7 @@ public class AdminUi
         CommandHandlerFlag.RequiresWorld,
         1,
         "Data feed for the Daralet Admin Decal plugin.",
-        "hello | players | fellowships | pois | instances | capstones | arenas | olthoinorth | tidemage | esper\n"
+        "hello | players | fellowships | pois | instances | capstones | arenas | olthoinorth | tidemage | esper | townevents\n"
             + "The plugin sends these itself and hides the replies from chat. See AdminUiProtocol for the reply format."
     )]
     public static void HandleAdminui(Session session, params string[] parameters)
@@ -77,6 +78,10 @@ public class AdminUi
             case "esper":
                 payload = AdminUiRegions.GetEsper();
                 break;
+            case "townevents":
+                // town event state belongs to the world thread: build the reply there, on the manager's next tick
+                TownEventManager.Enqueue(() => Send(session, kind, TownEventManager.GetAdminUiReport()));
+                return;
             case "settings":
                 payload = AdminUiSettings.GetValues();
                 break;
@@ -86,12 +91,17 @@ public class AdminUi
             default:
                 CommandHandlerHelper.WriteOutputInfo(
                     session,
-                    $"Unknown @adminui request: {parameters[0]}. Use hello, players, fellowships, pois, instances, capstones, arenas, olthoinorth, tidemage, esper, settings or settingdocs.",
+                    $"Unknown @adminui request: {parameters[0]}. Use hello, players, fellowships, pois, instances, capstones, arenas, olthoinorth, tidemage, esper, townevents, settings or settingdocs.",
                     ChatMessageType.Broadcast
                 );
                 return;
         }
 
+        Send(session, kind, payload);
+    }
+
+    private static void Send(Session session, string kind, object payload)
+    {
         foreach (var message in AdminUiProtocol.BuildMessages(kind, payload))
         {
             CommandHandlerHelper.WriteOutputInfo(session, message, ChatMessageType.Broadcast);

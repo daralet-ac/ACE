@@ -7,6 +7,7 @@ using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Entity;
 using Serilog;
 
+using ACE.Server.TownEvents;
 namespace ACE.Server.Entity;
 
 public partial class DamageEvent
@@ -146,6 +147,23 @@ public partial class DamageEvent
         damageEvent.DoCalculateDamage(attacker, defender, damageSource, cleaveHits);
 
         damageEvent.HandleLogging(attacker, defender);
+
+        // the town event combat log: raiders against the players, guards and Captain, and back
+        TownEventManager.OnSwing(
+            attacker,
+            defender,
+            damageEvent.Evaded,
+            damageEvent.Blocked,
+            damageEvent.Parried,
+            damageEvent._damageBeforeMitigation,
+            damageEvent.Damage
+        );
+
+        // a town event attacker's hits on a player, before mitigation: what a tank takes on for the others
+        if (defender is Player playerDefender && damageEvent.HasDamage && !damageEvent.Blocked && !damageEvent.Parried)
+        {
+            TownEventManager.OnPlayerHit(playerDefender, attacker, damageEvent._damageBeforeMitigation);
+        }
 
         return damageEvent;
     }

@@ -373,6 +373,7 @@ partial class Player
 
         AdminFreezeTick();
 
+
         ClosePlayerUiContainerOutOfReach();
 
         PhysicsObj.ObjMaint.DestroyObjects();

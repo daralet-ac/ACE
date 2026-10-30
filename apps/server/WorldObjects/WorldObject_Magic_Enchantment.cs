@@ -436,12 +436,10 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// Weapon spells on a creature (blood loather, spirit loather, lure blade, turn blade, leaden weapon, hermetic void)
-    /// affect its equipped weapon or caster
+    /// The item a weapon spell cast on a creature lands on: its held weapon or wand, as the spell's target type asks, or null
     /// </summary>
-    private void CastWeaponSpellOnCreature(Spell spell, Creature targetCreature)
-    {
-        var weapon = spell.NonComponentTargetType switch
+    protected static WorldObject GetWeaponSpellTarget(Spell spell, Creature targetCreature) =>
+        spell.NonComponentTargetType switch
         {
             ItemType.Weapon => targetCreature.GetEquippedWeapon(),
             ItemType.Caster => targetCreature.GetEquippedWand(),
@@ -450,6 +448,14 @@ partial class WorldObject
             ItemType.MissileWeapon => targetCreature.GetEquippedMissileWeapon(),
             _ => null
         };
+
+    /// <summary>
+    /// Weapon spells on a creature (blood loather, spirit loather, lure blade, turn blade, leaden weapon, hermetic void)
+    /// affect its equipped weapon or caster
+    /// </summary>
+    protected void CastWeaponSpellOnCreature(Spell spell, Creature targetCreature)
+    {
+        var weapon = GetWeaponSpellTarget(spell, targetCreature);
 
         if (weapon != null && weapon.IsEnchantable)
         {

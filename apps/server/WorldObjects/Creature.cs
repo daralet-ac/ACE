@@ -225,6 +225,9 @@ public partial class Creature : Container
         // a patroller sharing a route enters at its timetable slot instead of the route start
         var routeStart = this is Player ? null : PlaceAtPatrolSlot();
 
+        // a town guard is dressed for its town's supply level before anyone sees it
+        TownEvents.TownGuardUpgrades.DressOnSpawn(this);
+
         var result = base.EnterWorld();
 
         if (routeStart != null)
@@ -337,6 +340,17 @@ public partial class Creature : Container
             var skillMultiplier = 1.0;
 
             ApplyDungeonMods(ref toughness, ref lethality, ref healthMultiplier, ref skillMultiplier);
+
+            // a town event variant (a Raider, a leader), and a leader's scaling for its town's supply level
+            healthMultiplier *= TownEventHealthMod;
+            lethality *= TownEventLethalityMod;
+
+            toughness *= TownEventArchetypeMods.Toughness;
+            physicality *= TownEventArchetypeMods.Physicality;
+            dexterity *= TownEventArchetypeMods.Dexterity;
+            magic = Math.Max(magic, TownEventMinMagic) * TownEventArchetypeMods.Magic;
+            intelligence *= TownEventArchetypeMods.Intelligence;
+            lethality *= TownEventArchetypeMods.Lethality;
 
             SetSkills(tier, statWeight, toughness, physicality, dexterity, magic, intelligence);
 

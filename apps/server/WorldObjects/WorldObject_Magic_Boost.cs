@@ -6,6 +6,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 
+using ACE.Server.TownEvents;
 namespace ACE.Server.WorldObjects;
 
 partial class WorldObject
@@ -178,6 +179,12 @@ partial class WorldObject
         else if (boost > 0)
         {
             HandlePostHealRatingEffects(player, cast.TargetPlayer);
+
+            // life magic healing someone else, for a town event's scoreboard
+            if (player != null && cast.TargetPlayer != null && cast.TargetPlayer != player && spell.VitalDamageType == DamageType.Health)
+            {
+                TownEventManager.OnLifeHeal(player, cast.TargetPlayer, boost);
+            }
         }
 
         SendBoostMessages(cast, boost, srcVital, critical, showMsg);

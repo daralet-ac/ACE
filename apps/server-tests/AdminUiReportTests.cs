@@ -135,6 +135,46 @@ public class AdminUiReportTests
     }
 
     [TestMethod]
+    public void TownEventsJsonHasTheNamesThePluginReads()
+    {
+        var report = new AdminUiTownEvents(
+            true,
+            150,
+            new List<AdminUiTownUnrest> { new AdminUiTownUnrest("Holtburg", 0, 42.5, 180, 0, true, 0.1, true, 2, 3000, 2500, 4750, 75, 1200, 600) },
+            new List<AdminUiTownAttack>
+            {
+                new AdminUiTownAttack(
+                    3,
+                    "Holtburg",
+                    "Wave",
+                    2,
+                    3,
+                    "drudge raiders",
+                    7,
+                    4,
+                    250,
+                    0,
+                    new List<AdminUiTownDefender> { new AdminUiTownDefender("Ann", 1200, 300, 900, 5, true, false, 1, 2, 1) }
+                ),
+            }
+        );
+
+        var json = AdminUiProtocol.BuildMessages("townevents", report).JoinedJson();
+
+        StringAssert.Contains(json, "\"enabled\":true,\"baseThreshold\":150,");
+        StringAssert.Contains(json, "\"towns\":[{\"town\":\"Holtburg\",\"tier\":0,\"unrest\":42.5,\"threshold\":180,\"cooldownSeconds\":0,\"underAttack\":true,\"triggerChance\":0.1,\"hasEligiblePlayer\":true,"
+                + "\"supplyLevel\":2,\"supply\":3000,\"supplyLevelFloor\":2500,\"supplyNextLevel\":4750,\"supplyLossPerHour\":75,"
+                + "\"supplyLevelSecondsLeft\":1200,\"supplyHoldSecondsLeft\":600}]");
+        StringAssert.Contains(json, "\"id\":3,\"town\":\"Holtburg\",\"phase\":\"Wave\",\"wave\":2,\"waveCount\":3,\"family\":\"drudge raiders\"");
+        StringAssert.Contains(json, "\"attackersAlive\":7,\"defenders\":4,\"secondsIn\":250,\"phaseSecondsLeft\":0");
+        StringAssert.Contains(
+            json,
+            "\"scores\":[{\"name\":\"Ann\",\"damage\":1200,\"healing\":300,\"damageTaken\":900,\"killingBlows\":5,\"member\":true,"
+                + "\"creditLost\":false,\"overLevelKills\":1,\"promptsRefused\":2,\"killsAfterRefusal\":1}]"
+        );
+    }
+
+    [TestMethod]
     public void TideMageJsonHasTheNamesThePluginReads()
     {
         var report = new AdminUiTideMage(

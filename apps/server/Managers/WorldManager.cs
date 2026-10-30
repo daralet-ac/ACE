@@ -27,6 +27,7 @@ using Position = ACE.Entity.Position;
 using System.Numerics;
 
 
+using ACE.Server.TownEvents;
 namespace ACE.Server.Managers;
 
 public static class WorldManager
@@ -649,6 +650,8 @@ public static class WorldManager
         ArenaManager.Tick();
 
         LfgManager.Tick();
+
+        TownEventManager.Tick();
 
         HouseManager.Tick();
         ResonanceManager.Tick(Timers.PortalYearTicks);

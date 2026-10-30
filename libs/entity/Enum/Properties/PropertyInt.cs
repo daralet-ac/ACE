@@ -1305,6 +1305,18 @@ public enum PropertyInt : ushort
     /// </summary>
     PatrolSlotCount = 537,
 
+    /// <summary>
+    /// The highest level a player can be to use this item (WorldObject.CheckUseRequirements), the counterpart of
+    /// UseRequiresLevel: a Writ of Gratitude for one town tier's level band
+    /// </summary>
+    UseRequiresMaxLevel = 538,
+
+    /// <summary>
+    /// The attribute (1 Strength, 4 Coordination, 6 Self) that the loot a loot crate opens into must require to wield
+    /// (Gem.HandleUseCreateLoot)
+    /// </summary>
+    UseCreateLootAttribute = 539,
+
     PCAPRecordedAutonomousMovement = 8007,
     PCAPRecordedMaxVelocityEstimated = 8030,
     PCAPRecordedPlacement = 8041,

@@ -19,7 +19,7 @@ partial class Creature
     /// </summary>
     public void Monster_Tick(double currentUnixTime)
     {
-        if (HasPatrol)
+        if (HasPatrol || TownEvent != null)
         {
             IsAwake = true;
 
@@ -57,7 +57,7 @@ partial class Creature
                 NextMonsterTargetScanTime = currentUnixTime + monsterTargetScanInterval;
             }
 
-            if (IsFactionMob || HasFoeType)
+            if ((IsFactionMob || HasFoeType) && !IsTownCaptain)
             {
                 FactionMob_CheckMonsters();
             }
@@ -115,7 +115,9 @@ partial class Creature
             PatrolResetDestination();
         }
         // Patrol: prevent getting stuck targeting a dead creature (required so patrol can resume)
-        if (HasPatrol && AttackTarget is Creature at && at.IsDead)
+        // A town event attacker does the same, so it can march on, and drops anyone outside the Town Defense (however it
+        // came to target them: an alert, an appraisal, a player who left the fellowship)
+        if ((HasPatrol || TownEvent != null) && AttackTarget is Creature at && (at.IsDead || TownEventIgnores(at)))
         {
             AttackTarget = null;
             CurrentAttack = null;
@@ -131,7 +133,9 @@ partial class Creature
             PatrolResetDestination();
         }
 
-        if (!HasPatrol)
+        // a town event attacker has no home to go back to: it marches on into town. A Captain of the Guard on duty goes
+        // back to its post instead.
+        if (!HasPatrol && TownEvent == null && !TownCaptainOnDuty)
         {
             CheckMissHome(); // tickrate?
         }
@@ -145,6 +149,20 @@ partial class Creature
 
         if (AttackTarget == null)
         {
+            ResetChaseStuck();
+
+            if (TownEvent != null)
+            {
+                TownEventMarchUpdate(currentUnixTime);
+                return;
+            }
+
+            if (TownCaptainOnDuty)
+            {
+                TownCaptainReturnToPost(currentUnixTime);
+                return;
+            }
+
             if (HasPatrol)
             {
                 if (MonsterState == State.Return)
@@ -182,7 +200,8 @@ partial class Creature
         }
 
         if (
-            creatureTarget != null && (creatureTarget.IsDead || (combatPet == null && !IsVisibleTarget(creatureTarget)))
+            creatureTarget != null
+                && (creatureTarget.IsDead || (combatPet == null && !TownCaptainOnDuty && !IsVisibleTarget(creatureTarget) && !IsTownEventGuardTarget(creatureTarget)))
             || (playerTarget != null && playerTarget.IsStealthed)
         )
         {
@@ -246,6 +265,11 @@ partial class Creature
         {
             if (targetDist > MaxRange || (!IsFacing(AttackTarget) && !IsSelfCast()))
             {
+                if ((HasPatrol || TownEvent != null || TownCaptainOnDuty) && targetDist > MaxRange)
+                {
+                    CheckChaseStuck(currentUnixTime, targetDist);
+                }
+
                 // turn / move towards
                 if (!IsTurning && !IsMoving)
                 {
@@ -271,6 +295,8 @@ partial class Creature
             }
             else
             {
+                ResetChaseStuck();
+
                 // perform attack
                 if (AttackReady())
                 {

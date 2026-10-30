@@ -116,6 +116,25 @@ public class Session
         Network = new NetworkSession(this, connectionListener, clientId, serverId);
     }
 
+    /// <summary>
+    /// A session with no client behind it, for a fake player (FakePlayerManager). It isn't one of NetworkManager's
+    /// sessions, so it never times out, and everything sent to it is dropped.
+    /// </summary>
+    public Session(uint accountId, string account)
+    {
+        EndPointC2S = new IPEndPoint(IPAddress.Loopback, 0);
+        Network = new NetworkSession(this);
+        State = SessionState.WorldConnected;
+        LoggingIdentifier = $"Fake player ({account})";
+        SetAccount(accountId, account, AccessLevel.Player);
+        IsHeadless = true;
+    }
+
+    /// <summary>
+    /// A fake player's session, with no client behind it
+    /// </summary>
+    public bool IsHeadless { get; }
+
     private bool CheckState(ClientPacket packet)
     {
         if (packet.Header.HasFlag(PacketHeaderFlags.LoginRequest) && State != SessionState.AuthLoginRequest)
@@ -280,6 +299,13 @@ public class Session
     {
         if (Player == null)
         {
+            return;
+        }
+
+        // a fake player is never saved: it's simply taken out of the world
+        if (Player.IsFakePlayer)
+        {
+            FakePlayerManager.Remove(Player);
             return;
         }
 

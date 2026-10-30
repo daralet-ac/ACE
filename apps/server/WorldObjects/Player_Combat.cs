@@ -13,6 +13,7 @@ using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
+using ACE.Server.TownEvents;
 using ACE.Server.WorldObjects.Entity;
 using Time = ACE.Common.Time;
 
@@ -2147,6 +2148,10 @@ partial class Player
     /// Determines if player can damage a target via PlayerKillerStatus
     /// </summary>
     /// <returns>null if no errors, else pk error list</returns>
+    // when a player outside the Town Defense who attacks a town event attacker is next asked to join it
+    private double nextTownDefensePrompt;
+    private const double TownDefensePromptSeconds = 10;
+
     public override List<WeenieErrorWithString> CheckPKStatusVsTarget(WorldObject target, Spell spell)
     {
         if (target == null || target == this)
@@ -2163,6 +2168,27 @@ partial class Player
         if (targetCreature == null)
         {
             return null;
+        }
+
+        // a town event attacker can only be harmed by the Town Defense. The client's own "cannot be harmed" text is garbled
+        // ("because $s cannot be harmed"), so the attacker is called an invalid target, and the player is asked to join.
+        if (targetCreature.TownEvent != null && (spell == null || spell.IsHarmful) && !targetCreature.TownEvent.IsMember(this))
+        {
+            var now = Time.GetUnixTime();
+            if (now >= nextTownDefensePrompt)
+            {
+                nextTownDefensePrompt = now + TownDefensePromptSeconds;
+
+                var townEvent = targetCreature.TownEvent;
+                var question = $"Only the Town Defense of {townEvent.TownName} can fight its raiders, such as {targetCreature.Name}. Join the Town Defense?";
+                TownEventManager.Enqueue(() => townEvent.Prompt(this, question));
+            }
+
+            return new List<WeenieErrorWithString>()
+            {
+                WeenieErrorWithString._IsAnInvalidTarget,
+                WeenieErrorWithString._FailsToAffectYou_YouCannotBeHarmed
+            };
         }
 
         if (

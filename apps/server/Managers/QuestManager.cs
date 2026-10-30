@@ -12,6 +12,7 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
 using Serilog;
 
+using ACE.Server.TownEvents;
 namespace ACE.Server.Managers;
 
 public class QuestManager
@@ -321,6 +322,9 @@ public class QuestManager
     }
     private void PrimeTownMessage(Player player, IQuestRegistryEntry quest)
     {
+        // every quest solved around a town stirs up unrest there; town attunement progress most of all
+        TownEventManager.OnQuestStamped(player, quest.QuestName, IsTownProgressQuest(quest.QuestName));
+
         if (IsTownProgressQuest(quest.QuestName))
         {
             player.PendingTownAttunementQuestName = quest.QuestName;

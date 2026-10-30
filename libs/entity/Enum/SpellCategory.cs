@@ -858,4 +858,5 @@ public enum SpellCategory : uint
     BonusAttackUnarmedCombat = 860,
     BonusAttackBow = 861,
     BonusAttackThrownWeapon = 862,
+    GuardsGratitude = 865,
 }

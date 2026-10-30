@@ -17,6 +17,8 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 
+using ACE.Server.TownEvents;
+
 namespace ACE.Server.WorldObjects;
 
 partial class Creature
@@ -102,6 +104,12 @@ partial class Creature
         if (this is Player || lastDamager is {IsPlayer: true})
         {
             OnDeath_HandleKillTracking(lastDamager);
+        }
+
+        // a town event attacker's killing blow, or a kill that stirs up unrest around a town
+        if (this is not Player)
+        {
+            TownEventManager.OnCreatureDeath(this, lastDamager?.TryGetPetOwnerOrAttacker());
         }
 
         return GetDeathMessage(lastDamager, damageType, criticalHit);
@@ -1441,7 +1449,7 @@ partial class Creature
         player.QuestManager.Stamp($"Quest{simplifiedTownName}");
     }
 
-    private uint GetCreatureTier()
+    internal uint GetCreatureTier()
     {
         return Level switch
         {

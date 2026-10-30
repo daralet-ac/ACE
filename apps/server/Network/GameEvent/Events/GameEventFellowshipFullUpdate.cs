@@ -20,11 +20,21 @@ public class GameEventFellowshipFullUpdate : GameEventMessage
             return;
         }
 
-        var fellows = fellowship.GetFellowshipMembers();
+        var sorted = new SortedDictionary<uint, Creature>(FellowComparer);
 
-        PackableHashTable.WriteHeader(Writer, fellows.Count, FellowComparer.NumBuckets);
+        foreach (var (guid, fellow) in fellowship.GetFellowshipMembers())
+        {
+            sorted[guid] = fellow;
+        }
 
-        var sorted = new SortedDictionary<uint, Player>(fellows, FellowComparer);
+        // a Town Defense fellowship shows the town's Captain of the Guard as a fellow. The leader stays a real player: sending the Captain as leader may have crashed the client.
+        var captain = fellowship.TownDefense?.Captain;
+        if (captain != null)
+        {
+            sorted[captain.Guid.Full] = captain;
+        }
+
+        PackableHashTable.WriteHeader(Writer, sorted.Count, FellowComparer.NumBuckets);
 
         foreach (var fellow in sorted.Values)
         {
@@ -44,7 +54,7 @@ public class GameEventFellowshipFullUpdate : GameEventMessage
         Writer.Write(fellowship.FellowshipLocks);
     }
 
-    public void WriteFellow(Player fellow)
+    public void WriteFellow(Creature fellow)
     {
         Writer.WriteGuid(fellow.Guid);
 
