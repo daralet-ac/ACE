@@ -6,10 +6,11 @@ namespace ACE.Server.Entity.PlayerUi;
 // pin the names.
 
 /// <summary>
-/// Who the plugin is talking for, and every request this server answers (Kinds), so a newer plugin can tell which of its
-/// tabs this server doesn't have yet.
+/// Who the plugin is talking for, every request this server answers (Kinds), so a newer plugin can tell which of its
+/// tabs this server doesn't have yet, and what else this server's commands take that older ones didn't (Features,
+/// PlayerUi.Features), so the plugin only sends a command in a form the server reads.
 /// </summary>
-public record PlayerUiHello(int Protocol, string Name, uint Guid, string[] Kinds);
+public record PlayerUiHello(int Protocol, string Name, uint Guid, string[] Kinds, string[] Features);
 
 /// <summary>
 /// The player's fellowship. Leader is the leader's guid. MaxMembers is how many it can hold (Fellowship.MaxFellows; a
@@ -163,7 +164,9 @@ public record PlayerUiPlace(float MapX, float MapY);
 /// The player's bank, for the plugin's bank window. Open: they have a bank open and are close enough to use it (what every
 /// /bank command but balance, log and intro needs). Loaded: its items have come from the database (a moment after opening).
 /// Guid is the bank chest's, so the plugin can find its items in what the client was sent. Packs are numbered as /bank packs
-/// and /bank inscribe number them.
+/// and /bank inscribe number them. Carried is the side packs the player carries (Number 0), bank open or not: the client
+/// only learns a pack's inscription from an appraisal, and one that leaves an inscription out leaves the client's old one
+/// in place, so a cleared pack kept its tags in the plugin.
 /// </summary>
 public record PlayerUiBank(
     bool Open,
@@ -175,11 +178,12 @@ public record PlayerUiBank(
     long Notes,
     int NoteCount,
     bool AutoSort,
-    List<PlayerUiBankPack> Packs
+    List<PlayerUiBankPack> Packs,
+    List<PlayerUiBankPack> Carried
 );
 
 /// <summary>
-/// A pack in the bank. Tags is what it collects, in words (BankCommand.PackTags); Inscription is the text itself.
+/// A pack in the bank, or one carried (Number 0). Tags is what it collects, in words (BankCommand.PackTags); Inscription is the text itself.
 /// </summary>
 public record PlayerUiBankPack(int Number, uint Guid, string Name, string Tags, string Inscription, int Used, int Capacity);
 

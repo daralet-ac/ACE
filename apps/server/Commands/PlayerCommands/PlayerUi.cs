@@ -18,6 +18,12 @@ public class PlayerUi
     internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "bankwindow", "lootwindow", "market", "broker", "arena", "corpse", "salvage", "describe", "character", "quests", "abandon", "rollranges", "lfg", "social", "friend", "squelch", "allegiance", "fellowcreate"];
 
     /// <summary>
+    /// What else this server's commands take that older servers' don't, for the hello reply. "packid": /bank inscribe and
+    /// /bank icon name a pack by its id ("#8000ABCD"), not only by its number or as the pack last examined.
+    /// </summary>
+    internal static readonly string[] Features = ["packid"];
+
+    /// <summary>
     /// How often each player may ask (the playerui_ server properties). Asking faster (typing or scripting the command, say)
     /// gets no answer, so it can't be used to load the server.
     /// </summary>
@@ -56,7 +62,7 @@ public class PlayerUi
         switch (kind)
         {
             case "hello":
-                payload = new PlayerUiHello(2,player.Name, player.Guid.Full, Kinds);
+                payload = new PlayerUiHello(2, player.Name, player.Guid.Full, Kinds, Features);
                 break;
             case "fellowship":
                 payload = PlayerUiData.GetFellowship(player, parameters.Skip(1).Any(p => p.Equals("spells", StringComparison.OrdinalIgnoreCase)));
