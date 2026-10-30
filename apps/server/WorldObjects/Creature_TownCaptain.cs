@@ -21,8 +21,8 @@ partial class Creature
 
     /// <summary>
     /// A town's Captain of the Guard (TownCaptain.IsCaptain). Though a faction mob like the guards, it never hunts on its
-    /// own: off duty it picks no targets and isn't woken by monsters passing by, so it doesn't go after the town's mice
-    /// and hens.
+    /// own: off duty it picks no targets and isn't woken by anything nearby (Creature.AlertMonster), so it doesn't go after
+    /// the town's mice and hens.
     /// </summary>
     public bool IsTownCaptain => isTownCaptain ??= TownEvents.TownCaptain.IsCaptain(this);
 
@@ -104,11 +104,12 @@ partial class Creature
     }
 
     /// <summary>
-    /// FindNextTarget for the Captain: keeps the target it was given while it lives, and never picks one of its own
+    /// FindNextTarget for the Captain: keeps the target it was given while it lives and is still in the world, and never
+    /// picks one of its own
     /// </summary>
     private bool TownCaptainKeepTarget()
     {
-        if (AttackTarget is Creature { IsDead: false })
+        if (AttackTarget is Creature && IsAttackTargetValid())
         {
             return true;
         }
