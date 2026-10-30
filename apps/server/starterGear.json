@@ -479,6 +479,17 @@
       ]
     },
     {
+      "id": "41",
+      "name": "Two Handed Combat",
+      "gear": [
+        {
+          "weenieId": "1058011",
+          "name": "Starter Greatsword",
+          "stacksize": "1"
+        }
+      ]
+    },
+    {
       "id": "4",
       "name": "Dagger",
       "heritage": [

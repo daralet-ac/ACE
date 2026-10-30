@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using ACE.Common;
+using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -39,5 +40,8 @@ public class StarterGearTests
                 );
             }
         }
+
+        var twoHanded = config.Skills.Single(s => s.SkillId == (ushort)Skill.TwoHandedCombat);
+        Assert.AreEqual(1058011u, twoHanded.Gear.Single().WeenieId, "two hand should start with a Starter Greatsword");
     }
 }
