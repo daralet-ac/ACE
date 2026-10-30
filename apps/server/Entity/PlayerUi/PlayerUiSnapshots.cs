@@ -6,13 +6,15 @@ namespace ACE.Server.Entity.PlayerUi;
 // pin the names.
 
 /// <summary>
-/// Who the plugin is talking for, and every request this server answers (Kinds), so a newer plugin can tell which of its
-/// tabs this server doesn't have yet.
+/// Who the plugin is talking for, every request this server answers (Kinds), so a newer plugin can tell which of its
+/// tabs this server doesn't have yet, and what else this server's commands take that older ones didn't (Features,
+/// PlayerUi.Features), so the plugin only sends a command in a form the server reads.
 /// </summary>
-public record PlayerUiHello(int Protocol, string Name, uint Guid, string[] Kinds);
+public record PlayerUiHello(int Protocol, string Name, uint Guid, string[] Kinds, string[] Features);
 
 /// <summary>
-/// The player's fellowship. Leader is the leader's guid.
+/// The player's fellowship. Leader is the leader's guid. MaxMembers is how many it can hold (Fellowship.MaxFellows; a
+/// fellowship with no cap would send int.MaxValue, which the plugin reads as no cap).
 /// </summary>
 public record PlayerUiFellowship(
     string Name,
@@ -21,14 +23,17 @@ public record PlayerUiFellowship(
     bool ShareXp,
     bool EvenShare,
     bool Locked,
-    List<PlayerUiFellow> Members
+    List<PlayerUiFellow> Members,
+    int MaxMembers = 0
 );
 
 /// <summary>
 /// A fellowship member with their vitals. Distance is in meters, or null when they're too far away to say (not in the
 /// player's landblock or the ones around it, or in another instance). MapX is east (+) / west (-) and MapY north (+) /
 /// south (-), in map units, or null in a dungeon, where the map doesn't reach. InBuilding: they're inside a building, which
-/// still has a place on the map (PlayerUiData.GetMapCoords).
+/// still has a place on the map (PlayerUiData.GetMapCoords). Focus is the Combat Focus they wear, or null. Buffs and Debuffs
+/// are the spell ids in effect on them, one a category, sent only when @playerui fellowship spells asks (null otherwise):
+/// the plugin finds each spell's icon in the portal dat.
 /// </summary>
 public record PlayerUiFellow(
     uint Guid,
@@ -44,8 +49,57 @@ public record PlayerUiFellow(
     string Location,
     float? MapX,
     float? MapY,
-    bool InBuilding
+    bool InBuilding,
+    PlayerUiFocus Focus = null,
+    List<int> Buffs = null,
+    List<int> Debuffs = null
 );
+
+/// <summary>A worn Combat Focus: its name and its icon's layers (portal dat ids, 0 for none).</summary>
+public record PlayerUiFocus(string Name, uint Icon, uint Underlay, uint Overlay);
+
+/// <summary>
+/// The player's social side, for the plugin's Social tab (PlayerUiSocialData): their Appear Offline and fellowship options,
+/// friends, squelches, and allegiance (null when they have none).
+/// </summary>
+public record PlayerUiSocial(
+    bool AppearOffline,
+    bool IgnoreFellowshipRequests,
+    bool AutoAcceptFellowshipRequests,
+    bool ShareFellowshipXp,
+    bool ShareFellowshipLoot,
+    List<PlayerUiFriend> Friends,
+    List<PlayerUiSquelch> Squelches,
+    PlayerUiAllegiance Allegiance
+);
+
+/// <summary>A friend. Online is false for one who appears offline.</summary>
+public record PlayerUiFriend(uint Guid, string Name, bool Online);
+
+/// <summary>A squelched character; Account when the squelch is on their whole account.</summary>
+public record PlayerUiSquelch(uint Guid, string Name, bool Account);
+
+/// <summary>
+/// The player's allegiance: its name, their rank and followers (everyone under them), the XP they've passed to their patron
+/// (XpGenerated) and been passed by their vassals (XpReceived), and their monarch (null when they're the monarch), patron
+/// and vassals.
+/// </summary>
+public record PlayerUiAllegiance(
+    string Name,
+    uint Rank,
+    int Followers,
+    ulong XpGenerated,
+    ulong XpReceived,
+    PlayerUiAllegianceMember Monarch,
+    PlayerUiAllegianceMember Patron,
+    List<PlayerUiAllegianceMember> Vassals
+);
+
+/// <summary>
+/// One of the player's allegiance. XpGenerated: for the patron, what the player has passed up to them; for a vassal, what
+/// the vassal has passed up to the player; for the monarch, 0.
+/// </summary>
+public record PlayerUiAllegianceMember(uint Guid, string Name, int Level, uint Rank, bool Online, ulong XpGenerated);
 
 /// <summary>
 /// Where the player is on the map, the same way as a fellow's MapX / MapY / InBuilding. The plugin works it out itself
@@ -110,7 +164,9 @@ public record PlayerUiPlace(float MapX, float MapY);
 /// The player's bank, for the plugin's bank window. Open: they have a bank open and are close enough to use it (what every
 /// /bank command but balance, log and intro needs). Loaded: its items have come from the database (a moment after opening).
 /// Guid is the bank chest's, so the plugin can find its items in what the client was sent. Packs are numbered as /bank packs
-/// and /bank inscribe number them.
+/// and /bank inscribe number them. Carried is the side packs the player carries (Number 0), bank open or not: the client
+/// only learns a pack's inscription from an appraisal, and one that leaves an inscription out leaves the client's old one
+/// in place, so a cleared pack kept its tags in the plugin.
 /// </summary>
 public record PlayerUiBank(
     bool Open,
@@ -122,11 +178,12 @@ public record PlayerUiBank(
     long Notes,
     int NoteCount,
     bool AutoSort,
-    List<PlayerUiBankPack> Packs
+    List<PlayerUiBankPack> Packs,
+    List<PlayerUiBankPack> Carried
 );
 
 /// <summary>
-/// A pack in the bank. Tags is what it collects, in words (BankCommand.PackTags); Inscription is the text itself.
+/// A pack in the bank, or one carried (Number 0). Tags is what it collects, in words (BankCommand.PackTags); Inscription is the text itself.
 /// </summary>
 public record PlayerUiBankPack(int Number, uint Guid, string Name, string Tags, string Inscription, int Used, int Capacity);
 

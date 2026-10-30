@@ -15,7 +15,13 @@ public class PlayerUi
     /// <summary>
     /// Every request @playerui answers, sent in the hello reply.
     /// </summary>
-    internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "bankwindow", "lootwindow", "market", "broker", "arena", "corpse", "salvage", "describe", "character", "quests", "abandon", "rollranges", "lfg"];
+    internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "bankwindow", "lootwindow", "market", "broker", "arena", "corpse", "salvage", "describe", "character", "quests", "abandon", "rollranges", "lfg", "social", "friend", "squelch", "allegiance", "fellowcreate"];
+
+    /// <summary>
+    /// What else this server's commands take that older servers' don't, for the hello reply. "packid": /bank inscribe and
+    /// /bank icon name a pack by its id ("#8000ABCD"), not only by its number or as the pack last examined.
+    /// </summary>
+    internal static readonly string[] Features = ["packid"];
 
     /// <summary>
     /// How often each player may ask (the playerui_ server properties). Asking faster (typing or scripting the command, say)
@@ -30,8 +36,10 @@ public class PlayerUi
         CommandHandlerFlag.RequiresWorld,
         1,
         "Data feed for the Daralet Decal plugin.",
-        "hello | fellowship | targets <guid> [guid] | position | bank | bankwindow <on|off> | lootwindow <on|off>"
-            + " | market | broker <list|cancel|claim|expired> ... | arena | corpse <guid> | describe <guid>... | salvage <guid>... | character | quests | abandon <contract id> | rollranges | lfg\n"
+        "hello | fellowship [spells] | targets <guid> [guid] | position | bank | bankwindow <on|off> | lootwindow <on|off>"
+            + " | market | broker <list|cancel|claim|expired> ... | arena | corpse <guid> | describe <guid>... | salvage <guid>... | character | quests | abandon <contract id> | rollranges | lfg"
+            + " | social | friend add|remove ... | squelch character|account|remove ... | allegiance swear|break|kick ..."
+            + " | fellowcreate <0|1> <name>\n"
             + "The plugin sends these itself and hides the replies from chat. See PlayerUiProtocol for the reply format."
     )]
     public static void HandlePlayerui(Session session, params string[] parameters)
@@ -54,10 +62,10 @@ public class PlayerUi
         switch (kind)
         {
             case "hello":
-                payload = new PlayerUiHello(2,player.Name, player.Guid.Full, Kinds);
+                payload = new PlayerUiHello(2, player.Name, player.Guid.Full, Kinds, Features);
                 break;
             case "fellowship":
-                payload = PlayerUiData.GetFellowship(player);
+                payload = PlayerUiData.GetFellowship(player, parameters.Skip(1).Any(p => p.Equals("spells", StringComparison.OrdinalIgnoreCase)));
                 break;
             case "targets":
                 payload = PlayerUiData.GetTargets(player, PlayerUiData.ParseGuids(parameters.Skip(1)));
@@ -105,6 +113,31 @@ public class PlayerUi
             case "lfg":
                 payload = LfgManager.GetPlayerUiReport(player);
                 break;
+            case "social":
+                payload = PlayerUiSocialData.GetSocial(player);
+                break;
+            case "friend":
+            case "squelch":
+            case "allegiance":
+            case "fellowcreate":
+            {
+                // not data requests: the game's own handlers say what happened, as its panels' buttons do
+                var words = parameters.Skip(1).ToArray();
+                var problem = kind switch
+                {
+                    "friend" => PlayerUiSocialData.Friend(player, words),
+                    "squelch" => PlayerUiSocialData.Squelch(player, words),
+                    "allegiance" => PlayerUiSocialData.Allegiance(player, words),
+                    _ => PlayerUiSocialData.CreateFellowship(player, words),
+                };
+
+                if (problem != null)
+                {
+                    player.SendMessage(problem, ChatMessageType.System);
+                }
+
+                return;
+            }
             case "abandon":
             {
                 // not a data request: the game says it's abandoned, or why it can't be, as the Contracts panel's Abandon does
@@ -151,7 +184,7 @@ public class PlayerUi
         }
 
         // a corpse's items are whole market listings, mostly empty fields
-        foreach (var message in PlayerUiProtocol.BuildMessages(kind, payload, omitNulls: kind is "corpse" or "describe" or "quests"))
+        foreach (var message in PlayerUiProtocol.BuildMessages(kind, payload, omitNulls: kind is "corpse" or "describe" or "quests" or "fellowship"))
         {
             CommandHandlerHelper.WriteOutputInfo(session, message, ChatMessageType.Broadcast);
         }
