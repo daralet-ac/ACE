@@ -1749,6 +1749,13 @@ partial class Creature
             return false;
         }
 
+        // a Captain of the Guard fights only what the town event gives it: left to these scans it would go after whatever
+        // is closest, even an invisible quest watcher it can't reach
+        if (monster.IsTownCaptain)
+        {
+            return false;
+        }
+
         // ensure monster is currently in idle state to wake up,
         // and it has no tolerance to players running nearby
         // TODO: investigate usage for tolerance
