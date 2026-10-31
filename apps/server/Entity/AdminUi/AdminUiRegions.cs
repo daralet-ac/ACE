@@ -87,16 +87,14 @@ public static class AdminUiRegions
         return new AdminUiOlthoiNorth(camps, players);
     }
 
-    public static bool IsInOlthoiNorth(Player player)
-    {
-        var landblock = player.Location.LandblockId;
+    public static bool IsInOlthoiNorth(Player player) =>
+        player.InstanceId == Landblock.PersistentInstance && IsInOlthoiNorth(player.Location.LandblockId);
 
-        return player.InstanceId == Landblock.PersistentInstance
-            && landblock.LandblockX >= OlthoiNorthMinX
-            && landblock.LandblockX <= OlthoiNorthMaxX
-            && landblock.LandblockY >= OlthoiNorthMinY
-            && landblock.LandblockY <= OlthoiNorthMaxY;
-    }
+    public static bool IsInOlthoiNorth(LandblockId landblock) =>
+        landblock.LandblockX >= OlthoiNorthMinX
+        && landblock.LandblockX <= OlthoiNorthMaxX
+        && landblock.LandblockY >= OlthoiNorthMinY
+        && landblock.LandblockY <= OlthoiNorthMaxY;
 
     public static AdminUiTideMage GetTideMage()
     {

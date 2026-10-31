@@ -36,6 +36,67 @@ public class TownEventTests
     }
 
     [TestMethod]
+    public void DungeonTown_IsTheOneNearItsEntrance_NotItsLandblockSlot()
+    {
+        Assert.AreEqual("Glenden Wood", TownDungeons.GetTown(0x01E3));
+
+        // 0x0108's landblock numbers would put it nearest Wai Jhou
+        Assert.AreEqual("Shoushi", TownDungeons.GetTown(0x0108));
+    }
+
+    [TestMethod]
+    public void DungeonTown_CapstoneCopyGoesWithItsOriginal()
+    {
+        Assert.AreEqual(TownDungeons.GetTown(0x01E3), TownDungeons.GetTown(0x13FE));
+        Assert.AreEqual(TownDungeons.GetTown(0x01E3), TownDungeons.GetTown(0x13FA));
+    }
+
+    [TestMethod]
+    public void DungeonTown_IsNullWithNoWayInFromTheMap()
+    {
+        Assert.IsNull(TownDungeons.GetTown(0xFFFF));
+    }
+
+    [TestMethod]
+    public void EndgameZones_HoldTheirTownsAndDungeons()
+    {
+        Assert.IsTrue(TownGeography.IsEndgameTown("Crater"));
+        Assert.IsTrue(TownGeography.IsEndgameTown("Neydisa"));
+        Assert.IsFalse(TownGeography.IsEndgameTown("Holtburg"));
+        Assert.IsFalse(TownGeography.IsEndgameTown("Arwic"));
+
+        // Olthoi Queen's Lair and a copy of it, and the Crater Pathway
+        Assert.IsNull(TownDungeons.GetTown(0xC7B7));
+        Assert.IsNull(TownDungeons.GetTown(0x1AFE));
+        Assert.IsNull(TownDungeons.GetTown(0x01A7));
+    }
+
+    [TestMethod]
+    public void EndgameZones_LeaveStoneholdRaidable()
+    {
+        Assert.IsFalse(TownGeography.IsEndgameTown("Stonehold"));
+
+        // The Pit, entered in the Esper Mountains near Stonehold
+        Assert.AreEqual("Stonehold", TownDungeons.GetTown(0x01A3));
+    }
+
+    [TestMethod]
+    public void DungeonTown_EveryTownInTheTableIsATown()
+    {
+        var towns = Town.TownNames.ToHashSet();
+
+        for (uint landblock = 0; landblock <= 0xFFFF; landblock++)
+        {
+            var town = TownDungeons.GetTown(landblock);
+
+            if (town != null)
+            {
+                Assert.IsTrue(towns.Contains(town), $"{landblock:X4}: {town}");
+            }
+        }
+    }
+
+    [TestMethod]
     public void TriggerChance_ClimbsFromTenPercentAtTheThresholdToFiftyAtDouble()
     {
         Assert.AreEqual(0, TownEventManager.GetTriggerChance(199, 200));

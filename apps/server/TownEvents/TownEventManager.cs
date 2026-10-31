@@ -375,7 +375,7 @@ public static class TownEventManager
 
     /// <summary>
     /// A creature died. An event attacker's killing blow is scored; any other kill by a player, of a creature at or
-    /// above the nearest town's tier, stirs up unrest there (less from a dungeon)
+    /// above the tier of the town it counts toward (TownGeography.GetUnrestTown), stirs up unrest there (less from a dungeon)
     /// </summary>
     /// <param name="killedBy">The killer, or the player whose pet it was</param>
     public static void OnCreatureDeath(Creature creature, WorldObject killedBy)
@@ -394,8 +394,8 @@ public static class TownEventManager
             return;
         }
 
-        var town = Town.GetNearestTown(creature);
-        if (creature.GetCreatureTier() < Town.GetTownTier(town))
+        var town = TownGeography.GetUnrestTown(creature);
+        if (town == null || creature.GetCreatureTier() < Town.GetTownTier(town))
         {
             return;
         }
@@ -405,8 +405,8 @@ public static class TownEventManager
     }
 
     /// <summary>
-    /// A player stamped a quest. Town attunement progress (Quest{Town}) stirs up a lot of unrest in that town, and other
-    /// quests a little in the town whose region the player is in.
+    /// A player stamped a quest. Town attunement progress (Quest{Town}) stirs up a lot of unrest, and other quests a little,
+    /// in the town the player's place counts toward (TownGeography.GetUnrestTown).
     /// </summary>
     public static void OnQuestStamped(Player player, string questName, bool townProgress)
     {
@@ -415,7 +415,7 @@ public static class TownEventManager
             return;
         }
 
-        var town = Town.GetNearestTown(player);
+        var town = TownGeography.GetUnrestTown(player);
         var amount = townProgress ? AttunementUnrest : QuestUnrest;
 
         Queue.Enqueue(() => AddUnrest(town, amount));

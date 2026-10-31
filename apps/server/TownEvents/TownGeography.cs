@@ -5,6 +5,7 @@ using System.Numerics;
 using ACE.Entity;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
+using ACE.Server.Entity.AdminUi;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Patrol;
@@ -46,6 +47,9 @@ public static class TownGeography
     // a lead-in this close to a road's entry, and farther out, becomes the road's new entry
     private const float LeadInReach = 120f;
 
+    // in the Esper Mountains, but with guards to hold off an attack
+    private const string RaidableEsperTown = "Stonehold";
+
     /// <summary>
     /// Where a road should start when the guards' patrol ends too close to town: a landblock cell and its local x, y. The
     /// road begins here and joins the guards' route at its far end.
@@ -73,6 +77,48 @@ public static class TownGeography
     /// dungeons near (or filed near) the town
     /// </summary>
     public static string GetRegion(Player player) => player.Location == null ? null : Town.GetNearestTown(player);
+
+    /// <summary>
+    /// The town whose unrest what happens here stirs up: the nearest, or for a dungeon the one nearest its entrance
+    /// (TownDungeons). Null for a dungeon with no known way in from the map, and in the endgame zones, except around Stonehold.
+    /// </summary>
+    public static string GetUnrestTown(WorldObject worldObject)
+    {
+        var location = worldObject.Location;
+
+        if (!Town.IsOnMap(location.Cell))
+        {
+            return TownDungeons.GetTown(location.Landblock);
+        }
+
+        if (AdminUiRegions.IsInOlthoiNorth(location.LandblockId))
+        {
+            return null;
+        }
+
+        var town = Town.GetNearestTown(worldObject);
+
+        if (IsEndgameTown(town) || (EsperMountainsZone.Contains(location) && town != RaidableEsperTown))
+        {
+            return null;
+        }
+
+        return town;
+    }
+
+    /// <summary>
+    /// Whether a town is in one of the endgame zones (Olthoi North, the Esper Mountains), other than Stonehold. They stir up no
+    /// unrest, since nothing there can yet hold off an attack, and the low-level towns nearest them shouldn't pay for what's
+    /// killed there.
+    /// </summary>
+    public static bool IsEndgameTown(string town)
+    {
+        var center = Town.GetTownCenterGlobal(town);
+
+        return center != null
+            && town != RaidableEsperTown
+            && (AdminUiRegions.IsInOlthoiNorth(Town.GetTownCenterLandblock(town)) || EsperMountainsZone.Contains(center.Value.X, center.Value.Y));
+    }
 
     /// <summary>
     /// Whether the player is in the town area: outdoors or in one of its buildings, within TownAreaRadius of the centre
