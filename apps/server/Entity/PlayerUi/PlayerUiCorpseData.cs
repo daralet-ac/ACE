@@ -171,10 +171,29 @@ public static class PlayerUiCorpseData
             .Take(MaxDescribeItems)
             .ToList();
 
+        return guids
+            .Select(OwnItemFinder(player))
+            .Where(item => item != null)
+            .Select(Describe)
+            .ToList();
+    }
+
+    /// <summary>
+    /// One of the player's own items: carried, worn, or in the bank they have open (and near). Null for anything else, so
+    /// nothing here ever describes someone else's things.
+    /// </summary>
+    public static WorldObject FindOwnItem(Player player, uint guid)
+    {
+        return OwnItemFinder(player)(guid);
+    }
+
+    /// <summary>FindOwnItem for several guids, reading the bank's contents once at most.</summary>
+    private static Func<uint, WorldObject> OwnItemFinder(Player player)
+    {
         // the bank's own items only while it's open and near, and only this account's (GetBankContents)
         Dictionary<uint, WorldObject> banked = null;
 
-        WorldObject Find(uint guid)
+        return guid =>
         {
             var carried = player.FindObject(guid, Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems);
 
@@ -193,13 +212,7 @@ public static class PlayerUiCorpseData
             }
 
             return banked.TryGetValue(guid, out var item) ? item : null;
-        }
-
-        return guids
-            .Select(Find)
-            .Where(item => item != null)
-            .Select(Describe)
-            .ToList();
+        };
     }
 
     /// <summary>

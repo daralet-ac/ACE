@@ -371,3 +371,23 @@ public record PlayerUiEnchantment(
 /// A row of a monster's threat table: who it would like to attack, and how much.
 /// </summary>
 public record PlayerUiThreat(uint Guid, string Name, int Threat, bool IsYou, bool IsPlayer);
+
+/// <summary>
+/// An item a player linked in chat (@playerui shareitem), as it was when they linked it: Key is the word the plugin asked
+/// about it with (@playerui shared), Name what goes in the chat line ("[Name]", PlayerUiItemShares), Owner who linked it,
+/// Slots where it's worn or wielded (its ValidLocations, 0 for neither: the plugin compares it with what the reader is
+/// wearing there), and Item its description, the same as a corpse item's.
+/// </summary>
+public record PlayerUiSharedItem(string Key, string Name, string Owner, int Slots, PlayerUiCorpseItem Item);
+
+/// <summary>
+/// The answer to @playerui shareitem and shareagain: the item asked about (Guid, 0 for shareagain), and either the share or
+/// why there's none (Problem).
+/// </summary>
+public record PlayerUiShareReply(uint Guid, string Problem, PlayerUiSharedItem Shared);
+
+/// <summary>
+/// The answer to @playerui shared: the links' items, and the keys there's none for (forgotten after a day, or just text in
+/// brackets), so the plugin can tell those from a request that got no answer.
+/// </summary>
+public record PlayerUiSharedLookup(List<PlayerUiSharedItem> Items, List<string> Missing);

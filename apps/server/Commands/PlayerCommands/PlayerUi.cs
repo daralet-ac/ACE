@@ -15,7 +15,7 @@ public class PlayerUi
     /// <summary>
     /// Every request @playerui answers, sent in the hello reply.
     /// </summary>
-    internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "bankwindow", "lootwindow", "market", "broker", "arena", "corpse", "salvage", "describe", "character", "quests", "abandon", "rollranges", "lfg", "social", "friend", "squelch", "allegiance", "fellowcreate"];
+    internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "bankwindow", "lootwindow", "market", "broker", "arena", "corpse", "salvage", "describe", "character", "quests", "abandon", "rollranges", "lfg", "social", "friend", "squelch", "allegiance", "fellowcreate", "shareitem", "shareagain", "shared"];
 
     /// <summary>
     /// What else this server's commands take that older servers' don't, for the hello reply. "packid": /bank inscribe and
@@ -39,7 +39,7 @@ public class PlayerUi
         "hello | fellowship [spells] | targets <guid> [guid] | position | bank | bankwindow <on|off> | lootwindow <on|off>"
             + " | market | broker <list|cancel|claim|expired> ... | arena | corpse <guid> | describe <guid>... | salvage <guid>... | character | quests | abandon <contract id> | rollranges | lfg"
             + " | social | friend add|remove ... | squelch character|account|remove ... | allegiance swear|break|kick ..."
-            + " | fellowcreate <0|1> <name>\n"
+            + " | fellowcreate <0|1> <name> | shareitem <guid> | shareagain <key> | shared <key>...\n"
             + "The plugin sends these itself and hides the replies from chat. See PlayerUiProtocol for the reply format."
     )]
     public static void HandlePlayerui(Session session, params string[] parameters)
@@ -116,6 +116,18 @@ public class PlayerUi
             case "social":
                 payload = PlayerUiSocialData.GetSocial(player);
                 break;
+            case "shareitem":
+                // one of the player's own items, kept for a chat link (PlayerUiItemShares)
+                payload = PlayerUiItemShares.Share(player, parameters.Length > 1 ? parameters[1] : null);
+                break;
+            case "shareagain":
+                // someone else's link, to pass on: only what they already showed
+                payload = PlayerUiItemShares.ShareAgain(player, parameters.Length > 1 ? parameters[1] : null);
+                break;
+            case "shared":
+                // the items other players' links name: what their owners chose to show
+                payload = PlayerUiItemShares.Lookup(parameters.Skip(1));
+                break;
             case "friend":
             case "squelch":
             case "allegiance":
@@ -184,7 +196,7 @@ public class PlayerUi
         }
 
         // a corpse's items are whole market listings, mostly empty fields
-        foreach (var message in PlayerUiProtocol.BuildMessages(kind, payload, omitNulls: kind is "corpse" or "describe" or "quests" or "fellowship"))
+        foreach (var message in PlayerUiProtocol.BuildMessages(kind, payload, omitNulls: kind is "corpse" or "describe" or "quests" or "fellowship" or "shareitem" or "shareagain" or "shared"))
         {
             CommandHandlerHelper.WriteOutputInfo(session, message, ChatMessageType.Broadcast);
         }
