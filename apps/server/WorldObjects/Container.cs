@@ -1086,6 +1086,11 @@ public partial class Container : WorldObject
         // the plugin can show and loot them, but not the ViewContents that opens the game's window
         var pluginWindow = player.UsesPlayerUiWindow(this);
 
+        if (pluginWindow)
+        {
+            player.PlayerUiOpenedContainer = Guid;
+        }
+
         if (!pluginWindow)
         {
             player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, this));

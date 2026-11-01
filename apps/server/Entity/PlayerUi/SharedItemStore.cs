@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ACE.Server.Entity.PlayerUi;
@@ -9,7 +10,8 @@ namespace ACE.Server.Entity.PlayerUi;
 /// not; what it means is found from who said it and the name, so each player has one item to a name, the latest they
 /// linked. Only what that player linked can be found under their name, so nobody can pass another's item off as theirs,
 /// or as anything else. A link is for the people reading chat at the time, so each is kept for a day (Keep), and only the
-/// newest Capacity, so typing or scripting the command can't grow it without end.
+/// newest Capacity, so typing or scripting the command can't grow it without end; and only each player's newest MaxPerOwner,
+/// so one player's links can't push out everyone else's.
 /// </summary>
 public sealed class SharedItemStore
 {
@@ -19,27 +21,35 @@ public sealed class SharedItemStore
     /// <summary>The longest word a link's key can be, from the longest names and then some.</summary>
     public const int MaxKeyLength = 256;
 
+    /// <summary>The most links kept under one player's name unless a store says otherwise: far more than chat needs.</summary>
+    public const int DefaultMaxPerOwner = 50;
+
     private sealed class Entry
     {
         public string Link;
+        public string Owner;
         public PlayerUiSharedItem Shared;
         public DateTime At;
+        public LinkedListNode<Entry> Node;
     }
 
     private readonly object gate = new();
     private readonly Dictionary<string, Entry> byLink = new();
+    private readonly Dictionary<string, int> linksByOwner = new();
 
-    /// <summary>Links oldest first, to drop the oldest once there are Capacity. An entry replaced since is skipped.</summary>
-    private readonly Queue<Entry> order = new();
+    /// <summary>Links oldest first, to drop the oldest once there are Capacity. Linking again moves one to the end.</summary>
+    private readonly LinkedList<Entry> order = new();
 
-    public SharedItemStore(int capacity, TimeSpan keep)
+    public SharedItemStore(int capacity, TimeSpan keep, int maxPerOwner = DefaultMaxPerOwner)
     {
         Capacity = Math.Max(1, capacity);
         Keep = keep;
+        MaxPerOwner = Math.Max(1, maxPerOwner);
     }
 
     public int Capacity { get; }
     public TimeSpan Keep { get; }
+    public int MaxPerOwner { get; }
 
     public int Count
     {
@@ -52,12 +62,24 @@ public sealed class SharedItemStore
         }
     }
 
+    /// <summary>What's held for dropping later: only what can still be found, or linking one item over and over would grow it.</summary>
+    public int Queued
+    {
+        get
+        {
+            lock (gate)
+            {
+                return order.Count;
+            }
+        }
+    }
+
     /// <summary>Keeps one of a player's items for a link, in place of any they linked with that name before.</summary>
     public PlayerUiSharedItem Add(string ownerName, int slots, PlayerUiCorpseItem item, DateTime now)
     {
         var name = LinkName(item?.Name);
         var shared = new PlayerUiSharedItem(null, name, ownerName, slots, item);
-        Put(Link(ownerName, name), shared, now);
+        Put(ownerName, name, shared, now);
         return shared;
     }
 
@@ -70,7 +92,7 @@ public sealed class SharedItemStore
 
         if (shared != null)
         {
-            Put(Link(playerName, shared.Name), shared, now);
+            Put(playerName, shared.Name, shared, now);
         }
 
         return shared;
@@ -93,7 +115,7 @@ public sealed class SharedItemStore
 
             if (now - entry.At >= Keep)
             {
-                byLink.Remove(link);
+                Remove(entry);
                 return null;
             }
 
@@ -137,9 +159,14 @@ public sealed class SharedItemStore
     }
 
     /// <summary>A staff character's + isn't always in what the plugin reads, and case isn't a different link.</summary>
+    private static string Owner(string ownerName)
+    {
+        return (ownerName ?? "").TrimStart('+').ToLowerInvariant();
+    }
+
     private static string Link(string ownerName, string name)
     {
-        return $"{(ownerName ?? "").TrimStart('+')}\n{name}".ToLowerInvariant();
+        return $"{Owner(ownerName)}\n{name}".ToLowerInvariant();
     }
 
     private static bool TryReadKey(string key, out string link)
@@ -165,18 +192,33 @@ public sealed class SharedItemStore
         }
     }
 
-    private void Put(string link, PlayerUiSharedItem shared, DateTime now)
+    private void Put(string ownerName, string name, PlayerUiSharedItem shared, DateTime now)
     {
+        var link = Link(ownerName, name);
+        var owner = Owner(ownerName);
+
         lock (gate)
         {
             Prune(now);
-            var entry = new Entry { Link = link, Shared = shared, At = now };
-            byLink[link] = entry;
-            order.Enqueue(entry);
 
-            while (byLink.Count > Capacity && order.Count > 0)
+            if (byLink.TryGetValue(link, out var replaced))
             {
-                Remove(order.Dequeue());
+                Remove(replaced);
+            }
+
+            var entry = new Entry { Link = link, Owner = owner, Shared = shared, At = now };
+            entry.Node = order.AddLast(entry);
+            byLink[link] = entry;
+            linksByOwner[owner] = linksByOwner.GetValueOrDefault(owner) + 1;
+
+            if (linksByOwner[owner] > MaxPerOwner)
+            {
+                Remove(order.First(e => e.Owner == owner));
+            }
+
+            while (byLink.Count > Capacity)
+            {
+                Remove(order.First.Value);
             }
         }
     }
@@ -184,17 +226,26 @@ public sealed class SharedItemStore
     /// <summary>Drops what's older than Keep, oldest first.</summary>
     private void Prune(DateTime now)
     {
-        while (order.Count > 0 && now - order.Peek().At >= Keep)
+        while (order.First != null && now - order.First.Value.At >= Keep)
         {
-            Remove(order.Dequeue());
+            Remove(order.First.Value);
         }
     }
 
     private void Remove(Entry entry)
     {
-        if (byLink.TryGetValue(entry.Link, out var current) && ReferenceEquals(current, entry))
+        byLink.Remove(entry.Link);
+        order.Remove(entry.Node);
+
+        var left = linksByOwner[entry.Owner] - 1;
+
+        if (left > 0)
         {
-            byLink.Remove(entry.Link);
+            linksByOwner[entry.Owner] = left;
+        }
+        else
+        {
+            linksByOwner.Remove(entry.Owner);
         }
     }
 }

@@ -116,24 +116,18 @@ internal sealed class MarketSnapshotUpdater
 
                         if (itemType == (int)ItemType.Food)
                         {
+                            // read and left for the garbage collector: a copy has the real item's id, so Destroy would delete it
                             var wo = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(l.ItemSnapshotJson);
                             if (wo != null)
                             {
-                                try
+                                var qty = wo.StackSize ?? 0;
+                                if (qty > 1)
                                 {
-                                    var qty = wo.StackSize ?? 0;
-                                    if (qty > 1)
-                                    {
-                                        consumableUnitPriceKey = (int)Math.Ceiling(l.ListedPrice / (double)qty);
-                                    }
-                                    else
-                                    {
-                                        consumableUnitPriceKey = l.ListedPrice;
-                                    }
+                                    consumableUnitPriceKey = (int)Math.Ceiling(l.ListedPrice / (double)qty);
                                 }
-                                finally
+                                else
                                 {
-                                    wo.Destroy();
+                                    consumableUnitPriceKey = l.ListedPrice;
                                 }
                             }
                             else
@@ -167,19 +161,12 @@ internal sealed class MarketSnapshotUpdater
                             var wo = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(l.ItemSnapshotJson);
                             if (wo != null)
                             {
-                                try
+                                salvageMaterialKey = wo.MaterialType.HasValue ? (int)wo.MaterialType.Value : int.MaxValue;
+                                salvageWorkKey = wo.Workmanship ?? float.MaxValue;
+                                var qty = wo.Structure ?? 0;
+                                if (qty > 0)
                                 {
-                                    salvageMaterialKey = wo.MaterialType.HasValue ? (int)wo.MaterialType.Value : int.MaxValue;
-                                    salvageWorkKey = wo.Workmanship ?? float.MaxValue;
-                                    var qty = wo.Structure ?? 0;
-                                    if (qty > 0)
-                                    {
-                                        salvageUnitPriceKey = (int)Math.Ceiling(l.ListedPrice / (double)qty);
-                                    }
-                                }
-                                finally
-                                {
-                                    wo.Destroy();
+                                    salvageUnitPriceKey = (int)Math.Ceiling(l.ListedPrice / (double)qty);
                                 }
                             }
                         }
@@ -188,15 +175,8 @@ internal sealed class MarketSnapshotUpdater
                             var wo = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(l.ItemSnapshotJson);
                             if (wo != null)
                             {
-                                try
-                                {
-                                    gemMaterialKey = wo.MaterialType.HasValue ? (int)wo.MaterialType.Value : int.MaxValue;
-                                    gemWorkKey = wo.Workmanship ?? float.MaxValue;
-                                }
-                                finally
-                                {
-                                    wo.Destroy();
-                                }
+                                gemMaterialKey = wo.MaterialType.HasValue ? (int)wo.MaterialType.Value : int.MaxValue;
+                                gemWorkKey = wo.Workmanship ?? float.MaxValue;
                             }
                         }
                     }

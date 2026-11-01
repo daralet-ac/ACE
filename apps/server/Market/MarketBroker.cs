@@ -44,10 +44,14 @@ public static class MarketBroker
             return null;
         }
 
+        // The copies made here are read and left for the garbage collector. Destroying one would delete the real item from
+        // the database: it has the real item's id, and MarketEscrowGuard only protects a listing that hasn't expired.
         WorldObject TryBuildItemForDisplayFromBiota(uint biotaId)
         {
             var biota = DatabaseManager.Shard.BaseDatabase.GetBiota(biotaId, true);
-            if (biota == null)
+
+            // an id freed since can belong to something else by now
+            if (biota == null || biota.WeenieClassId != listing.ItemWeenieClassId)
             {
                 return null;
             }
@@ -65,7 +69,6 @@ public static class MarketBroker
                 if (item != null)
                 {
                     var name = ShouldDisplayNameWithMaterial(item) ? item.NameWithMaterial : item.Name;
-                    item.Destroy();
                     if (!string.IsNullOrWhiteSpace(name))
                     {
                         return name;
@@ -87,7 +90,6 @@ public static class MarketBroker
                 if (item != null)
                 {
                     var name = ShouldDisplayNameWithMaterial(item) ? item.NameWithMaterial : item.Name;
-                    item.Destroy();
                     if (!string.IsNullOrWhiteSpace(name))
                     {
                         return name;
@@ -799,6 +801,7 @@ public static class MarketBroker
         }
 
         var returned = 0;
+        var alreadyBack = 0;
         foreach (var listing in expired)
         {
             if (listing.ItemBiotaId <= 0)
@@ -816,21 +819,37 @@ public static class MarketBroker
             try
             {
                 var biota = DatabaseManager.Shard.BaseDatabase.GetBiota(listing.ItemBiotaId, true);
-                if (biota != null)
+                if (biota != null && biota.WeenieClassId == listing.ItemWeenieClassId)
                 {
+                    if (!MarketEscrowGuard.IsInEscrow(biota))
+                    {
+                        // Someone holds this item already: a listing cancelled before cancelling marked it returned. Making
+                        // another from its biota would be a duplicate of it, wherever it's gone since.
+                        Log.Warning(
+                            "Market expired claim skipped: item is no longer in escrow for listing {ListingId} (ItemBiotaId={ItemBiotaId}, WCID={WCID}, SellerAccountId={SellerAccountId})",
+                            listing.Id,
+                            listing.ItemBiotaId,
+                            listing.ItemWeenieClassId,
+                            listing.SellerAccountId);
+
+                        MarketServiceLocator.PlayerMarketRepository.MarkListingReturned(listing, DateTime.UtcNow);
+                        alreadyBack++;
+                        continue;
+                    }
+
                     var entityBiota = Database.Adapter.BiotaConverter.ConvertToEntityBiota(biota);
                     item = WorldObjectFactory.CreateWorldObject(entityBiota);
                 }
                 else if (!string.IsNullOrWhiteSpace(listing.ItemSnapshotJson))
                 {
-                    item = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(listing.ItemSnapshotJson);
+                    item = RestoreFromSnapshot(listing.ItemSnapshotJson);
                 }
             }
             catch
             {
                 if (!string.IsNullOrWhiteSpace(listing.ItemSnapshotJson))
                 {
-                    item = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(listing.ItemSnapshotJson);
+                    item = RestoreFromSnapshot(listing.ItemSnapshotJson);
                 }
                 else
                 {
@@ -887,7 +906,13 @@ public static class MarketBroker
 
         if (returned == 0)
         {
-            SendTell(player, broker, "Unable to restore any expired listing items.");
+            SendTell(
+                player,
+                broker,
+                alreadyBack > 0
+                    ? "Those listings' items have already been returned."
+                    : "Unable to restore any expired listing items."
+            );
             return;
         }
 
@@ -906,6 +931,23 @@ public static class MarketBroker
         }
 
         SendTell(player, broker, $"Claimed {returned} expired listing item(s)." );
+    }
+
+    /// <summary>
+    /// A listing's item made again from its snapshot, when its biota is gone. With an id of its own: the old one may have
+    /// been given to something else, which saving this would overwrite.
+    /// </summary>
+    private static WorldObject RestoreFromSnapshot(string snapshotJson)
+    {
+        var copy = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(snapshotJson);
+
+        if (copy?.Biota == null)
+        {
+            return null;
+        }
+
+        copy.Biota.Id = GuidManager.NewDynamicGuid().Full;
+        return WorldObjectFactory.CreateWorldObject(copy.Biota);
     }
 
     private static int GetItemCountInInventory(Player player, uint weenieClassId)
@@ -1106,7 +1148,9 @@ public static class MarketBroker
             return;
         }
 
-        MarketServiceLocator.PlayerMarketRepository.CancelListing(listing);
+        // Returned as well as cancelled: otherwise it comes back as an expired listing to claim once its time is up, for an
+        // item the player already has.
+        MarketServiceLocator.PlayerMarketRepository.MarkListingReturned(listing, DateTime.UtcNow);
         var display = requestedIndex.HasValue ? requestedIndex.Value : listingId;
         SendTell(player, $"Cancelled listing #{display}." + (cancelChargeAmount > 0 ? $" Cancellation fee: {cancelChargeAmount:N0} pyreals." : ""));
     }

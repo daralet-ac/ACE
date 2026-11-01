@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Market;
@@ -28,6 +29,17 @@ internal static class MarketEscrowGuard
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Whether a listing's item is still held by the market. Listing it clears its container and wielder
+    /// (MarketBroker.FinalizeConfirmedListing), so one with either is in someone's hands.
+    /// </summary>
+    public static bool IsInEscrow(ACE.Database.Models.Shard.Biota biota)
+    {
+        return biota.BiotaPropertiesIID?.Any(p =>
+                p.Type == (ushort)PropertyInstanceId.Container || p.Type == (ushort)PropertyInstanceId.Wielder
+            ) != true;
     }
 
     public static bool ShouldPreserveBiotaOnDestroy(WorldObject obj)
