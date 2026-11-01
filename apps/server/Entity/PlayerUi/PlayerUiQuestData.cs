@@ -1,6 +1,12 @@
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System.Threading.Tasks;
+using ACE.Database;
 using ACE.Entity.Enum;
+using ACE.Entity.Models;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
 
@@ -13,6 +19,9 @@ namespace ACE.Server.Entity.PlayerUi;
 /// </summary>
 public static class PlayerUiQuestData
 {
+    private static readonly ConcurrentDictionary<(uint Cell, string Npc), Task<Vector2?>> NpcSpots =
+        new ConcurrentDictionary<(uint, string), Task<Vector2?>>();
+
     public static PlayerUiQuests GetQuests(Player player)
     {
         var quests = new List<PlayerUiQuest>();
@@ -59,8 +68,8 @@ public static class PlayerUiQuestData
             tracker.TimeWhenRepeats > 0 ? tracker.TimeWhenRepeats : null,
             Text(contract.NameNPCStart),
             Text(contract.NameNPCEnd),
-            Place(contract.LocationNPCStart),
-            Place(contract.LocationNPCEnd),
+            Place(contract.LocationNPCStart, Text(contract.NameNPCStart)),
+            Place(contract.LocationNPCEnd, Text(contract.NameNPCEnd)),
             Place(contract.LocationQuestArea),
             Player.CanAbandonContract(contract.ContractId, stage)
         );
@@ -83,15 +92,71 @@ public static class PlayerUiQuestData
     private static string Text(string text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 
     /// <summary>A contract's place on the map, as a building or outdoor spot is placed; null for a dungeon or none.</summary>
-    private static PlayerUiPlace Place(ACE.DatLoader.Entity.Position position)
+    private static PlayerUiPlace Place(ACE.DatLoader.Entity.Position position, string npc = null)
     {
         if (position == null || !Town.IsOnMap(position.ObjCellID))
         {
             return null;
         }
 
-        var coords = PlayerUiData.BuildingMapCoords(position.ObjCellID, position.Frame.Origin.X, position.Frame.Origin.Y);
+        var spot = NpcSpot(position, npc);
+        var coords = PlayerUiData.BuildingMapCoords(position.ObjCellID, spot.X, spot.Y);
         return new PlayerUiPlace(coords.X, coords.Y);
+    }
+
+    /// <summary>
+    /// Where a contract's NPC really stands. The ContractTable's spots are only rough (Renald the Eldest's is 38 meters from
+    /// him, outside his building), so the NPC's own spawn in that landblock is used when one has the name. Looking it up can
+    /// reach the database for every weenie in the landblock, so it's done off the world thread, once, and the table's spot
+    /// stands in until it's known.
+    /// </summary>
+    private static Vector2 NpcSpot(ACE.DatLoader.Entity.Position position, string npc)
+    {
+        var table = new Vector2(position.Frame.Origin.X, position.Frame.Origin.Y);
+
+        if (npc == null)
+        {
+            return table;
+        }
+
+        var lookup = NpcSpots.GetOrAdd(
+            (position.ObjCellID, npc),
+            _ => Task.Run(() => FindNpcSpot(position.ObjCellID, npc, table))
+        );
+
+        return lookup.Status == TaskStatus.RanToCompletion && lookup.Result.HasValue ? lookup.Result.Value : table;
+    }
+
+    private static Vector2? FindNpcSpot(uint cell, string npc, Vector2 table)
+    {
+        var spawns = DatabaseManager
+            .World.GetCachedInstancesByLandblock((ushort)(cell >> 16))
+            .Where(i =>
+                string.Equals(
+                    DatabaseManager.World.GetCachedWeenie(i.WeenieClassId)?.GetName(),
+                    npc,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            .Select(i => new Vector2(i.OriginX, i.OriginY));
+
+        return Nearest(spawns, table);
+    }
+
+    /// <summary>The spot closest to another, for a name more than one spawn in a landblock shares; null if there are none.</summary>
+    public static Vector2? Nearest(IEnumerable<Vector2> spots, Vector2 to)
+    {
+        Vector2? nearest = null;
+
+        foreach (var spot in spots)
+        {
+            if (nearest == null || Vector2.Distance(spot, to) < Vector2.Distance(nearest.Value, to))
+            {
+                nearest = spot;
+            }
+        }
+
+        return nearest;
     }
 
     /// <summary>

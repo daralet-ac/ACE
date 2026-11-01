@@ -394,6 +394,15 @@ public class PlayerUiProtocolTests
     }
 
     [TestMethod]
+    public void AContractNpcsSpotIsTheNearestSpawnOfTheName()
+    {
+        var spawns = new[] { new System.Numerics.Vector2(10, 10), new System.Numerics.Vector2(138, 5) };
+
+        Assert.AreEqual(spawns[1], PlayerUiQuestData.Nearest(spawns, new System.Numerics.Vector2(135, 43)));
+        Assert.IsNull(PlayerUiQuestData.Nearest(new System.Numerics.Vector2[0], new System.Numerics.Vector2(135, 43)));
+    }
+
+    [TestMethod]
     public void NoFellowshipIsNull()
     {
         Assert.AreEqual("DAP2|fellowship|1|1|1|bnVsbA==", PlayerUiProtocol.BuildMessages("fellowship", "null", 1)[0]);
