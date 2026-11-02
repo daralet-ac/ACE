@@ -110,6 +110,60 @@ public class SharedItemStoreTests
     }
 
     [TestMethod]
+    public void LinkingOneItemOverAndOverHoldsOnlyTheLatest()
+    {
+        var store = Store();
+
+        for (var i = 0; i < 1000; i++)
+        {
+            store.Add("Bob", 0, Item(7, "Sword"), Start.AddSeconds(i));
+        }
+
+        Assert.AreEqual(1, store.Count);
+        Assert.AreEqual(1, store.Queued, "replaced links mustn't stay in memory for their day");
+    }
+
+    [TestMethod]
+    public void ForgottenLinksLeaveTheQueueToo()
+    {
+        var store = Store();
+        store.Add("Bob", 0, Item(7, "Sword"), Start);
+
+        Assert.IsNull(store.Find(Key("Bob", "Sword"), Start.AddDays(1)));
+        Assert.AreEqual(0, store.Queued);
+    }
+
+    [TestMethod]
+    public void OnePlayersLinksCantPushOutAnothers()
+    {
+        var store = new SharedItemStore(capacity: 4, TimeSpan.FromDays(1), maxPerOwner: 2);
+        store.Add("Ann", 0, Item(1, "Ann's Sword"), Start);
+
+        for (var i = 0; i < 100; i++)
+        {
+            store.Add("Bob", 0, Item((uint)i, $"Item {i}"), Start.AddSeconds(i));
+        }
+
+        Assert.IsNotNull(store.Find(Key("Ann", "Ann's Sword"), Start.AddMinutes(5)));
+        Assert.IsNotNull(store.Find(Key("Bob", "Item 99"), Start.AddMinutes(5)));
+        Assert.IsNotNull(store.Find(Key("Bob", "Item 98"), Start.AddMinutes(5)));
+        Assert.IsNull(store.Find(Key("Bob", "Item 97"), Start.AddMinutes(5)));
+        Assert.AreEqual(3, store.Count);
+    }
+
+    [TestMethod]
+    public void AStaffCharactersPlusIsTheSameOwner()
+    {
+        var store = new SharedItemStore(capacity: 10, TimeSpan.FromDays(1), maxPerOwner: 1);
+
+        store.Add("+Bob", 0, Item(1, "One"), Start);
+        store.Add("Bob", 0, Item(2, "Two"), Start);
+
+        Assert.IsNull(store.Find(Key("Bob", "One"), Start));
+        Assert.IsNotNull(store.Find(Key("Bob", "Two"), Start));
+    }
+
+    [TestMethod]
     public void ALinkCanBePassedOnAndStillSaysWhoLinkedIt()
     {
         var store = Store();

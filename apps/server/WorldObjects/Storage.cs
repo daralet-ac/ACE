@@ -302,6 +302,11 @@ public class Storage : Container
         // show and move them, but no ViewContents, which is what opens the game's bank window
         var pluginWindow = player.PlayerUiBankWindow;
 
+        if (pluginWindow)
+        {
+            player.PlayerUiOpenedContainer = Guid;
+        }
+
         if (!pluginWindow)
         {
             player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, this));

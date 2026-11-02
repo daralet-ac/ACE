@@ -1655,24 +1655,19 @@ internal static class MarketListingFormatter
                 if (biota != null)
                 {
                     var entityBiota = Database.Adapter.BiotaConverter.ConvertToEntityBiota(biota);
+                    // read and left for the garbage collector: it's the real item's biota, so Destroy would delete it
                     var obj = WorldObjectFactory.CreateWorldObject(entityBiota);
-                    try
-                    {
-                        if (obj.WeenieType == WeenieType.Salvage)
-                        {
-                            cache.Name = obj.NameWithMaterial;
-                            return cache.Name;
-                        }
 
-                        if (!string.IsNullOrWhiteSpace(obj.Name))
-                        {
-                            cache.Name = obj.Name;
-                            return cache.Name;
-                        }
-                    }
-                    finally
+                    if (obj.WeenieType == WeenieType.Salvage)
                     {
-                        obj.Destroy();
+                        cache.Name = obj.NameWithMaterial;
+                        return cache.Name;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(obj.Name))
+                    {
+                        cache.Name = obj.Name;
+                        return cache.Name;
                     }
                 }
             }

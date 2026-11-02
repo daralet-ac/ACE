@@ -19,6 +19,13 @@ public partial class Player
     public bool PlayerUiLootWindow { get; set; }
 
     /// <summary>
+    /// The container this player last opened with its game window left out, which the client will never say it stopped
+    /// looking at. Kept rather than worked out from the settings above: turning one off with a container open would otherwise
+    /// leave that container held open from anywhere, with no one else able to use it.
+    /// </summary>
+    public ObjectGuid PlayerUiOpenedContainer { get; set; } = ObjectGuid.Invalid;
+
+    /// <summary>
     /// Whether this container's game window is left out for the plugin's, for this player.
     /// </summary>
     public bool UsesPlayerUiWindow(Container container)
@@ -38,19 +45,33 @@ public partial class Player
     /// </summary>
     private void ClosePlayerUiContainerOutOfReach()
     {
-        if ((!PlayerUiBankWindow && !PlayerUiLootWindow) || LastOpenedContainerId == ObjectGuid.Invalid)
+        if (PlayerUiOpenedContainer == ObjectGuid.Invalid)
         {
             return;
         }
 
-        if (CurrentLandblock?.GetObject(LastOpenedContainerId) is not Container container || !UsesPlayerUiWindow(container))
+        // something else has been opened since, which closed this one
+        if (PlayerUiOpenedContainer != LastOpenedContainerId)
+        {
+            PlayerUiOpenedContainer = ObjectGuid.Invalid;
+            return;
+        }
+
+        if (CurrentLandblock?.GetObject(PlayerUiOpenedContainer) is not Container container)
         {
             return;
         }
 
-        if (container.IsOpen && container.Viewer == Guid.Full && !CurrentLandblock.WithinUseRadius(this, container.Guid, out _))
+        if (!container.IsOpen || container.Viewer != Guid.Full)
+        {
+            PlayerUiOpenedContainer = ObjectGuid.Invalid;
+            return;
+        }
+
+        if (!CurrentLandblock.WithinUseRadius(this, container.Guid, out _))
         {
             container.Close(this);
+            PlayerUiOpenedContainer = ObjectGuid.Invalid;
         }
     }
 }

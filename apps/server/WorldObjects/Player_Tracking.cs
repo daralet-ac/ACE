@@ -47,6 +47,21 @@ partial class Player
     }
 
     /// <summary>
+    /// Whether an object this player's physics knows about is kept from their client.
+    /// </summary>
+    public bool IsHiddenFromClient(WorldObject worldObject)
+    {
+        // If Visibility is true, do not send object to client, object is meant for server side only, unless Adminvision is true.
+        if (worldObject.Visibility && !Adminvision && !IsAware(worldObject))
+        {
+            return true;
+        }
+
+        // PK/PKL players cannot see stealthed players at all.
+        return worldObject is Player stealthedPlayer && stealthedPlayer.IsStealthed && IsPKType;
+    }
+
+    /// <summary>
     /// Sends a network message to player for CreateObject, if applicable
     /// </summary>
     public void TrackObject(WorldObject worldObject, bool delay = false)
@@ -58,14 +73,7 @@ partial class Player
             return;
         }
 
-        // If Visibility is true, do not send object to client, object is meant for server side only, unless Adminvision is true.
-        if (worldObject.Visibility && !Adminvision && !IsAware(worldObject))
-        {
-            return;
-        }
-
-        // PK/PKL players cannot see stealthed players at all.
-        if (worldObject is Player stealthedPlayer && stealthedPlayer.IsStealthed && IsPKType)
+        if (IsHiddenFromClient(worldObject))
         {
             return;
         }

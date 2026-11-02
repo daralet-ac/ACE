@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using ACE.Entity;
+using ACE.Entity.Enum;
 using ACE.Entity.Models;
 using ACE.Server.Commands.PlayerCommands;
 using ACE.Server.Managers;
@@ -258,7 +259,7 @@ public static class PlayerUiData
     {
         var creature = FindNear(player, guid) as Creature;
 
-        if (creature == null || creature.IsDead)
+        if (creature == null || creature.IsDead || !ClientCanSee(player, creature))
         {
             return Gone(guid);
         }
@@ -289,6 +290,26 @@ public static class PlayerUiData
             GetEnchantments(player, creature),
             GetThreat(player, creature)
         );
+    }
+
+    /// <summary>
+    /// Whether the player's client has been told about this creature. The request names any guid it likes, and being in the
+    /// landblock isn't enough: that takes in creatures through walls, ones hidden until a Perception roll and cloaked staff,
+    /// and asking about guid after guid would find them all.
+    /// </summary>
+    private static bool ClientCanSee(Player player, Creature creature)
+    {
+        if (creature == player)
+        {
+            return true;
+        }
+
+        if (player.PhysicsObj?.ObjMaint.KnownObjectsContainsKey(creature.Guid.Full) != true || player.IsHiddenFromClient(creature))
+        {
+            return false;
+        }
+
+        return player.Adminvision || creature.CloakStatus != CloakStatus.On;
     }
 
     private static PlayerUiTarget Gone(uint guid)
