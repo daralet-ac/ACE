@@ -65,6 +65,17 @@ public class ItemStylesTests
     }
 
     [TestMethod]
+    public void GetStyles_LetsItemStylesNameTheAlternateButNotLockIt()
+    {
+        var item = CreateItem(LookA, LookB, "0x10000200|Shadow|Event;0x10000200|Again;0x10000300|Pumpkin");
+        var styles = ItemStyles.GetStyles(item);
+
+        Assert.AreEqual(3, styles.Count);
+        Assert.AreEqual(new ItemStyle(LookB, "Shadow", null), styles[1]);
+        Assert.AreEqual("Pumpkin", styles[2].Name);
+    }
+
+    [TestMethod]
     public void LockedStyles_AreOnlyAvailableWithTheirQuest()
     {
         var item = CreateItem(LookA, null, "0x10000200|Pumpkin|Event");

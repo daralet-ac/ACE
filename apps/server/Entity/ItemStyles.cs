@@ -126,8 +126,8 @@ public static class ItemStyles
 
     /// <summary>
     /// Every style of the item, locked or not, starting with its default. Styles that repeat a ClothingBase already
-    /// listed are dropped, except that an ItemStyles entry for the default look names it. An item with no ClothingBase
-    /// of its own has no styles, since there would be no default to return to.
+    /// listed are dropped, except that the first ItemStyles entry naming the default or alternate look names it. An
+    /// item with no ClothingBase of its own has no styles, since there would be no default to return to.
     /// </summary>
     public static IReadOnlyList<ItemStyle> GetStyles(WorldObject item)
     {
@@ -141,7 +141,8 @@ public static class ItemStyles
         var styles = new List<ItemStyle> { new(defaultLook, DefaultName, null) };
 
         var alternate = item.AlternateClothingBase ?? 0;
-        if (alternate != 0 && alternate != defaultLook)
+        var hasAlternate = alternate != 0 && alternate != defaultLook;
+        if (hasAlternate)
         {
             styles.Add(new ItemStyle(alternate, AlternateName, null));
         }
@@ -150,7 +151,7 @@ public static class ItemStyles
         {
             if (style.ClothingBase == defaultLook)
             {
-                if (style.Name != null)
+                if (style.Name != null && styles[0].Name == DefaultName)
                 {
                     styles[0] = styles[0] with { Name = style.Name };
                 }
@@ -162,7 +163,7 @@ public static class ItemStyles
             if (existing >= 0)
             {
                 // AlternateClothingBase listed again in ItemStyles: let the entry name it, but keep it unlocked.
-                if (existing == 1 && style.Name != null)
+                if (hasAlternate && existing == 1 && style.Name != null && styles[1].Name == AlternateName)
                 {
                     styles[1] = styles[1] with { Name = style.Name };
                 }
