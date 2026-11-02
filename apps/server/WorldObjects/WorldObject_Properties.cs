@@ -8927,6 +8927,25 @@ partial class WorldObject
         }
     }
 
+    /// <summary>
+    /// The ClothingBase this item showed before it was switched to another style; null while it shows its default.
+    /// </summary>
+    public uint? ItemStyleDefaultClothingBase
+    {
+        get => GetProperty(PropertyDataId.ItemStyleDefaultClothingBase);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyDataId.ItemStyleDefaultClothingBase);
+            }
+            else
+            {
+                SetProperty(PropertyDataId.ItemStyleDefaultClothingBase, value.Value);
+            }
+        }
+    }
+
     public double? BaseArmorWarMagicMod
     {
         get => (double?)GetProperty(PropertyFloat.BaseArmorWarMagicMod);
