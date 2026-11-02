@@ -137,13 +137,16 @@ public class StyleCommand
             return;
         }
 
-        // The item's own look is only seen by its owner; a worn item is drawn as part of its wearer, whose
-        // appearance everyone nearby sees.
-        session.Network.EnqueueSend(new GameMessageUpdateObject(item));
-
+        // A carried item is only seen by its owner. An equipped one is seen by everyone nearby: a wielded weapon or
+        // shield as an object of its own (its setup, colors and effect), a worn item as part of its wearer.
         if (equipped)
         {
+            player.EnqueueBroadcast(new GameMessageUpdateObject(item));
             player.EnqueueBroadcast(new GameMessageObjDescEvent(player));
+        }
+        else
+        {
+            session.Network.EnqueueSend(new GameMessageUpdateObject(item));
         }
 
         Send(session, $"You switch the {item.Name} to its {style.Name} look.");
@@ -166,10 +169,9 @@ public class StyleCommand
         }
 
         var available = ItemStyles.GetAvailableStyles(item, player);
-        var current = item.ClothingBase ?? 0;
+        var current = ItemLook.Of(item);
         var lines = available.Select(
-            (s, i) =>
-                $"  {i + 1}. {s.Name}" + (s.ClothingBase == current ? " (showing)" : "") + (s.IsLocked ? " *" : "")
+            (s, i) => $"  {i + 1}. {s.Name}" + (s.Look == current ? " (showing)" : "") + (s.IsLocked ? " *" : "")
         );
 
         var footnote = available.Any(s => s.IsLocked) ? "\n  * a look you have earned" : "";

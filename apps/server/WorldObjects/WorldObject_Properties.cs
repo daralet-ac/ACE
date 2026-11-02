@@ -8928,7 +8928,8 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// The ClothingBase this item showed before it was switched to another style; null while it shows its default.
+    /// The ClothingBase this item showed before it was switched to another style, from before ItemStyleDefaultLook
+    /// kept the whole look; null while it shows its default.
     /// </summary>
     public uint? ItemStyleDefaultClothingBase
     {
@@ -8942,6 +8943,26 @@ partial class WorldObject
             else
             {
                 SetProperty(PropertyDataId.ItemStyleDefaultClothingBase, value.Value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The look this item showed before it was switched to another style (see ItemLook.Write); null while it shows
+    /// its default.
+    /// </summary>
+    public string ItemStyleDefaultLook
+    {
+        get => GetProperty(PropertyString.ItemStyleDefaultLook);
+        set
+        {
+            if (value == null)
+            {
+                RemoveProperty(PropertyString.ItemStyleDefaultLook);
+            }
+            else
+            {
+                SetProperty(PropertyString.ItemStyleDefaultLook, value);
             }
         }
     }

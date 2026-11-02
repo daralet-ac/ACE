@@ -108,8 +108,9 @@ public enum PropertyDataId : ushort
     AlternateClothingBase = 67,
 
     /// <summary>
-    /// The ClothingBase an item showed before it was first switched to another of its ItemStyles, so its default look
-    /// can be restored. Unset while the item shows its default look.
+    /// The ClothingBase an item showed before it was first switched to another of its ItemStyles. No longer written:
+    /// ItemStyleDefaultLook (String 58) keeps the whole default look. Still read for items switched before it, and
+    /// cleared the next time they switch.
     /// </summary>
     ItemStyleDefaultClothingBase = 68,
     PCAPRecordedWeenieHeader = 8001,

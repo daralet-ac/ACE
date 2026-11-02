@@ -112,11 +112,19 @@ public enum PropertyString : ushort
     SpellTomeDiscoveredFormulas = 56,
 
     /// <summary>
-    /// The extra looks (ClothingBases) an item can switch between with /style, one per line or separated by ';', each
-    /// written ClothingBase|Name|QuestFlag. Name and QuestFlag are optional; a style with a QuestFlag can only be
-    /// chosen by players who have that quest. Read from the item's weenie, so edits reach items already in the world.
+    /// The extra looks an item can switch between with /style, one per line or separated by ';', each written
+    /// ClothingBase|Name|QuestFlag|Changes. Changes is a comma-separated list of palette=, shade=, icon=, setup= and
+    /// script= values; every part but one look value is optional. A style with a QuestFlag can only be chosen by
+    /// players who have that quest. Read from the item's weenie, so edits reach items already in the world.
     /// </summary>
     ItemStyles = 57,
+
+    /// <summary>
+    /// The look an item showed before it was first switched to another of its ItemStyles, so it can be restored,
+    /// written as ItemStyles' Changes are (with clothing=); a value left out is one the item didn't have. Unset while
+    /// the item shows its default look.
+    /// </summary>
+    ItemStyleDefaultLook = 58,
     PCAPRecordedCurrentMotionState = 8006,
     PCAPRecordedServerName = 8031,
     PCAPRecordedCharacterName = 8032,
