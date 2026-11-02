@@ -110,6 +110,13 @@ public enum PropertyString : ushort
     PatrolPath = 54,
     ScrollWritingComponents = 55,
     SpellTomeDiscoveredFormulas = 56,
+
+    /// <summary>
+    /// The extra looks (ClothingBases) an item can switch between with /style, one per line or separated by ';', each
+    /// written ClothingBase|Name|QuestFlag. Name and QuestFlag are optional; a style with a QuestFlag can only be
+    /// chosen by players who have that quest. Read from the item's weenie, so edits reach items already in the world.
+    /// </summary>
+    ItemStyles = 57,
     PCAPRecordedCurrentMotionState = 8006,
     PCAPRecordedServerName = 8031,
     PCAPRecordedCharacterName = 8032,

@@ -68,6 +68,9 @@ public class AppraiseInfo
     private bool _hasExtraPropertiesText = false;
     private string _questItemRollRangeText = "";
 
+    // The player examining the item, for text that depends on who reads it.
+    private Player _examiner;
+
     public AppraiseInfo()
     {
         Flags = IdentifyResponseFlags.None;
@@ -86,6 +89,7 @@ public class AppraiseInfo
     {
         //Console.WriteLine($"Appraise: {wo.Guid} {wo.Name}");
         Success = success;
+        _examiner = examiner;
 
         BuildProperties(wo);
         BuildSpells(wo);
@@ -899,7 +903,7 @@ public class AppraiseInfo
         SetCriticalDamageResistanceUseLongText(wo);
         SetAttuneOnEquipUseLongText(wo);
         SetAccountAttunedUseLongText(wo);
-        SetAlternateStyleUseLongText(wo);
+        SetItemStylesUseLongText(wo);
         SetNoCompsRequiredSchoolUseLongText(wo);
 
         SetGearRatingText(wo, PropertyInt.GearStrength, "Mighty Thews", "Grants +10 to current Strength, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
@@ -2049,17 +2053,21 @@ public class AppraiseInfo
             "~ Account-attuned: This item may be equipped by another character on the same account.\n";
     }
 
-    private void SetAlternateStyleUseLongText(WorldObject wo)
+    private void SetItemStylesUseLongText(WorldObject wo)
     {
-        if (!ItemStyleToggle.HasAlternateStyle(wo))
+        // Only the looks the examiner can use are counted, so a locked style isn't advertised to players without it.
+        if (!ItemStyles.CanSwitch(wo, _examiner))
         {
             return;
         }
 
-        _additionalPropertiesList.Add("Two Looks");
+        var count = ItemStyles.GetAvailableStyles(wo, _examiner).Count;
+        var name = count == 2 ? "Two Looks" : "Multiple Looks";
+
+        _additionalPropertiesList.Add(name);
         _hasAdditionalProperties = true;
         _additionalPropertiesLongDescriptionsText +=
-            "~ Two Looks: Examine this item and type /style to switch it to its other look, and again to switch back.\n";
+            $"~ {name}: Examine this item and type /style to switch it to its next look, or /style show to list them.\n";
     }
 
     private void SetBitingStrikeUseLongText(WorldObject wo)
