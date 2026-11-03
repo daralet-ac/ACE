@@ -125,6 +125,13 @@ public enum PropertyString : ushort
     /// the item shows its default look.
     /// </summary>
     ItemStyleDefaultLook = 58,
+
+    /// <summary>
+    /// An item's wear-level looks, five ClothingBase ids separated by commas, battered to pristine (workmanship 1-2,
+    /// 3-4, 5-6, 7-8, 9-10). While the item's ClothingBase is the middle one, it draws the one for its workmanship
+    /// instead. Read from the item's weenie, so edits reach items already in the world.
+    /// </summary>
+    WorkmanshipClothingBases = 59,
     PCAPRecordedCurrentMotionState = 8006,
     PCAPRecordedServerName = 8031,
     PCAPRecordedCharacterName = 8032,

@@ -1480,9 +1480,11 @@ partial class WorldObject
 
         AddBaseModelData(objDesc);
 
-        if (ClothingBase.HasValue)
+        // Its wear level's look, when it has them (WorkmanshipLooks).
+        var clothingBase = WorkmanshipLooks.DrawnClothingBase(this);
+        if (clothingBase.HasValue)
         {
-            item = DatManager.PortalDat.ReadFromDat<ClothingTable>((uint)ClothingBase);
+            item = DatManager.PortalDat.ReadFromDat<ClothingTable>(clothingBase.Value);
         }
         else
         {

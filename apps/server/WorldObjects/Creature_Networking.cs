@@ -6,6 +6,7 @@ using ACE.DatLoader.Entity;
 using ACE.DatLoader.FileTypes;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
+using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
@@ -172,7 +173,9 @@ partial class Creature
             {
                 if (w.ClothingBase.HasValue)
                 {
-                    item = DatManager.PortalDat.ReadFromDat<ClothingTable>((uint)w.ClothingBase);
+                    item = DatManager.PortalDat.ReadFromDat<ClothingTable>(
+                        WorkmanshipLooks.DrawnClothingBase(w) ?? (uint)w.ClothingBase
+                    );
                 }
                 else
                 {
