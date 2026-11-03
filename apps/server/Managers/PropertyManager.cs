@@ -846,6 +846,7 @@ public static class DefaultPropertyManager
         ("chat_requires_player_age", new Property<long>(0, "the amount of time in seconds a player is required to have played for global chat privileges")),
         ("chat_requires_player_level", new Property<long>(0, "the level a player is required to have for global chat privileges")),
         ("corpse_spam_limit", new Property<long>(15, "the number of corpses a player is allowed to leave on a landblock at one time")),
+        ("ddd_max_unacked_packets", new Property<long>(256, "(non-retail function) how many packets the server lets a client fall behind on acknowledging before it holds back further DAT patch files. Lower if patching stalls, raise if it is slow")),
         ("default_subscription_level", new Property<long>(1, "retail defaults to 1, 1 = standard subscription (same as 2 and 3), 4 grants ToD pre-order bonus item Asheron's Benediction")),
         ("fellowship_even_share_level", new Property<long>(50, "level when fellowship XP sharing is no longer restricted")),
         ("lfg_post_any_interval_seconds", new Property<long>(60, "(non-retail function) how often a player's /lfgroup and /lfmore lines can be posted in the LFG channel at all, in seconds (0 for every time), whatever they're for. Their lfg or lfm still changes every time; only the line waits")),

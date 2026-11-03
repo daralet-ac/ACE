@@ -81,6 +81,11 @@ public class NetworkSession
     private const int cachedPacketRetentionTime = 120;
 
     /// <summary>
+    /// The number of packets sent to the client that it hasn't acknowledged yet
+    /// </summary>
+    public int UnacknowledgedPacketCount => cachedPackets.Count;
+
+    /// <summary>
     /// This is referenced by multiple thread:<para />
     /// [ConnectionListener Thread + 0] WorldManager.ProcessPacket()->SendLoginRequestReject()<para />
     /// [ConnectionListener Thread + 0] WorldManager.ProcessPacket()->Session.ProcessPacket()->NetworkSession.ProcessPacket()->DoRequestForRetransmission()<para />
