@@ -344,6 +344,8 @@ public partial class MarketRepository
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesSpellBook') AS SpellBookRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt') AS AllPropertiesIntRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.JewelSockets') AS SocketsRaw,
+                    JSON_UNQUOTE(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesString.LegacyJewelSocketString1')) AS LegacyJewelSocket1Raw,
+                    JSON_UNQUOTE(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesString.LegacyJewelSocketString2')) AS LegacyJewelSocket2Raw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.StaminaCostReductionMod') AS StaminaCostReductionModRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.IgnoreWard') AS IgnoreWardRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.IgnoreArmor') AS IgnoreArmorRaw,

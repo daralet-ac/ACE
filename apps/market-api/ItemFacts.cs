@@ -98,6 +98,8 @@ public static class ItemColumns
         ["ItemXpStyleRaw"] = "PropertiesInt.ItemXpStyle",
         ["JewelMaterialTypeRaw"] = "PropertiesInt.JewelMaterialType",
         ["JewelQualityRaw"] = "PropertiesInt.JewelQuality",
+        ["LegacyJewelSocket1Raw"] = "PropertiesString.LegacyJewelSocketString1",
+        ["LegacyJewelSocket2Raw"] = "PropertiesString.LegacyJewelSocketString2",
         ["ManaRaw"] = "PropertiesInt.ItemMaxMana",
         ["ManaRateRaw"] = "PropertiesFloat.ManaRate",
         ["MaterialTypeRaw"] = "PropertiesInt.MaterialType",
