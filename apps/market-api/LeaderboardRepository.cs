@@ -439,15 +439,30 @@ public class LeaderboardRepository
 
     /// <summary>
     /// The fastest capstone completions of one dungeon at one difficulty and fellowship size (1, 2, or 3 meaning 3 or
-    /// more), fastest first, with only the best time of each distinct group of characters. Runs with a character on
+    /// more), fastest first, with only the best time of each distinct group of characters. A null dungeon, size or
+    /// difficulty means all of them: runs are then ranked hardest difficulty first, then fastest, and each group keeps
+    /// its best run in each dungeon (its hardest difficulty, then its fastest time there). Runs with a character on
     /// a staff account (accessLevel &gt; 1), or a character on the capstone blacklist, are left out. Returns null while the game server has not
     /// created the capstone_run tables yet (they come with the server update that records runs).
     /// </summary>
     public async Task<List<CapstoneLeaderboardEntry>?> GetCapstoneBoardAsync(
-        string dungeon, int fellowshipSize, int difficultyTier, int limit, CancellationToken ct)
+        string? dungeon, int? fellowshipSize, int? difficultyTier, int limit, CancellationToken ct)
     {
         limit = Math.Clamp(limit, 1, 100);
-        var sizeFilter = fellowshipSize >= 3 ? "r.fellowship_size >= 3" : "r.fellowship_size = @size";
+        var filters = new List<string>();
+        if (dungeon != null)
+        {
+            filters.Add("r.dungeon = @dungeon AND ");
+        }
+        if (difficultyTier != null)
+        {
+            filters.Add("r.difficulty_tier = @tier AND ");
+        }
+        if (fellowshipSize != null)
+        {
+            filters.Add(fellowshipSize >= 3 ? "r.fellowship_size >= 3 AND " : "r.fellowship_size = @size AND ");
+        }
+        var where = string.Concat(filters);
 
         try
         {
@@ -460,13 +475,14 @@ public class LeaderboardRepository
             await using (var cmd = connection.CreateCommand())
             {
                 cmd.CommandText = $"""
-                    SELECT best.id, best.completion_seconds, best.completed_at_utc
+                    SELECT best.id, best.dungeon, best.fellowship_size, best.difficulty_tier,
+                           best.completion_seconds, best.completed_at_utc
                     FROM (
-                        SELECT r.id, r.completion_seconds, r.completed_at_utc,
-                               ROW_NUMBER() OVER (PARTITION BY r.roster_key ORDER BY r.completion_seconds, r.id) AS rn
+                        SELECT r.id, r.dungeon, r.fellowship_size, r.difficulty_tier, r.completion_seconds, r.completed_at_utc,
+                               ROW_NUMBER() OVER (PARTITION BY r.roster_key, r.dungeon
+                                                  ORDER BY r.difficulty_tier DESC, r.completion_seconds, r.id) AS rn
                         FROM capstone_run r
-                        WHERE r.dungeon = @dungeon AND r.difficulty_tier = @tier AND {sizeFilter}
-                          AND NOT EXISTS (
+                        WHERE {where}NOT EXISTS (
                               SELECT 1
                               FROM capstone_run_member m
                               JOIN `character` c ON c.id = m.character_id
@@ -480,12 +496,12 @@ public class LeaderboardRepository
                               WHERE mb.run_id = r.id)
                     ) best
                     WHERE best.rn = 1
-                    ORDER BY best.completion_seconds, best.id
+                    ORDER BY best.difficulty_tier DESC, best.completion_seconds, best.id
                     LIMIT @limit
                     """;
-                cmd.Parameters.AddWithValue("@dungeon", dungeon);
-                cmd.Parameters.AddWithValue("@tier", difficultyTier);
-                cmd.Parameters.AddWithValue("@size", fellowshipSize);
+                cmd.Parameters.AddWithValue("@dungeon", dungeon ?? "");
+                cmd.Parameters.AddWithValue("@tier", difficultyTier ?? 0);
+                cmd.Parameters.AddWithValue("@size", fellowshipSize ?? 0);
                 cmd.Parameters.AddWithValue("@blacklistType", PropertyBoolCapstoneTrackingExcluded);
                 cmd.Parameters.AddWithValue("@limit", limit);
 
@@ -497,6 +513,9 @@ public class LeaderboardRepository
                     runs.Add(new CapstoneLeaderboardEntry
                     {
                         Rank = rank++,
+                        Dungeon = reader.GetString("dungeon"),
+                        FellowshipSize = reader.GetInt32("fellowship_size"),
+                        DifficultyTier = reader.GetInt32("difficulty_tier"),
                         CompletionSeconds = reader.GetInt32("completion_seconds"),
                         // stored in UTC; mark it so it is sent with a Z and the browser shows the right local time
                         CompletedAt = DateTime.SpecifyKind(reader.GetDateTime("completed_at_utc"), DateTimeKind.Utc),

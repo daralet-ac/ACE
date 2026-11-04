@@ -47,6 +47,10 @@ public class CapstoneLeaderboardEntry
 {
     public int Rank { get; set; }
     public List<string> CharacterNames { get; set; } = new();
+    // the run's own dungeon key, fellowship size and difficulty tier, for boards that cover all of one of them
+    public string Dungeon { get; set; } = "";
+    public int FellowshipSize { get; set; }
+    public int DifficultyTier { get; set; }
     public int CompletionSeconds { get; set; }
     public DateTime CompletedAt { get; set; }
 }
