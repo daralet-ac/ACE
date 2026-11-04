@@ -403,26 +403,45 @@ app.MapGet("/api/leaderboards/arena", async (int? size, bool? scaled, int? limit
 // The fastest completions of a capstone dungeon: dungeon is its website key (GlendenWoodDungeon), fellowshipSize
 // is 1, 2, or 3 (3 or more) and difficulty is the Dungeon: Difficulty tier, 0 for none up to 20. 404 until the game
 // server has created the tables its runs are recorded in, which the website shows as "not tracked yet".
-app.MapGet("/api/leaderboards/capstone", async (string? dungeon, int? fellowshipSize, int? difficulty, int? limit, LeaderboardRepository repository, CancellationToken ct) =>
+// Any of the three can be "all" to rank across every value of it: hardest difficulty first, then fastest time.
+app.MapGet("/api/leaderboards/capstone", async (string? dungeon, string? fellowshipSize, string? difficulty, int? limit, LeaderboardRepository repository, CancellationToken ct) =>
 {
+    static bool IsAll(string? value) => string.Equals(value, "all", StringComparison.OrdinalIgnoreCase);
+
     if (string.IsNullOrWhiteSpace(dungeon) || dungeon.Length > 40 || !dungeon.All(char.IsAsciiLetter))
     {
-        return Results.BadRequest(new { error = "dungeon is required (for example GlendenWoodDungeon)." });
+        return Results.BadRequest(new { error = "dungeon is required (for example GlendenWoodDungeon, or all)." });
     }
+    string? dungeonFilter = IsAll(dungeon) ? null : dungeon;
 
-    var size = fellowshipSize ?? 1;
-    if (size < 1 || size > 3)
+    // null = all; left out = the old defaults (solo, no difficulty); anything else must be a number in range
+    static bool TryFilter(string? value, int defaultValue, int min, int max, out int? result)
     {
-        return Results.BadRequest(new { error = "fellowshipSize must be 1, 2, or 3 (3 or more)." });
+        result = null;
+        if (IsAll(value))
+        {
+            return true;
+        }
+        var n = defaultValue;
+        if (!string.IsNullOrEmpty(value) && !int.TryParse(value, out n))
+        {
+            return false;
+        }
+        result = n;
+        return n >= min && n <= max;
     }
 
-    var tier = difficulty ?? 0;
-    if (tier < 0 || tier > 20)
+    if (!TryFilter(fellowshipSize, 1, 1, 3, out var size))
     {
-        return Results.BadRequest(new { error = "difficulty must be between 0 and 20." });
+        return Results.BadRequest(new { error = "fellowshipSize must be 1, 2, 3 (3 or more), or all." });
     }
 
-    var rows = await repository.GetCapstoneBoardAsync(dungeon, size, tier, limit ?? 50, ct);
+    if (!TryFilter(difficulty, 0, 0, 20, out var tier))
+    {
+        return Results.BadRequest(new { error = "difficulty must be between 0 and 20, or all." });
+    }
+
+    var rows = await repository.GetCapstoneBoardAsync(dungeonFilter, size, tier, limit ?? 50, ct);
     return rows is null ? Results.NotFound() : Results.Ok(rows);
 });
 
