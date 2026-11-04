@@ -20,6 +20,10 @@ public class TierPowerCorrectionTests
     private const uint Jambiya = 319;
     private const uint FlamingDirk = 22443;
     private const uint Longbow = 306;
+    private const uint Shuriken = 343;
+
+    // created after the cleave overhaul went live, so it's corrected
+    private const int Created = LootGenerationFactory.CorrectWeaponsCreatedSince + 86400;
 
     [TestMethod]
     public void Band_IsWhatT6LootRolledInBeforeTheRework()
@@ -149,9 +153,64 @@ public class TierPowerCorrectionTests
         bow.DamageMod = band.Middle;
         Assert.IsTrue(LootGenerationFactory.MigrateToTierPower(bow, new List<string>()));
 
-        var backup = new LootGenerationFactory.TierPowerBackupWeapon(1, Longbow, 6, null, null, band.Middle, null);
+        var backup = new LootGenerationFactory.TierPowerBackupWeapon(1, Longbow, 6, null, null, band.Middle, null, Created);
         Assert.AreEqual(Correction.Corrected, LootGenerationFactory.CorrectTierPowerDamage(bow, backup, new List<string>()));
         Assert.AreEqual(TierPower.GetMultiplierRange(6).Maximum, bow.DamageMod.Value, 1e-4);
+    }
+
+    [TestMethod]
+    public void WeaponFromBeforeTheCleaveOverhaul_IsLeftAsMigrated()
+    {
+        // rolled on an earlier formula: left alone, as is a weapon with no creation time
+        var dagger = Migrate(CreateMelee(Dagger, 6, 40, AttackType.DoubleStrike), damage: 36);
+
+        Assert.AreEqual(
+            Correction.TooOld,
+            LootGenerationFactory.CorrectTierPowerDamage(dagger, Backup(Dagger, 6, 36, created: 1735689600), new List<string>())
+        );
+        Assert.AreEqual(Correction.TooOld, LootGenerationFactory.CorrectTierPowerDamage(dagger, Backup(Dagger, 6, 36, created: null), new List<string>()));
+        Assert.AreEqual(166, dagger.Damage);
+    }
+
+    [TestMethod]
+    public void ThrownMigratedAtTheOldVariance_TakesTheNewOneWithTheCorrection()
+    {
+        // a T6 shuriken migrated while its weenie still had 0.75 variance, before world-db lowered it to 0.6
+        var shuriken = CreateItem(
+            WeenieType.Missile,
+            ItemType.MissileWeapon,
+            new()
+            {
+                [PropertyInt.Tier] = 6,
+                [PropertyInt.WeaponTime] = 80,
+                [PropertyInt.Damage] = 1,
+                [PropertyInt.DefaultCombatStyle] = (int)CombatStyle.ThrownWeapon,
+                [PropertyInt.WeaponSkill] = (int)Skill.ThrownWeapon,
+                [PropertyInt.WeaponType] = (int)WeaponType.Thrown,
+            },
+            new() { [PropertyFloat.DamageVariance] = 0.75 },
+            Shuriken
+        );
+        shuriken.WeaponTime = 112;
+        shuriken.DamageVariance = 0.8;
+        var band = LootGenerationFactory.GetPreTimePerHitDamageBand(shuriken, 6).Value;
+        var rolled = (int)Math.Round(band.Middle);
+        Migrate(shuriken, damage: rolled);
+        Assert.AreEqual(0.8, shuriken.DamageVariance.Value, 1e-4);
+
+        shuriken.Weenie.PropertiesFloat[PropertyFloat.DamageVariance] = 0.6;
+
+        var changes = new List<string>();
+        Assert.AreEqual(
+            Correction.Corrected,
+            LootGenerationFactory.CorrectTierPowerDamage(shuriken, Backup(Shuriken, 6, rolled), changes),
+            string.Join(", ", changes)
+        );
+
+        // its share of the variance, and the top of the range at 0.6
+        Assert.AreEqual(0.64, shuriken.DamageVariance.Value, 1e-4);
+        var range = LootGenerationFactory.GetMeleeDamageRollRange(shuriken, 6);
+        Assert.AreEqual((int)Math.Round(range.Maximum, MidpointRounding.AwayFromZero), shuriken.Damage);
     }
 
     /// <summary>
@@ -166,9 +225,15 @@ public class TierPowerCorrectionTests
         return wo;
     }
 
-    private static LootGenerationFactory.TierPowerBackupWeapon Backup(uint wcid, int tier, int damage, int? baseDamage = null)
+    private static LootGenerationFactory.TierPowerBackupWeapon Backup(
+        uint wcid,
+        int tier,
+        int damage,
+        int? baseDamage = null,
+        int? created = Created
+    )
     {
-        return new LootGenerationFactory.TierPowerBackupWeapon(1, wcid, tier, damage, baseDamage, null, null);
+        return new LootGenerationFactory.TierPowerBackupWeapon(1, wcid, tier, damage, baseDamage, null, null, created);
     }
 
     private static WorldObject CreateMelee(uint wcid, int tier, int weenieTime, AttackType attackType)

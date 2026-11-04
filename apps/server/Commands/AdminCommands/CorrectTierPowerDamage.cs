@@ -147,7 +147,7 @@ public class CorrectTierPowerDamage
 
     /// <summary>
     /// The export's rows, tab separated with a header (mariadb -B): id, wcid, tier, damage, base_damage, damage_mod,
-    /// base_damage_mod, NULL where the backup has none
+    /// base_damage_mod, created (Unix time), NULL where the backup has none
     /// </summary>
     internal static List<LootGenerationFactory.TierPowerBackupWeapon> ReadExport(string path)
     {
@@ -161,9 +161,9 @@ public class CorrectTierPowerDamage
             }
 
             var columns = line.Split('\t');
-            if (columns.Length < 7)
+            if (columns.Length < 8)
             {
-                throw new FormatException($"expected 7 columns: {line}");
+                throw new FormatException($"expected 8 columns (export it again with the latest query): {line}");
             }
 
             weapons.Add(
@@ -174,7 +174,8 @@ public class CorrectTierPowerDamage
                     ParseInt(columns[3]),
                     ParseInt(columns[4]),
                     ParseDouble(columns[5]),
-                    ParseDouble(columns[6])
+                    ParseDouble(columns[6]),
+                    ParseInt(columns[7])
                 )
             );
         }

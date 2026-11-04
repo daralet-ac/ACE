@@ -17,13 +17,15 @@ SELECT b.id,
        damage.value AS damage,
        base_damage.value AS base_damage,
        damage_mod.value AS damage_mod,
-       base_damage_mod.value AS base_damage_mod
+       base_damage_mod.value AS base_damage_mod,
+       created.value AS created
 FROM biota b
 JOIN biota_properties_int tier ON tier.object_Id = b.id AND tier.`type` = 10007 /* Tier */ AND tier.value >= 1
 LEFT JOIN biota_properties_int damage ON damage.object_Id = b.id AND damage.`type` = 44 /* Damage */
 LEFT JOIN biota_properties_int base_damage ON base_damage.object_Id = b.id AND base_damage.`type` = 452 /* BaseDamage */
 LEFT JOIN biota_properties_float damage_mod ON damage_mod.object_Id = b.id AND damage_mod.`type` = 63 /* DamageMod */
 LEFT JOIN biota_properties_float base_damage_mod ON base_damage_mod.object_Id = b.id AND base_damage_mod.`type` = 20050 /* BaseDamageMod */
+LEFT JOIN biota_properties_int created ON created.object_Id = b.id AND created.`type` = 98 /* CreationTimestamp */
 WHERE (b.weenie_Type IN (1 /* Generic */, 4 /* Missile */, 6 /* MeleeWeapon */) AND damage.value > 0)
    OR (b.weenie_Type = 3 /* MissileLauncher */ AND damage_mod.value > 0)
 ORDER BY b.id;
