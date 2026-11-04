@@ -79,6 +79,10 @@ public class MarketListing
 
     public int? Sockets { get; set; }
 
+    // What's in each jewel socket, in order, as appraisal lists them (AppraiseInfo.SetJewelcraftingUseText): the jewel's
+    // material and quality, "Black Garnet (5)", or "" for an empty socket. Null when the item has no sockets.
+    public List<string>? SocketJewels { get; set; }
+
     // Weapon stats (melee/missile/caster — only the relevant subset is populated).
     public int? BaseDamage { get; set; }
     public double? DamageVariance { get; set; }
