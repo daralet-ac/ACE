@@ -67,7 +67,14 @@ public static partial class LootGenerationFactory
     /// </summary>
     internal static (double Minimum, double Middle, double Maximum)? GetPreTimePerHitDamageBand(WorldObject wo, int tier)
     {
-        if (!PreTimePerHitWeaponTime.ByWcid.TryGetValue(wo.WeenieClassId, out var weaponTime) || weaponTime <= 0)
+        // #1106 left alone the weenies its conversion didn't change (staves' 50 stays 50), so theirs is the same now
+        var weenie = wo.Weenie ?? DatabaseManager.World?.GetCachedWeenie(wo.WeenieClassId);
+        if (!PreTimePerHitWeaponTime.ByWcid.TryGetValue(wo.WeenieClassId, out var weaponTime))
+        {
+            weaponTime = weenie?.GetProperty(PropertyInt.WeaponTime) ?? 0;
+        }
+
+        if (weaponTime <= 0)
         {
             return null;
         }
@@ -113,8 +120,7 @@ public static partial class LootGenerationFactory
                 attacksPerSecond = 1 / (animLength - PreviousThrownReload + PreviousThrownReload * speedMod);
             }
 
-            // an item restored from the shard has no Weenie of its own
-            var weenie = wo.Weenie ?? DatabaseManager.World?.GetCachedWeenie(wo.WeenieClassId);
+
             var variance = PreviousWeenieDamageVariance.TryGetValue(wo.WeenieClassId, out var previousVariance)
                 ? previousVariance
                 : weenie?.GetProperty(PropertyFloat.DamageVariance) ?? wo.DamageVariance ?? 0.0;
