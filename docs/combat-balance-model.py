@@ -72,8 +72,11 @@ def melee_dps(weapon_time, power=1.0, swing_speed=1.0, refill_speed=1.0):
     return s * power_curve(power) * (L + payback) / L / (L + refill)
 
 
-def missile_dps(per_shot_expected, attack_time, power=1.0, scale=0.55):
-    L = attack_time * scale
+MISSILE_POWER_LENGTH_SCALE = 0.65 if AFTER else 0.55   # Player.MissilePowerAttackLengthScale (stamina keeps 0.55)
+
+
+def missile_dps(per_shot_expected, attack_time, power=1.0, scale=None):
+    L = attack_time * (scale or MISSILE_POWER_LENGTH_SCALE)
     return per_shot_expected * power_curve(power) * (L + power) / L / (attack_time + power) / D
 
 

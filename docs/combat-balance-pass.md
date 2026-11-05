@@ -30,7 +30,7 @@ ammo or spell level deals it. The differences are everything after that:
 
 | | Melee | Missile (bows, thrown) | Magic |
 |---|---|---|---|
-| Power/accuracy bar | x0.75 at full, refill time paid back (`GetPowerMod`) | x0.75, paid back against 55% of the attack time, so it's worth more (bow x1.17 of target, crossbow/atlatl/thrown x1.0) | none (x1.0) |
+| Power/accuracy bar | x0.75 at full, refill time paid back (`GetPowerMod`) | x0.75, paid back against part of the attack time, so it's worth more: 55% before (bow x1.17 of target, crossbow/atlatl/thrown x1.0), 65% now (bow x1.05, the others x0.91-0.93) | none (x1.0) |
 | Hit chance | Medium height +10% attack (+20% specialized) | Medium height; the accuracy bar's +10% is removed | nothing before; now +10% specialized |
 | Combat skill damage | Two-handed / Dual Wield up to +50% | none | none |
 | Crits | 10% for 2x max | 10% for 2x max | 10% for 2x max (harms x1.5) |
@@ -42,10 +42,10 @@ ammo or spell level deals it. The differences are everything after that:
 | Two-handed sword | 1.11 | 0.79 | 0.87 |
 | Sword and board | 0.75 | 0.79 | 0.59 |
 | Dual wield daggers, spec | 1.38 | 0.79 | 1.09 |
-| Thrown | 1.01 | 0.79 | 0.79 |
-| Bow | 1.17 | 0.79 | 0.92 |
-| Crossbow | 1.01 | 0.79 | 0.80 |
-| Atlatl | 0.99 | 0.79 | 0.78 |
+| Thrown | 0.92 | 0.79 | 0.72 |
+| Bow | 1.05 | 0.79 | 0.82 |
+| Crossbow | 0.93 | 0.79 | 0.73 |
+| Atlatl | 0.91 | 0.79 | 0.71 |
 | War magic (bolts) | 1.18 | 0.68 | 0.80 |
 | Life magic (harms) | 0.56 | 0.68 | 0.38 |
 
@@ -151,13 +151,13 @@ On a two-handed Spellsword at T8 (300 War Magic, weapon damage including misses)
 | S&B heavy - Warrior | 1.01 | 0.43 | 0.50 | 2.38 |
 | S&B heavy - Blademaster (axe) | 1.26 | 0.59 | 0.75 | 2.12 |
 | S&B heavy - Spellsword | 0.74 | 0.42 | 0.53 | 1.74 |
-| Thrown heavy - Warrior | 1.28 | 0.83 | 0.70 | 1.56 |
-| Thrown heavy - Blademaster | 1.52 | 0.78 | 0.75 | 1.95 |
-| Thrown heavy - Archer | 1.96 | 0.82 | 0.75 | 2.38 |
+| Thrown heavy - Warrior | 1.17 | 0.83 | 0.70 | 1.42 |
+| Thrown heavy - Blademaster | 1.39 | 0.78 | 0.75 | 1.78 |
+| Thrown heavy - Archer | 1.79 | 0.82 | 0.75 | 2.17 |
 | DW light - Blademaster (daggers) | 2.17 | 0.78 | 0.92 | 2.79 |
 | DW light - Vagabond | 1.55 | 0.58 | 0.69 | 2.68 |
-| Bow heavy - Archer | 2.27 | 0.82 | 0.75 | 2.75 |
-| Bow heavy - Vagabond | 1.17 | 0.55 | 0.56 | 2.13 |
+| Bow heavy - Archer | 2.04 | 0.82 | 0.75 | 2.47 |
+| Bow heavy - Vagabond | 1.05 | 0.55 | 0.56 | 1.91 |
 | War cloth - Sorcerer | 1.33 | 0.72 | 0.58 | 1.83 |
 | War cloth - Vagabond | 0.80 | 0.68 | 0.62 | 1.17 |
 | Life cloth - Sorcerer (harms) | 0.63 | 0.72 | 0.58 | 0.86 |
@@ -167,7 +167,7 @@ What the full kits show:
 - **Warrior is the best-protected focus by far** (half the damage of a build with no abilities): Phalanx, Aegis,
   Reflect, Provoke and Riposte together, and it also has Fury. Sword and board Warrior takes the least physical damage of
   any build (0.43).
-- **Archer and dual-wield Blademaster lead on damage** (2.27, 2.17). Archer stacks the most damage abilities (Fury,
+- **Dual-wield Blademaster and Archer lead on damage** (2.17, 2.04). Archer stacks the most damage abilities (Fury,
   Steady Strike, Multishot) on the fastest-paying weapon, at range, in heavy armor.
 - **Spellsword is the weakest damage focus** (1.08 with a two-handed weapon), with Warrior-like defenses (0.48 / 0.53)
   but no Fury. Enchanted Blade is its only damage ability.
@@ -184,6 +184,7 @@ What the full kits show:
 | Change | Where | Effect |
 |---|---|---|
 | **Dual Wield spec refill fix**: the power bar pays back the real refill time | `DamageFormulas.GetPowerMod`, `Player.GetPowerMod`, `Player.GetMeleeRefillTimeMod` | DW spec is +25% damage, as described (was ~+45%); attacks still come 25% faster |
+| **Missile power payback**: the accuracy bar's damage pays back its refill against 65% of the attack time (was 55%, shared with stamina). Missile stamina keeps the 55% it was tuned on | `Player.MissilePowerAttackLengthScale`, `MissileStaminaAttackLengthScale` | A full accuracy bar is worth +28% over a full power bar for a bow (was +43%), +21-23% for crossbows, atlatls and thrown weapons (was +32-34%): bows -10%, the others -8 to -9% |
 | **Accuracy bar attack bonus removed**: the bar no longer adds +10% attack skill to missile attacks | `Player.GetEffectiveAttackSkill` | Missile weapons land as often as other weapons (79% instead of 90% at the tier's average skills) |
 | **Spell accuracy**: a player's own War and Life spells count +10% magic skill against resists with the school specialized (nothing when only trained) | `MagicFormulas.GetSpellAccuracyMod`, `WorldObject.GetEffectiveMagicSkill` | War magic lands 68% instead of 59%; procs and Enchanted Blade are unchanged |
 | **Multishot fallback**: bonus arrows that find no other enemy hit the main target for 25% (was 50%). Bonus arrows at other enemies are unchanged | `DamageFormulas.MultishotFallbackDamageMod`, `DamageEvent.GetCleaveDamageMod` | Multishot +50% -> +25% on a lone target; groups unchanged |
@@ -220,16 +221,16 @@ Every weapon specialization also doubles the attack height bonuses (+20% instead
 
 ## Recommended follow-ups (not changed here)
 
-1. **Archer is still the top damage** (2.27 with a bow, 1.96 thrown). It stacks three damage abilities where the others
-   have one or two. Multishot's fallback at 12.5% would bring a bow Archer to 2.02 (between dual-wield and two-handed
-   Blademaster), or at 0 (a group-only ability, like cleave) to 1.76 (just under two-handed Blademaster).
+1. **Archer still stacks the most damage abilities** (2.04 with a bow, 1.79 thrown; dual-wield Blademaster 2.17).
+   Multishot's fallback at 12.5% would bring a bow Archer to 1.81, or at 0 (a group-only ability, like cleave) to 1.58,
+   between two-handed Warrior and Blademaster.
 2. **Spellsword's damage.** Enchanted Blade (+8-24%) is its only damage ability, against Fury (+62%) for Warrior with the
    same defensive pairs. Rolling Enchanted Blade's spell level from the full skill instead of half to all of it (level
    V-VII instead of III-VI at T8) would add roughly half again.
 3. **Weapon Master by weapon.** Axe and dagger bleeds are worth twice sword and unarmed's bonus, and spear's is only for
    groups. Either the bleed comes down (3 ticks instead of 4: axe +27% -> +20%), or sword/unarmed/spear come up.
-4. **Crossbows and atlatls deal ~13-15% less than bows.** All launchers share one damage-mod ladder, so the slower
-   launchers fall behind on ammo damage per second. Raising quarrel and dart damage ~15% (`TierPower` ammo tables), or
+4. **Crossbows and atlatls deal ~12-14% less than bows.** All launchers share one damage-mod ladder, so the slower
+   launchers fall behind on ammo damage per second, and the power payback still favors the fastest weapons. Raising quarrel and dart damage ~15% (`TierPower` ammo tables), or
    giving their launchers a matching damage-mod factor, would level them.
 5. **Life magic's damage is half of War's.** Harm Other is half a bolt at every level (crits x1.5 instead of x2), and
    Martyr's Hecatomb reaches bolt damage only by spending the caster's health. Options: raise Harm Other to ~75% of a
@@ -241,6 +242,23 @@ Every weapon specialization also doubles the attack height bonuses (+20% instead
 8. **Sword and board's damage reduction.** With the full Warrior kit, sword and board takes 12% less physical damage than
    two-handed but deals a third less. If that trade should be closer, the shield's damage reduction (up to 25%,
    `SkillFormula.CalcShieldMod`) or base block chance (5%, `DamageFormulas.GetBlockChance`) are the levers.
+
+## Where the missile attack length scale came from
+
+It's Daralet's, not upstream ACE's. Upstream ACE's power and accuracy bars don't depend on the attack's length at all.
+The history (`git log -S`):
+
+1. **Melee/missile damage rework (#61, Jan 2024)** added the payback: the power and accuracy bars' damage pays back
+   the refill against the attack's length. Missiles used their full attack time (launch, reload and link).
+2. **#598 (Dec 2024)**, a missile stamina fix, set the missile length to the link animation alone.
+3. **#934 (Nov 2025)**, the missile stamina formula update, set it to (link + launch + reload) / animation speed. The
+   launch and reload times were already at that speed, so dividing again took about half the attack time.
+4. **The attack speed rework (#1288, Oct 2026)** kept that value as a flat x0.55, noting stamina and the accuracy bar's
+   damage were tuned against about half the attack.
+
+So the scale was set for missile stamina, and the damage payback inherited it. Paying back a full bar against about half
+the attack is what made a full accuracy bar worth so much more than a full power bar. This pass splits the two: stamina
+keeps 0.55, the damage payback uses 0.65.
 
 ## Assumptions and limits
 
