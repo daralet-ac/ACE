@@ -93,7 +93,6 @@ public partial class DamageEvent
         _damageModifiers.DamageRating = Creature.GetPositiveRatingMod(_attacker.GetDamageRating());
         _damageModifiers.DualWield = GetDualWieldDamageBonus(_playerAttacker, _defender);
         _damageModifiers.TwoHandedCombat = GetTwohandedCombatDamageBonus(_playerAttacker, _defender);
-        _damageModifiers.ShieldCombat = GetShieldCombatDamageBonus(_playerAttacker, _defender, CombatType);
         _damageModifiers.Fury = GetCombatAbilityFuryDamageBonus(_playerAttacker, _playerDefender);
         _damageModifiers.Relentless = GetCombatAbilityRelentlessDamagePenalty(_playerAttacker);
         _damageModifiers.SteadyStrike = GetCombatAbilitySteadyStrikeDamageBonus(_playerAttacker);
@@ -160,31 +159,6 @@ public partial class DamageEvent
 
         return DamageFormulas.GetCombatSkillDamageBonus(
             playerAttacker.GetModdedTwohandedCombatSkill(),
-            defender.GetModdedPhysicalDefSkill()
-        );
-    }
-
-    /// <summary>
-    /// Shield Damage Mod: melee attacks with a shield equipped gain up to +25%, from Shield skill vs the defender's
-    /// physical defense. Thrown weapons can be wielded with a shield (SPEC BONUS - Thrown Weapons), but don't gain this.
-    /// The shield must be at least trained, as for its damage reduction (Creature.GetShieldMod).
-    /// </summary>
-    private static float GetShieldCombatDamageBonus(Player playerAttacker, Creature defender, CombatType combatType)
-    {
-        if (
-            playerAttacker is null
-            || defender is null
-            || combatType is not CombatType.Melee
-            || playerAttacker.GetEquippedShield() is null
-            || playerAttacker.GetEquippedMeleeWeapon() is null
-            || playerAttacker.GetCreatureSkill(Skill.Shield).AdvancementClass < SkillAdvancementClass.Trained
-        )
-        {
-            return 1.0f;
-        }
-
-        return DamageFormulas.GetShieldCombatDamageBonus(
-            playerAttacker.GetModdedShieldSkill(),
             defender.GetModdedPhysicalDefSkill()
         );
     }

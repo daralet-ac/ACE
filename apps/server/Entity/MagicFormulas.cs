@@ -22,17 +22,12 @@ internal static class MagicFormulas
     }
 
     /// <summary>
-    /// SPELL ACCURACY: the multiplier on a player's War or Life magic skill against resists. Matches the Medium attack
-    /// height bonus weapons get on their attack skill: x1.1 trained, x1.2 specialized.
+    /// SPELL ACCURACY: the multiplier on a player's War or Life magic skill against resists, x1.1 with the school
+    /// specialized (nothing when only trained)
     /// </summary>
     public static float GetSpellAccuracyMod(SkillAdvancementClass advancementClass)
     {
-        return advancementClass switch
-        {
-            SkillAdvancementClass.Specialized => 1.2f,
-            SkillAdvancementClass.Trained => 1.1f,
-            _ => 1.0f,
-        };
+        return advancementClass == SkillAdvancementClass.Specialized ? 1.1f : 1.0f;
     }
 
     /// <summary>

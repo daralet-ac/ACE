@@ -283,7 +283,7 @@ public static partial class LootGenerationFactory
     {
         int? baseArmorLevel = null;
 
-        // Ward Level by weight class: Cloth the most, Heavy next, Light the least (LootTables.GetWeightClassBaseWardLevel)
+        // Ward Level by weight class (LootTables.GetWeightClassBaseWardLevel)
         var baseWardLevel = tierPowerMigration
             ? LootTables.GetTierPowerMigrationWeightClassWard(wo.ArmorWeightClass)
             : LootTables.GetWeightClassBaseWardLevel(wo.ArmorWeightClass);

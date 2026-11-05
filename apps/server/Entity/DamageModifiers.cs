@@ -35,11 +35,6 @@ internal struct DamageModifiers
     public float TwoHandedCombat;
 
     /// <summary>
-    /// Shield: melee damage with a shield equipped (DamageFormulas.GetShieldCombatDamageBonus)
-    /// </summary>
-    public float ShieldCombat;
-
-    /// <summary>
     /// COMBAT ABILITY - Fury stance and Enrage
     /// </summary>
     public float Fury;
@@ -75,7 +70,6 @@ internal struct DamageModifiers
             * PierceRating
             * DualWield
             * TwoHandedCombat
-            * ShieldCombat
             * Fury
             * Relentless
             * SteadyStrike

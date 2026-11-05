@@ -139,23 +139,6 @@ public class DamageFormulaTests
     }
 
     [TestMethod]
-    public void ShieldCombatDamageBonus_IsHalfTheCombatSkillBonus()
-    {
-        // the same curve as Dual Wield and Two-handed Combat, up to +25%
-        Assert.AreEqual(1.125f, DamageFormulas.GetShieldCombatDamageBonus(200, 300), Tolerance);
-        Assert.AreEqual(1.25f, DamageFormulas.GetShieldCombatDamageBonus(1000, 0), 0.001);
-        Assert.AreEqual(1.0f, DamageFormulas.GetShieldCombatDamageBonus(0, 1000), 0.001);
-
-        foreach (var (skill, defense) in new (uint, uint)[] { (150, 300), (300, 350), (450, 500) })
-        {
-            var combatSkillBonus = DamageFormulas.GetCombatSkillDamageBonus(skill, defense) - 1.0f;
-            var shieldBonus = DamageFormulas.GetShieldCombatDamageBonus(skill, defense) - 1.0f;
-
-            Assert.AreEqual(combatSkillBonus / 2, shieldBonus, Tolerance);
-        }
-    }
-
-    [TestMethod]
     public void CleaveDamageMods_MultishotFallbackIsHalfACleave()
     {
         Assert.AreEqual(0.5f, DamageFormulas.CleaveDamageMod);

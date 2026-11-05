@@ -275,7 +275,7 @@ partial class WorldObject
                 magicSkill = (uint)(magicSkill * weaponAttackMod);
             }
 
-            // SPELL ACCURACY - a player's own War and Life spells, like Medium attacks for weapons
+            // SPELL ACCURACY - a player's own War and Life spells, with the school specialized
             if (casterCreature is Player && weaponSpellcraft is null)
             {
                 magicSkill = (uint)(magicSkill * GetSpellAccuracyMod(casterCreature, spell.School));
@@ -316,10 +316,10 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// SPELL ACCURACY: a player's War and Life spells are +10% harder to resist, +20% with the school specialized.
-    /// Weapon attacks get the same from a Medium attack height (+10%, +20% with the weapon specialized), and missile
-    /// weapons another +10% from the accuracy bar, but spells had nothing, so mages were resisted far more often than
-    /// weapons were evaded by the same monsters (MagicFormulas.GetSpellAccuracyMod).
+    /// SPELL ACCURACY: a player's War and Life spells are +10% harder to resist with the school specialized
+    /// (MagicFormulas.GetSpellAccuracyMod). Weapon attacks get +10-20% attack skill from a Medium attack height, and
+    /// missile weapons another +10% from the accuracy bar, but spells had nothing, so mages were resisted far more often
+    /// than weapons were evaded by the same monsters.
     /// Proc and Enchanted Blade spells (cast with a weapon's spellcraft) don't gain it.
     /// </summary>
     private static float GetSpellAccuracyMod(Creature caster, MagicSchool school)

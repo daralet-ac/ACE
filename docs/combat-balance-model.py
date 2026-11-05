@@ -112,10 +112,9 @@ PLAYER_SKILL = 300            # LevelScaling.AvgPlayerAttackSkillPerTier[7] (L10
 # attack skill multipliers by family
 MELEE_ATTACK = 1.2            # Medium height, specialized weapon (DamageEvent_Defense)
 MISSILE_ATTACK = 1.1 * 1.2    # accuracy bar (GetAccuracySkillMod) x Medium height
-SPELL_ATTACK = 1.2 if AFTER else 1.0
+SPELL_ATTACK = 1.1 if AFTER else 1.0   # specialized school (spell accuracy)
 
 two_h = combat_skill_bonus(PLAYER_SKILL)
-shield_bonus = combat_skill_bonus(PLAYER_SKILL, cap=0.25) if AFTER else 1.0
 
 bow = missile_dps(launcher_expected(80, 0.6), seconds_per_hit(56, ranged=True))
 xbow = missile_dps(launcher_expected(112, 0.4), seconds_per_hit(93, ranged=True))
@@ -128,7 +127,7 @@ harm = spell_dps(65, 130, 2.88, crit_mult=1.5)        # Harm Other VII (half a b
 
 weapons = {
     "2H (Str)": (melee_dps(65) * two_h, MELEE_ATTACK),
-    "Sword & board (Str)": (melee_dps(50) * shield_bonus, MELEE_ATTACK),
+    "Sword & board (Str)": (melee_dps(50), MELEE_ATTACK),
     "Thrown (Str)": (thrown, MISSILE_ATTACK),
     "Dual wield, spec (Coord)": (melee_dps(40, swing_speed=1.25, refill_speed=1.25) * two_h, MELEE_ATTACK),
     "Dual wield, trained (Coord)": (melee_dps(40) * two_h, MELEE_ATTACK),
@@ -161,13 +160,51 @@ multishot = 1 + 0.5 * 2 * leftover
 # Shadow Flurry: every hit a sneak attack (+25%) for 10 s per 20 s
 shadow = 1 + 0.5 * 0.25
 
+# Enchanted Blade (Player.TryUseEnchantedBlade, DamageEvent.CheckForEnchantedBlade): stores a spell whose level comes
+# from a roll between half and all of (magic skill + 10% of spellcraft), nearest of 20/150/.../400, and fires it on the
+# next hit for (spellcraft x 1%) x (1 + power bar). Spellcraft is the weapon's plus half of Arcane Lore when Arcane Lore
+# is specialized. Monster ward and the attribute mod (the weapon's: Strength for martial weapons) match the weapon's own
+# hits, so they cancel against them. 10 s cooldown, so about once per 10.5 s with the hit that fires it.
+BOLT = {1: (6, 12), 2: (12, 24), 3: (24, 48), 4: (40, 80), 5: (60, 120), 6: (90, 180), 7: (130, 260)}
+EB_DIFF = [20, 150, 200, 250, 300, 350, 400]
+
+
+def enchanted_blade_damage(weapon_spellcraft, arcane_lore=0, arcane_lore_spec=False, magic_skill=PLAYER_SKILL, power=1.0):
+    spellcraft = weapon_spellcraft + (0.5 * arcane_lore if arcane_lore_spec else 0)
+    skill = magic_skill + 0.1 * spellcraft
+    steps = 200
+    expected = 0.0
+    for i in range(steps):
+        roll = skill * (0.5 + 0.5 * (i + 0.5) / steps)
+        level = min(range(len(EB_DIFF)), key=lambda j: abs(EB_DIFF[j] - roll)) + 1
+        lo, hi = BOLT[level]
+        expected += ((lo + hi) / 2 * 0.9 + hi * 0.2) / steps
+    return expected * spellcraft * 0.01 * (1 + power) * retained(skill)
+
+
+def enchanted_blade_mult(weapon_eff_dps, **kwargs):
+    return 1 + enchanted_blade_damage(**kwargs) / D / (weapon_eff_dps * 10.5)
+
+
+spellsword_2h = melee_dps(65) * two_h * retained(PLAYER_SKILL * MELEE_ATTACK)
+eb_cases = [
+    ("400 spellcraft, Arcane Lore not specialized", dict(weapon_spellcraft=400)),
+    ("400 spellcraft, Arcane Lore 300 specialized", dict(weapon_spellcraft=400, arcane_lore=300, arcane_lore_spec=True)),
+    ("600 spellcraft, Arcane Lore 300 specialized", dict(weapon_spellcraft=600, arcane_lore=300, arcane_lore_spec=True)),
+    ("600 spellcraft, Arcane Lore 400 specialized", dict(weapon_spellcraft=600, arcane_lore=400, arcane_lore_spec=True)),
+]
+show("Enchanted Blade on a two-handed Spellsword (T8, per 10.5 s, x weapon damage)",
+     [(n, [enchanted_blade_damage(**k) / D, enchanted_blade_mult(spellsword_2h, **k)]) for n, k in eb_cases],
+     ["proc / D", "x damage"])
+ENCHANTED_BLADE = enchanted_blade_mult(spellsword_2h, **eb_cases[1][1])
+
 focus = [
     ("Warrior (Fury)", fury),
     ("Blademaster (Fury, Steady Strike)", fury * steady),
     ("Archer (Fury, Multishot, Steady)", fury * multishot * steady),
     ("Vagabond (Shadow Flurry, Steady)", shadow * steady),
     ("Sorcerer (Overload)", overload),
-    ("Spellsword (Enchanted Blade ~+10%)", 1.10),
+    ("Spellsword (Enchanted Blade)", ENCHANTED_BLADE),
 ]
 show("focus damage multipliers (single target, sustained)", [(n, [v]) for n, v in focus], ["x"])
 
@@ -184,10 +221,10 @@ FURY_USERS = ("Warrior", "Blademaster", "Archer")
 builds = [
     ("2H heavy - Warrior", eff("2H (Str)") * F["Warrior (Fury)"]),
     ("2H heavy - Blademaster", eff("2H (Str)") * F["Blademaster (Fury, Steady Strike)"]),
-    ("2H heavy - Spellsword", eff("2H (Str)") * F["Spellsword (Enchanted Blade ~+10%)"]),
+    ("2H heavy - Spellsword", eff("2H (Str)") * F["Spellsword (Enchanted Blade)"]),
     ("S&B heavy - Warrior", eff("Sword & board (Str)") * F["Warrior (Fury)"]),
     ("S&B heavy - Blademaster", eff("Sword & board (Str)") * F["Blademaster (Fury, Steady Strike)"]),
-    ("S&B heavy - Spellsword", eff("Sword & board (Str)") * F["Spellsword (Enchanted Blade ~+10%)"]),
+    ("S&B heavy - Spellsword", eff("Sword & board (Str)") * F["Spellsword (Enchanted Blade)"]),
     ("Thrown heavy - Warrior", eff("Thrown (Str)") * F["Warrior (Fury)"]),
     ("Thrown heavy - Blademaster", eff("Thrown (Str)") * F["Blademaster (Fury, Steady Strike)"]),
     ("Thrown heavy - Archer", eff("Thrown (Str)") * F["Archer (Fury, Multishot, Steady)"]),
@@ -204,7 +241,7 @@ builds = [
 def ward_total(base_per_slot):
     return 9 * base_per_slot * 64 + JEWELRY_AND_CLOTHES_WARD
 
-ward_base = {"heavy": 7, "light": 6 if AFTER else 5, "cloth": 8 if AFTER else 6}
+ward_base = {"heavy": 7, "light": 6 if AFTER else 5, "cloth": 6}
 al_base = {"heavy": 100, "light": 85, "cloth": 80}
 ref_phys = BOTTOM_COVENANT_AL + 100
 ref_magic = ward_total(7) + 100

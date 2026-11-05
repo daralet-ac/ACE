@@ -177,11 +177,11 @@ public class QuestItemMutationTests
         Assert.AreEqual(75, LootTables.GetArmorStyleBaseArmorLevel((int)ArmorStyle.Cloth));
         Assert.AreEqual(75, LootTables.GetArmorStyleBaseArmorLevel(null));
 
-        // ward by weight class: Cloth leads, then Heavy, then Light; clothing keeps 5
+        // ward by weight class: Heavy 7, Cloth and Light 6; clothing keeps 5
         Assert.AreEqual(10, LootTables.GetArmorStyleBaseWardLevel((int)ArmorStyle.CovenantShield, null));
-        Assert.AreEqual(8, LootTables.GetArmorStyleBaseWardLevel((int)ArmorStyle.Amuli, (int)ArmorWeightClass.Light));
+        Assert.AreEqual(6, LootTables.GetArmorStyleBaseWardLevel((int)ArmorStyle.Amuli, (int)ArmorWeightClass.Light));
         Assert.AreEqual(7, LootTables.GetArmorStyleBaseWardLevel((int)ArmorStyle.Platemail, (int)ArmorWeightClass.Heavy));
-        Assert.AreEqual(8, LootTables.GetArmorStyleBaseWardLevel((int)ArmorStyle.Cloth, (int)ArmorWeightClass.Cloth));
+        Assert.AreEqual(6, LootTables.GetArmorStyleBaseWardLevel((int)ArmorStyle.Cloth, (int)ArmorWeightClass.Cloth));
         Assert.AreEqual(6, LootTables.GetArmorStyleBaseWardLevel((int)ArmorStyle.Leather, (int)ArmorWeightClass.Light));
         Assert.AreEqual(5, LootTables.GetArmorStyleBaseWardLevel(null, (int)ArmorWeightClass.None));
     }

@@ -27,17 +27,6 @@ internal static class DamageFormulas
     public const float MultishotFallbackDamageMod = 0.25f;
 
     /// <summary>
-    /// The most Dual Wield and Two-handed Combat add to damage (GetCombatSkillDamageBonus)
-    /// </summary>
-    public const float MaxCombatSkillDamageBonus = 0.5f;
-
-    /// <summary>
-    /// The most Shield adds to melee damage with a shield equipped (GetShieldCombatDamageBonus): half of Dual Wield and
-    /// Two-handed Combat's, as the shield's block and damage reduction make up the rest
-    /// </summary>
-    public const float MaxShieldCombatDamageBonus = 0.25f;
-
-    /// <summary>
     /// Returns the chance (0-1) to evade an attack.
     /// COMBAT ABILITY - Smokescreen: 10% of the remaining chance to be hit becomes chance to evade.
     /// </summary>
@@ -132,25 +121,9 @@ internal static class DamageFormulas
     /// </summary>
     public static float GetCombatSkillDamageBonus(uint combatSkill, uint defenderPhysicalDefense)
     {
-        return GetCombatSkillDamageBonus(combatSkill, defenderPhysicalDefense, MaxCombatSkillDamageBonus);
-    }
-
-    /// <summary>
-    /// Damage multiplier for a melee attack with a shield equipped: up to +25%, based on Shield skill vs the defender's
-    /// physical defense, on the same curve as Dual Wield and Two-handed Combat (GetCombatSkillDamageBonus).
-    /// Without it, sword and board had no combat skill adding to its damage, and fell a third behind two-handed and
-    /// dual wield for a shield's ~10-15% damage reduction and ~8% block.
-    /// </summary>
-    public static float GetShieldCombatDamageBonus(uint shieldSkill, uint defenderPhysicalDefense)
-    {
-        return GetCombatSkillDamageBonus(shieldSkill, defenderPhysicalDefense, MaxShieldCombatDamageBonus);
-    }
-
-    private static float GetCombatSkillDamageBonus(uint combatSkill, uint defenderPhysicalDefense, float maxBonus)
-    {
         var moddedCombatSkill = (uint)(combatSkill * 1.5f);
 
-        var damageMod = maxBonus * SkillCheck.GetSkillChance(moddedCombatSkill, defenderPhysicalDefense);
+        var damageMod = 0.5f * SkillCheck.GetSkillChance(moddedCombatSkill, defenderPhysicalDefense);
 
         return 1.0f + (float)damageMod;
     }

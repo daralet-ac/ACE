@@ -213,7 +213,7 @@ public class LootRollRangeTests
     }
 
     [TestMethod]
-    public void ArmorBaseWard_ClothLeadsThenHeavyThenLight()
+    public void ArmorBaseWard_ByWeightClass()
     {
         static int Ward(ArmorStyle style, ArmorWeightClass weightClass, bool tierPowerMigration = false)
         {
@@ -230,10 +230,9 @@ public class LootRollRangeTests
             return LootGenerationFactory.GetArmorBaseLevels(armor, tierPowerMigration).WardLevel;
         }
 
-        // Self's robes lead against spells, as Strength's plate does against weapons (armor level)
-        Assert.AreEqual(8, Ward(ArmorStyle.Amuli, ArmorWeightClass.Cloth));
-        Assert.AreEqual(8, Ward(ArmorStyle.OlthoiAmuli, ArmorWeightClass.Cloth));
-        Assert.AreEqual(8, Ward(ArmorStyle.Cloth, ArmorWeightClass.Cloth));
+        Assert.AreEqual(6, Ward(ArmorStyle.Amuli, ArmorWeightClass.Cloth));
+        Assert.AreEqual(6, Ward(ArmorStyle.OlthoiAmuli, ArmorWeightClass.Cloth));
+        Assert.AreEqual(6, Ward(ArmorStyle.Cloth, ArmorWeightClass.Cloth));
         Assert.AreEqual(7, Ward(ArmorStyle.Covenant, ArmorWeightClass.Heavy));
         Assert.AreEqual(6, Ward(ArmorStyle.Koujia, ArmorWeightClass.Light));
 

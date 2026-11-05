@@ -3883,17 +3883,15 @@ public static class LootTables
     }
 
     /// <summary>
-    /// An armor piece's per-slot base ward by weight class, which TierPower doubles each tier. Each weight class leads
-    /// in one defense: Heavy (Strength) in armor level, Cloth (Self) in ward, so a mage's robes protect best against
-    /// spells, as plate does against weapons. Light (Coordination) sits below both, and carries the lowest stamina and
-    /// mana penalty instead. Heavy is the reference player's armor (TierPower.ReferenceWardTable), which monster spell
-    /// damage is tuned against.
+    /// An armor piece's per-slot base ward by weight class, which TierPower doubles each tier. Heavy is the reference
+    /// player's armor (TierPower.ReferenceWardTable), which monster spell damage is tuned against. Light was 5, which
+    /// left Coordination's armor 22% behind heavy against spells on top of its lower armor level.
     /// </summary>
     public static int GetWeightClassBaseWardLevel(int? armorWeightClass)
     {
         return armorWeightClass switch
         {
-            (int)ArmorWeightClass.Cloth => 8,
+            (int)ArmorWeightClass.Cloth => 6,
             (int)ArmorWeightClass.Heavy => 7,
             (int)ArmorWeightClass.Light => 6,
             _ => 5, // clothing (shirts and pants)
