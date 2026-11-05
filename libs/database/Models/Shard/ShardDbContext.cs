@@ -95,6 +95,8 @@ public partial class ShardDbContext : DbContext
 
     public virtual DbSet<BankActivity> BankActivities { get; set; }
 
+    public virtual DbSet<ItemTransfer> ItemTransfers { get; set; }
+
     public virtual DbSet<CapstoneRun> CapstoneRuns { get; set; }
 
     public virtual DbSet<CapstoneRunMember> CapstoneRunMembers { get; set; }
@@ -1432,6 +1434,29 @@ public partial class ShardDbContext : DbContext
             entity.Property(e => e.CharacterName).HasColumnName("character_name").HasMaxLength(50);
             entity.Property(e => e.Action).HasColumnName("action").HasMaxLength(20);
             entity.Property(e => e.Details).HasColumnName("details").HasMaxLength(500);
+            entity.Property(e => e.CreatedAtUtc).HasColumnName("created_at_utc");
+        });
+
+        modelBuilder.Entity<ItemTransfer>(entity =>
+        {
+            entity.ToTable("item_transfer_log");
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.HasIndex(e => new { e.ItemId, e.Id }, "idx_item_transfer_log_item");
+            entity.HasIndex(e => new { e.FromCharacterId, e.Id }, "idx_item_transfer_log_from");
+            entity.HasIndex(e => new { e.ToCharacterId, e.Id }, "idx_item_transfer_log_to");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Kind).HasColumnName("kind").HasMaxLength(20);
+            entity.Property(e => e.ItemId).HasColumnName("item_id");
+            entity.Property(e => e.ItemWcid).HasColumnName("item_wcid");
+            entity.Property(e => e.ItemName).HasColumnName("item_name").HasMaxLength(100);
+            entity.Property(e => e.Amount).HasColumnName("amount");
+            entity.Property(e => e.FromCharacterId).HasColumnName("from_character_id");
+            entity.Property(e => e.FromName).HasColumnName("from_name").HasMaxLength(50);
+            entity.Property(e => e.FromAccountId).HasColumnName("from_account_id");
+            entity.Property(e => e.ToCharacterId).HasColumnName("to_character_id");
+            entity.Property(e => e.ToName).HasColumnName("to_name").HasMaxLength(50);
+            entity.Property(e => e.ToAccountId).HasColumnName("to_account_id");
+            entity.Property(e => e.Details).HasColumnName("details").HasMaxLength(200);
             entity.Property(e => e.CreatedAtUtc).HasColumnName("created_at_utc");
         });
 

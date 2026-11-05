@@ -2086,6 +2086,18 @@ partial class Player
 
         CheckForBankMoveItem(item, container, prevContainer, containerRootOwner, prevContainerRootOwner);
 
+        if (containerRootOwner == this)
+        {
+            if (prevLocation != null)
+            {
+                ItemTransferLog.RecordPickup(this, item);
+            }
+            else if (prevContainerRootOwner is Corpse corpse)
+            {
+                ItemTransferLog.RecordCorpseLoot(this, corpse, item);
+            }
+        }
+
         // when moving from a non-stuck container to a different container,
         // the database must be synced immediately
         if (prevContainer != null && !prevContainer.Stuck && container != prevContainer)
@@ -2306,6 +2318,8 @@ partial class Player
         }
 
         item.EnqueueBroadcastPhysicsState();
+
+        ItemTransferLog.RecordDrop(this, item);
 
         return true;
     }
@@ -5409,6 +5423,8 @@ partial class Player
                 }
 
                 var stackSize = itemToGive.StackSize ?? 1;
+
+                ItemTransferLog.RecordGive(this, target, itemToGive, stackSize);
 
                 var stackMsg = stackSize != 1 ? $"{stackSize:N0} " : "";
                 var itemName = itemToGive.GetNameWithMaterial(stackSize);

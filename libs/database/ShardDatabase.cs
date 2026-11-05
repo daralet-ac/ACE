@@ -1687,6 +1687,276 @@ LEFT JOIN biota_properties_int tq
     }
 
     /// <summary>
+    /// Saves item transfers (item_transfer_log) in one go. Throws if the table is missing.
+    /// </summary>
+    public virtual void AddItemTransfers(IReadOnlyCollection<ItemTransfer> entries)
+    {
+        if (entries.Count == 0)
+        {
+            return;
+        }
+
+        using var context = new ShardDbContext();
+
+        context.ItemTransfers.AddRange(entries);
+        context.SaveChanges();
+    }
+
+    /// <summary>
+    /// The newest transfers of one item, newest first. Throws if they can't be read.
+    /// </summary>
+    public virtual List<ItemTransfer> GetItemTransfersForItem(uint itemId, int count)
+    {
+        using var context = new ShardDbContext();
+
+        return context.ItemTransfers.AsNoTracking()
+            .Where(e => e.ItemId == itemId)
+            .OrderByDescending(e => e.Id)
+            .Take(count)
+            .ToList();
+    }
+
+    /// <summary>
+    /// The newest transfers to or from any of these characters, newest first. Throws if they can't be read.
+    /// </summary>
+    public virtual List<ItemTransfer> GetItemTransfersForCharacters(IReadOnlyCollection<uint> characterIds, int count)
+    {
+        using var context = new ShardDbContext();
+
+        var ids = characterIds.Select(id => (uint?)id).ToList();
+
+        // two index range reads (from, to) instead of one OR, which MySQL can't always read by index
+        var from = context.ItemTransfers.AsNoTracking()
+            .Where(e => ids.Contains(e.FromCharacterId))
+            .OrderByDescending(e => e.Id)
+            .Take(count)
+            .ToList();
+        var to = context.ItemTransfers.AsNoTracking()
+            .Where(e => ids.Contains(e.ToCharacterId))
+            .OrderByDescending(e => e.Id)
+            .Take(count)
+            .ToList();
+
+        return from.Concat(to)
+            .GroupBy(e => e.Id)
+            .Select(g => g.First())
+            .OrderByDescending(e => e.Id)
+            .Take(count)
+            .ToList();
+    }
+
+    /// <summary>
+    /// The newest transfers of items whose name contains text, newest first. Throws if they can't be read.
+    /// </summary>
+    public virtual List<ItemTransfer> GetItemTransfersByName(string text, int count)
+    {
+        using var context = new ShardDbContext();
+
+        return context.ItemTransfers.AsNoTracking()
+            .Where(e => e.ItemName.Contains(text))
+            .OrderByDescending(e => e.Id)
+            .Take(count)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Market sales of one item (by its biota id), or to or from any of these characters, newest first. Throws if they
+    /// can't be read.
+    /// </summary>
+    public virtual List<PlayerMarketTransaction> GetMarketTransactions(uint? itemId, IReadOnlyCollection<uint> characterIds, string nameContains, int count)
+    {
+        using var context = new ShardDbContext();
+
+        var query = context.PlayerMarketTransactions.AsNoTracking();
+
+        if (itemId != null)
+        {
+            query = query.Where(t => t.ItemBiotaId == itemId.Value || t.ItemGuid == itemId.Value);
+        }
+        else if (characterIds != null)
+        {
+            var ids = characterIds.Select(id => (uint?)id).ToList();
+            query = query.Where(t => ids.Contains(t.SellerCharacterId) || ids.Contains(t.BuyerCharacterId));
+        }
+        else if (!string.IsNullOrEmpty(nameContains))
+        {
+            query = query.Where(t => t.ItemName.Contains(nameContains));
+        }
+
+        return query.OrderByDescending(t => t.CreatedAtUtc).Take(count).ToList();
+    }
+
+    /// <summary>
+    /// Market listings still holding their item (not sold, cancelled or returned, expired or not): the item has no
+    /// container while the market has it. Throws if they can't be read.
+    /// </summary>
+    public virtual List<PlayerMarketListing> GetListingsHoldingItems()
+    {
+        using var context = new ShardDbContext();
+
+        // only what the search shows: the item snapshot is big, and not needed
+        return context.PlayerMarketListings.AsNoTracking()
+            .Where(l => !l.IsSold && !l.IsCancelled && l.ReturnedAtUtc == null)
+            .Select(l => new PlayerMarketListing
+            {
+                Id = l.Id,
+                SellerAccountId = l.SellerAccountId,
+                SellerCharacterId = l.SellerCharacterId,
+                SellerName = l.SellerName,
+                ItemGuid = l.ItemGuid,
+                ItemBiotaId = l.ItemBiotaId,
+                ItemWeenieClassId = l.ItemWeenieClassId,
+                ListedPrice = l.ListedPrice,
+                CurrencyType = l.CurrencyType,
+                ExpiresAtUtc = l.ExpiresAtUtc,
+            })
+            .ToList();
+    }
+
+    // What the item search reads of each object (b), after a FROM that picks the objects
+    private const string ItemSearchColumns = @"
+SELECT b.id, b.weenie_Class_Id, b.weenie_Type, n.value, ss.value, c.value, w.value, ba.value, v.value";
+
+    private const string ItemSearchJoins = @"
+LEFT JOIN biota_properties_string n ON n.object_Id = b.id AND n.type = 1
+LEFT JOIN biota_properties_int ss ON ss.object_Id = b.id AND ss.type = 12
+LEFT JOIN biota_properties_i_i_d c ON c.object_Id = b.id AND c.type = 2
+LEFT JOIN biota_properties_i_i_d w ON w.object_Id = b.id AND w.type = 3
+LEFT JOIN biota_properties_i_i_d ba ON ba.object_Id = b.id AND ba.type = 48
+LEFT JOIN biota_properties_i_i_d v ON v.object_Id = b.id AND v.type = 18";
+
+    /// <summary>
+    /// Items whose name contains text (any case), that something holds (a container or a wielder), up to limit. This reads
+    /// every name in the shard (biota_properties_string has no index on the name), which takes a second or more on a big
+    /// shard, so callers run it off the world thread and one at a time.
+    /// </summary>
+    public virtual List<ItemSearchRow> SearchItemsByName(string text, int limit)
+    {
+        var pattern = "%" + text.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%";
+
+        return ReadItemRows(
+            ItemSearchColumns
+                + @"
+FROM (SELECT object_Id AS id FROM biota_properties_string WHERE type = 1 AND value LIKE @pattern) found
+INNER JOIN biota b ON b.id = found.id"
+                + ItemSearchJoins
+                + @"
+WHERE c.value IS NOT NULL OR w.value IS NOT NULL
+LIMIT @limit",
+            new MySqlParameter("@pattern", pattern),
+            new MySqlParameter("@limit", limit)
+        );
+    }
+
+    /// <summary>
+    /// Items of one weenie class that something holds, up to limit (biota_wcid_idx).
+    /// </summary>
+    public virtual List<ItemSearchRow> SearchItemsByWcid(uint wcid, int limit)
+    {
+        return ReadItemRows(
+            ItemSearchColumns
+                + "\nFROM biota b"
+                + ItemSearchJoins
+                + @"
+WHERE b.weenie_Class_Id = @wcid AND (c.value IS NOT NULL OR w.value IS NOT NULL)
+LIMIT @limit",
+            new MySqlParameter("@wcid", wcid),
+            new MySqlParameter("@limit", limit)
+        );
+    }
+
+    /// <summary>
+    /// Everything held by these characters (worn, in their packs, and in the packs in those), and in these accounts' banks
+    /// (with the bank's side packs), up to limit. Starts from type_value_idx, never a scan of biota.
+    /// </summary>
+    public virtual List<ItemSearchRow> SearchItemsByOwners(IReadOnlyCollection<uint> characterIds, IReadOnlyCollection<uint> bankAccountIds, int limit)
+    {
+        if (characterIds.Count == 0 && bankAccountIds.Count == 0)
+        {
+            return new List<ItemSearchRow>();
+        }
+
+        // ids from the server's own lists of characters and accounts, never typed text, so they can go in the SQL as they are
+        var characters = characterIds.Count == 0 ? "0" : string.Join(",", characterIds);
+        var accounts = bankAccountIds.Count == 0 ? "0" : string.Join(",", bankAccountIds);
+
+        return ReadItemRows(
+            ItemSearchColumns
+                + $@"
+FROM (
+  SELECT object_Id AS id FROM biota_properties_i_i_d WHERE type IN (2, 3) AND value IN ({characters})
+  UNION
+  SELECT inPack.object_Id FROM biota_properties_i_i_d pack
+  INNER JOIN biota_properties_i_i_d inPack ON inPack.type = 2 AND inPack.value = pack.object_Id
+  WHERE pack.type = 2 AND pack.value IN ({characters})
+  UNION
+  SELECT object_Id FROM biota_properties_i_i_d WHERE type = 48 AND value IN ({accounts})
+  UNION
+  SELECT inPack.object_Id FROM biota_properties_i_i_d pack
+  INNER JOIN biota_properties_i_i_d inPack ON inPack.type = 2 AND inPack.value = pack.object_Id
+  WHERE pack.type = 48 AND pack.value IN ({accounts})
+) found
+INNER JOIN biota b ON b.id = found.id"
+                + ItemSearchJoins
+                + @"
+LIMIT @limit",
+            new MySqlParameter("@limit", limit)
+        );
+    }
+
+    /// <summary>
+    /// These objects, by id (a guid search, and the containers above the items found).
+    /// </summary>
+    public virtual List<ItemSearchRow> GetItemRows(IEnumerable<uint> ids)
+    {
+        var rows = new List<ItemSearchRow>();
+
+        foreach (var batch in ids.Distinct().Chunk(BulkInClauseBatchSize))
+        {
+            rows.AddRange(ReadItemRows(ItemSearchColumns + "\nFROM biota b" + ItemSearchJoins + $"\nWHERE b.id IN ({string.Join(",", batch)})"));
+        }
+
+        return rows;
+    }
+
+    private List<ItemSearchRow> ReadItemRows(string sql, params MySqlParameter[] parameters)
+    {
+        using var context = new ShardDbContext();
+
+        var connection = context.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            connection.Open();
+        }
+
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        command.CommandTimeout = 60;
+        command.Parameters.AddRange(parameters);
+
+        using var reader = command.ExecuteReader();
+        var rows = new List<ItemSearchRow>();
+
+        while (reader.Read())
+        {
+            rows.Add(new ItemSearchRow
+            {
+                Id = Convert.ToUInt32(reader.GetValue(0)),
+                Wcid = Convert.ToUInt32(reader.GetValue(1)),
+                WeenieType = Convert.ToInt32(reader.GetValue(2)),
+                Name = reader.IsDBNull(3) ? null : reader.GetString(3),
+                StackSize = reader.IsDBNull(4) ? null : Convert.ToInt32(reader.GetValue(4)),
+                ContainerId = reader.IsDBNull(5) ? null : Convert.ToUInt32(reader.GetValue(5)),
+                WielderId = reader.IsDBNull(6) ? null : Convert.ToUInt32(reader.GetValue(6)),
+                BankAccountId = reader.IsDBNull(7) ? null : Convert.ToUInt32(reader.GetValue(7)),
+                VictimId = reader.IsDBNull(8) ? null : Convert.ToUInt32(reader.GetValue(8)),
+            });
+        }
+
+        return rows;
+    }
+
+    /// <summary>
     /// Saves a completed capstone run with its members (capstone_run, capstone_run_member). Throws if the database can't be
     /// reached or the tables are missing; the caller decides how loudly to report it.
     /// </summary>

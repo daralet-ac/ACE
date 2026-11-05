@@ -20,6 +20,7 @@ public class AdminUi
         1,
         "Data feed for the Daralet Admin Decal plugin.",
         "hello | players | fellowships | pois | instances | capstones | arenas | olthoinorth | tidemage | esper | townevents\n"
+            + "items <name|wcid|guid|character|account> <text> | itemhistory <guid|name|character|account> <text>\n"
             + "The plugin sends these itself and hides the replies from chat. See AdminUiProtocol for the reply format."
     )]
     public static void HandleAdminui(Session session, params string[] parameters)
@@ -88,10 +89,17 @@ public class AdminUi
             case "settingdocs":
                 payload = AdminUiSettings.GetDocs();
                 break;
+            case AdminUiItems.KindItems:
+                // reads the database off the world thread, and replies when it's done
+                AdminUiItems.HandleSearch(session, parameters);
+                return;
+            case AdminUiItems.KindHistory:
+                AdminUiItems.HandleHistory(session, parameters);
+                return;
             default:
                 CommandHandlerHelper.WriteOutputInfo(
                     session,
-                    $"Unknown @adminui request: {parameters[0]}. Use hello, players, fellowships, pois, instances, capstones, arenas, olthoinorth, tidemage, esper, townevents, settings or settingdocs.",
+                    $"Unknown @adminui request: {parameters[0]}. Use hello, players, fellowships, pois, instances, capstones, arenas, olthoinorth, tidemage, esper, townevents, settings, settingdocs, items or itemhistory.",
                     ChatMessageType.Broadcast
                 );
                 return;

@@ -342,6 +342,8 @@ partial class Player
                     }
                 }
 
+                ItemTransferLog.RecordTrade(this, target, targetEscrow, myEscrow);
+
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.TradeComplete));
                 target.Session.Network.EnqueueSend(new GameEventWeenieError(target.Session, WeenieError.TradeComplete));
 

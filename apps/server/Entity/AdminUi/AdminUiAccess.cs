@@ -23,6 +23,9 @@ public static class AdminUiAccess
         ["fellowships"] = AccessLevel.Sentinel,
         ["arena"] = AccessLevel.Sentinel,
 
+        // finding items on any character, bank or market listing, and what's changed hands
+        ["items"] = AccessLevel.Sentinel,
+
         // events and regions
         ["teleport"] = AccessLevel.Envoy,
         ["capstones"] = AccessLevel.Envoy,
@@ -58,6 +61,8 @@ public static class AdminUiAccess
         ["townevents"] = Tabs["townevents"],
         ["settings"] = Tabs["settings"],
         ["settingdocs"] = Tabs["settings"],
+        ["items"] = Tabs["items"],
+        ["itemhistory"] = Tabs["items"],
     };
 
     /// <summary>
