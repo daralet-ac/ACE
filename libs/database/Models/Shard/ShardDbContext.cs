@@ -1444,6 +1444,7 @@ public partial class ShardDbContext : DbContext
             entity.HasIndex(e => new { e.ItemId, e.Id }, "idx_item_transfer_log_item");
             entity.HasIndex(e => new { e.FromCharacterId, e.Id }, "idx_item_transfer_log_from");
             entity.HasIndex(e => new { e.ToCharacterId, e.Id }, "idx_item_transfer_log_to");
+            entity.HasIndex(e => e.CreatedAtUtc, "idx_item_transfer_log_created");
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Kind).HasColumnName("kind").HasMaxLength(20);
             entity.Property(e => e.ItemId).HasColumnName("item_id");
@@ -1457,6 +1458,7 @@ public partial class ShardDbContext : DbContext
             entity.Property(e => e.ToName).HasColumnName("to_name").HasMaxLength(50);
             entity.Property(e => e.ToAccountId).HasColumnName("to_account_id");
             entity.Property(e => e.Details).HasColumnName("details").HasMaxLength(200);
+            entity.Property(e => e.Snapshot).HasColumnName("snapshot").HasColumnType("mediumtext");
             entity.Property(e => e.CreatedAtUtc).HasColumnName("created_at_utc");
         });
 

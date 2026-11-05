@@ -161,7 +161,7 @@ public class AdminUiItemsTests
             "0x80000001",
             new List<AdminUiItemTransfer>
             {
-                new(90, "given", 0x80000001, 3001, "Iron Jitte", 1, "Ann", "ann1", "Bob", "bob1", null),
+                new(12, true, 90, "given", 0x80000001, 3001, "Iron Jitte", 1, "Ann", "ann1", "Bob", "bob1", null),
             },
             null
         );
@@ -172,6 +172,8 @@ public class AdminUiItemsTests
             var name in new[]
             {
                 "\"entries\":",
+                "\"id\":12",
+                "\"canRestore\":true",
                 "\"secondsAgo\":90",
                 "\"kind\":\"given\"",
                 "\"itemGuid\":2147483649",
@@ -186,5 +188,65 @@ public class AdminUiItemsTests
         {
             StringAssert.Contains(json, name);
         }
+    }
+
+    [TestMethod]
+    public void LogsSalesOfValuableItemsAndRaresOnly()
+    {
+        Assert.IsTrue(ACE.Server.Managers.ItemTransferLog.WorthLogging(5000, false, 5000));
+        Assert.IsFalse(ACE.Server.Managers.ItemTransferLog.WorthLogging(4999, false, 5000));
+        Assert.IsTrue(ACE.Server.Managers.ItemTransferLog.WorthLogging(1, true, 5000));
+        Assert.IsTrue(ACE.Server.Managers.ItemTransferLog.WorthLogging(0, false, 0));
+    }
+
+    /// <summary>
+    /// A copy is a new item somewhere else: nothing may say who held the original, or where.
+    /// </summary>
+    [TestMethod]
+    public void ACopyForgetsWhereTheOriginalWas()
+    {
+        var snapshot = new ACE.Server.Market.MarketListingSnapshot
+        {
+            PropertiesIID = new()
+            {
+                [ACE.Entity.Enum.Properties.PropertyInstanceId.Container] = Player,
+                [ACE.Entity.Enum.Properties.PropertyInstanceId.Wielder] = Player,
+                [ACE.Entity.Enum.Properties.PropertyInstanceId.BankAccountId] = 7,
+                [ACE.Entity.Enum.Properties.PropertyInstanceId.AllowedWielder] = Player,
+            },
+            PropertiesInt = new()
+            {
+                [ACE.Entity.Enum.Properties.PropertyInt.CurrentWieldedLocation] = 1,
+                [ACE.Entity.Enum.Properties.PropertyInt.Value] = 100,
+            },
+            PropertiesPosition = new() { [ACE.Entity.Enum.Properties.PositionType.Location] = new ACE.Entity.Models.PropertiesPosition() },
+        };
+
+        ACE.Server.Managers.ItemSnapshots.Strip(snapshot);
+
+        CollectionAssert.AreEquivalent(new[] { ACE.Entity.Enum.Properties.PropertyInstanceId.AllowedWielder }, snapshot.PropertiesIID.Keys);
+        CollectionAssert.AreEquivalent(new[] { ACE.Entity.Enum.Properties.PropertyInt.Value }, snapshot.PropertiesInt.Keys);
+        Assert.AreEqual(0, snapshot.PropertiesPosition.Count);
+    }
+
+    [TestMethod]
+    public void PacksAndCreaturesCantBeCopied()
+    {
+        Assert.IsTrue(ACE.Server.Managers.ItemSnapshots.CanCopy(WeenieType.MeleeWeapon, out _));
+        Assert.IsTrue(ACE.Server.Managers.ItemSnapshots.CanCopy(WeenieType.Clothing, out _));
+        Assert.IsFalse(ACE.Server.Managers.ItemSnapshots.CanCopy(WeenieType.Container, out var reason));
+        StringAssert.Contains(reason, "Packs");
+        Assert.IsFalse(ACE.Server.Managers.ItemSnapshots.CanCopy(WeenieType.Creature, out _));
+        Assert.IsFalse(ACE.Server.Managers.ItemSnapshots.CanCopy(WeenieType.Corpse, out _));
+    }
+
+    [TestMethod]
+    public void ThePluginCanGreyOutCopyAndRestore()
+    {
+        var field = typeof(AdminUiAccess).GetField("PluginCommands", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var commands = (string[])field.GetValue(null);
+
+        CollectionAssert.Contains(commands, "itemcopy");
+        CollectionAssert.Contains(commands, "itemrestore");
     }
 }

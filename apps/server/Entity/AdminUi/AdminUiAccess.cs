@@ -94,6 +94,8 @@ public static class AdminUiAccess
         "modifylong",
         "modifydouble",
         "modifystring",
+        "itemcopy",
+        "itemrestore",
     };
 
     /// <summary>

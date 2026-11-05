@@ -1713,6 +1713,7 @@ LEFT JOIN biota_properties_int tq
             .Where(e => e.ItemId == itemId)
             .OrderByDescending(e => e.Id)
             .Take(count)
+            .Select(WithoutSnapshot)
             .ToList();
     }
 
@@ -1730,11 +1731,13 @@ LEFT JOIN biota_properties_int tq
             .Where(e => ids.Contains(e.FromCharacterId))
             .OrderByDescending(e => e.Id)
             .Take(count)
+            .Select(WithoutSnapshot)
             .ToList();
         var to = context.ItemTransfers.AsNoTracking()
             .Where(e => ids.Contains(e.ToCharacterId))
             .OrderByDescending(e => e.Id)
             .Take(count)
+            .Select(WithoutSnapshot)
             .ToList();
 
         return from.Concat(to)
@@ -1756,7 +1759,70 @@ LEFT JOIN biota_properties_int tq
             .Where(e => e.ItemName.Contains(text))
             .OrderByDescending(e => e.Id)
             .Take(count)
+            .Select(WithoutSnapshot)
             .ToList();
+    }
+
+    /// <summary>
+    /// An entry without its snapshot, which can be tens of kilobytes: Snapshot is "" when it has one, null when not.
+    /// </summary>
+    private static readonly System.Linq.Expressions.Expression<Func<ItemTransfer, ItemTransfer>> WithoutSnapshot = e => new ItemTransfer
+    {
+        Id = e.Id,
+        Kind = e.Kind,
+        ItemId = e.ItemId,
+        ItemWcid = e.ItemWcid,
+        ItemName = e.ItemName,
+        Amount = e.Amount,
+        FromCharacterId = e.FromCharacterId,
+        FromName = e.FromName,
+        FromAccountId = e.FromAccountId,
+        ToCharacterId = e.ToCharacterId,
+        ToName = e.ToName,
+        ToAccountId = e.ToAccountId,
+        Details = e.Details,
+        Snapshot = e.Snapshot != null ? "" : null,
+        CreatedAtUtc = e.CreatedAtUtc,
+    };
+
+    /// <summary>
+    /// One entry, with its snapshot (for @itemrestore). Null if there's none. Throws if it can't be read.
+    /// </summary>
+    public virtual ItemTransfer GetItemTransfer(ulong id)
+    {
+        using var context = new ShardDbContext();
+
+        return context.ItemTransfers.AsNoTracking().FirstOrDefault(e => e.Id == id);
+    }
+
+    /// <summary>
+    /// Deletes what's past keeping: entries of shortLivedKinds and every snapshot older than shortDays, and everything
+    /// older than allDays (0 keeps it). Returns how many entries went. Throws if the table can't be reached.
+    /// </summary>
+    public virtual int PruneItemTransfers(IReadOnlyCollection<string> shortLivedKinds, int shortDays, int allDays)
+    {
+        using var context = new ShardDbContext();
+
+        var deleted = 0;
+
+        if (shortDays > 0)
+        {
+            var cutoff = DateTime.UtcNow.AddDays(-shortDays);
+            var kinds = shortLivedKinds.ToList();
+
+            deleted += context.ItemTransfers.Where(e => kinds.Contains(e.Kind) && e.CreatedAtUtc < cutoff).ExecuteDelete();
+            context.ItemTransfers
+                .Where(e => e.Snapshot != null && e.CreatedAtUtc < cutoff)
+                .ExecuteUpdate(u => u.SetProperty(e => e.Snapshot, (string)null));
+        }
+
+        if (allDays > 0)
+        {
+            var cutoff = DateTime.UtcNow.AddDays(-allDays);
+            deleted += context.ItemTransfers.Where(e => e.CreatedAtUtc < cutoff).ExecuteDelete();
+        }
+
+        return deleted;
     }
 
     /// <summary>

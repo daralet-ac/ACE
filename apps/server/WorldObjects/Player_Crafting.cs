@@ -288,6 +288,8 @@ partial class Player
             var structureSnapshot = salvageBags.ToDictionary(b => b.Guid.Full, b => b.Structure ?? (ushort)0);
             var capturedName = item.Name ?? "Unknown Item";
 
+            ItemTransferLog.RecordSalvage(this, item);
+
             AddSalvage(salvageBags, item, salvageResults);
 
             foreach (var bag in salvageBags)

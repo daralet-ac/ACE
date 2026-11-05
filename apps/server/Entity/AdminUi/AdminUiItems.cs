@@ -44,9 +44,12 @@ public record AdminUiItem(
 public record AdminUiItemSearch(string Mode, string Query, List<AdminUiItem> Items, bool Truncated, string Error);
 
 /// <summary>
-/// One time an item changed hands (ItemTransferLog), or was sold on the market.
+/// One time an item changed hands (ItemTransferLog), or was sold on the market. Id is the entry's number (0 for a market
+/// sale), which @itemrestore takes when CanRestore: the entry has a copy of the item.
 /// </summary>
 public record AdminUiItemTransfer(
+    ulong Id,
+    bool CanRestore,
     double SecondsAgo,
     string Kind,
     uint ItemGuid,
@@ -718,6 +721,8 @@ public static class AdminUiItems
         string AccountName(uint? id) => id == null ? null : accountNames.TryGetValue(id.Value, out var name) ? name : $"#{id}";
 
         var entries = transfers.Select(t => (t.CreatedAtUtc, new AdminUiItemTransfer(
+            t.Id,
+            t.Snapshot != null,
             (now - t.CreatedAtUtc).TotalSeconds,
             t.Kind,
             t.ItemId,
@@ -732,6 +737,8 @@ public static class AdminUiItems
         )));
 
         var sold = sales.Select(s => (s.CreatedAtUtc, new AdminUiItemTransfer(
+            0,
+            false,
             (now - s.CreatedAtUtc).TotalSeconds,
             "sold",
             s.ItemBiotaId,

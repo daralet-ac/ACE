@@ -7,16 +7,22 @@ using System.Threading.Tasks;
 using ACE.Database;
 using ACE.Database.Models.Shard;
 using ACE.Entity;
+using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.WorldObjects;
 using Serilog;
 
 namespace ACE.Server.Managers;
 
 /// <summary>
-/// Items changing hands between characters, kept in the shard database (item_transfer_log) for the Daralet Admin
-/// plugin's Items tab: given, traded, dropped on the ground, and picked up off the ground or a player's corpse by
-/// someone else. Only moves between players are logged (no loot, vendors or moves within your own packs), so it's a few
-/// rows per trade, written off the world thread. A pack that changes hands is logged with each item in it.
+/// Items changing hands, kept in the shard database (item_transfer_log) for the Daralet Admin plugin's Items tab: given,
+/// traded, dropped on the ground, picked up off the ground or a player's corpse by someone else, sold to and bought back
+/// from vendors, salvaged, and copied or restored by an admin. Written off the world thread. A pack that changes hands is
+/// logged with each item in it.
+///
+/// Loot and moves within your own packs aren't logged, and selling, buying back, salvaging and dropping only for items worth
+/// item_history_min_value or more, which keeps vendor trash out. Those come with a snapshot of the whole item, so
+/// @itemrestore can make it again. Old entries are deleted once a day (item_history_days, item_history_destroyed_days).
 /// </summary>
 public static class ItemTransferLog
 {
@@ -27,6 +33,18 @@ public static class ItemTransferLog
     public const string Dropped = "dropped";
     public const string PickedUp = "picked up";
     public const string Looted = "looted";
+    public const string Sold = "sold to vendor";
+    public const string Bought = "bought";
+    public const string Salvaged = "salvaged";
+    public const string Copied = "copied";
+    public const string Restored = "restored";
+
+    /// <summary>The kinds kept item_history_destroyed_days, not item_history_days: there are many more of them.</summary>
+    public static readonly string[] ShortLivedKinds = { Sold, Bought, Salvaged };
+
+    private static readonly TimeSpan PruneInterval = TimeSpan.FromDays(1);
+    private static DateTime _nextPruneUtc = DateTime.MinValue;
+    private static int _pruning;
 
     /// <summary>Items dropped longer ago than this are forgotten: the ground has long since cleaned them up.</summary>
     private static readonly TimeSpan DroppedMemory = TimeSpan.FromHours(2);
@@ -84,7 +102,93 @@ public static class ItemTransferLog
         ForgetOldDrops();
         droppedBy[item.Guid.Full] = (player.Guid.Full, player.Name, player.Account?.AccountId, DateTime.UtcNow);
 
-        Record(Dropped, item, item.StackSize ?? 1, player, null, null);
+        // remembered either way, so whoever picks it up is logged; the drop itself only when it's worth something
+        if (!WorthLogging(item))
+        {
+            return;
+        }
+
+        var entries = Build(Dropped, item, item.StackSize ?? 1, player, null, null);
+        entries[0].Snapshot = ItemSnapshots.FromLive(item);
+        Save(entries);
+    }
+
+    /// <summary>
+    /// player sold these to vendor. Only the ones worth logging, each with a snapshot, as most are destroyed.
+    /// </summary>
+    public static void RecordSale(Player player, WorldObject vendor, IEnumerable<WorldObject> items)
+    {
+        var entries = new List<ItemTransfer>();
+
+        foreach (var item in items.Where(WorthLogging))
+        {
+            var entry = Entry(Sold, item, item.StackSize ?? 1, player, null, $"to {vendor?.Name}, worth {item.Value ?? 0:N0}", DateTime.UtcNow);
+            entry.Snapshot = ItemSnapshots.FromLive(item);
+            entries.Add(entry);
+        }
+
+        Save(entries);
+    }
+
+    /// <summary>
+    /// player bought item from vendor: one a player sold it, as vendors sell those on (Vendor.UniqueItemsForSale).
+    /// </summary>
+    public static void RecordVendorBuy(Player player, WorldObject vendor, WorldObject item)
+    {
+        if (item == null || !WorthLogging(item))
+        {
+            return;
+        }
+
+        Save(new List<ItemTransfer> { Entry(Bought, item, item.StackSize ?? 1, null, player, $"from {vendor?.Name}", DateTime.UtcNow) });
+    }
+
+    /// <summary>
+    /// player is about to salvage item. Called before it's destroyed, for the snapshot.
+    /// </summary>
+    public static void RecordSalvage(Player player, WorldObject item)
+    {
+        if (item == null || !WorthLogging(item))
+        {
+            return;
+        }
+
+        var material = item.MaterialType != null ? $"into {item.MaterialType} salvage" : "into salvage";
+        var entry = Entry(Salvaged, item, item.StackSize ?? 1, player, null, $"{material}, workmanship {item.Workmanship ?? 0:0.#}", DateTime.UtcNow);
+        entry.Snapshot = ItemSnapshots.FromLive(item);
+        Save(new List<ItemTransfer> { entry });
+    }
+
+    /// <summary>
+    /// admin made a copy of an item (@itemcopy, kind Copied) or made a gone one again (@itemrestore, Restored) for to.
+    /// from is who had the original, if anyone. Always logged, whatever it's worth.
+    /// </summary>
+    public static void RecordCopy(string kind, Player admin, WorldObject copy, Player to, uint? fromCharacterId, string fromName, uint? fromAccountId, string original)
+    {
+        var entry = Entry(kind, copy, copy.StackSize ?? 1, null, to, Truncate($"by {admin?.Name}, {original}", MaxDetailsLength), DateTime.UtcNow);
+        entry.FromCharacterId = fromCharacterId;
+        entry.FromName = fromName;
+        entry.FromAccountId = fromAccountId;
+        Save(new List<ItemTransfer> { entry });
+    }
+
+    /// <summary>
+    /// Whether an item is worth logging when it's sold, bought back, salvaged or dropped: worth item_history_min_value or
+    /// more, or a rare. Money never is.
+    /// </summary>
+    public static bool WorthLogging(WorldObject item)
+    {
+        if (item == null || item.WeenieType == WeenieType.Coin || item.ItemType == ItemType.PromissoryNote)
+        {
+            return false;
+        }
+
+        return WorthLogging(item.Value ?? 0, item.GetProperty(PropertyInt.RareId) != null, PropertyManager.GetLong("item_history_min_value", 5000).Item);
+    }
+
+    public static bool WorthLogging(int value, bool rare, long minValue)
+    {
+        return rare || value >= minValue;
     }
 
     /// <summary>
@@ -212,6 +316,30 @@ public static class ItemTransferLog
         return text.Length > length ? text[..length] : text;
     }
 
+    /// <summary>
+    /// Deletes old entries. Runs with the first write after the server starts, then once a day.
+    /// </summary>
+    private static void Prune(int shortDays, int allDays)
+    {
+        try
+        {
+            var deleted = DatabaseManager.Shard.BaseDatabase.PruneItemTransfers(ShortLivedKinds, shortDays, allDays);
+
+            if (deleted > 0)
+            {
+                _log.Information("[ITEMS] Deleted {Count} old item history entries.", deleted);
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.Warning(ex, "[ITEMS] Couldn't delete old item history entries.");
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _pruning, 0);
+        }
+    }
+
     private static void ForgetOldDrops()
     {
         // only now and then: this runs on every drop
@@ -238,8 +366,23 @@ public static class ItemTransferLog
             return;
         }
 
+        var prune = DateTime.UtcNow >= _nextPruneUtc && Interlocked.CompareExchange(ref _pruning, 1, 0) == 0;
+
+        if (prune)
+        {
+            _nextPruneUtc = DateTime.UtcNow + PruneInterval;
+        }
+
+        var shortDays = (int)Math.Max(0, PropertyManager.GetLong("item_history_destroyed_days", 30).Item);
+        var allDays = (int)Math.Max(0, PropertyManager.GetLong("item_history_days", 0).Item);
+
         _ = Task.Run(() =>
         {
+            if (prune)
+            {
+                Prune(shortDays, allDays);
+            }
+
             try
             {
                 DatabaseManager.Shard.BaseDatabase.AddItemTransfers(entries);

@@ -205,6 +205,7 @@ partial class Player
                 if (!vendor.IsMarketVendor)
                 {
                     vendor.UniqueItemsForSale.Remove(itemToCreate.Guid);
+                    ItemTransferLog.RecordVendorBuy(this, vendor, itemToCreate);
                 }
 
                 // MARKET HOOK: if this unique is a market listing, mark it sold and create a payout,
@@ -548,6 +549,9 @@ partial class Player
         var payoutCoinStacks = CreatePayoutCoinStacks(payoutCoinAmount);
 
         vendor.MoneyOutflow += payoutCoinAmount;
+
+        // logged before they go: most are destroyed, and the log keeps a copy of the valuable ones
+        ItemTransferLog.RecordSale(this, vendor, sellList.Values);
 
         // remove sell items from player inventory
         foreach (var item in sellList.Values)
