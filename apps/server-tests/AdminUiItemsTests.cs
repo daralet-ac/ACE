@@ -102,9 +102,9 @@ public class AdminUiItemsTests
     }
 
     [TestMethod]
-    public void ItemsAreGatedAtSentinel()
+    public void ItemsAreGatedAtAdmin()
     {
-        Assert.AreEqual(AccessLevel.Sentinel, AdminUiAccess.Tabs["items"]);
+        Assert.AreEqual(AccessLevel.Admin, AdminUiAccess.Tabs["items"]);
         Assert.AreEqual(AdminUiAccess.Tabs["items"], AdminUiAccess.Requests["items"]);
         Assert.AreEqual(AdminUiAccess.Tabs["items"], AdminUiAccess.Requests["itemhistory"]);
     }

@@ -23,8 +23,6 @@ public static class AdminUiAccess
         ["fellowships"] = AccessLevel.Sentinel,
         ["arena"] = AccessLevel.Sentinel,
 
-        // finding items on any character, bank or market listing, and what's changed hands
-        ["items"] = AccessLevel.Sentinel,
 
         // events and regions
         ["teleport"] = AccessLevel.Envoy,
@@ -38,6 +36,9 @@ public static class AdminUiAccess
         ["olthoinorth"] = AccessLevel.Admin,
         ["tidemage"] = AccessLevel.Admin,
         ["townevents"] = AccessLevel.Admin,
+
+        // finding items on any character, bank or market listing, and what's changed hands
+        ["items"] = AccessLevel.Admin,
 
         // server properties, which only Admins can change (/modifybool and the rest) or read (/fetchbool, /fetchlong)
         ["settings"] = AccessLevel.Admin,
