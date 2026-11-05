@@ -317,9 +317,8 @@ partial class WorldObject
 
     /// <summary>
     /// SPELL ACCURACY: a player's War and Life spells are +10% harder to resist with the school specialized
-    /// (MagicFormulas.GetSpellAccuracyMod). Weapon attacks get +10-20% attack skill from a Medium attack height, and
-    /// missile weapons another +10% from the accuracy bar, but spells had nothing, so mages were resisted far more often
-    /// than weapons were evaded by the same monsters.
+    /// (MagicFormulas.GetSpellAccuracyMod). Weapon attacks get +10-20% attack skill from a Medium attack height, but
+    /// spells had nothing, so mages were resisted far more often than weapons were evaded by the same monsters.
     /// Proc and Enchanted Blade spells (cast with a weapon's spellcraft) don't gain it.
     /// </summary>
     private static float GetSpellAccuracyMod(Creature caster, MagicSchool school)

@@ -13,7 +13,6 @@ namespace ACE.Server.Entity;
 public partial class DamageEvent
 {
     private readonly ILogger _log = Log.ForContext<DamageEvent>();
-    private float _accuracyMod;
     private List<WorldObject> _armor;
     private Creature _attacker;
     private AttackHeight _attackHeight;

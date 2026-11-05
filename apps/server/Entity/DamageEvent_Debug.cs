@@ -39,11 +39,6 @@ public partial class DamageEvent
         }
 
         // evade
-        if (_accuracyMod != 0.0f && _accuracyMod != 1.0f)
-        {
-            info += $"AccuracyMod: {_accuracyMod}\n";
-        }
-
         info += $"EffectiveAttackSkill: {EffectiveAttackSkill}\n";
         info += $"EffectiveDefenseSkill: {_effectiveDefenseSkill}\n";
 

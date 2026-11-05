@@ -1,7 +1,7 @@
 # Combat balance pass (2026-11)
 
-A pass over the three attribute gear sets (Strength, Coordination, Self), the six Combat Focuses and their abilities, and
-the combat skills, built around the seven builds people play:
+A pass over the three attribute gear sets (Strength, Coordination, Self), the six Combat Focuses and all their abilities,
+and the combat skills, built around the seven builds people play:
 
 | Attribute | Build | Armor | Usual focuses |
 |---|---|---|---|
@@ -16,9 +16,11 @@ the combat skills, built around the seven builds people play:
 Every number here comes from the server's own formulas, reproduced in [`combat-balance-model.py`](combat-balance-model.py)
 (`python3 docs/combat-balance-model.py [--after] [--markdown]`). It models tier 8 at level 100 against a same-level
 monster: bottom-roll gear, full power/accuracy bar, the tier's average Quickness (195), player attack and defense skill at
-the tier's average (300), and monster defense at that plus the archetype system's 50-point gap. Damage is relative to the
-tier's target DPS (`TierPower`), so 1.00 is what a bottom-roll weapon of the tier is sized to deal. Damage taken is
-relative to the reference player (bottom-roll Covenant), which monster damage is tuned against.
+the tier's average (300, Physical Defense specialized), and monster attack and defense at that plus the archetype
+system's 50-point gap. Every Combat Focus ability is simulated over time, used on cooldown against one target, so
+overlapping windows, auto-hits and attack-skill bonuses all count. Damage is relative to the tier's target DPS
+(`TierPower`), so 1.00 is what a bottom-roll weapon of the tier is sized to deal. Damage taken is relative to the
+reference player (bottom-roll Covenant, no abilities), which monster damage is tuned against.
 
 ## How the three weapon families compare
 
@@ -29,119 +31,73 @@ ammo or spell level deals it. The differences are everything after that:
 | | Melee | Missile (bows, thrown) | Magic |
 |---|---|---|---|
 | Power/accuracy bar | x0.75 at full, refill time paid back (`GetPowerMod`) | x0.75, paid back against 55% of the attack time, so it's worth more (bow x1.17 of target, crossbow/atlatl/thrown x1.0) | none (x1.0) |
-| Hit chance | Medium height +10% attack (+20% specialized) | accuracy bar +10% and Medium height | nothing (now +10% specialized) |
+| Hit chance | Medium height +10% attack (+20% specialized) | Medium height; the accuracy bar's +10% is removed | nothing before; now +10% specialized |
 | Combat skill damage | Two-handed / Dual Wield up to +50% | none | none |
 | Crits | 10% for 2x max | 10% for 2x max | 10% for 2x max (harms x1.5) |
 
-## What was out of line
+**After** (weapons alone, no abilities):
 
-**Before** (T8, single target, misses included):
+| Weapon | Raw | Lands | Damage |
+|---|---:|---:|---:|
+| Two-handed sword | 1.11 | 0.79 | 0.87 |
+| Sword and board | 0.75 | 0.79 | 0.59 |
+| Dual wield daggers, spec | 1.38 | 0.79 | 1.09 |
+| Thrown | 1.01 | 0.79 | 0.79 |
+| Bow | 1.17 | 0.79 | 0.92 |
+| Crossbow | 1.01 | 0.79 | 0.80 |
+| Atlatl | 0.99 | 0.79 | 0.78 |
+| War magic (bolts) | 1.18 | 0.68 | 0.80 |
+| Life magic (harms) | 0.56 | 0.68 | 0.38 |
 
-| Build | Damage | Physical taken | Magic taken | Damage / physical taken |
-|---|---:|---:|---:|---:|
-| 2H heavy - Warrior | 1.23 | 0.92 | 1.00 | 1.34 |
-| 2H heavy - Blademaster | 1.31 | 0.92 | 1.00 | 1.42 |
-| 2H heavy - Spellsword | 0.98 | 0.90 | 1.00 | 1.10 |
-| S&B heavy - Warrior | 0.83 | 0.81 | 1.00 | 1.02 |
-| S&B heavy - Blademaster | 0.89 | 0.81 | 1.00 | 1.09 |
-| S&B heavy - Spellsword | 0.66 | 0.79 | 1.00 | 0.84 |
-| Thrown heavy - Warrior | 1.28 | 1.03 | 1.00 | 1.24 |
-| Thrown heavy - Archer | 2.04 | 1.03 | 1.00 | 1.98 |
-| DW light - Blademaster | 1.89 | 1.08 | 1.22 | 1.75 |
-| DW light - Vagabond | 1.51 | 1.05 | 1.22 | 1.43 |
-| Bow heavy - Archer | **2.36** | 1.03 | 1.00 | **2.30** |
-| Bow heavy - Vagabond | 1.11 | 1.00 | 1.00 | 1.11 |
-| War cloth - Sorcerer | 0.95 | 1.25 | 1.10 | 0.76 |
-| War cloth - Vagabond | 0.70 | 1.25 | 1.10 | 0.56 |
-| Life cloth - Sorcerer (harms) | 0.45 | 1.25 | 1.10 | 0.36 |
-
-1. **Archer with a bow led everything by a wide margin** (2.36x target), at range, in the best armor. Its focus stacks
-   Fury, Steady Strike and Multishot, and Multishot's fallback (the two bonus arrows hit the main target for 50% when
-   nothing else is near) doubled single-target damage for half of every 20 seconds: x2.25 from the focus, against x1.35-1.50
-   for the other damage focuses.
-2. **Dual Wield specialization was worth +45%, not +25%.** The spec bonus swings 25% faster and refills the power bar
-   25% faster. The power bar's damage pays back the refill as if it took the bar's full level in seconds, so the faster
-   refill added ~14% damage for time never spent. Other spec bonuses are worth ~5-10%.
-3. **Sword and board pays a third of its damage for ~13% less damage taken.** Two-handed and Dual Wield add up to +50%
-   damage from their skill; Shield adds none, by design: its strength is damage reduction. But that reduction is small
-   next to what it costs: ~14% from the shield and ~8% block, against two-handed's ~10% parry (two-handed parries about as
-   often as a shield blocks). Left as a follow-up: see the damage-reduction options below.
-4. **Spells were resisted far more often than weapons were evaded.** Weapons get +10-20% attack skill from the Medium
-   attack height (missiles another +10% from the accuracy bar); spells get nothing, so at the tier's average skills a war
-   mage landed 59% of their damage against a melee's 79% and an archer's 90%.
-5. **Heavy leads both defenses.** Heavy armor has the highest armor level *and* the highest ward (7 per slot, against
-   cloth's 6 and light's 5), and its defense mod roll grants Physical *and* Magic Defense where every other two-way roll
-   picks one. Cloth and light ward and heavy's defense roll are kept by design: heavy is the defensive armor, and pays
-   for it with the largest stamina and mana penalty (up to +45%).
-6. **Workmanship scored armor ward against a stale table** (cloth 7, amuli 6, light/most heavy 5, covenant 4 per slot), so
-   Covenant pieces scored ~170% on ward and cloth ~80%, inflating heavy armor's workmanship and deflating cloth's.
-
-## Changes
-
-### ACE
-
-| Change | Where | Effect |
-|---|---|---|
-| **Dual Wield spec refill fix**: the power bar pays back the real refill time | `DamageFormulas.GetPowerMod`, `Player.GetPowerMod`, `Player.GetMeleeRefillTimeMod` | DW spec is +25% damage, as described; attacks still come 25% faster |
-| **Spell accuracy**: a player's own War and Life spells count +10% magic skill against resists with the school specialized (nothing when only trained) | `MagicFormulas.GetSpellAccuracyMod`, `WorldObject.GetEffectiveMagicSkill` | War magic 0.70 -> 0.80 effective; procs and Enchanted Blade are unchanged |
-| **Multishot fallback**: bonus arrows that find no other enemy hit the main target for 25% (was 50%). Bonus arrows at other enemies are unchanged | `DamageFormulas.MultishotFallbackDamageMod`, `DamageEvent.GetCleaveDamageMod` | Archer focus x2.25 -> x1.88 single target; groups unchanged |
-| **Workmanship ward score** follows each piece's own base ward | `GetMaxWardLevel` | Same score for the same roll quality in every weight class (clothing unchanged) |
-| **Bug: Enrage had no damage-taken drawback** - the stance's +25% damage taken read the meter, which Enrage empties | `GetCombatAbilityFuryDamageBonus` | Enraged players take up to +25% damage, at the level released |
-| **Bug: Overload put Backstab on cooldown** instead of Battery when it cancelled Battery (wrong WCID) | `Player.TryUseOverload` | Battery goes on cooldown |
-| **Bug: Backstab/Smokescreen errors named Spellsword**; they're Vagabond, Archer and Sorcerer abilities | `Player.VerifyCombatFocus` | Message only |
-
-### world-db
-
-- Multishot's description: fallback arrows deal 25%.
-- Fury's description: the stance and Enrage raise damage taken by up to 25%, and Enraged attacks can't be evaded (both
-  were already true of the stance and the no-evade, but not described).
-
-Workmanship applies to newly rolled armor (and armor that's restabilized); existing items keep theirs.
-
-## After
-
-| Build | Damage | Physical taken | Magic taken | Damage / physical taken |
-|---|---:|---:|---:|---:|
-| 2H heavy - Warrior | 1.23 | 1.01 | 1.00 | 1.22 |
-| 2H heavy - Blademaster | 1.31 | 1.01 | 1.00 | 1.30 |
-| 2H heavy - Spellsword | 0.98 | 0.90 | 1.00 | 1.10 |
-| S&B heavy - Warrior | 0.83 | 0.89 | 1.00 | 0.94 |
-| S&B heavy - Blademaster | 0.89 | 0.89 | 1.00 | 1.00 |
-| S&B heavy - Spellsword | 0.66 | 0.79 | 1.00 | 0.84 |
-| Thrown heavy - Warrior | 1.28 | 1.12 | 1.00 | 1.14 |
-| Thrown heavy - Archer | 1.70 | 1.12 | 1.00 | 1.51 |
-| DW light - Blademaster | 1.63 | 1.18 | 1.22 | 1.38 |
-| DW light - Vagabond | 1.30 | 1.05 | 1.22 | 1.24 |
-| Bow heavy - Archer | 1.97 | 1.12 | 1.00 | 1.75 |
-| Bow heavy - Vagabond | 1.11 | 1.00 | 1.00 | 1.11 |
-| War cloth - Sorcerer | 1.09 | 1.25 | 1.10 | 0.87 |
-| War cloth - Vagabond | 0.80 | 1.25 | 1.10 | 0.64 |
-| Life cloth - Sorcerer (harms) | 0.51 | 1.25 | 1.10 | 0.41 |
-
-The spread of damage per damage taken narrows from 0.36-2.30 to 0.41-1.75, and the two-handed, thrown and dual wield
-builds sit in a 1.1-1.4 band. Sword and board (0.84-1.00) and war magic (0.87) stay below it. Ranged builds (bow, thrown, war) also take less melee damage than the table shows, since they can keep
-their distance; the table counts every build as taking every hit. Fury users' physical damage taken rises with the Enrage
-fix (Warrior, Blademaster, Archer: +12% averaged over a Fury cycle, was +3%).
-
-## Combat focuses and abilities
+## Combat Focus abilities
 
 Each focus has one locked ability and three pairs shared around a ring (each pair goes to the focus it's centered on and
 its two neighbours):
 
-| Focus | Locked | Pairs | Single-target damage (avg) |
-|---|---|---|---:|
-| Warrior | Phalanx (30% less full-hit damage, +25-50% block/parry) | Provoke/Riposte, Fury/Relentless, Reflect/Aegis | x1.41 |
-| Blademaster | Weapon Master (weapon-specific: sword +25% speed, bleed, daze...) | Provoke/Riposte, Fury/Relentless, Steady Strike/Evasive | x1.50 |
-| Archer | Multishot | Fury/Relentless, Steady Strike/Evasive, Backstab/Smokescreen | x2.25 -> **x1.88** |
-| Vagabond | Shadow Flurry (every hit a sneak attack, 10 s) | Steady Strike/Evasive, Backstab/Smokescreen, Battery/Mana Barrier | x1.20 |
-| Sorcerer | Overload | Backstab/Smokescreen, Battery/Mana Barrier, Reflect/Aegis | x1.35 |
-| Spellsword | Enchanted Blade | Provoke/Riposte, Battery/Mana Barrier, Reflect/Aegis | x1.08-1.24 (x1.13 typical) |
+| Focus | Locked | Pairs |
+|---|---|---|
+| Warrior | Phalanx | Provoke/Riposte, Fury/Relentless, Reflect/Aegis |
+| Blademaster | Weapon Master | Provoke/Riposte, Fury/Relentless, Steady Strike/Evasive Stance |
+| Archer | Multishot | Fury/Relentless, Steady Strike/Evasive Stance, Backstab/Smokescreen |
+| Vagabond | Shadow Flurry | Steady Strike/Evasive Stance, Backstab/Smokescreen, Battery/Mana Barrier |
+| Sorcerer | Overload | Backstab/Smokescreen, Battery/Mana Barrier, Reflect/Aegis |
+| Spellsword | Enchanted Blade | Provoke/Riposte, Battery/Mana Barrier, Reflect/Aegis |
 
-Fury (Enrage x2 for 10 s on a 20 s cooldown, ~6 s to fill) and Overload (x2 for 10 s, ~4 casts to fill) are the two big
-damage engines, and are close: x1.41 and x1.35 averaged. The locked abilities are where the focuses differ most: Multishot
-and Overload are big, Weapon Master and Shadow Flurry are worth ~5-12% on a single target, Enchanted Blade 8-24%
-depending on spellcraft and Arcane Lore (below), and Phalanx is defensive. Warrior and Spellsword share the defensive
-pairs, but Warrior also gets Fury, so Spellsword trades ~20-25% damage for Enchanted Blade, Battery and Mana Barrier.
+Each ability alone, used on cooldown (after this pass):
+
+| Ability | How it works | Damage | Physical taken | Magic taken | Cost |
+|---|---|---:|---:|---:|---|
+| Fury (2H) | stance builds to +25% in ~6 s; Enrage +100% for 10 s, can't be evaded; 20 s cooldown; up to +25% damage taken | +62% | +12% | | +25% stamina in Enrage, self-damage |
+| Fury (bow) | same | +62% | +12% | | |
+| Overload (war) | 4 casts to +20%; discharge +100% and 2x magic skill for 10 s; 20 s cooldown | +64% | | | up to 2x mana while charging |
+| Steady Strike (2H) | 10 s of +25% damage and +25% attack skill at 0.9x swing speed; 20 s cooldown | +20% | | | +25% stamina |
+| Steady Strike (bow) | same (missiles keep their speed) | +28% | | | +25% stamina |
+| Multishot (bow) | 10 s of two bonus arrows; on a lone target 25% each (was 50%) | +25% | | | +25% stamina |
+| Weapon Master: axe (S&B) | next hit bleeds: 4 ticks of 100 x power x weapon Damage / 132 | +27% | | | |
+| Weapon Master: greataxe (2H) | same | +23% | | | |
+| Weapon Master: dagger (DW) | bleed, Damage / 95 per hit | +14% | | | |
+| Weapon Master: sword (2H) | 10 s of 25% faster swings | +12% | | | |
+| Weapon Master: unarmed (DW) | kick puts the target off balance (-100 defense) | +12% | | | |
+| Weapon Master: mace (S&B) | daze (-100 attack skill) | | -18% | | |
+| Weapon Master: spear | 10 s of puncturing (a second target) | groups only | | | |
+| Riposte (2H) | 10 s of 2x block/parry chance; each block or parry counters for a full hit at x1.0 power | +10% | -5% | | +25% stamina |
+| Enchanted Blade (2H) | stored spell on the next hit (see below) | +8 to +24% | | | mana |
+| Shadow Flurry (DW) | 10 s of every hit a sneak attack (+25%) | +13% | | | +25% stamina |
+| Backstab | next sneak attack x2 (x2-3 and unavoidable from stealth) | ~+5% (Vagabond) | | | +25% stamina |
+| Phalanx | toggle, shield or two-handed: full hits (weapons and spells) -30%, block/parry +25-50%, all around | | -31% | -29% | +25% stamina |
+| Aegis | 10 s: weapon damage -50%, can't evade; 10% back as stamina and mana | | -22% | | mana = level |
+| Reflect | 10 s: +50% magic defense, and every resisted spell (full or partial) is reflected, not taken | | | -30% | |
+| Provoke | 10 s: damage taken -15%, double threat, taunt | | -7% | | +25% stamina |
+| Evasive Stance | toggle: 25% of attacks and spells fully evaded first | | -25% | -25% | +25-50% stamina |
+| Mana Barrier | toggle: 25% of health damage taken as 1.5-2x mana | | -25% | -25% | mana |
+| Smokescreen | 10 s: +10% of the chance to be hit becomes evade; threat drop, vanish | | -2% | | +25% stamina |
+| Relentless, Battery | stamina / mana cost reduction; -10% damage while charging | sustain | | | |
+
+Fury and Overload are the two damage engines and are close (+62%, +64%); both are worth far more than a flat +100% for
+10 s suggests, because Enrage can't be evaded and Overload's discharge doubles magic skill. Steady Strike's attack skill
+is worth as much as its damage. Weapon Master depends on the weapon: the bleed (axe, dagger and their thrown versions) is
+strong, because it scales with the weapon's Damage over its type's top damage from before the tier rework, which tier 8
+weapons are ~5x; sword and unarmed are about half of it; mace and staff are defensive; spear only helps against groups.
 
 ### Enchanted Blade, spellcraft and Arcane Lore
 
@@ -155,15 +111,94 @@ Arcane Lore adds half its skill to the spellcraft both times:
 
 On a two-handed Spellsword at T8 (300 War Magic, weapon damage including misses), per 10.5 s:
 
-| Weapon spellcraft | Arcane Lore | Proc (x target DPS) | Damage added |
-|---|---|---:|---:|
-| 400 (bottom roll) | not specialized | 0.70 | +8% |
-| 400 | 300, specialized (+150 spellcraft) | 1.15 | +13% |
-| 600 (top roll) | 300, specialized | 1.91 | +21% |
-| 600 | 400, specialized (+200) | 2.17 | +24% |
+| Weapon spellcraft | Arcane Lore | Damage added |
+|---|---|---:|
+| 400 (bottom roll) | not specialized | +8% |
+| 400 | 300, specialized (+150 spellcraft) | +13% |
+| 600 (top roll) | 300, specialized | +21% |
+| 600 | 400, specialized (+200) | +24% |
 
-So Arcane Lore specialization is worth about +5 points of Enchanted Blade's bonus, and a top spellcraft roll another +8.
-Even at the top it stays below Fury (+41%) and Overload (+35%).
+## The builds, with their focus kits
+
+**Before:**
+
+| Build | Damage | Physical taken | Magic taken | Damage / physical taken |
+|---|---:|---:|---:|---:|
+| 2H heavy - Warrior | 1.53 | 0.44 | 0.50 | 3.45 |
+| 2H heavy - Blademaster (greataxe) | 1.87 | 0.61 | 0.75 | 3.07 |
+| 2H heavy - Spellsword | 1.08 | 0.48 | 0.53 | 2.26 |
+| S&B heavy - Warrior | 1.01 | 0.39 | 0.50 | 2.60 |
+| S&B heavy - Blademaster (axe) | 1.26 | 0.54 | 0.75 | 2.32 |
+| S&B heavy - Spellsword | 0.74 | 0.42 | 0.53 | 1.74 |
+| Thrown heavy - Warrior | 1.36 | 0.75 | 0.70 | 1.80 |
+| Thrown heavy - Blademaster | 1.57 | 0.71 | 0.75 | 2.19 |
+| Thrown heavy - Archer | 2.45 | 0.75 | 0.75 | 3.25 |
+| DW light - Blademaster (daggers) | 2.49 | 0.71 | 0.92 | 3.48 |
+| DW light - Vagabond | 1.79 | 0.58 | 0.69 | 3.10 |
+| Bow heavy - Archer | **2.84** | 0.75 | 0.75 | **3.76** |
+| Bow heavy - Vagabond | 1.25 | 0.55 | 0.56 | 2.27 |
+| War cloth - Sorcerer | 1.25 | 0.72 | 0.58 | 1.73 |
+| War cloth - Vagabond | 0.70 | 0.68 | 0.62 | 1.02 |
+| Life cloth - Sorcerer (harms) | 0.59 | 0.72 | 0.58 | 0.82 |
+
+**After:**
+
+| Build | Damage | Physical taken | Magic taken | Damage / physical taken |
+|---|---:|---:|---:|---:|
+| 2H heavy - Warrior | 1.53 | 0.49 | 0.50 | 3.16 |
+| 2H heavy - Blademaster (greataxe) | 1.87 | 0.66 | 0.75 | 2.81 |
+| 2H heavy - Spellsword | 1.08 | 0.48 | 0.53 | 2.26 |
+| S&B heavy - Warrior | 1.01 | 0.43 | 0.50 | 2.38 |
+| S&B heavy - Blademaster (axe) | 1.26 | 0.59 | 0.75 | 2.12 |
+| S&B heavy - Spellsword | 0.74 | 0.42 | 0.53 | 1.74 |
+| Thrown heavy - Warrior | 1.28 | 0.83 | 0.70 | 1.56 |
+| Thrown heavy - Blademaster | 1.52 | 0.78 | 0.75 | 1.95 |
+| Thrown heavy - Archer | 1.96 | 0.82 | 0.75 | 2.38 |
+| DW light - Blademaster (daggers) | 2.17 | 0.78 | 0.92 | 2.79 |
+| DW light - Vagabond | 1.55 | 0.58 | 0.69 | 2.68 |
+| Bow heavy - Archer | 2.27 | 0.82 | 0.75 | 2.75 |
+| Bow heavy - Vagabond | 1.17 | 0.55 | 0.56 | 2.13 |
+| War cloth - Sorcerer | 1.33 | 0.72 | 0.58 | 1.83 |
+| War cloth - Vagabond | 0.80 | 0.68 | 0.62 | 1.17 |
+| Life cloth - Sorcerer (harms) | 0.63 | 0.72 | 0.58 | 0.86 |
+
+What the full kits show:
+
+- **Warrior is the best-protected focus by far** (half the damage of a build with no abilities): Phalanx, Aegis,
+  Reflect, Provoke and Riposte together, and it also has Fury. Sword and board Warrior takes the least physical damage of
+  any build (0.43).
+- **Archer and dual-wield Blademaster lead on damage** (2.27, 2.17). Archer stacks the most damage abilities (Fury,
+  Steady Strike, Multishot) on the fastest-paying weapon, at range, in heavy armor.
+- **Spellsword is the weakest damage focus** (1.08 with a two-handed weapon), with Warrior-like defenses (0.48 / 0.53)
+  but no Fury. Enchanted Blade is its only damage ability.
+- **Sorcerer's Overload keeps up with Fury**, but cloth and no Phalanx/Evasive leave it taking 0.72 physical.
+- **Vagabond is a defensive focus**: Evasive Stance, Mana Barrier and Smokescreen take its damage taken down to Warrior
+  territory (0.58), at the cost of stamina and mana, with modest damage (Shadow Flurry, Steady Strike, Backstab).
+- **Thrown** is the least protected Strength build (no parry, block or Phalanx without a shield).
+- **Life magic** stays at about half of War's damage.
+
+## Changes
+
+### ACE
+
+| Change | Where | Effect |
+|---|---|---|
+| **Dual Wield spec refill fix**: the power bar pays back the real refill time | `DamageFormulas.GetPowerMod`, `Player.GetPowerMod`, `Player.GetMeleeRefillTimeMod` | DW spec is +25% damage, as described (was ~+45%); attacks still come 25% faster |
+| **Accuracy bar attack bonus removed**: the bar no longer adds +10% attack skill to missile attacks | `Player.GetEffectiveAttackSkill` | Missile weapons land as often as other weapons (79% instead of 90% at the tier's average skills) |
+| **Spell accuracy**: a player's own War and Life spells count +10% magic skill against resists with the school specialized (nothing when only trained) | `MagicFormulas.GetSpellAccuracyMod`, `WorldObject.GetEffectiveMagicSkill` | War magic lands 68% instead of 59%; procs and Enchanted Blade are unchanged |
+| **Multishot fallback**: bonus arrows that find no other enemy hit the main target for 25% (was 50%). Bonus arrows at other enemies are unchanged | `DamageFormulas.MultishotFallbackDamageMod`, `DamageEvent.GetCleaveDamageMod` | Multishot +50% -> +25% on a lone target; groups unchanged |
+| **Workmanship ward score** follows each piece's own base ward | `GetMaxWardLevel` | Covenant scored ~170% on ward and cloth ~80% against a stale table; now the same roll quality scores the same in every weight class (clothing unchanged) |
+| **Bug: Enrage had no damage-taken drawback** - the stance's +25% damage taken read the meter, which Enrage empties | `GetCombatAbilityFuryDamageBonus` | Enraged players take up to +25% damage, at the level released (Fury +3% -> +12% damage taken, averaged) |
+| **Bug: Overload put Backstab on cooldown** instead of Battery when it cancelled Battery (wrong WCID) | `Player.TryUseOverload` | Battery goes on cooldown |
+| **Bug: Backstab/Smokescreen errors named Spellsword**; they're Vagabond, Archer and Sorcerer abilities | `Player.VerifyCombatFocus` | Message only |
+
+Kept as they are by design: cloth, light and heavy ward (6, 5, 7 per slot), heavy armor's defense roll granting both
+Physical and Magic Defense, and no damage bonus for shields (a shield's strength is damage reduction).
+
+### world-db
+
+- Multishot's description: fallback arrows deal 25%.
+- Fury's description: the stance and Enrage raise damage taken by up to 25%, and Enraged attacks can't be evaded.
 
 ## Skills and specialization bonuses
 
@@ -176,7 +211,7 @@ Even at the top it stays below Fury (+41%) and Overload (+35%).
 | Dual Wield | 25% faster swings and refill | +45% -> **+25%** |
 | Shield | blocks from 225 degrees | defensive |
 | Bow / Thrown | specialized weapon height bonuses (all weapons get these); Thrown also allows a shield | ~ |
-| War Magic | advanced spells, +10% spell accuracy (new), plus scepter +5% crit, wand +50% crit damage or orb +10% ward penetration | ~6-8%, plus ~13% from accuracy |
+| War Magic | advanced spells, +10% spell accuracy (new), plus scepter +5% crit, wand +50% crit damage or orb +10% ward penetration | ~6-8%, plus ~15% from accuracy |
 | Life Magic | advanced spells, +10% spell accuracy (new); the caster subtype bonuses are War only | accuracy only |
 | Arcane Lore | half the skill added to item spellcraft: procs and Enchanted Blade | see Enchanted Blade |
 | Physical / Magic Defense | 10-20% damage reduction (+ block/parry chance for Physical) | large |
@@ -185,42 +220,39 @@ Every weapon specialization also doubles the attack height bonuses (+20% instead
 
 ## Recommended follow-ups (not changed here)
 
-These need design calls or data changes beyond this pass:
-
-1. **Archer is still the top single-target damage** (1.97x, 1.75 per damage taken). If that's more than intended,
-   Multishot's fallback can go to 12.5% (archer focus x1.72, bow archer ~1.80) or be dropped entirely, making Multishot a
-   group ability like cleave (x1.50, the same as Blademaster).
-2. **Crossbows and atlatls deal ~13-15% less than bows.** All launchers share one damage-mod ladder, so the slower
-   launchers fall behind on ammo damage per second (bow 1.17, crossbow 1.01, atlatl 0.99). Raising quarrel and dart damage
-   ~15% (`TierPower` ammo tables), or giving their launchers a matching damage-mod factor, would level them.
-3. **Life magic's damage is half of War's.** Harm Other is half a bolt at every level (crits x1.5 instead of x2), and
-   Martyr's Hecatomb reaches bolt damage only by spending the caster's health. That suits a healer, but a solo Life mage
-   kills at ~half the speed of everyone else. Options: raise Harm Other to ~75% of a bolt, or let Life specialization use
-   the caster subtype bonuses War gets (`CheckForWarSpecCriticalChanceBonus` and friends check `WarMagic` only).
-4. **Spellsword's locked ability is the smallest damage engine.** Enchanted Blade adds 8-24% (see above), against Fury's
-   41% and Overload's 35%, so a two-handed Spellsword deals ~20% less than a two-handed Warrior with the same defensive
-   pairs. Rolling the spell level from the full skill instead of half to all of it (level V-VII instead of III-VI at
-   T8) would add roughly half again.
-7. **Sword and board's damage reduction.** At 0.94 damage per damage taken (Warrior), against two-handed's 1.22,
-   the shield needs about a third less damage taken to match. Options, modeled for a sword and board Warrior:
-   - shield damage reduction up to 40% instead of 25% (`SkillFormula.CalcShieldMod`): 1.04
-   - base block chance 10% instead of 5% (`DamageFormulas.GetBlockChance`): 1.03
-   - both: 1.14
-5. **Light armor has no defensive mod, and the lowest ward.** Its rolls are Attack, Dual Wield, Thievery/Run, Stamina
-   Regen and Perception/Deception, so archers wear heavy armor for its Physical/Magic Defense rolls and higher armor and
-   ward (light takes 17% more physical and 22% more magic damage than heavy). A
-   Physical Defense (evasion) roll on light armor would give the Coordination set a defensive identity and a real choice
-   for archers.
-6. **Two-handed specialization** only adds cleave, so it does nothing on a single target and nothing for two-handed spears
-   (which don't cleave). A small single-target bonus (e.g. +10% critical damage) would put it beside the others.
+1. **Archer is still the top damage** (2.27 with a bow, 1.96 thrown). It stacks three damage abilities where the others
+   have one or two. Multishot's fallback at 12.5% would bring a bow Archer to 2.02 (between dual-wield and two-handed
+   Blademaster), or at 0 (a group-only ability, like cleave) to 1.76 (just under two-handed Blademaster).
+2. **Spellsword's damage.** Enchanted Blade (+8-24%) is its only damage ability, against Fury (+62%) for Warrior with the
+   same defensive pairs. Rolling Enchanted Blade's spell level from the full skill instead of half to all of it (level
+   V-VII instead of III-VI at T8) would add roughly half again.
+3. **Weapon Master by weapon.** Axe and dagger bleeds are worth twice sword and unarmed's bonus, and spear's is only for
+   groups. Either the bleed comes down (3 ticks instead of 4: axe +27% -> +20%), or sword/unarmed/spear come up.
+4. **Crossbows and atlatls deal ~13-15% less than bows.** All launchers share one damage-mod ladder, so the slower
+   launchers fall behind on ammo damage per second. Raising quarrel and dart damage ~15% (`TierPower` ammo tables), or
+   giving their launchers a matching damage-mod factor, would level them.
+5. **Life magic's damage is half of War's.** Harm Other is half a bolt at every level (crits x1.5 instead of x2), and
+   Martyr's Hecatomb reaches bolt damage only by spending the caster's health. Options: raise Harm Other to ~75% of a
+   bolt, or let Life specialization use the caster subtype bonuses War gets.
+6. **Light armor has no defensive mod, and the lowest ward**, so archers wear heavy armor for its Physical/Magic Defense
+   rolls and higher armor and ward (light takes 17% more physical and 22% more magic damage than heavy).
+7. **Two-handed specialization** only adds cleave, so it does nothing on a single target and nothing for two-handed spears
+   (which don't cleave).
+8. **Sword and board's damage reduction.** With the full Warrior kit, sword and board takes 12% less physical damage than
+   two-handed but deals a third less. If that trade should be closer, the shield's damage reduction (up to 25%,
+   `SkillFormula.CalcShieldMod`) or base block chance (5%, `DamageFormulas.GetBlockChance`) are the levers.
 
 ## Assumptions and limits
 
 - Skills are at the tier's averages (`LevelScaling.AvgPlayerAttackSkillPerTier`), 50 under monster defense. Higher player
-  skill shrinks the hit-chance differences (at even skill: melee 95%, missile 98%, magic 75% -> 87%).
+  skill shrinks the hit-chance differences, and with them what auto-hits (Enrage) and attack skill (Steady Strike,
+  Overload's discharge) are worth.
+- Abilities on the same 20 s cooldown are used together; Fury (26 s cycle) and Overload (31.5 s) drift against them.
+  Toggles (Phalanx, Evasive Stance, Mana Barrier) are always on: their stamina and mana costs aren't modeled.
+- Monsters attack ~0.8 times a second (for Riposte's counters). Weapon Master's Daze and Off Balance last 10 s (their
+  duration is in the dat). The bleed ticks 4 times.
 - Spell cast times are `WeaponAnimationLength`'s bolt/arc table (2.88 s at level VII); mana costs aren't modeled.
-- Shield damage reduction assumes the shield's level is a little above the attacker's (`CalcShieldMod` at ~55% of its 25%).
+- Shield damage reduction assumes the shield's level is a little above the attacker's (`CalcShieldMod` at ~55% of its
+  25%). Physical Defense is specialized (its +up to 50% block/parry chance).
 - Enchanted Blade uses Medium (bolt) attacks; High stores a blast and Low a volley.
-- Stamina is modeled only qualitatively. The armor penalty (heavy up to +45% stamina and mana) and the abilities' +25%
-  each make heavy-armored ability users the most stamina-hungry.
-- Ability averages assume using them on cooldown against one target. Groups favor cleave, Multishot, volleys and rings.
+- Groups favor cleave, Multishot, spear Weapon Master, volleys and rings; this is single target only.

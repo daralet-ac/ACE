@@ -616,16 +616,6 @@ partial class Creature
     }
 
     /// <summary>
-    /// Returns a value between 1.0-1.1 for bow attacks,
-    /// depending on the accuracy meter
-    /// </summary>
-    public virtual float GetAccuracySkillMod(WorldObject weapon)
-    {
-        // doesn't apply for non-player creatures?
-        return 1.0f;
-    }
-
-    /// <summary>
     /// Returns the attribute damage bonus for a physical and magical attacks
     /// </summary>
     /// <param name="attackType">Uses strength for melee, coordination for missile</param>

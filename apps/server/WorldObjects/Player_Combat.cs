@@ -435,19 +435,16 @@ partial class Player
 
     public override uint GetEffectiveAttackSkill()
     {
-        var weapon = GetEquippedWeapon();
         var weaponSkill = GetCurrentWeaponSkill();
         var attackSkill = GetCreatureSkill(weaponSkill).Current;
         double? offenseMod = 1.0;
 
         offenseMod = GetWeaponOffenseModifier(this) + GetGearAttackModNotInCurrent(weaponSkill);
 
-        var accuracyMod = GetAccuracySkillMod(weapon);
-
+        // the accuracy bar no longer adds attack skill: it already raises missile damage (GetPowerMod), and on top of
+        // a Medium attack height it gave missile weapons more attack skill than any other weapon
         attackSkill = (uint)
-            Math.Round(
-                attackSkill * accuracyMod * ((float)offenseMod + GetSecondaryAttributeMod(GetCurrentAttackSkill()))
-            );
+            Math.Round(attackSkill * ((float)offenseMod + GetSecondaryAttributeMod(GetCurrentAttackSkill())));
 
         //if (IsExhausted)
         //attackSkill = GetExhaustedSkill(attackSkill);
@@ -784,26 +781,6 @@ partial class Player
     /// SPEC BONUS - Dual Wield: dual wield attacks swing 25% faster, and the power bar refills 25% faster after them
     /// </summary>
     public const float DualWieldSpecSpeedBonus = 1.25f;
-
-    /// <summary>
-    /// Accuracy Skill Mod ranges from 1 to 1.1 (+0% to +10%)
-    /// (the accuracy bar now also grants crit mods)
-    /// </summary>
-    public override float GetAccuracySkillMod(WorldObject weapon)
-    {
-        if (weapon != null && weapon.IsRanged)
-        {
-            var accuracyMod = 1 + (AccuracyLevel / 10);
-
-            //Console.WriteLine($"GetAccuracyMod - AccuracyLevel: {AccuracyLevel}, AccuracyMod: {accuracyMod}");
-
-            return accuracyMod;
-        }
-        else
-        {
-            return 1.0f;
-        }
-    }
 
     /// <summary>
     /// Accuracy Crit Chance Mod ranges from 0 to 0.1. This is added to DamageEvent.CriticalChance
