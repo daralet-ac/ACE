@@ -212,36 +212,6 @@ public class LootRollRangeTests
         );
     }
 
-    [TestMethod]
-    public void ArmorBaseWard_ByWeightClass()
-    {
-        static int Ward(ArmorStyle style, ArmorWeightClass weightClass, bool tierPowerMigration = false)
-        {
-            var armor = CreateItem(
-                WeenieType.Clothing,
-                ItemType.Armor,
-                new()
-                {
-                    [PropertyInt.ArmorStyle] = (int)style,
-                    [PropertyInt.ArmorWeightClass] = (int)weightClass,
-                }
-            );
-
-            return LootGenerationFactory.GetArmorBaseLevels(armor, tierPowerMigration).WardLevel;
-        }
-
-        Assert.AreEqual(6, Ward(ArmorStyle.Amuli, ArmorWeightClass.Cloth));
-        Assert.AreEqual(6, Ward(ArmorStyle.OlthoiAmuli, ArmorWeightClass.Cloth));
-        Assert.AreEqual(6, Ward(ArmorStyle.Cloth, ArmorWeightClass.Cloth));
-        Assert.AreEqual(7, Ward(ArmorStyle.Covenant, ArmorWeightClass.Heavy));
-        Assert.AreEqual(6, Ward(ArmorStyle.Koujia, ArmorWeightClass.Light));
-
-        // the tier rework migration keeps the bases it was written for
-        Assert.AreEqual(6, Ward(ArmorStyle.Amuli, ArmorWeightClass.Cloth, tierPowerMigration: true));
-        Assert.AreEqual(7, Ward(ArmorStyle.Covenant, ArmorWeightClass.Heavy, tierPowerMigration: true));
-        Assert.AreEqual(5, Ward(ArmorStyle.Koujia, ArmorWeightClass.Light, tierPowerMigration: true));
-    }
-
     private static WorldObject CreateItem(
         WeenieType weenieType,
         ItemType itemType,

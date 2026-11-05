@@ -69,12 +69,11 @@ ammo or spell level deals it. The differences are everything after that:
 4. **Spells were resisted far more often than weapons were evaded.** Weapons get +10-20% attack skill from the Medium
    attack height (missiles another +10% from the accuracy bar); spells get nothing, so at the tier's average skills a war
    mage landed 59% of their damage against a melee's 79% and an archer's 90%.
-5. **Heavy leads both defenses, and light trailed far behind on ward.** Heavy armor has the highest armor level *and*
-   the highest ward (7 per slot, against cloth's 6 and light's 5). Cloth's ward stays as it is; light's 5 left the
-   Coordination set 22% behind heavy against spells, on top of its lower armor level.
-6. **Heavy armor's defense roll granted two mods.** Every two-way roll in every weight class picks one (Perception or
-   Deception, Shield or Two-handed, Thievery or Run); heavy's Physical Defense + Magic Defense roll gave both at full value.
-7. **Workmanship scored armor ward against a stale table** (cloth 7, amuli 6, light/most heavy 5, covenant 4 per slot), so
+5. **Heavy leads both defenses.** Heavy armor has the highest armor level *and* the highest ward (7 per slot, against
+   cloth's 6 and light's 5), and its defense mod roll grants Physical *and* Magic Defense where every other two-way roll
+   picks one. Cloth and light ward and heavy's defense roll are kept by design: heavy is the defensive armor, and pays
+   for it with the largest stamina and mana penalty (up to +45%).
+6. **Workmanship scored armor ward against a stale table** (cloth 7, amuli 6, light/most heavy 5, covenant 4 per slot), so
    Covenant pieces scored ~170% on ward and cloth ~80%, inflating heavy armor's workmanship and deflating cloth's.
 
 ## Changes
@@ -86,8 +85,6 @@ ammo or spell level deals it. The differences are everything after that:
 | **Dual Wield spec refill fix**: the power bar pays back the real refill time | `DamageFormulas.GetPowerMod`, `Player.GetPowerMod`, `Player.GetMeleeRefillTimeMod` | DW spec is +25% damage, as described; attacks still come 25% faster |
 | **Spell accuracy**: a player's own War and Life spells count +10% magic skill against resists with the school specialized (nothing when only trained) | `MagicFormulas.GetSpellAccuracyMod`, `WorldObject.GetEffectiveMagicSkill` | War magic 0.70 -> 0.80 effective; procs and Enchanted Blade are unchanged |
 | **Multishot fallback**: bonus arrows that find no other enemy hit the main target for 25% (was 50%). Bonus arrows at other enemies are unchanged | `DamageFormulas.MultishotFallbackDamageMod`, `DamageEvent.GetCleaveDamageMod` | Archer focus x2.25 -> x1.88 single target; groups unchanged |
-| **Light armor ward**: per-slot base ward Light 5 -> **6**; Cloth 6 and Heavy 7 (the reference monsters are tuned to) unchanged. New loot, quest rolls and retiering use it; the one-time tier rework migration keeps the old one | `LootTables.GetWeightClassBaseWardLevel`, `GetArmorStyleBaseWardLevel`, `GetArmorBaseLevels` | Light takes 10% more magic damage than heavy (was 22%), the same as cloth |
-| **Heavy armor defense roll**: when a heavy piece rolls its defense mod, it gets Physical Defense *or* Magic Defense (50/50) at the rolled amount, instead of both at that amount | `TryMutateArmorSkillMod` | Heavy's mod budget matches light and cloth |
 | **Workmanship ward score** follows each piece's own base ward | `GetMaxWardLevel` | Same score for the same roll quality in every weight class (clothing unchanged) |
 | **Bug: Enrage had no damage-taken drawback** - the stance's +25% damage taken read the meter, which Enrage empties | `GetCombatAbilityFuryDamageBonus` | Enraged players take up to +25% damage, at the level released |
 | **Bug: Overload put Backstab on cooldown** instead of Battery when it cancelled Battery (wrong WCID) | `Player.TryUseOverload` | Battery goes on cooldown |
@@ -99,7 +96,7 @@ ammo or spell level deals it. The differences are everything after that:
 - Fury's description: the stance and Enrage raise damage taken by up to 25%, and Enraged attacks can't be evaded (both
   were already true of the stance and the no-evade, but not described).
 
-Existing items keep their ward and mods; the armor changes reach players through new loot, quest rolls and retiering.
+Workmanship applies to newly rolled armor (and armor that's restabilized); existing items keep theirs.
 
 ## After
 
@@ -113,8 +110,8 @@ Existing items keep their ward and mods; the armor changes reach players through
 | S&B heavy - Spellsword | 0.66 | 0.79 | 1.00 | 0.84 |
 | Thrown heavy - Warrior | 1.28 | 1.12 | 1.00 | 1.14 |
 | Thrown heavy - Archer | 1.70 | 1.12 | 1.00 | 1.51 |
-| DW light - Blademaster | 1.63 | 1.18 | 1.10 | 1.38 |
-| DW light - Vagabond | 1.30 | 1.05 | 1.10 | 1.24 |
+| DW light - Blademaster | 1.63 | 1.18 | 1.22 | 1.38 |
+| DW light - Vagabond | 1.30 | 1.05 | 1.22 | 1.24 |
 | Bow heavy - Archer | 1.97 | 1.12 | 1.00 | 1.75 |
 | Bow heavy - Vagabond | 1.11 | 1.00 | 1.00 | 1.11 |
 | War cloth - Sorcerer | 1.09 | 1.25 | 1.10 | 0.87 |
@@ -209,8 +206,9 @@ These need design calls or data changes beyond this pass:
    - shield damage reduction up to 40% instead of 25% (`SkillFormula.CalcShieldMod`): 1.04
    - base block chance 10% instead of 5% (`DamageFormulas.GetBlockChance`): 1.03
    - both: 1.14
-5. **Light armor has no defensive mod.** Its rolls are Attack, Dual Wield, Thievery/Run, Stamina Regen and
-   Perception/Deception, so archers wear heavy armor for its Physical/Magic Defense rolls and higher armor and ward. A
+5. **Light armor has no defensive mod, and the lowest ward.** Its rolls are Attack, Dual Wield, Thievery/Run, Stamina
+   Regen and Perception/Deception, so archers wear heavy armor for its Physical/Magic Defense rolls and higher armor and
+   ward (light takes 17% more physical and 22% more magic damage than heavy). A
    Physical Defense (evasion) roll on light armor would give the Coordination set a defensive identity and a real choice
    for archers.
 6. **Two-handed specialization** only adds cleave, so it does nothing on a single target and nothing for two-handed spears

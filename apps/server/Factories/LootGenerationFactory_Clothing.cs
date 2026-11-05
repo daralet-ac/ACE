@@ -277,16 +277,17 @@ public static partial class LootGenerationFactory
     /// by its armor style, shield type and weight class. The armor level is null for a style without one of its own,
     /// which builds on its weenie's armor level.
     /// </summary>
-    /// <param name="tierPowerMigration">The ward bases the tier rework's one-time migration was written against
-    /// (LootTables.GetTierPowerMigrationWeightClassWard), so an item it hasn't reached yet still moves correctly</param>
-    internal static (int? ArmorLevel, int WardLevel) GetArmorBaseLevels(WorldObject wo, bool tierPowerMigration = false)
+    internal static (int? ArmorLevel, int WardLevel) GetArmorBaseLevels(WorldObject wo)
     {
         int? baseArmorLevel = null;
 
-        // Ward Level by weight class (LootTables.GetWeightClassBaseWardLevel)
-        var baseWardLevel = tierPowerMigration
-            ? LootTables.GetTierPowerMigrationWeightClassWard(wo.ArmorWeightClass)
-            : LootTables.GetWeightClassBaseWardLevel(wo.ArmorWeightClass);
+        // Ward Level by weight class
+        var baseWardLevel = wo.ArmorWeightClass switch
+        {
+            (int)ArmorWeightClass.Cloth => 6,
+            (int)ArmorWeightClass.Heavy => 7,
+            _ => 5,
+        };
 
         switch (wo.ArmorStyle)
         {
@@ -294,9 +295,7 @@ public static partial class LootGenerationFactory
             case (int)ArmorStyle.Chiran:
             case (int)ArmorStyle.OlthoiAmuli:
                 baseArmorLevel = 80;
-                baseWardLevel = tierPowerMigration
-                    ? LootTables.GetTierPowerMigrationWeightClassWard((int)ArmorWeightClass.Cloth)
-                    : LootTables.GetWeightClassBaseWardLevel((int)ArmorWeightClass.Cloth);
+                baseWardLevel = 6;
                 break;
             case (int)ArmorStyle.Leather:
             case (int)ArmorStyle.Yoroi:
@@ -992,17 +991,8 @@ public static partial class LootGenerationFactory
                         wo.ArmorAttackMod = amount;
                         break;
                     case 2:
-                        // one or the other, like every other two-way roll: granting both at full value made this the
-                        // one roll in any weight class worth two mods
-                        if (ThreadSafeRandom.Next(0, 1) == 0)
-                        {
-                            wo.ArmorPhysicalDefMod = amount;
-                        }
-                        else
-                        {
-                            wo.ArmorMagicDefMod = amount;
-                        }
-
+                        wo.ArmorPhysicalDefMod = amount;
+                        wo.ArmorMagicDefMod = amount;
                         break;
                     case 3:
                         if (IsShieldWcid(wo) || ThreadSafeRandom.Next(0, 1) == 0)

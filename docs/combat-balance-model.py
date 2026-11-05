@@ -241,7 +241,7 @@ builds = [
 def ward_total(base_per_slot):
     return 9 * base_per_slot * 64 + JEWELRY_AND_CLOTHES_WARD
 
-ward_base = {"heavy": 7, "light": 6 if AFTER else 5, "cloth": 6}
+ward_base = {"heavy": 7, "light": 5, "cloth": 6}
 al_base = {"heavy": 100, "light": 85, "cloth": 80}
 ref_phys = BOTTOM_COVENANT_AL + 100
 ref_magic = ward_total(7) + 100
