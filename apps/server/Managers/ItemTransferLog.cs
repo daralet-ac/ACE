@@ -20,8 +20,9 @@ namespace ACE.Server.Managers;
 /// from vendors, salvaged, and copied or restored by an admin. Written off the world thread. A pack that changes hands is
 /// logged with each item in it.
 ///
-/// Loot and moves within your own packs aren't logged, and selling, buying back, salvaging and dropping only for loot of
-/// good workmanship for its tier (item_history_min_workmanship), which keeps vendor trash out. Pyreal value would be no
+/// Loot and moves within your own packs aren't logged, and selling, buying back, salvaging and dropping only for quest gear,
+/// quest items (QuestItems), rares, and loot of good workmanship for its tier (item_history_min_workmanship), which keeps
+/// vendor trash out. Pyreal value would be no
 /// good for that: it changes too much from tier to tier. Those come with a snapshot of the whole item, so
 /// @itemrestore can make it again. Old entries are deleted once a day (item_history_days, item_history_destroyed_days).
 /// </summary>
@@ -185,14 +186,19 @@ public static class ItemTransferLog
     private static int[] _thresholds;
 
     /// <summary>
-    /// Whether an item is worth logging when it's sold, bought back, salvaged or dropped: a rare, or loot whose workmanship
-    /// is at least item_history_min_workmanship for its tier. Money never is.
+    /// Whether an item is worth logging when it's sold, bought back, salvaged or dropped: quest gear, a quest item, a rare,
+    /// or loot whose workmanship is at least item_history_min_workmanship for its tier. Money never is.
     /// </summary>
     public static bool WorthLogging(WorldObject item)
     {
         if (item == null || item.WeenieType == WeenieType.Coin || item.ItemType == ItemType.PromissoryNote)
         {
             return false;
+        }
+
+        if (QuestItems.IsQuestGearOrItem(item))
+        {
+            return true;
         }
 
         var text = PropertyManager.GetString("item_history_min_workmanship", DefaultMinWorkmanship).Item;

@@ -270,4 +270,22 @@ public class AdminUiItemsTests
         CollectionAssert.Contains(commands, "itemcopy");
         CollectionAssert.Contains(commands, "itemrestore");
     }
+
+    /// <summary>
+    /// Quest gear keeps MutableQuestItem (set to false) once its stats have rolled, so the flag being there at all is what
+    /// counts.
+    /// </summary>
+    [TestMethod]
+    public void KnowsQuestGearAndQuestItems()
+    {
+        Assert.IsTrue(ACE.Server.Managers.QuestItems.IsQuestGear(true, false, false));
+        Assert.IsTrue(ACE.Server.Managers.QuestItems.IsQuestGear(false, true, false));
+        Assert.IsTrue(ACE.Server.Managers.QuestItems.IsQuestGear(false, false, true));
+        Assert.IsFalse(ACE.Server.Managers.QuestItems.IsQuestGear(false, false, false));
+
+        var questWcids = new HashSet<uint> { 1234 };
+        Assert.IsTrue(ACE.Server.Managers.QuestItems.IsQuestItem(1234, null, questWcids));
+        Assert.IsTrue(ACE.Server.Managers.QuestItems.IsQuestItem(99, "SkullOfThePitLordPickup", questWcids));
+        Assert.IsFalse(ACE.Server.Managers.QuestItems.IsQuestItem(99, "", questWcids));
+    }
 }

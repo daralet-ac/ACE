@@ -2,7 +2,8 @@
  * Items changing hands, for the Daralet Admin plugin's Items tab: given, traded, dropped on the ground, picked up off the
  * ground or a player's corpse by someone else, sold to and bought back from vendors, salvaged, and copied or restored by
  * an admin (@itemcopy, @itemrestore). Loot, crafting and moves within a character's own packs aren't logged, and selling,
- * buying, salvaging and dropping only for loot of good workmanship for its tier (item_history_min_workmanship) and rares.
+ * buying, salvaging and dropping only for quest gear, quest items, rares, and loot of good workmanship for its tier
+ * (item_history_min_workmanship).
  * Market sales are in player_market_transactions already.
  *
  * snapshot is the whole item, kept for one that's gone (sold, salvaged, dropped) so @itemrestore can make it again. The

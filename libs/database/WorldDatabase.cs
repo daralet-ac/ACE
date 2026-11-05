@@ -168,6 +168,24 @@ public class WorldDatabase
     }
 
     /// <summary>
+    /// The weenie classes that emotes of these types name (EmoteType.Give, TakeItems, InqOwnsItems...): the items quest
+    /// NPCs hand out, take in and look for. Throws if they can't be read.
+    /// </summary>
+    public virtual HashSet<uint> GetEmoteItemWcids(IReadOnlyCollection<uint> emoteTypes)
+    {
+        using var context = new WorldDbContext();
+
+        var types = emoteTypes.ToList();
+
+        return context.WeeniePropertiesEmoteAction
+            .AsNoTracking()
+            .Where(a => types.Contains(a.Type) && a.WeenieClassId != null && a.WeenieClassId > 0)
+            .Select(a => a.WeenieClassId.Value)
+            .Distinct()
+            .ToHashSet();
+    }
+
+    /// <summary>
     /// This will populate all sub collections except the following: LandblockInstances, PointsOfInterest
     /// </summary>
     public virtual List<Weenie> GetAllWeenies()
