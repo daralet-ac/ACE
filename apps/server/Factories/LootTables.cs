@@ -3862,8 +3862,12 @@ public static class LootTables
     /// The Ward Level one loot tier adds per armor slot. Matches AssignArmorLevel: body armor keys off
     /// weight class, Amuli-family styles are overridden, and shields carry no weight class so they stay style-based.
     /// </summary>
-    public static int GetArmorStyleBaseWardLevel(int? armorStyle, int? armorWeightClass)
+    public static int GetArmorStyleBaseWardLevel(int? armorStyle, int? armorWeightClass, bool tierPowerMigration = false)
     {
+        var clothWard = tierPowerMigration
+            ? GetTierPowerMigrationWeightClassWard((int)ArmorWeightClass.Cloth)
+            : GetWeightClassBaseWardLevel((int)ArmorWeightClass.Cloth);
+
         return (ArmorStyle?)armorStyle switch
         {
             ArmorStyle.CovenantShield => 10,
@@ -3871,13 +3875,43 @@ public static class LootTables
             ArmorStyle.LargeShield => 7,
             ArmorStyle.StandardShield => 6,
             ArmorStyle.Buckler or ArmorStyle.SmallShield => 5,
-            ArmorStyle.Amuli or ArmorStyle.Chiran or ArmorStyle.OlthoiAmuli => 6,
-            _ => armorWeightClass switch
-            {
-                (int)ArmorWeightClass.Cloth => 6,
-                (int)ArmorWeightClass.Heavy => 7,
-                _ => 5,
-            },
+            ArmorStyle.Amuli or ArmorStyle.Chiran or ArmorStyle.OlthoiAmuli => clothWard,
+            _ => tierPowerMigration
+                ? GetTierPowerMigrationWeightClassWard(armorWeightClass)
+                : GetWeightClassBaseWardLevel(armorWeightClass),
+        };
+    }
+
+    /// <summary>
+    /// An armor piece's per-slot base ward by weight class, which TierPower doubles each tier. Each weight class leads
+    /// in one defense: Heavy (Strength) in armor level, Cloth (Self) in ward, so a mage's robes protect best against
+    /// spells, as plate does against weapons. Light (Coordination) sits below both, and carries the lowest stamina and
+    /// mana penalty instead. Heavy is the reference player's armor (TierPower.ReferenceWardTable), which monster spell
+    /// damage is tuned against.
+    /// </summary>
+    public static int GetWeightClassBaseWardLevel(int? armorWeightClass)
+    {
+        return armorWeightClass switch
+        {
+            (int)ArmorWeightClass.Cloth => 8,
+            (int)ArmorWeightClass.Heavy => 7,
+            (int)ArmorWeightClass.Light => 6,
+            _ => 5, // clothing (shirts and pants)
+        };
+    }
+
+    /// <summary>
+    /// The per-slot base ward each weight class had when the tier rework's one-time migration was written
+    /// (LootGenerationFactory.MigrateToTierPower). The migration keeps using these, so an item it hasn't reached yet
+    /// still maps from the range it was rolled in.
+    /// </summary>
+    public static int GetTierPowerMigrationWeightClassWard(int? armorWeightClass)
+    {
+        return armorWeightClass switch
+        {
+            (int)ArmorWeightClass.Cloth => 6,
+            (int)ArmorWeightClass.Heavy => 7,
+            _ => 5,
         };
     }
 }

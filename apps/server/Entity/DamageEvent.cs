@@ -244,7 +244,7 @@ public partial class DamageEvent
 
         // Mitigation
         var mitigation = GetMitigation();
-        var cleaveMod = cleaveHits ? 0.5f : 1.0f;
+        var cleaveMod = GetCleaveDamageMod(cleaveHits);
 
         Damage = _damageBeforeMitigation * mitigation * cleaveMod;
 
@@ -266,6 +266,22 @@ public partial class DamageEvent
             Damage = 0.0f;
             IsCritical = false;
         }
+    }
+
+    /// <summary>
+    /// The damage multiplier for a cleave hit: a melee cleave onto a nearby target, or a COMBAT ABILITY - Multishot bonus
+    /// projectile that found no other enemy and fell back on the main target (Player.LaunchBonusProjectiles)
+    /// </summary>
+    private float GetCleaveDamageMod(bool cleaveHits)
+    {
+        if (!cleaveHits)
+        {
+            return 1.0f;
+        }
+
+        return _damageSource is { ProjectileIsCleave: true }
+            ? DamageFormulas.MultishotFallbackDamageMod
+            : DamageFormulas.CleaveDamageMod;
     }
 
     /// <summary>

@@ -93,6 +93,7 @@ public partial class DamageEvent
         _damageModifiers.DamageRating = Creature.GetPositiveRatingMod(_attacker.GetDamageRating());
         _damageModifiers.DualWield = GetDualWieldDamageBonus(_playerAttacker, _defender);
         _damageModifiers.TwoHandedCombat = GetTwohandedCombatDamageBonus(_playerAttacker, _defender);
+        _damageModifiers.ShieldCombat = GetShieldCombatDamageBonus(_playerAttacker, _defender, CombatType);
         _damageModifiers.Fury = GetCombatAbilityFuryDamageBonus(_playerAttacker, _playerDefender);
         _damageModifiers.Relentless = GetCombatAbilityRelentlessDamagePenalty(_playerAttacker);
         _damageModifiers.SteadyStrike = GetCombatAbilitySteadyStrikeDamageBonus(_playerAttacker);
@@ -164,9 +165,35 @@ public partial class DamageEvent
     }
 
     /// <summary>
+    /// Shield Damage Mod: melee attacks with a shield equipped gain up to +25%, from Shield skill vs the defender's
+    /// physical defense. Thrown weapons can be wielded with a shield (SPEC BONUS - Thrown Weapons), but don't gain this.
+    /// The shield must be at least trained, as for its damage reduction (Creature.GetShieldMod).
+    /// </summary>
+    private static float GetShieldCombatDamageBonus(Player playerAttacker, Creature defender, CombatType combatType)
+    {
+        if (
+            playerAttacker is null
+            || defender is null
+            || combatType is not CombatType.Melee
+            || playerAttacker.GetEquippedShield() is null
+            || playerAttacker.GetEquippedMeleeWeapon() is null
+            || playerAttacker.GetCreatureSkill(Skill.Shield).AdvancementClass < SkillAdvancementClass.Trained
+        )
+        {
+            return 1.0f;
+        }
+
+        return DamageFormulas.GetShieldCombatDamageBonus(
+            playerAttacker.GetModdedShieldSkill(),
+            defender.GetModdedPhysicalDefSkill()
+        );
+    }
+
+    /// <summary>
     /// COMBAT ABILITY - Fury (Stance): Damage dealt and taken is increased by up to 25%. Attacking and
     /// taking damage builds up a Adrenaline meter. Adrenaline meter decreases over time.
-    /// COMBAT ABILITY - Fury (Enrage): Damage increased by Adrenaline build up amount (%) for 10 seconds.
+    /// COMBAT ABILITY - Fury (Enrage): Damage increased by Adrenaline build up amount (%) for 10 seconds, and damage
+    /// taken by up to 25% (the stance's drawback, at the level it was released at).
     /// </summary>
     private static float GetCombatAbilityFuryDamageBonus(Player playerAttacker, Player playerDefender)
     {
@@ -177,7 +204,12 @@ public partial class DamageEvent
             recklessMod += 0.25f * playerAttacker.AdrenalineMeter;
         }
 
-        if (playerDefender is { FuryStanceIsActive: true } or { FuryEnrageIsActive: true })
+        // an Enraged defender takes more damage for the adrenaline it spent: its meter is empty while it's Enraged
+        if (playerDefender is { FuryEnrageIsActive: true })
+        {
+            recklessMod += 0.25f * playerDefender.EnrageLevel;
+        }
+        else if (playerDefender is { FuryStanceIsActive: true })
         {
             recklessMod += 0.25f * playerDefender.AdrenalineMeter;
         }

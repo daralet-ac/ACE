@@ -277,17 +277,16 @@ public static partial class LootGenerationFactory
     /// by its armor style, shield type and weight class. The armor level is null for a style without one of its own,
     /// which builds on its weenie's armor level.
     /// </summary>
-    internal static (int? ArmorLevel, int WardLevel) GetArmorBaseLevels(WorldObject wo)
+    /// <param name="tierPowerMigration">The ward bases the tier rework's one-time migration was written against
+    /// (LootTables.GetTierPowerMigrationWeightClassWard), so an item it hasn't reached yet still moves correctly</param>
+    internal static (int? ArmorLevel, int WardLevel) GetArmorBaseLevels(WorldObject wo, bool tierPowerMigration = false)
     {
         int? baseArmorLevel = null;
 
-        // Ward Level by weight class
-        var baseWardLevel = wo.ArmorWeightClass switch
-        {
-            (int)ArmorWeightClass.Cloth => 6,
-            (int)ArmorWeightClass.Heavy => 7,
-            _ => 5,
-        };
+        // Ward Level by weight class: Cloth the most, Heavy next, Light the least (LootTables.GetWeightClassBaseWardLevel)
+        var baseWardLevel = tierPowerMigration
+            ? LootTables.GetTierPowerMigrationWeightClassWard(wo.ArmorWeightClass)
+            : LootTables.GetWeightClassBaseWardLevel(wo.ArmorWeightClass);
 
         switch (wo.ArmorStyle)
         {
@@ -295,7 +294,9 @@ public static partial class LootGenerationFactory
             case (int)ArmorStyle.Chiran:
             case (int)ArmorStyle.OlthoiAmuli:
                 baseArmorLevel = 80;
-                baseWardLevel = 6;
+                baseWardLevel = tierPowerMigration
+                    ? LootTables.GetTierPowerMigrationWeightClassWard((int)ArmorWeightClass.Cloth)
+                    : LootTables.GetWeightClassBaseWardLevel((int)ArmorWeightClass.Cloth);
                 break;
             case (int)ArmorStyle.Leather:
             case (int)ArmorStyle.Yoroi:
@@ -991,8 +992,17 @@ public static partial class LootGenerationFactory
                         wo.ArmorAttackMod = amount;
                         break;
                     case 2:
-                        wo.ArmorPhysicalDefMod = amount;
-                        wo.ArmorMagicDefMod = amount;
+                        // one or the other, like every other two-way roll: granting both at full value made this the
+                        // one roll in any weight class worth two mods
+                        if (ThreadSafeRandom.Next(0, 1) == 0)
+                        {
+                            wo.ArmorPhysicalDefMod = amount;
+                        }
+                        else
+                        {
+                            wo.ArmorMagicDefMod = amount;
+                        }
+
                         break;
                     case 3:
                         if (IsShieldWcid(wo) || ThreadSafeRandom.Next(0, 1) == 0)
@@ -1404,48 +1414,24 @@ public static partial class LootGenerationFactory
         return (int)(maxArmorLevel * 1.1f);
     }
 
+    /// <summary>
+    /// The ward a piece is scored against for workmanship: the top of tier 7's range on the scale before the tier rework
+    /// (GetPreviousScaleWardLevel), for the piece's own base ward, plus 10%. So a tier 8 roll scores about 0.9 to 1.04
+    /// whatever its weight class. A table of its own fell out of step with the base wards, and scored Covenant's ward
+    /// near 1.7 and Cloth's near 0.8, raising heavy armor's workmanship and lowering cloth's.
+    /// </summary>
     private static int GetMaxWardLevel(WorldObject wo)
     {
-        var wardLevel = 49;
-
-        if (wo.ArmorStyle == null && wo.ItemType != ItemType.Clothing)
-        {
-            _log.Error("GetMaxWardLevel(WorldObject {WorldObject} ({ID})) - ArmorStyle is null. Defaulting to {MaxWardLevel}", wo.Name, wo.WeenieClassId, wardLevel);
-        }
-
-        var armorStyle = (ArmorStyle)(wo.ArmorStyle ?? 0);
         var armorSlots = wo.ArmorSlots ?? 1;
 
-        switch (armorStyle)
-        {
-            case ArmorStyle.Cloth:
-                wardLevel = 49;
-                break;
-            case ArmorStyle.Amuli:
-            case ArmorStyle.Chiran:
-                wardLevel = 42;
-                break;
-            case ArmorStyle.Leather:
-            case ArmorStyle.Yoroi:
-            case ArmorStyle.Lorica:
-            case ArmorStyle.StuddedLeather:
-            case ArmorStyle.Koujia:
-            case ArmorStyle.OlthoiKoujia:
-            case ArmorStyle.Chainmail:
-            case ArmorStyle.Scalemail:
-            case ArmorStyle.Platemail:
-            case ArmorStyle.Celdon:
-            case ArmorStyle.OlthoiCeldon:
-            case ArmorStyle.Nariyid:
-                wardLevel = 35;
-                break;
-            case ArmorStyle.OlthoiArmor:
-            case ArmorStyle.Covenant:
-                wardLevel = 28;
-                break;
-        }
+        // clothing (shirts and pants) has no weight class, and keeps the score it always had
+        const int clothingMaxWardLevel = 49;
 
-        return (int)(wardLevel * armorSlots * 1.1f);
+        var maxWardLevel = wo.ArmorWeightClass is null or (int)ArmorWeightClass.None && !wo.IsShield
+            ? clothingMaxWardLevel
+            : GetArmorBaseLevels(wo).WardLevel * 7;
+
+        return (int)(maxWardLevel * armorSlots * 1.1f);
     }
 
     private static bool IsShieldWcid(WorldObject wo)

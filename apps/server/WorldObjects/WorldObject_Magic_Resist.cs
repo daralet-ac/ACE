@@ -275,6 +275,12 @@ partial class WorldObject
                 magicSkill = (uint)(magicSkill * weaponAttackMod);
             }
 
+            // SPELL ACCURACY - a player's own War and Life spells, like Medium attacks for weapons
+            if (casterCreature is Player && weaponSpellcraft is null)
+            {
+                magicSkill = (uint)(magicSkill * GetSpellAccuracyMod(casterCreature, spell.School));
+            }
+
             // COMBAT ABILITY - Overload Discharge: magic skill increased by the discharged charge (up to 100%)
             if (casterCreature is Player { OverloadDischargeIsActive: true } casterPlayer)
             {
@@ -307,6 +313,23 @@ partial class WorldObject
         }
 
         return magicSkill;
+    }
+
+    /// <summary>
+    /// SPELL ACCURACY: a player's War and Life spells are +10% harder to resist, +20% with the school specialized.
+    /// Weapon attacks get the same from a Medium attack height (+10%, +20% with the weapon specialized), and missile
+    /// weapons another +10% from the accuracy bar, but spells had nothing, so mages were resisted far more often than
+    /// weapons were evaded by the same monsters (MagicFormulas.GetSpellAccuracyMod).
+    /// Proc and Enchanted Blade spells (cast with a weapon's spellcraft) don't gain it.
+    /// </summary>
+    private static float GetSpellAccuracyMod(Creature caster, MagicSchool school)
+    {
+        if (school is not (MagicSchool.WarMagic or MagicSchool.LifeMagic))
+        {
+            return 1.0f;
+        }
+
+        return MagicFormulas.GetSpellAccuracyMod(caster.GetCreatureSkill(school).AdvancementClass);
     }
 
     /// <summary>

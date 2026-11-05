@@ -416,7 +416,7 @@ partial class Player
     /// <summary>
     /// Fires the bonus projectiles for an attack.
     /// COMBAT ABILITY - Multishot: 2 bonus projectiles at nearby enemies. Any that can't find one fire at the main target
-    /// instead, where they deal half damage like melee cleaves.
+    /// instead, where they deal a quarter of a shot's damage (DamageFormulas.MultishotFallbackDamageMod).
     /// RATING - Slash: a bonus projectile at a nearby enemy, if there's one Multishot didn't already take.
     /// </summary>
     private void LaunchBonusProjectiles(

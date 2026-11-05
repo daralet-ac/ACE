@@ -94,6 +94,14 @@ public class MagicFormulaTests
     // ---- Mitigation
 
     [TestMethod]
+    public void SpellAccuracyMod_MatchesTheMediumAttackHeightBonus()
+    {
+        Assert.AreEqual(1.0f, MagicFormulas.GetSpellAccuracyMod(SkillAdvancementClass.Untrained), Tolerance);
+        Assert.AreEqual(1.1f, MagicFormulas.GetSpellAccuracyMod(SkillAdvancementClass.Trained), Tolerance);
+        Assert.AreEqual(1.2f, MagicFormulas.GetSpellAccuracyMod(SkillAdvancementClass.Specialized), Tolerance);
+    }
+
+    [TestMethod]
     public void WardDebuffDurationMod_IsHalfwayToTheWardMod()
     {
         Assert.AreEqual(0.75f, MagicFormulas.GetWardDebuffDurationMod(0.5f), Tolerance);

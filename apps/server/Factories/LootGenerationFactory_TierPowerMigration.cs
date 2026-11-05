@@ -409,10 +409,10 @@ public static partial class LootGenerationFactory
         }
 
         var armorSlots = wo.ArmorSlots ?? 1;
-        var (_, baseWardLevel) = GetArmorBaseLevels(wo);
+        var (_, baseWardLevel) = GetArmorBaseLevels(wo, tierPowerMigration: true);
         if (quest)
         {
-            baseWardLevel = LootTables.GetArmorStyleBaseWardLevel(wo.ArmorStyle, wo.ArmorWeightClass);
+            baseWardLevel = LootTables.GetArmorStyleBaseWardLevel(wo.ArmorStyle, wo.ArmorWeightClass, tierPowerMigration: true);
         }
 
         var (silver, pyreal, whiteJade) = GetWardTinks(wo, quest);

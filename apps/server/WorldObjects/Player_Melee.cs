@@ -444,11 +444,8 @@ partial class Player
                 Attacking = false;
 
                 // powerbar refill timing
-                var isDualWieldSpec =
-                    GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
-                var dualWieldSpecBonus = (IsDualWieldAttack && isDualWieldSpec) ? 1.25f : 1.0f; // Dual Wield Spec Bonus: +25% faster refill time
-
-                var refillMod = 1.0f / dualWieldSpecBonus;
+                // SPEC BONUS - Dual Wield: +25% faster refill time (GetPowerMod pays back this shorter wait)
+                var refillMod = GetMeleeRefillTimeMod();
 
                 PowerLevel = AttackQueue.Fetch();
 
@@ -533,7 +530,7 @@ partial class Player
         var baseSpeed = GetAttackAnimSpeed(baseAnimLength, attackFrames.Count, target as Creature);
 
         var isDualWieldSpec = GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
-        var animSpeedMod = (IsDualWieldAttack && isDualWieldSpec) ? 1.25f : 1.0f; // Dual Wield Spec Bonus: +25% faster dual-wield swing animation
+        var animSpeedMod = (IsDualWieldAttack && isDualWieldSpec) ? DualWieldSpecSpeedBonus : 1.0f; // Dual Wield Spec Bonus: +25% faster dual-wield swing animation
 
         if (WeaponMasterIsActive && GetEquippedMeleeWeapon() is { WeaponSkill: Skill.Sword } && GetPowerAccuracyBar() >= 0.5)
         {
