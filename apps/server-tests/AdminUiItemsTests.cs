@@ -191,12 +191,33 @@ public class AdminUiItemsTests
     }
 
     [TestMethod]
-    public void LogsSalesOfValuableItemsAndRaresOnly()
+    public void LogsGoodWorkmanshipForItsTierAndRaresOnly()
     {
-        Assert.IsTrue(ACE.Server.Managers.ItemTransferLog.WorthLogging(5000, false, 5000));
-        Assert.IsFalse(ACE.Server.Managers.ItemTransferLog.WorthLogging(4999, false, 5000));
-        Assert.IsTrue(ACE.Server.Managers.ItemTransferLog.WorthLogging(1, true, 5000));
-        Assert.IsTrue(ACE.Server.Managers.ItemTransferLog.WorthLogging(0, false, 0));
+        var thresholds = ACE.Server.Managers.ItemTransferLog.ParseMinWorkmanship(ACE.Server.Managers.ItemTransferLog.DefaultMinWorkmanship);
+
+        // a tier 8 drop: 7 is the usual, 8 is worth keeping
+        Assert.IsFalse(ACE.Server.Managers.ItemTransferLog.WorthLogging(8, 7, false, thresholds));
+        Assert.IsTrue(ACE.Server.Managers.ItemTransferLog.WorthLogging(8, 8, false, thresholds));
+
+        // the same workmanship is the best a tier 4 drop gets
+        Assert.IsTrue(ACE.Server.Managers.ItemTransferLog.WorthLogging(4, 4, false, thresholds));
+        Assert.IsFalse(ACE.Server.Managers.ItemTransferLog.WorthLogging(4, 3, false, thresholds));
+
+        // not loot, unless it's a rare; loot with no tier is held to tier 8's bar
+        Assert.IsFalse(ACE.Server.Managers.ItemTransferLog.WorthLogging(null, null, false, thresholds));
+        Assert.IsTrue(ACE.Server.Managers.ItemTransferLog.WorthLogging(null, null, true, thresholds));
+        Assert.IsFalse(ACE.Server.Managers.ItemTransferLog.WorthLogging(null, 7, false, thresholds));
+        Assert.IsTrue(ACE.Server.Managers.ItemTransferLog.WorthLogging(null, 8, false, thresholds));
+    }
+
+    [TestMethod]
+    public void ReadsWorkmanshipThresholdsForgivingly()
+    {
+        CollectionAssert.AreEqual(new[] { 2, 2, 3, 4, 5, 6, 7, 8 }, ACE.Server.Managers.ItemTransferLog.ParseMinWorkmanship(""));
+        CollectionAssert.AreEqual(new[] { 0, 0, 0, 0, 0, 0, 0, 0 }, ACE.Server.Managers.ItemTransferLog.ParseMinWorkmanship("0,0,0,0,0,0,0,0"));
+
+        // a typo or a short list keeps that tier's default
+        CollectionAssert.AreEqual(new[] { 1, 2, 3, 4, 5, 6, 9, 8 }, ACE.Server.Managers.ItemTransferLog.ParseMinWorkmanship(" 1, x, 3,4,5,6, 9"));
     }
 
     /// <summary>

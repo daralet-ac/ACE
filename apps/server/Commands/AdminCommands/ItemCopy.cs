@@ -119,7 +119,7 @@ public class ItemCopy
         CommandHandlerFlag.RequiresWorld,
         1,
         "Makes an item that was sold, salvaged or dropped again, from the item history, in your packs or an online player's.",
-        "<history entry> [character name]\nThe entry's number is in the Daralet Admin plugin's Items tab, which has a Restore button for it. Only entries with a copy of the item can be restored: valuable items sold, salvaged or dropped in the last item_history_destroyed_days. The restored item is a new one with a guid of its own, and is logged in the item history."
+        "<history entry> [character name]\nThe entry's number is in the Daralet Admin plugin's Items tab, which has a Restore button for it. Only entries with a copy of the item can be restored: loot of good workmanship for its tier (item_history_min_workmanship) sold, salvaged or dropped in the last item_history_destroyed_days. The restored item is a new one with a guid of its own, and is logged in the item history."
     )]
     public static void HandleItemRestore(Session session, params string[] parameters)
     {
@@ -165,7 +165,7 @@ public class ItemCopy
 
                 if (string.IsNullOrEmpty(entry.Snapshot))
                 {
-                    Reply(session, $"Entry #{entryId} has no copy of {entry.ItemName} to restore it from: only valuable items sold, salvaged or dropped have one, for item_history_destroyed_days.");
+                    Reply(session, $"Entry #{entryId} has no copy of {entry.ItemName} to restore it from: only loot of good workmanship for its tier (item_history_min_workmanship) sold, salvaged or dropped has one, for item_history_destroyed_days.");
                     return;
                 }
 

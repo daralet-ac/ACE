@@ -20,8 +20,9 @@ namespace ACE.Server.Managers;
 /// from vendors, salvaged, and copied or restored by an admin. Written off the world thread. A pack that changes hands is
 /// logged with each item in it.
 ///
-/// Loot and moves within your own packs aren't logged, and selling, buying back, salvaging and dropping only for items worth
-/// item_history_min_value or more, which keeps vendor trash out. Those come with a snapshot of the whole item, so
+/// Loot and moves within your own packs aren't logged, and selling, buying back, salvaging and dropping only for loot of
+/// good workmanship for its tier (item_history_min_workmanship), which keeps vendor trash out. Pyreal value would be no
+/// good for that: it changes too much from tier to tier. Those come with a snapshot of the whole item, so
 /// @itemrestore can make it again. Old entries are deleted once a day (item_history_days, item_history_destroyed_days).
 /// </summary>
 public static class ItemTransferLog
@@ -173,8 +174,19 @@ public static class ItemTransferLog
     }
 
     /// <summary>
-    /// Whether an item is worth logging when it's sold, bought back, salvaged or dropped: worth item_history_min_value or
-    /// more, or a rare. Money never is.
+    /// The lowest workmanship worth logging at each tier (1 to 8), when item_history_min_workmanship isn't set: one more
+    /// than each tier's usual (WorkmanshipChance.MinWorkmanshipPerTier), about the best third of what drops.
+    /// </summary>
+    public const string DefaultMinWorkmanship = "2,2,3,4,5,6,7,8";
+
+    private const int Tiers = 8;
+
+    private static string _thresholdsText;
+    private static int[] _thresholds;
+
+    /// <summary>
+    /// Whether an item is worth logging when it's sold, bought back, salvaged or dropped: a rare, or loot whose workmanship
+    /// is at least item_history_min_workmanship for its tier. Money never is.
     /// </summary>
     public static bool WorthLogging(WorldObject item)
     {
@@ -183,12 +195,55 @@ public static class ItemTransferLog
             return false;
         }
 
-        return WorthLogging(item.Value ?? 0, item.GetProperty(PropertyInt.RareId) != null, PropertyManager.GetLong("item_history_min_value", 5000).Item);
+        var text = PropertyManager.GetString("item_history_min_workmanship", DefaultMinWorkmanship).Item;
+
+        // read once each time the setting changes, not on every item sold
+        var thresholds = _thresholds;
+        if (thresholds == null || text != _thresholdsText)
+        {
+            thresholds = ParseMinWorkmanship(text);
+            _thresholds = thresholds;
+            _thresholdsText = text;
+        }
+
+        return WorthLogging(item.Tier, item.Workmanship, item.GetProperty(PropertyInt.RareId) != null, thresholds);
     }
 
-    public static bool WorthLogging(int value, bool rare, long minValue)
+    public static bool WorthLogging(int? tier, float? workmanship, bool rare, int[] thresholds)
     {
-        return rare || value >= minValue;
+        if (rare)
+        {
+            return true;
+        }
+
+        // not loot: bought from a vendor, a quest's, a component
+        if (workmanship == null || workmanship <= 0)
+        {
+            return false;
+        }
+
+        // loot with no tier on it is held to the highest bar
+        var index = Math.Clamp(tier ?? Tiers, 1, Tiers) - 1;
+
+        return workmanship.Value >= thresholds[index];
+    }
+
+    /// <summary>
+    /// "2,2,3,4,5,6,7,8": the lowest workmanship worth logging at tiers 1 to 8. A missing or unreadable number is the
+    /// default's for that tier, so a typo can't turn the log off or flood it.
+    /// </summary>
+    public static int[] ParseMinWorkmanship(string text)
+    {
+        var defaults = DefaultMinWorkmanship.Split(',').Select(int.Parse).ToArray();
+        var parts = (text ?? "").Split(',');
+        var thresholds = new int[Tiers];
+
+        for (var i = 0; i < Tiers; i++)
+        {
+            thresholds[i] = i < parts.Length && int.TryParse(parts[i].Trim(), out var value) && value >= 0 ? value : defaults[i];
+        }
+
+        return thresholds;
     }
 
     /// <summary>
