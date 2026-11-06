@@ -40,7 +40,7 @@ public class LevelScalingTests
     [TestMethod]
     public void ArmorWard_ReferenceGearIsWorthWhatReferenceGearIsAtTheMonstersLevel()
     {
-        // #1251: monster damage is authored against the reference player's armor at the monster's level (TierPower),
+        // #1251: monster damage is authored against the target armor at the monster's level (TierPower),
         // so the monster's level cancels
         for (var playerLevel = LevelScaling.MinimumScaledLevel; playerLevel <= MaxLevel; playerLevel += 5)
         {
@@ -48,22 +48,22 @@ public class LevelScalingTests
             {
                 var ratio = LevelScaling.GetArmorWardModRatio(playerLevel, monsterLevel);
 
-                var average = SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(playerLevel));
-                var averageAtMonsterLevel = SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(monsterLevel));
+                var average = SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(playerLevel));
+                var averageAtMonsterLevel = SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(monsterLevel));
 
                 Assert.AreEqual(averageAtMonsterLevel, average * ratio, 1e-5, $"level {playerLevel} vs {monsterLevel}");
 
                 // and ward the same way against the reference ward
                 var wardRatio = LevelScaling.GetArmorWardModRatio(playerLevel, monsterLevel, ward: true);
                 Assert.AreEqual(
-                    SkillFormula.CalcWardMod(TierPower.GetReferenceWard(monsterLevel)),
-                    SkillFormula.CalcWardMod(TierPower.GetReferenceWard(playerLevel)) * wardRatio,
+                    SkillFormula.CalcWardMod(TierPower.GetTargetWard(monsterLevel)),
+                    SkillFormula.CalcWardMod(TierPower.GetTargetWard(playerLevel)) * wardRatio,
                     1e-5,
                     $"ward, level {playerLevel} vs {monsterLevel}"
                 );
 
                 // and gear above the reference keeps the same edge over it
-                var good = SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(playerLevel) * 1.5f);
+                var good = SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(playerLevel) * 1.5f);
 
                 Assert.AreEqual(
                     good / average,
