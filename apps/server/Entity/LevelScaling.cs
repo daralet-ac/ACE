@@ -515,19 +515,19 @@ public static class LevelScaling
 
     /// <summary>
     /// Scales a player's armor/ward mod from their level to the monster's. Monster damage is authored against the
-    /// reference player's armor (melee) or ward (spells) at the monster's level (TierPower), so armor as far above or
-    /// below the reference at the player's level is worth the same against the monster.
+    /// target armor (melee) or ward (spells) at the monster's level (TierPower), so armor as far above or below the
+    /// target at the player's level is worth the same against the monster.
     /// </summary>
     internal static float GetArmorWardModRatio(int playerLevel, int monsterLevel, bool ward = false)
     {
         if (ward)
         {
-            return SkillFormula.CalcWardMod(TierPower.GetReferenceWard(monsterLevel))
-                / SkillFormula.CalcWardMod(TierPower.GetReferenceWard(playerLevel));
+            return SkillFormula.CalcWardMod(TierPower.GetTargetWard(monsterLevel))
+                / SkillFormula.CalcWardMod(TierPower.GetTargetWard(playerLevel));
         }
 
-        return SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(monsterLevel))
-            / SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(playerLevel));
+        return SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(monsterLevel))
+            / SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(playerLevel));
     }
 
     /// <summary>
