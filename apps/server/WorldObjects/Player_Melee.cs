@@ -499,7 +499,18 @@ partial class Player
             {
                 var selfDamage = Math.Max(Convert.ToInt32(0.1f * meter * staminaCost), 1);
 
+                // Fury can never kill: this runs while the attack itself is still being set up (melee and missile both),
+                // and nothing here starts the death sequence, so a lethal injury used to leave the player standing at 0 health,
+                // treated as dead by everything (no regeneration, no attacks, no respawn) with no way out but logging off
+                selfDamage = Math.Min(selfDamage, (int)Health.Current - 1);
+
+                if (selfDamage <= 0)
+                {
+                    return;
+                }
+
                 UpdateVitalDelta(Health, -selfDamage);
+                DamageHistory.Add(this, DamageType.Health, (uint)selfDamage);
 
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
