@@ -490,6 +490,12 @@ partial class Player
 
     private void CheckForFurySelfDamage(int staminaCost)
     {
+        // a player who is already dying can't be hurt any further
+        if (IsDead || IsInDeathProcess)
+        {
+            return;
+        }
+
         if (FuryStanceIsActive || FuryEnrageIsActive)
         {
             var meter = FuryStanceIsActive ? AdrenalineMeter : EnrageLevel;
@@ -499,7 +505,7 @@ partial class Player
             {
                 var selfDamage = Math.Max(Convert.ToInt32(0.1f * meter * staminaCost), 1);
 
-                // Fury can never kill: this runs while the attack itself is still being set up (melee and missile both),
+                // Fury can never kill (nor can Overload, to match): this runs while the attack itself is still being set up (melee and missile both),
                 // and nothing here starts the death sequence, so a lethal injury used to leave the player standing at 0 health,
                 // treated as dead by everything (no regeneration, no attacks, no respawn) with no way out but logging off
                 selfDamage = Math.Min(selfDamage, (int)Health.Current - 1);

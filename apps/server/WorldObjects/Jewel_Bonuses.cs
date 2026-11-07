@@ -315,6 +315,12 @@ partial class Jewel
             return;
         }
 
+        // a player who is already dying can't be hurt any further, nor die a second time
+        if (playerAttacker.IsDead || playerAttacker.IsInDeathProcess)
+        {
+            return;
+        }
+
         if (damage is <= 0 or > uint.MaxValue)
         {
             return;
@@ -339,6 +345,8 @@ partial class Jewel
         {
             return;
         }
+
+        playerAttacker.IsInDeathProcess = true;
 
         var lastDamager = playerAttacker.DamageHistory.LastDamager;
         playerAttacker.OnDeath(lastDamager, DamageType.Health);
