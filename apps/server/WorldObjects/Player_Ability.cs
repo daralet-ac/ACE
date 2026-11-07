@@ -798,7 +798,7 @@ partial class Player
         {
             if (BatteryStanceIsActive)
             {
-                var batteryItem = GetInventoryItemsOfWCID(1051132);
+                var batteryItem = GetInventoryItemsOfWCID(1051134);
                 if (batteryItem.Count > 0)
                 {
                     EnchantmentManager.StartCooldown(batteryItem[0]);
@@ -1832,7 +1832,7 @@ partial class Player
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Smokescreen can only be used with a Vagabond Focus, Archer Focus, or Spellsword Focus",
+                            $"Smokescreen can only be used with a Vagabond Focus, Archer Focus, or Sorcerer Focus",
                             ChatMessageType.Broadcast
                         )
                     );
@@ -1847,7 +1847,7 @@ partial class Player
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Backstab can only be used with a Vagabond Focus, Archer Focus, or Spellsword Focus",
+                            $"Backstab can only be used with a Vagabond Focus, Archer Focus, or Sorcerer Focus",
                             ChatMessageType.Broadcast
                         )
                     );

@@ -138,6 +138,47 @@ public class DamageFormulaTests
         Assert.AreEqual(1.0f, DamageFormulas.GetCombatSkillDamageBonus(0, 1000), 0.001);
     }
 
+    [TestMethod]
+    public void CleaveDamageMods_MultishotFallbackIsHalfACleave()
+    {
+        Assert.AreEqual(0.5f, DamageFormulas.CleaveDamageMod);
+        Assert.AreEqual(0.25f, DamageFormulas.MultishotFallbackDamageMod);
+    }
+
+    [TestMethod]
+    public void PowerMod_GoesFromHalfToThreeQuartersTimesTheRefillPayback()
+    {
+        // no wait before the next attack: just the power curve
+        Assert.AreEqual(0.5f, DamageFormulas.GetPowerMod(0.0f, 1.0f, 0.0f), Tolerance);
+        Assert.AreEqual(0.75f, DamageFormulas.GetPowerMod(1.0f, 1.0f, 0.0f), Tolerance);
+
+        // a full bar waits a second: a 1 second swing pays back 2 seconds
+        Assert.AreEqual(1.5f, DamageFormulas.GetPowerMod(1.0f, 1.0f, 1.0f), Tolerance);
+
+        // no attack length to measure against
+        Assert.AreEqual(0.75f, DamageFormulas.GetPowerMod(1.0f, 0.0f, 1.0f), Tolerance);
+    }
+
+    [TestMethod]
+    public void PowerMod_DamagePerSecondDoesNotDependOnTheRefillTime()
+    {
+        // damage over an attack and its refill is the same per second however long the refill takes, so a faster refill
+        // (SPEC BONUS - Dual Wield) speeds up attacks without raising their damage per second
+        const float swing = 0.6f;
+
+        foreach (var power in new[] { 0.25f, 0.5f, 1.0f })
+        {
+            var expected = DamageFormulas.GetPowerMod(power, swing, 0.0f) / swing;
+
+            foreach (var refill in new[] { power, power / 1.25f, power / 2.0f })
+            {
+                var perSecond = DamageFormulas.GetPowerMod(power, swing, refill) / (swing + refill);
+
+                Assert.AreEqual(expected, perSecond, Tolerance, $"power {power}, refill {refill}");
+            }
+        }
+    }
+
     // ---- Mitigation
 
     [TestMethod]
