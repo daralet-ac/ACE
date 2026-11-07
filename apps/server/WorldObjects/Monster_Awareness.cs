@@ -1338,6 +1338,13 @@ partial class Creature
                 continue;
             }
 
+            // a Captain of the Guard fights only what the town event gives it, or what hits it: a guard or other Human
+            // waking nearby would otherwise hand it their target, even a town's hen or rabbit
+            if (nearbyCreature.IsTownCaptain)
+            {
+                continue;
+            }
+
             if (
                 CreatureType != null && CreatureType == nearbyCreature.CreatureType
                 || FriendType != null && FriendType == nearbyCreature.CreatureType
