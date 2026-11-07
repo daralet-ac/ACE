@@ -93,6 +93,24 @@ partial class Player
             actionChain.EnqueueChain();
         }
 
+        // A player is only ever saved at 0 health when a death never finished (a revive heals them before they can log off).
+        // Entering the world like that leaves them dead with nothing that will ever stand them back up, so they come back
+        // with three quarters of their vitals, as a revive would have given them. Set before SendSelf, so the client is
+        // only ever told about the healed values.
+        if (Health.Current == 0)
+        {
+            _log.Warning(
+                "[DEATH] {Player} (0x{Guid}) logged in at 0 health, restoring their vitals",
+                Name,
+                Guid
+            );
+
+            Health.Current = (uint)Math.Round(Health.MaxValue * 0.75f);
+            Stamina.Current = Math.Max(Stamina.Current, (uint)Math.Round(Stamina.MaxValue * 0.75f));
+            Mana.Current = Math.Max(Mana.Current, (uint)Math.Round(Mana.MaxValue * 0.75f));
+            ChangesDetected = true;
+        }
+
         // SendSelf will trigger the entrance into portal space
         SendSelf();
 

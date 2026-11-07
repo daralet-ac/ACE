@@ -351,6 +351,72 @@ partial class Player
     private static readonly TimeSpan MaximumTeleportTime = TimeSpan.FromMinutes(5);
 
     /// <summary>
+    /// How long a player may sit at 0 health, partway through dying, before they are sent to their lifestone anyway.
+    /// A normal death takes a few seconds of falling plus a few more in portal space, so this is many times that.
+    /// </summary>
+    private const double StuckDeathRecoverySeconds = 60.0;
+
+    /// <summary>
+    /// When this player was first seen at 0 health while dying, or null
+    /// </summary>
+    private double? zeroHealthSinceTime;
+
+    /// <summary>
+    /// A watchdog for players left at 0 health with no death under way, or with a death that never finished.
+    /// Everything treats a player at 0 health as dead (no regeneration, no attacking, no taking damage), so without this
+    /// they are stuck until they log off, and while a death is unfinished they can't even do that.
+    /// Anything that takes a player's health without starting the death sequence is a bug of its own; this only makes sure
+    /// such a bug can't strand them.
+    /// </summary>
+    private void CheckStuckAtZeroHealth(double currentUnixTime)
+    {
+        if (Health.Current > 0)
+        {
+            zeroHealthSinceTime = null;
+            return;
+        }
+
+        // a death in progress heals them while they are in portal space: wait for it to arrive
+        if (Teleporting)
+        {
+            return;
+        }
+
+        if (!IsInDeathProcess)
+        {
+            _log.Warning(
+                "[DEATH] {Player} (0x{Guid}) was at 0 health without dying, starting the death sequence",
+                Name,
+                Guid
+            );
+
+            zeroHealthSinceTime = null;
+            IsInDeathProcess = true;
+            OnDeath(DamageHistory.LastDamager, DamageType.Health);
+            Die();
+            return;
+        }
+
+        zeroHealthSinceTime ??= currentUnixTime;
+
+        if (currentUnixTime - zeroHealthSinceTime.Value < StuckDeathRecoverySeconds)
+        {
+            return;
+        }
+
+        _log.Warning(
+            "[DEATH] {Player} (0x{Guid}) has been dying at 0 health for over {Seconds} seconds, sending them to their lifestone",
+            Name,
+            Guid,
+            StuckDeathRecoverySeconds
+        );
+
+        zeroHealthSinceTime = null;
+        IsBusy = false;
+        ThreadSafeTeleportOnDeath();
+    }
+
+    /// <summary>
     /// Called every ~5 seconds for Players
     /// </summary>
     public override void Heartbeat(double currentUnixTime)
@@ -368,6 +434,8 @@ partial class Player
         LifestoneProtectionTick();
 
         PK_DeathTick();
+
+        CheckStuckAtZeroHealth(currentUnixTime);
 
         GagsTick();
 
