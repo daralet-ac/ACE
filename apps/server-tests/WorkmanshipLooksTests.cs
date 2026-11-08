@@ -24,7 +24,29 @@ public class WorkmanshipLooksTests
     [TestMethod]
     public void Parse_ReadsFiveHexOrDecimalIds()
     {
-        CollectionAssert.AreEqual(new[] { Battered, Worn, Plain, Fine, Pristine }, WorkmanshipLooks.Parse(List));
+        var entries = WorkmanshipLooks.Parse(List);
+        CollectionAssert.AreEqual(new[] { Battered, Worn, Plain, Fine, Pristine }, System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(entries, e => e[0])));
+        Assert.IsTrue(System.Array.TrueForAll(entries, e => e.Length == 1));
+    }
+
+    [TestMethod]
+    public void Alternatives_EachItemKeepsOneOfTheEntrysLooks()
+    {
+        const uint BatteredB = 0x1000088E;
+        var two = "0x1000088A|0x1000088E,0x1000088B,0x10000139,0x1000088C,0x1000088D";
+        var seen = new HashSet<uint>();
+        for (uint guid = 0x80000000; guid < 0x80000040; guid++)
+        {
+            var look = WorkmanshipLooks.Resolve(Plain, two, 1, guid);
+            Assert.IsTrue(look == Battered || look == BatteredB, $"guid {guid:X8}");
+            Assert.AreEqual(look, WorkmanshipLooks.Resolve(Plain, two, 2, guid), "the same item always draws the same look");
+            seen.Add(look.Value);
+        }
+
+        Assert.AreEqual(2, seen.Count, "both looks are used");
+        // The plain look is found among single entries, and either battered look counts as being in the list.
+        Assert.AreEqual(Worn, WorkmanshipLooks.Resolve(BatteredB, two, 3, 0x80000001));
+        Assert.IsNull(WorkmanshipLooks.Parse("0x1000088A|,0x1000088B,0x10000139,0x1000088C,0x1000088D"));
     }
 
     [TestMethod]
