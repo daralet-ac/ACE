@@ -435,19 +435,16 @@ partial class Player
 
     public override uint GetEffectiveAttackSkill()
     {
-        var weapon = GetEquippedWeapon();
         var weaponSkill = GetCurrentWeaponSkill();
         var attackSkill = GetCreatureSkill(weaponSkill).Current;
         double? offenseMod = 1.0;
 
         offenseMod = GetWeaponOffenseModifier(this) + GetGearAttackModNotInCurrent(weaponSkill);
 
-        var accuracyMod = GetAccuracySkillMod(weapon);
-
+        // the accuracy bar no longer adds attack skill: it already raises missile damage (GetPowerMod), and on top of
+        // a Medium attack height it gave missile weapons more attack skill than any other weapon
         attackSkill = (uint)
-            Math.Round(
-                attackSkill * accuracyMod * ((float)offenseMod + GetSecondaryAttributeMod(GetCurrentAttackSkill()))
-            );
+            Math.Round(attackSkill * ((float)offenseMod + GetSecondaryAttributeMod(GetCurrentAttackSkill())));
 
         //if (IsExhausted)
         //attackSkill = GetExhaustedSkill(attackSkill);
@@ -718,7 +715,9 @@ partial class Player
     }
 
     /// <summary>
-    /// Scales from -50% modifier to +100% (Retail was -50% to +50%)
+    /// The power (or accuracy) bar's damage multiplier for this hit: x0.5 at no power to x0.75 at full, times the share
+    /// of the attack that pays back the bar's refill time (DamageFormulas.GetPowerMod). Over time, a full bar deals 1.5x
+    /// the damage of an empty one, whatever the weapon's speed.
     /// </summary>
     public override float GetPowerMod(WorldObject weapon)
     {
@@ -755,41 +754,33 @@ partial class Player
             multistrike = 3;
         }
 
-        var animMod = (float)((currentAnimLength + GetPowerAccuracyBar() / multistrike) / currentAnimLength);
+        var powerLevel = GetPowerAccuracyBar();
 
-        //Console.WriteLine($"\n--------- {weapon.Name} {Math.Round(GetPowerAccuracyBar() * 100, 0)}% ---------\n" +
+        // the real wait before the next attack: Dual Wield specialization refills the bar faster (Player_Melee)
+        var refillTime = weapon.IsRanged ? powerLevel : powerLevel * GetMeleeRefillTimeMod();
+
+        //Console.WriteLine($"\n--------- {weapon.Name} {Math.Round(powerLevel * 100, 0)}% ---------\n" +
         //    $"CurrentAnimLength: {currentAnimLength}\n" +
-        //    $"AnimMod: {animMod}");
+        //    $"RefillTime: {refillTime}");
 
-        if (weapon.IsRanged)
-        {
-            return (float)(Math.Pow(GetPowerAccuracyBar() / 2, 2) + 0.5) * animMod;
-        }
-        else
-        {
-            return (float)(Math.Pow(GetPowerAccuracyBar() / 2, 2) + 0.5) * animMod;
-        }
+        return DamageFormulas.GetPowerMod(powerLevel, (float)currentAnimLength, refillTime / multistrike);
     }
 
     /// <summary>
-    /// Accuracy Skill Mod ranges from 1 to 1.1 (+0% to +10%)
-    /// (the accuracy bar now also grants crit mods)
+    /// SPEC BONUS - Dual Wield: the power bar refills 25% faster after a dual wield attack.
+    /// Returns the share of the bar's level the refill takes, in seconds per full bar (1.0 without the bonus).
     /// </summary>
-    public override float GetAccuracySkillMod(WorldObject weapon)
+    public float GetMeleeRefillTimeMod()
     {
-        if (weapon != null && weapon.IsRanged)
-        {
-            var accuracyMod = 1 + (AccuracyLevel / 10);
+        var isDualWieldSpec = GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
 
-            //Console.WriteLine($"GetAccuracyMod - AccuracyLevel: {AccuracyLevel}, AccuracyMod: {accuracyMod}");
-
-            return accuracyMod;
-        }
-        else
-        {
-            return 1.0f;
-        }
+        return IsDualWieldAttack && isDualWieldSpec ? 1.0f / DualWieldSpecSpeedBonus : 1.0f;
     }
+
+    /// <summary>
+    /// SPEC BONUS - Dual Wield: dual wield attacks swing 25% faster, and the power bar refills 25% faster after them
+    /// </summary>
+    public const float DualWieldSpecSpeedBonus = 1.25f;
 
     /// <summary>
     /// Accuracy Crit Chance Mod ranges from 0 to 0.1. This is added to DamageEvent.CriticalChance

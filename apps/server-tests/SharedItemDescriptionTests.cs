@@ -159,4 +159,28 @@ public class SharedItemDescriptionTests
     {
         Assert.AreEqual(ACE.Server.WorldObjects.WorldObject.CrushingBlowScale, MarketRepository.CrushingBlowScale, 1e-6);
     }
+
+    /// <summary>Each socket's jewel, as appraisal lists them: the legacy string first, then the socket's own properties.</summary>
+    [TestMethod]
+    public void EachSocketsJewelIsDescribed()
+    {
+        var json = "{\"WeenieType\":6,\"PropertiesInt\":{\"ItemType\":1,\"JewelSockets\":3,"
+            + "\"JewelSocket2Material\":15,\"JewelSocket2Quality\":5},"
+            + "\"PropertiesString\":{\"Name\":\"Sword\",\"LegacyJewelSocketString1\":\"Flawless/Imperial Topaz/of Rending/x/1/y\"}}";
+
+        var (listing, _) = MarketRepository.Describe(new SnapshotItemFacts(json, new Dictionary<string, object> { ["ItemWeenieClassId"] = 351u }));
+
+        Assert.AreEqual(3, listing.Sockets);
+        CollectionAssert.AreEqual(new[] { "Imperial Topaz (10)", "Black Garnet (5)", "" }, listing.SocketJewels);
+    }
+
+    [TestMethod]
+    public void AnItemWithoutSocketsHasNoSocketJewels()
+    {
+        var json = "{\"WeenieType\":6,\"PropertiesInt\":{\"ItemType\":1},\"PropertiesString\":{\"Name\":\"Sword\"}}";
+
+        var (listing, _) = MarketRepository.Describe(new SnapshotItemFacts(json, new Dictionary<string, object> { ["ItemWeenieClassId"] = 351u }));
+
+        Assert.IsNull(listing.SocketJewels);
+    }
 }

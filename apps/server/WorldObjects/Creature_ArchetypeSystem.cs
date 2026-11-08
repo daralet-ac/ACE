@@ -1165,8 +1165,8 @@ partial class Creature
         var playerEvadeChance = 1 - SkillCheck.GetSkillChance((int)enemyAttackSkill, (int)weightedPlayerMeleeDef);
         var playerEvadeDamageReduction = 1 - (playerEvadeChance * 0.5f);
 
-        // player armor: the reference player's (TierPower), whose armor doubles every tier
-        var weightedPlayerArmorReduction = SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(tier, statWeight));
+        // player armor: the middle of the tier's rolls (TierPower), which doubles every tier
+        var weightedPlayerArmorReduction = SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(tier, statWeight));
 
         //player life protection
         var playerLifeProtReduction = avgPlayerLifeProtReduction[tier];
@@ -1253,8 +1253,8 @@ partial class Creature
         var playerResistDamageReduction = 1 - (playerResistChance * 0.5f);
 
         // player armor
-        // player ward: the reference player's (TierPower), whose ward doubles every tier
-        var weightedPlayerWardReduction = SkillFormula.CalcWardMod(TierPower.GetReferenceWard(tier, statWeight));
+        // player ward: the middle of the tier's rolls (TierPower), which doubles every tier
+        var weightedPlayerWardReduction = SkillFormula.CalcWardMod(TierPower.GetTargetWard(tier, statWeight));
 
         //player life protection
         var playerLifeProtReduction = avgPlayerLifeProtReduction[tier];

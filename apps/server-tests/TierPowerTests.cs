@@ -53,9 +53,9 @@ public class TierPowerTests
     }
 
     [TestMethod]
-    public void Monsters_CleanHealthWithArmorAndWardClimbingEveryTier()
+    public void Monsters_HealthWithArmorAndWardClimbingEveryTier()
     {
-        float[] health = [20, 100, 175, 300, 500, 800, 1250, 2000, 3000];
+        float[] health = [30, 150, 262.5f, 450, 750, 1200, 1875, 3000, 4500];
 
         for (var i = 0; i < TierStarts.Length; i++)
         {
@@ -66,6 +66,22 @@ public class TierPowerTests
                 Assert.IsTrue(TierPower.GetMonsterArmorWard(TierStarts[i]) > TierPower.GetMonsterArmorWard(TierStarts[i - 1]), $"L{TierStarts[i]}");
             }
         }
+    }
+
+    [TestMethod]
+    public void Monsters_AreBuiltForTheMiddleOfEachTiersGear()
+    {
+        Assert.AreEqual(1.5f, TierPower.TargetGearMultiplier);
+
+        // the middle of T6's 1600-3200 armor roll
+        Assert.AreEqual(2400f, TierPower.GetTargetArmor(50), 1e-3);
+        Assert.AreEqual(TierPower.GetReferenceWard(50) * 1.5f, TierPower.GetTargetWard(50), 1e-3);
+
+        // monster melee damage, which divides by the armor's mod: up about 47% at T6, and 17% at T1
+        var t6 = SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(50)) / SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(50));
+        var t1 = SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(0)) / SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(0));
+        Assert.AreEqual(1.47f, t6, 0.01f);
+        Assert.AreEqual(1.17f, t1, 0.01f);
     }
 
     [TestMethod]

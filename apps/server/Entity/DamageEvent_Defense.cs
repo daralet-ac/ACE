@@ -252,8 +252,6 @@ public partial class DamageEvent
     /// </summary>
     private void SetAttackAndDefenseSkills()
     {
-        _accuracyMod = _attacker.GetAccuracySkillMod(Weapon);
-
         EffectiveAttackSkill = (uint)(
             _attacker.GetEffectiveAttackSkill() * LevelScaling.GetPlayerAttackSkillScalar(_playerAttacker, _defender)
         );

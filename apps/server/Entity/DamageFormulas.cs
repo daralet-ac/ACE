@@ -15,6 +15,18 @@ internal static class DamageFormulas
     public const float GlancingBlowMod = 0.5f;
 
     /// <summary>
+    /// Damage multiplier for a cleave hit: a melee cleave onto a nearby target
+    /// </summary>
+    public const float CleaveDamageMod = 0.5f;
+
+    /// <summary>
+    /// COMBAT ABILITY - Multishot: damage multiplier for a bonus projectile that found no other enemy and falls back on the
+    /// main target. Multishot is mainly for groups; on a lone target its two fallback arrows add half a shot, not a
+    /// full one.
+    /// </summary>
+    public const float MultishotFallbackDamageMod = 0.25f;
+
+    /// <summary>
     /// Returns the chance (0-1) to evade an attack.
     /// COMBAT ABILITY - Smokescreen: 10% of the remaining chance to be hit becomes chance to evade.
     /// </summary>
@@ -114,6 +126,26 @@ internal static class DamageFormulas
         var damageMod = 0.5f * SkillCheck.GetSkillChance(moddedCombatSkill, defenderPhysicalDefense);
 
         return 1.0f + (float)damageMod;
+    }
+
+    /// <summary>
+    /// The power bar's damage bonus for one hit (Player.GetPowerMod): the power curve, from x0.5 at no power to x0.75 at
+    /// full, times a share of the swing that pays back the time the bar takes to refill before the next attack, so a
+    /// fuller bar is worth its wait.
+    /// <para>attackLength is the attack's length (a multi-strike weapon's per strike), refillTime the real wait before
+    /// the next attack (also per strike). Dual Wield specialization refills the bar faster, so its refill time is shorter
+    /// than the bar's level: paying back the bar's level instead would add damage for time that is never spent.</para>
+    /// </summary>
+    public static float GetPowerMod(float powerLevel, float attackLength, float refillTime)
+    {
+        var powerCurve = Math.Pow(powerLevel / 2, 2) + 0.5;
+
+        if (attackLength <= 0)
+        {
+            return (float)powerCurve;
+        }
+
+        return (float)(powerCurve * (attackLength + refillTime) / attackLength);
     }
 
     /// <summary>

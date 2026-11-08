@@ -298,6 +298,103 @@ public partial class MarketRepository
         ("GearLightningBane", "Astyrrian's Bane"), ("GearFrigidProtection", "Frigid Resistance"),
     };
 
+    // The quality words a legacy socket string starts with (Jewel.JewelQualityStringToValue in the server).
+    private static readonly string[] JewelQualityWords =
+    {
+        "Scuffed", "Flawed", "Mediocre", "Fine", "Admirable", "Superior", "Excellent", "Magnificent", "Peerless", "Flawless",
+    };
+
+    // Each socket's jewel, the way AppraiseInfo.SetJewelcraftingUseText reads them: JewelSocket<n>Material and
+    // JewelSocket<n>Quality, except that the first two sockets' legacy strings ("quality/material/name/property/amount/gem",
+    // LegacyJewelSocketString1 and 2) win when set and not "Empty". "Black Garnet (5)", or "" for an empty socket.
+    internal static List<string>? ComputeSocketJewels(int? sockets, string? allPropertiesIntRaw, string? legacy1, string? legacy2)
+    {
+        if (sockets is not > 0)
+        {
+            return null;
+        }
+
+        System.Text.Json.JsonElement? ints = null;
+        System.Text.Json.JsonDocument? doc = null;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(allPropertiesIntRaw))
+            {
+                doc = System.Text.Json.JsonDocument.Parse(allPropertiesIntRaw);
+                ints = doc.RootElement;
+            }
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // unreadable: every socket shows as empty rather than the whole description failing
+        }
+
+        int? Int(string name)
+        {
+            return ints is { ValueKind: System.Text.Json.JsonValueKind.Object } root && root.TryGetProperty(name, out var el)
+                && el.TryGetInt32(out var value) ? value : null;
+        }
+
+        var jewels = new List<string>();
+
+        using (doc)
+        {
+            for (var i = 0; i < Math.Min(sockets.Value, 10); i++)
+            {
+                string? material = null;
+                var quality = Int($"JewelSocket{i + 1}Quality");
+
+                if (Int($"JewelSocket{i + 1}Material") is { } materialType
+                    && MaterialTypeNames.TryGetValue(materialType, out var materialName))
+                {
+                    material = SpaceWords(materialName);
+                }
+
+                var legacy = i == 0 ? legacy1 : i == 1 ? legacy2 : null;
+
+                if (legacy is not null and not "Empty")
+                {
+                    var parts = legacy.Split('/');
+
+                    if (parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]))
+                    {
+                        material = parts[1];
+                    }
+
+                    var word = Array.IndexOf(JewelQualityWords, parts[0]);
+
+                    if (word >= 0)
+                    {
+                        quality = word + 1;
+                    }
+                }
+
+                jewels.Add(material != null && quality is >= 1 ? $"{material} ({quality})" : "");
+            }
+        }
+
+        return jewels;
+    }
+
+    // "BlackGarnet" as the game writes it, "Black Garnet".
+    private static string SpaceWords(string name)
+    {
+        var sb = new System.Text.StringBuilder(name.Length + 4);
+
+        for (var i = 0; i < name.Length; i++)
+        {
+            if (i > 0 && char.IsUpper(name[i]) && !char.IsUpper(name[i - 1]))
+            {
+                sb.Append(' ');
+            }
+
+            sb.Append(name[i]);
+        }
+
+        return sb.ToString();
+    }
+
     private static readonly (int Value, string Numeral)[] RomanNumerals =
     {
         (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
@@ -818,6 +915,8 @@ public partial class MarketRepository
             Workmanship = itemWorkmanship,
             NumTimesTinkered = facts.Int("NumTimesTinkeredRaw"),
             Sockets = sockets,
+            SocketJewels = ComputeSocketJewels(sockets, allPropertiesIntRaw, facts.Text("LegacyJewelSocket1Raw"),
+                facts.Text("LegacyJewelSocket2Raw")),
             ElementalDamageBonus = facts.Int("ElementalDamageBonusRaw"),
             WeaponOffense = facts.Double("WeaponOffenseRaw"),
             WeaponWarMagicMod = facts.Double("WeaponWarMagicModRaw"),

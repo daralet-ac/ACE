@@ -81,22 +81,15 @@ public static class ArmorPenetration
     }
 
     /// <summary>
-    /// A player's average armor and ward against the reference player's (TierPower), which wears the bottom of each
-    /// tier's x1-x2 roll range: the middle of that range. Tinks and clothing push real kits higher, so raise this if
-    /// players' equipped armor shows they average more.
-    /// </summary>
-    public const float PlayerReferenceMultiplier = 1.5f;
-
-    /// <summary>
     /// The average armor on one body part at the defender's level: a monster's from the archetype system, a player's
-    /// from the middle of the reference player's roll range
+    /// the middle of the tier's roll range (TierPower.TargetGearMultiplier)
     /// </summary>
     public static float GetReferenceArmor(Creature defender)
     {
         var level = Math.Max(1, defender.Level ?? 1);
 
         return defender is Player
-            ? TierPower.GetReferenceArmor(level) * PlayerReferenceMultiplier
+            ? TierPower.GetTargetArmor(level)
             : TierPower.GetMonsterArmorWard(level);
     }
 
@@ -108,7 +101,7 @@ public static class ArmorPenetration
         var level = Math.Max(1, defender.Level ?? 1);
 
         return defender is Player
-            ? TierPower.GetReferenceWard(level) * PlayerReferenceMultiplier
+            ? TierPower.GetTargetWard(level)
             : TierPower.GetMonsterArmorWard(level);
     }
 }

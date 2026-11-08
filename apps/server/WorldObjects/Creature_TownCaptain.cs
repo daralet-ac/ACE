@@ -109,7 +109,7 @@ partial class Creature
     /// </summary>
     private bool TownCaptainKeepTarget()
     {
-        if (AttackTarget is Creature && IsAttackTargetValid())
+        if (AttackTarget is Creature target && IsAttackTargetValid() && !TownCaptainIgnores(target))
         {
             return true;
         }
@@ -117,6 +117,15 @@ partial class Creature
         TownCaptainDropTarget();
         return false;
     }
+
+    /// <summary>
+    /// A target the Captain leaves alone however it got one: a player or a pet, or a harmless creature (a hen, a rabbit)
+    /// that hasn't hit it, unless the town event sent it there
+    /// </summary>
+    private bool TownCaptainIgnores(Creature target) =>
+        target is Player
+        || target is CombatPet
+        || target.IsHarmless && !(TownCaptainOnDuty && target.TownEvent != null) && !PhysicsObj.ObjMaint.RetaliateTargetsContainsKey(target.Guid.Full);
 
     /// <summary>
     /// With nothing to fight: walks back to its post, and goes off duty there, facing the way it stood

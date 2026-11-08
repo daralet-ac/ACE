@@ -444,11 +444,8 @@ partial class Player
                 Attacking = false;
 
                 // powerbar refill timing
-                var isDualWieldSpec =
-                    GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
-                var dualWieldSpecBonus = (IsDualWieldAttack && isDualWieldSpec) ? 1.25f : 1.0f; // Dual Wield Spec Bonus: +25% faster refill time
-
-                var refillMod = 1.0f / dualWieldSpecBonus;
+                // SPEC BONUS - Dual Wield: +25% faster refill time (GetPowerMod pays back this shorter wait)
+                var refillMod = GetMeleeRefillTimeMod();
 
                 PowerLevel = AttackQueue.Fetch();
 
@@ -490,6 +487,12 @@ partial class Player
 
     private void CheckForFurySelfDamage(int staminaCost)
     {
+        // a player who is already dying can't be hurt any further
+        if (IsDead || IsInDeathProcess)
+        {
+            return;
+        }
+
         if (FuryStanceIsActive || FuryEnrageIsActive)
         {
             var meter = FuryStanceIsActive ? AdrenalineMeter : EnrageLevel;
@@ -499,7 +502,18 @@ partial class Player
             {
                 var selfDamage = Math.Max(Convert.ToInt32(0.1f * meter * staminaCost), 1);
 
+                // Fury can never kill (nor can Overload, to match): this runs while the attack itself is still being set up (melee and missile both),
+                // and nothing here starts the death sequence, so a lethal injury used to leave the player standing at 0 health,
+                // treated as dead by everything (no regeneration, no attacks, no respawn) with no way out but logging off
+                selfDamage = Math.Min(selfDamage, (int)Health.Current - 1);
+
+                if (selfDamage <= 0)
+                {
+                    return;
+                }
+
                 UpdateVitalDelta(Health, -selfDamage);
+                DamageHistory.Add(this, DamageType.Health, (uint)selfDamage);
 
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
@@ -533,7 +547,7 @@ partial class Player
         var baseSpeed = GetAttackAnimSpeed(baseAnimLength, attackFrames.Count, target as Creature);
 
         var isDualWieldSpec = GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
-        var animSpeedMod = (IsDualWieldAttack && isDualWieldSpec) ? 1.25f : 1.0f; // Dual Wield Spec Bonus: +25% faster dual-wield swing animation
+        var animSpeedMod = (IsDualWieldAttack && isDualWieldSpec) ? DualWieldSpecSpeedBonus : 1.0f; // Dual Wield Spec Bonus: +25% faster dual-wield swing animation
 
         if (WeaponMasterIsActive && GetEquippedMeleeWeapon() is { WeaponSkill: Skill.Sword } && GetPowerAccuracyBar() >= 0.5)
         {

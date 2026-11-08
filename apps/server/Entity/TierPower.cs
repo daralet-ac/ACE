@@ -9,12 +9,14 @@ namespace ACE.Server.Entity;
 ///
 /// Built up from player armor (docs/tier-difficulty-scaling.md):
 ///  - Armor and ward double every tier. The reference player wears the bottom roll of their tier's armor and ward.
-///  - Monsters take 1% x tier of the reference player's health per second (T2 2% ... T8 8%), so reaching up a tier
-///    means much more damage taken.
+///  - Monsters are built for the middle of a tier's gear (TargetGearMultiplier), not the bottom: a player in it meets
+///    the damage and kill-time targets below, and a bottom-roll player has a harder time until they find better gear.
+///  - Monsters take 1% x tier of that player's health per second (T2 2% ... T8 8%), so reaching up a tier means much
+///    more damage taken.
 ///  - Weapon damage doubles every tier. Like armor, a tier's weapons roll from its target DPS (the bottom roll, about
 ///    6% of a same-tier reference player's health per second in PvP) up to the next tier's.
-///  - Monster health grows about x1.6 a tier in clean numbers, and armor is solved from it so a reference player
-///    (bottom rolls) kills a same-level monster in 5 s at T1, then 10 + (tier - 1) x 10/7 s at each tier start (T8 20 s).
+///  - Monster health grows about x1.6 a tier, and armor is solved from it so a player in mid-range gear kills a
+///    same-level monster in 5 s at T1, then 10 + (tier - 1) x 10/7 s at each tier start (T8 20 s).
 ///  - Casters and launchers share one set of multiplier ranges. Like melee, each tier rolls x1-x2: the bottom roll with
 ///    the tier's spell level or ammo deals the target DPS, the top double it. The ranges climb x1.41 a tier and spell
 ///    and ammo base damage carry the rest, so a tier's range overlaps the next one's.
@@ -29,6 +31,12 @@ public static class TierPower
     /// </summary>
     public static readonly int[] TierStartLevels = [1, 10, 20, 30, 40, 50, 75, 100, 125];
 
+    /// <summary>
+    /// The gear monsters are built for, against the reference player's bottom rolls: the middle of each tier's x1-x2
+    /// roll range. Lower it to make monsters easier, along with MonsterHealthTable, which is sized for the same gear.
+    /// </summary>
+    public const float TargetGearMultiplier = 1.5f;
+
     // --- by level (tier start) ---
 
     // the bottom Covenant armor roll of each tier
@@ -37,17 +45,17 @@ public static class TierPower
     // the ward of a full bottom-roll kit (9 Covenant pieces, shirt, pants, necklace, 2 rings, 2 bracelets)
     private static readonly float[] ReferenceWardTable = [48, 97, 194, 388, 776, 1552, 3104, 6208, 12416];
 
-    // % of the reference player's health a same-level monster takes per second
+    // % of a mid-range geared player's health a same-level monster takes per second
     private static readonly float[] IncomingPercentTable = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-    // seconds for a reference player to kill a same-level monster
+    // seconds for a mid-range geared player to kill a same-level monster
     private static readonly float[] KillTimeTable = [5.0f, 11.43f, 12.86f, 14.29f, 15.71f, 17.14f, 18.57f, 20.0f, 21.43f];
 
-    // clean numbers growing about x1.6 a tier, so the damage a player's hits land grows steadily
-    private static readonly float[] MonsterHealthTable = [20, 100, 175, 300, 500, 800, 1250, 2000, 3000];
+    // growing about x1.6 a tier, so the damage a player's hits land grows steadily; x1.5 for mid-range gear's damage
+    private static readonly float[] MonsterHealthTable = [30, 150, 262.5f, 450, 750, 1200, 1875, 3000, 4500];
 
-    // solved from the health: armor = 100 x kill time x reference DPS against no armor / health - 100, for the
-    // reference player at the tier's first level with the tier's bottom weapon roll
+    // solved from the health: armor = 100 x kill time x DPS against no armor / health - 100, for a player at the tier's
+    // first level. Mid-range gear's DPS and the health are both x1.5 of the bottom roll's, so that cancels
     private static readonly float[] MonsterArmorWardTable = [10, 20, 102, 192, 310, 493, 784, 1173, 1838];
 
     /// <summary>
@@ -148,6 +156,20 @@ public static class TierPower
     public static float GetReferenceWard(float level) => AtLevel(ReferenceWardTable, level);
 
     public static float GetReferenceWard(int tierIndex, float weight) => Interpolate(ReferenceWardTable, tierIndex, weight);
+
+    /// <summary>
+    /// The armor monsters are built against: the middle of the tier's roll range (TargetGearMultiplier)
+    /// </summary>
+    public static float GetTargetArmor(float level) => GetReferenceArmor(level) * TargetGearMultiplier;
+
+    public static float GetTargetArmor(int tierIndex, float weight) => GetReferenceArmor(tierIndex, weight) * TargetGearMultiplier;
+
+    /// <summary>
+    /// The ward monsters are built against, as GetTargetArmor()
+    /// </summary>
+    public static float GetTargetWard(float level) => GetReferenceWard(level) * TargetGearMultiplier;
+
+    public static float GetTargetWard(int tierIndex, float weight) => GetReferenceWard(tierIndex, weight) * TargetGearMultiplier;
 
     public static float GetIncomingPercent(int tierIndex, float weight) => Interpolate(IncomingPercentTable, tierIndex, weight);
 

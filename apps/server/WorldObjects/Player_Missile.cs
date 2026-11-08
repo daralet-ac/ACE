@@ -310,12 +310,13 @@ partial class Player
         var linkTime = MotionTable.GetAnimationLength(MotionTableId, motionStance, MotionCommand.Reload, MotionCommand.Ready);
         //var cycleTime = MotionTable.GetCycleLength(MotionTableId, CurrentMotionState.Stance, MotionCommand.Ready);
 
-        // stamina cost and accuracy damage bonus for missile attacks were tuned against about half of the attack time
-        const float missileAttackLengthScale = 0.55f;
-        LastAttackAnimationLength = (linkTime + launchTime + reloadTime) * missileAttackLengthScale;
-        //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime} (BaseReload: {reloadTime*animSpeed}), Link: {linkTime}, TOTAL: {LastAttackAnimationLength}");
+        var attackTime = linkTime + launchTime + reloadTime;
 
-        var staminaCost = GetAttackStamina((float)LastAttackAnimationLength, weapon);
+        // the accuracy bar's damage (GetPowerMod) pays back its refill against this share of the attack
+        LastAttackAnimationLength = attackTime * MissilePowerAttackLengthScale;
+        //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime} (BaseReload: {reloadTime*animSpeed}), Link: {linkTime}, TOTAL: {attackTime}");
+
+        var staminaCost = GetAttackStamina(attackTime * MissileStaminaAttackLengthScale, weapon);
         UpdateVitalDelta(Stamina, -staminaCost);
 
         if (Stamina.Current < 1 && EvasiveStanceIsActive)
@@ -405,6 +406,20 @@ partial class Player
         }
     }
 
+    /// <summary>
+    /// The share of a missile attack's time that stamina costs are tuned against. Missile stamina was tuned against about
+    /// half of the attack time (a double division by the animation speed, kept as this scale by the attack speed rework).
+    /// </summary>
+    private const float MissileStaminaAttackLengthScale = 0.55f;
+
+    /// <summary>
+    /// The share of a missile attack's time the accuracy bar's damage pays back its refill against (GetPowerMod).
+    /// It used to share the stamina scale, 0.55: paying back a full bar against about half the attack made a full
+    /// accuracy bar worth ~43% more damage over time for a bow than a full power bar for a melee weapon (crossbows,
+    /// atlatls and thrown weapons ~32-34%). At 0.65 it's ~28% (bows) and ~21-23% (the others).
+    /// </summary>
+    private const float MissilePowerAttackLengthScale = 0.65f;
+
     // bonus projectiles can only hit creatures this close to the main target
     private const float MissileCleaveRange = 10.0f;
 
@@ -416,7 +431,7 @@ partial class Player
     /// <summary>
     /// Fires the bonus projectiles for an attack.
     /// COMBAT ABILITY - Multishot: 2 bonus projectiles at nearby enemies. Any that can't find one fire at the main target
-    /// instead, where they deal half damage like melee cleaves.
+    /// instead, where they deal a quarter of a shot's damage (DamageFormulas.MultishotFallbackDamageMod).
     /// RATING - Slash: a bonus projectile at a nearby enemy, if there's one Multishot didn't already take.
     /// </summary>
     private void LaunchBonusProjectiles(

@@ -520,6 +520,13 @@ public class Session
             BeginDDDSentTime = DateTime.MinValue;
         }
 
+        // Pace by what the client has acknowledged. Sending as fast as the queue drains floods the client with UDP packets it can't keep up with,
+        // and anything it hasn't recovered by retransmit before the packet cache is pruned is lost for good, stalling the patch partway through.
+        if (Network.UnacknowledgedPacketCount >= PropertyManager.GetLong("ddd_max_unacked_packets").Item)
+        {
+            return;
+        }
+
         bool success;
         (uint DatFileId, DatDatabaseType DatDatabaseType) dataFile;
         lock (dddDataQueueLock)

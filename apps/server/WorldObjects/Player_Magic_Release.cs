@@ -404,6 +404,12 @@ partial class Player
             return;
         }
 
+        // a player who is already dying can't be hurt any further
+        if (IsDead || IsInDeathProcess)
+        {
+            return;
+        }
+
         var meter = OverloadStanceIsActive ? ManaChargeMeter : DischargeLevel;
         var chance = MagicFormulas.GetOverloadBacklashChance(meter);
 
@@ -413,6 +419,9 @@ partial class Player
         }
 
         var selfDamage = MagicFormulas.GetOverloadBacklashDamage(meter, spell.BaseMana);
+
+        // Overload can never kill, the same as Fury: a combat ability's own backlash leaves its user at 1 health at worst
+        selfDamage = Math.Min(selfDamage, (int)Health.Current - 1);
 
         if (selfDamage <= 0)
         {
@@ -428,14 +437,6 @@ partial class Player
                 ChatMessageType.CombatEnemy
             )
         );
-
-        if (!IsDead)
-        {
-            return;
-        }
-
-        OnDeath(DamageHistory.LastDamager, DamageType.Health);
-        Die();
     }
 
     private void FinishCast()

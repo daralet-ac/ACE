@@ -166,7 +166,8 @@ public partial class DamageEvent
     /// <summary>
     /// COMBAT ABILITY - Fury (Stance): Damage dealt and taken is increased by up to 25%. Attacking and
     /// taking damage builds up a Adrenaline meter. Adrenaline meter decreases over time.
-    /// COMBAT ABILITY - Fury (Enrage): Damage increased by Adrenaline build up amount (%) for 10 seconds.
+    /// COMBAT ABILITY - Fury (Enrage): Damage increased by Adrenaline build up amount (%) for 10 seconds, and damage
+    /// taken by up to 25% (the stance's drawback, at the level it was released at).
     /// </summary>
     private static float GetCombatAbilityFuryDamageBonus(Player playerAttacker, Player playerDefender)
     {
@@ -177,7 +178,12 @@ public partial class DamageEvent
             recklessMod += 0.25f * playerAttacker.AdrenalineMeter;
         }
 
-        if (playerDefender is { FuryStanceIsActive: true } or { FuryEnrageIsActive: true })
+        // an Enraged defender takes more damage for the adrenaline it spent: its meter is empty while it's Enraged
+        if (playerDefender is { FuryEnrageIsActive: true })
+        {
+            recklessMod += 0.25f * playerDefender.EnrageLevel;
+        }
+        else if (playerDefender is { FuryStanceIsActive: true })
         {
             recklessMod += 0.25f * playerDefender.AdrenalineMeter;
         }
