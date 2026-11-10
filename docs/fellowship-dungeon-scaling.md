@@ -35,6 +35,17 @@ two always agree.
   that to the target: 17.14 s (`TierPower.FellowshipKillTime`, the level 50 target) in a fellowship dungeon,
   or the monster level's kill time anywhere else.
 
+- **The player's side is read at their gear level.** Gear only steps up at a tier's first level, but the targets
+  climb all through the tier, so the player's half of the ratios above (target armor/ward, monster health, armor and
+  kill time) is read at `LevelScaling.GetGearLevel`: halfway from their tier's first level to their own level
+  (`GearLevelWeight`), never below the monster's level. A level 19 is judged at 14.5, a level 60 at 55. Without it a
+  level 19 needed 285 armor in a level 10 capstone, past the best T2 roll (200).
+- **Monsters are built for gear that climbs to mid-range by T6.** `TierPower`'s target gear multiplier is x1.0 at
+  T1, +0.1 a tier to x1.5 (the middle of each tier's x1-x2 roll) at T6, and x1.5 above. Low levels are mostly in
+  fresh bottom rolls; later levels have the tinkering and crafting to reach the middle of their tier. Because the
+  monster's level cancels in the ratios, a tier's multiplier only changes things for players whose gear level is in
+  that tier, not for anyone scaled down from above it.
+
 Outside fellowship dungeons the same rule means a Shrouded player kills a lower monster in that monster
 level's kill time, as a native does (for example a Shrouded level 100 against level 10 monsters: 11.43 s).
 

@@ -82,7 +82,7 @@ public static class ArmorPenetration
 
     /// <summary>
     /// The average armor on one body part at the defender's level: a monster's from the archetype system, a player's
-    /// the middle of the tier's roll range (TierPower.TargetGearMultiplier)
+    /// the gear monsters are built for (TierPower.GetTargetArmor)
     /// </summary>
     public static float GetReferenceArmor(Creature defender)
     {

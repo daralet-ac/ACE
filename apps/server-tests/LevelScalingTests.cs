@@ -48,7 +48,10 @@ public class LevelScalingTests
             {
                 var ratio = LevelScaling.GetArmorWardModRatio(playerLevel, monsterLevel);
 
-                var average = SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(playerLevel));
+                // the player's side is read at their gear level
+                var gearLevel = LevelScaling.GetGearLevel(playerLevel, monsterLevel);
+
+                var average = SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(gearLevel));
                 var averageAtMonsterLevel = SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(monsterLevel));
 
                 Assert.AreEqual(averageAtMonsterLevel, average * ratio, 1e-5, $"level {playerLevel} vs {monsterLevel}");
@@ -57,13 +60,13 @@ public class LevelScalingTests
                 var wardRatio = LevelScaling.GetArmorWardModRatio(playerLevel, monsterLevel, ward: true);
                 Assert.AreEqual(
                     SkillFormula.CalcWardMod(TierPower.GetTargetWard(monsterLevel)),
-                    SkillFormula.CalcWardMod(TierPower.GetTargetWard(playerLevel)) * wardRatio,
+                    SkillFormula.CalcWardMod(TierPower.GetTargetWard(gearLevel)) * wardRatio,
                     1e-5,
                     $"ward, level {playerLevel} vs {monsterLevel}"
                 );
 
                 // and gear above the reference keeps the same edge over it
-                var good = SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(playerLevel) * 1.5f);
+                var good = SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(gearLevel) * 1.5f);
 
                 Assert.AreEqual(
                     good / average,
@@ -91,18 +94,20 @@ public class LevelScalingTests
         {
             for (var monsterLevel = LevelScaling.MinimumScaledLevel; monsterLevel <= playerLevel; monsterLevel += 5)
             {
-                // a reference player at their own level kills a same-level monster in that level's kill time; scaled
-                // to a lower monster, damage over its health gives the monster level's kill time
+                // a player in the target gear of their gear level kills a monster of that level in its kill time;
+                // scaled to a lower monster, damage over its health gives the monster level's kill time
+                var gearLevel = LevelScaling.GetGearLevel(playerLevel, monsterLevel);
+
                 var ratio = LevelScaling.GetDamageTakenRatio(playerLevel, monsterLevel, false);
-                var killTime = TierPower.GetKillTime(playerLevel)
-                    * TierPower.GetMonsterHealth(monsterLevel) / TierPower.GetMonsterHealth(playerLevel) / ratio;
+                var killTime = TierPower.GetKillTime(gearLevel)
+                    * TierPower.GetMonsterHealth(monsterLevel) / TierPower.GetMonsterHealth(gearLevel) / ratio;
 
                 Assert.AreEqual(TierPower.GetKillTime(monsterLevel), killTime, 1e-3, $"level {playerLevel} vs {monsterLevel}");
 
                 // fellowship dungeons use their own target, whatever the levels
                 var fellowshipRatio = LevelScaling.GetDamageTakenRatio(playerLevel, monsterLevel, true);
-                var fellowshipKillTime = TierPower.GetKillTime(playerLevel)
-                    * TierPower.GetMonsterHealth(monsterLevel) / TierPower.GetMonsterHealth(playerLevel) / fellowshipRatio;
+                var fellowshipKillTime = TierPower.GetKillTime(gearLevel)
+                    * TierPower.GetMonsterHealth(monsterLevel) / TierPower.GetMonsterHealth(gearLevel) / fellowshipRatio;
 
                 Assert.AreEqual(TierPower.FellowshipKillTime, fellowshipKillTime, 1e-3, $"fellowship, level {playerLevel} vs {monsterLevel}");
             }
@@ -112,6 +117,42 @@ public class LevelScalingTests
         Assert.AreEqual(1.0f, LevelScaling.GetDamageTakenRatio(50, 50, false), 1e-5);
         Assert.AreEqual(11.43f, TierPower.GetKillTime(10), 1e-3);
         Assert.AreEqual(17.14f, TierPower.FellowshipKillTime, 1e-3);
+    }
+
+    [TestMethod]
+    public void GearLevel_HalfwayFromTheTiersFirstLevelAndNeverBelowTheMonster()
+    {
+        // a level 15 or 19 in T2 gear is judged at 12.5 or 14.5 against a level 10 capstone, not at their own level
+        Assert.AreEqual(10f, LevelScaling.GetGearLevel(10, 10), 1e-5);
+        Assert.AreEqual(12.5f, LevelScaling.GetGearLevel(15, 10), 1e-5);
+        Assert.AreEqual(14.5f, LevelScaling.GetGearLevel(19, 10), 1e-5);
+        Assert.AreEqual(20f, LevelScaling.GetGearLevel(20, 10), 1e-5);
+        Assert.AreEqual(55f, LevelScaling.GetGearLevel(60, 10), 1e-5);
+        Assert.AreEqual(62f, LevelScaling.GetGearLevel(74, 10), 1e-5);
+        Assert.AreEqual(112.5f, LevelScaling.GetGearLevel(125, 10), 1e-5);
+
+        // never below the monster: a level 15 against a level 13 monster is judged at 13, so scaling changes nothing
+        Assert.AreEqual(13f, LevelScaling.GetGearLevel(15, 13), 1e-5);
+        Assert.AreEqual(1.0f, LevelScaling.GetArmorWardModRatio(15, 13), 1e-6);
+        Assert.AreEqual(1.0f, LevelScaling.GetDamageTakenRatio(15, 13, false), 1e-5);
+
+        // a player below the monster (scaled up in a fellowship dungeon) keeps their own level
+        Assert.AreEqual(8f, LevelScaling.GetGearLevel(8, 10), 1e-5);
+    }
+
+    [TestMethod]
+    public void GearLevel_TheBackOfATierIsJudgedWithinReachOfItsGear()
+    {
+        // T2 armor rolls 100-200 from level 10 until T3 at level 20. Judged at their own level, a level 19 needed 285
+        // armor, past the best T2 roll; judged at their gear level it's within the roll
+        var gearLevel = LevelScaling.GetGearLevel(19, 10);
+
+        Assert.IsTrue(TierPower.GetTargetArmor(gearLevel) < 200f, $"{TierPower.GetTargetArmor(gearLevel)}");
+        Assert.IsTrue(TierPower.GetTargetArmor(gearLevel) < TierPower.GetTargetArmor(19));
+
+        // and a level 19's damage is measured against a monster that's less tough than a level 19's
+        Assert.IsTrue(LevelScaling.GetDamageTakenRatio(19, 10, true) > TierPower.GetMonsterHealth(10) / TierPower.GetMonsterHealth(19)
+            * TierPower.GetKillTime(19) / TierPower.FellowshipKillTime);
     }
 
     [TestMethod]

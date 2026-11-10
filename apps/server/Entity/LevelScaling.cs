@@ -32,6 +32,11 @@ public static class LevelScaling
      * player's gear is at their own level, it's worth the same at every lower level too. See
      * GetPlayerArmorWardModScalar() and GetScaledPlayerDefenseSkill().
      *
+     * Gear only steps up at the start of a tier, but the targets climb through it, so the player's side of the
+     * gear-based ratios (armor/ward, and the monster health, armor and kill time their damage is measured against)
+     * is read at their gear level (GetGearLevel): halfway from their tier's first level to their own, as player
+     * health and skills already are (GetRangeAndStatWeight), and never below the monster's level.
+     *
      * Monster stats and the reference player they're authored against come from TierPower, the same tables
      * Creature_ArchetypeSystem builds monsters from, so the two always agree.
      *
@@ -144,7 +149,7 @@ public static class LevelScaling
         }
 
 
-        var statAtPlayerLevel = GetMonsterHealthAtLevel(player.Level.Value);
+        var statAtPlayerLevel = GetMonsterHealthAtLevel(GetGearLevel(player.Level.Value, monster.Level.Value));
         var statAtMonsterLevel = GetMonsterHealthAtLevel(monster.Level.Value);
 
         var fellowship = monster.CurrentLandblock?.IsFellowshipRequired() == true;
@@ -169,15 +174,46 @@ public static class LevelScaling
 
     /// <summary>
     /// The scalar on a Shrouded player's damage to a monster. The health ratio (and the monster's armor/ward, scaled
-    /// separately) leaves the player killing it in the kill-time target of their own level; the kill-time ratio
-    /// moves that to the target of the monster's level, or the fellowship target in a fellowship-required dungeon.
+    /// separately) leaves the player killing it in the kill-time target of their gear level (GetGearLevel); the
+    /// kill-time ratio moves that to the target of the monster's level, or the fellowship target in a
+    /// fellowship-required dungeon.
     /// </summary>
     internal static float GetDamageTakenRatio(int playerLevel, int monsterLevel, bool fellowship)
     {
-        var healthRatio = GetMonsterHealthAtLevel(monsterLevel) / GetMonsterHealthAtLevel(playerLevel);
+        var gearLevel = GetGearLevel(playerLevel, monsterLevel);
+
+        var healthRatio = GetMonsterHealthAtLevel(monsterLevel) / GetMonsterHealthAtLevel(gearLevel);
         var killTimeTarget = fellowship ? TierPower.FellowshipKillTime : TierPower.GetKillTime(monsterLevel);
 
-        return healthRatio * TierPower.GetKillTime(playerLevel) / killTimeTarget;
+        return healthRatio * TierPower.GetKillTime(gearLevel) / killTimeTarget;
+    }
+
+    /// <summary>
+    /// How far from their tier's first level to their own a scaled player's gear is judged (GetGearLevel): 0 judges
+    /// the whole tier at its first level, 1 at the player's own level
+    /// </summary>
+    public const float GearLevelWeight = 0.5f;
+
+    /// <summary>
+    /// The level a scaled player's gear is judged at. Gear only steps up at a tier's first level (armor's wield level,
+    /// weapons' attribute requirement), while the targets climb all through the tier, so a level 19 in the best T2
+    /// gear was held to targets near T3's. This is halfway from the tier's first level to the player's own
+    /// (GearLevelWeight), for the attributes, skills and crafting that do grow within a tier.
+    ///
+    /// Never below the monster's level, so scaling never leaves a player stronger than meeting it unscaled, and a
+    /// player scaled up to a higher monster (in a fellowship dungeon) keeps their own level.
+    /// </summary>
+    internal static float GetGearLevel(int playerLevel, int monsterLevel)
+    {
+        if (playerLevel <= monsterLevel)
+        {
+            return playerLevel;
+        }
+
+        var tierStart = TierPower.GetTierStartLevel(playerLevel);
+        var gearLevel = tierStart + (playerLevel - tierStart) * GearLevelWeight;
+
+        return Math.Max(gearLevel, monsterLevel);
     }
 
     /// <summary>
@@ -230,7 +266,7 @@ public static class LevelScaling
         }
 
 
-        var statAtPlayerLevel = GetMonsterArmorWardAtLevel(player.Level.Value);
+        var statAtPlayerLevel = GetMonsterArmorWardAtLevel(GetGearLevel(player.Level.Value, monster.Level.Value));
         var statAtMonsterLevel = GetMonsterArmorWardAtLevel(monster.Level.Value);
 
         if (PropertyManager.GetBool("debug_level_scaling_system").Item)
@@ -514,20 +550,22 @@ public static class LevelScaling
     }
 
     /// <summary>
-    /// Scales a player's armor/ward mod from their level to the monster's. Monster damage is authored against the
-    /// target armor (melee) or ward (spells) at the monster's level (TierPower), so armor as far above or below the
-    /// target at the player's level is worth the same against the monster.
+    /// Scales a player's armor/ward mod from their gear level (GetGearLevel) to the monster's level. Monster damage is
+    /// authored against the target armor (melee) or ward (spells) at the monster's level (TierPower), so armor as far
+    /// above or below the target at the player's gear level is worth the same against the monster.
     /// </summary>
     internal static float GetArmorWardModRatio(int playerLevel, int monsterLevel, bool ward = false)
     {
+        var gearLevel = GetGearLevel(playerLevel, monsterLevel);
+
         if (ward)
         {
             return SkillFormula.CalcWardMod(TierPower.GetTargetWard(monsterLevel))
-                / SkillFormula.CalcWardMod(TierPower.GetTargetWard(playerLevel));
+                / SkillFormula.CalcWardMod(TierPower.GetTargetWard(gearLevel));
         }
 
         return SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(monsterLevel))
-            / SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(playerLevel));
+            / SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(gearLevel));
     }
 
     /// <summary>
@@ -620,12 +658,12 @@ public static class LevelScaling
     }
 
     // monsters are built from these (Creature_ArchetypeSystem), interpolated the same way
-    internal static float GetMonsterHealthAtLevel(int level)
+    internal static float GetMonsterHealthAtLevel(float level)
     {
         return TierPower.GetMonsterHealth(level);
     }
 
-    internal static float GetMonsterArmorWardAtLevel(int level)
+    internal static float GetMonsterArmorWardAtLevel(float level)
     {
         return TierPower.GetMonsterArmorWard(level);
     }
