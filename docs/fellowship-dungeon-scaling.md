@@ -36,10 +36,16 @@ two always agree.
   or the monster level's kill time anywhere else.
 
 - **The player's side is read at their gear level.** Gear only steps up at a tier's first level, but the targets
-  climb all through the tier, so the player's half of the ratios above (target armor/ward, monster health, armor and
-  kill time) is read at `LevelScaling.GetGearLevel`: halfway from their tier's first level to their own level
-  (`GearLevelWeight`), never below the monster's level. A level 19 is judged at 14.5, a level 60 at 55. Without it a
-  level 19 needed 285 armor in a level 10 capstone, past the best T2 roll (200).
+  climb all through the tier, so the player's half of the ratios above is read at a gear level, never below the
+  monster's level (`LevelScaling.GetGearLevel`):
+  - armor and ward at their tier's first level (`ArmorWardGearLevelWeight` 0): they only change with the next
+    tier's set, which has a level requirement. A level 19's armor is worth what a level 10's is.
+  - the monster health, armor and kill time their damage is measured against halfway from their tier's first level
+    to their own (`DamageGearLevelWeight` 0.5), for the attributes and skills that grow within a tier. A level 19 is
+    judged at 14.5, a level 60 at 55.
+
+  Without it a level 19 needed 285 armor in a level 10 capstone, past the best T2 roll (200). With it the same gear
+  grows about 1.4x as hard (health lost per kill) from a tier's first level to its last, in every tier.
 - **Monsters are built for gear that climbs to mid-range by T6.** `TierPower`'s target gear multiplier is x1.0 at
   T1, +0.1 a tier to x1.5 (the middle of each tier's x1-x2 roll) at T6, and x1.5 above. Low levels are mostly in
   fresh bottom rolls; later levels have the tinkering and crafting to reach the middle of their tier. Because the
