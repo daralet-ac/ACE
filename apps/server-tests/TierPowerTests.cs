@@ -55,7 +55,8 @@ public class TierPowerTests
     [TestMethod]
     public void Monsters_HealthWithArmorAndWardClimbingEveryTier()
     {
-        float[] health = [30, 150, 262.5f, 450, 750, 1200, 1875, 3000, 4500];
+        // bottom-roll health (20, 100, 175 ... 3000) times each tier's target gear multiplier
+        float[] health = [20, 110, 210, 390, 700, 1200, 1875, 3000, 4500];
 
         for (var i = 0; i < TierStarts.Length; i++)
         {
@@ -69,19 +70,45 @@ public class TierPowerTests
     }
 
     [TestMethod]
-    public void Monsters_AreBuiltForTheMiddleOfEachTiersGear()
+    public void Monsters_AreBuiltForGearClimbingToTheMiddleOfTheTierByT6()
     {
-        Assert.AreEqual(1.5f, TierPower.TargetGearMultiplier);
+        // x1.0 at T1, +0.1 a tier to x1.5 (the middle of each tier's x1-x2 roll) at T6, and x1.5 from there
+        float[] multiplier = [1.0f, 1.1f, 1.2f, 1.3f, 1.4f, 1.5f, 1.5f, 1.5f, 1.5f];
 
-        // the middle of T6's 1600-3200 armor roll
+        for (var i = 0; i < TierStarts.Length; i++)
+        {
+            var level = TierStarts[i] == 1 ? 0 : TierStarts[i];
+
+            Assert.AreEqual(multiplier[i], TierPower.GetTargetGearMultiplier(level), 1e-5, $"L{TierStarts[i]}");
+            Assert.AreEqual(TierPower.GetReferenceArmor(level) * multiplier[i], TierPower.GetTargetArmor(level), 1e-2, $"armor, L{TierStarts[i]}");
+            Assert.AreEqual(TierPower.GetReferenceWard(level) * multiplier[i], TierPower.GetTargetWard(level), 1e-2, $"ward, L{TierStarts[i]}");
+        }
+
+        // interpolated through a tier like the other tables, and never past x1.5 above level 125
+        Assert.AreEqual(1.15f, TierPower.GetTargetGearMultiplier(15), 1e-5);
+        Assert.AreEqual(1.5f, TierPower.GetTargetGearMultiplier(275), 1e-5);
+
+        // T2 is built for 110 armor, inside its 100-200 roll; T6 for the middle of its 1600-3200 roll
+        Assert.AreEqual(110f, TierPower.GetTargetArmor(10), 1e-3);
         Assert.AreEqual(2400f, TierPower.GetTargetArmor(50), 1e-3);
-        Assert.AreEqual(TierPower.GetReferenceWard(50) * 1.5f, TierPower.GetTargetWard(50), 1e-3);
 
-        // monster melee damage, which divides by the armor's mod: up about 47% at T6, and 17% at T1
+        // monster melee damage, which divides by the armor's mod: up about 47% at T6 over bottom-roll gear, 5% at T2
         var t6 = SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(50)) / SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(50));
+        var t2 = SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(10)) / SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(10));
         var t1 = SkillFormula.CalcArmorMod(TierPower.GetReferenceArmor(0)) / SkillFormula.CalcArmorMod(TierPower.GetTargetArmor(0));
         Assert.AreEqual(1.47f, t6, 0.01f);
-        Assert.AreEqual(1.17f, t1, 0.01f);
+        Assert.AreEqual(1.05f, t2, 0.01f);
+        Assert.AreEqual(1.0f, t1, 1e-5);
+    }
+
+    [TestMethod]
+    public void TierStartLevel_IsTheFirstLevelOfTheTier()
+    {
+        Assert.AreEqual(1, TierPower.GetTierStartLevel(9));
+        Assert.AreEqual(10, TierPower.GetTierStartLevel(10));
+        Assert.AreEqual(10, TierPower.GetTierStartLevel(19));
+        Assert.AreEqual(50, TierPower.GetTierStartLevel(74));
+        Assert.AreEqual(100, TierPower.GetTierStartLevel(275));
     }
 
     [TestMethod]
