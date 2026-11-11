@@ -818,6 +818,10 @@ public static class DefaultPropertyManager
 
         ("frigid_damage", new Property<bool>(true, "if TRUE, players standing on snow terrain above elevation 200 take Frigid damage each heartbeat")),
 
+        ("ps_global", new Property<bool>(true, "(non-retail function) if TRUE, portal storms happen in resonance zones that have them. FALSE stops every one")),
+        ("sz_global", new Property<bool>(true, "(non-retail function) if TRUE, shroud zones are active in resonance zones that have them. FALSE turns every one off")),
+        ("use_cloak_proc_custom_scale", new Property<bool>(false, "if TRUE, cloaks proc at the rates cloak_cooldown_seconds, cloak_max_proc_base, cloak_min_proc_base and cloak_max_proc_damage_percentage set, instead of ACE's own formula (5 second cooldown, 25% top chance, 15% for -200 cloaks). This affects cloaks with any proc, including -200")),
+
         ("rested_xp", new Property<bool>(true, "(non-retail function) if TRUE, players build up rested experience while logged out, or in a town out of combat mode, and their kills earn rested_xp_bonus more experience until it's used up (/rested). Turning it off stops both, and keeps what each player has")),
 
         ("debug_threat_system", new Property<bool>(false, "enable this to see threat system console logging")),
@@ -902,11 +906,23 @@ public static class DefaultPropertyManager
         ("ignore_magic_armor_pvp_scalar", new Property<double>(1.0, "Scales the effectiveness of IgnoreMagicArmor (ie. hollow weapons) in pvp battles. 1.0 = full effectiveness / ignore all enchantments on armor (default), 0.5 = half effectiveness / use half enchantments from armor, 0.0 = no effectiveness / use full enchantments from armor")),
         ("ignore_magic_resist_pvp_scalar", new Property<double>(1.0, "Scales the effectiveness of IgnoreMagicResist (ie. hollow weapons) in pvp battles. 1.0 = full effectiveness / ignore all resistances from life enchantments (default), 0.5 = half effectiveness / use half resistances from life enchantments, 0.0 = no effectiveness / use full resistances from life enchantments")),
         ("luminance_modifier", new Property<double>(1.0, "Scales the amount of luminance received by players")),
+        ("quest_lum_modifier", new Property<double>(0, "(non-retail function) scales the luminance quests give, on top of luminance_modifier. 0 gives none: this was its value before it was listed, unless the database set it")),
+        ("cloak_cooldown_seconds", new Property<double>(5, "the least time between cloak procs, in seconds, with use_cloak_proc_custom_scale on")),
+        ("cloak_max_proc_base", new Property<double>(0.25, "the base highest chance a cloak procs, 0 to 1, with use_cloak_proc_custom_scale on (for -200 cloaks too)")),
+        ("cloak_max_proc_damage_percentage", new Property<double>(30, "with use_cloak_proc_custom_scale on, the percent of a player's health a hit must take for a cloak's highest proc chance")),
+        ("cloak_min_proc_base", new Property<double>(0, "the lowest chance a cloak procs, 0 to 1, with use_cloak_proc_custom_scale on")),
         ("melee_max_angle", new Property<double>(0.0, "for melee players, the maximum angle before a TurnTo is required. retail appeared to have required a TurnTo even for the smallest of angle offsets.")),
         ("mob_awareness_range", new Property<double>(1.0, "Scales the distance the monsters become alerted and aggro the players")),
         ("pk_new_character_grace_period", new Property<double>(300, "the number of seconds, in addition to pk_respite_timer, that a player killer is set to non-player killer status after first exiting training academy")),
         ("pk_respite_timer", new Property<double>(300, "the number of seconds that a player killer is set to non-player killer status after dying to another player killer")),
         ("ps_cap", new Property<double>(8, "number of players required to trigger a portal storm")),
+        ("ps_cooldown", new Property<double>(120, "(non-retail function) seconds after a portal storm before another can start in the same landblock")),
+        ("ps_delay", new Property<double>(2, "(non-retail function) seconds between a portal storm reaching ps_cap and its players being teleported away")),
+        ("ps_interval", new Property<double>(60, "(non-retail function) seconds between checks of each resonance zone for a portal storm")),
+        ("rz_teleport_clearance", new Property<double>(0.5, "(non-retail function) meters of clearance above the ground a player is teleported to by a shroud zone or portal storm")),
+        ("sz_shroudmsg", new Property<double>(60, "(non-retail function) seconds between the messages a shrouded player gets inside a shroud zone")),
+        ("sz_warnmsg", new Property<double>(10, "(non-retail function) seconds between the warning messages a player gets at a shroud zone's outer edge")),
+        ("sz_warnswirl", new Property<double>(2.5, "(non-retail function) seconds between the warning swirls shown at a shroud zone's outer edge")),
         ("quest_mindelta_rate", new Property<double>(1.0, "scales all quest min delta time between solves, 1 being normal")),
         ("rare_drop_rate_percent", new Property<double>(0.04, "Adjust the chance of a rare to spawn as a percentage. Default is 0.04, or 1 in 2,500. Max is 100, or every eligible drop.")),
         ("rz_maxfall", new Property<double>(2, "maximum allowed vertical drop (in meters) when teleporting players via shroud or portal storm")),
@@ -934,6 +950,7 @@ public static class DefaultPropertyManager
 
     public static readonly ReadOnlyDictionary<string, Property<string>> DefaultStringProperties = DictOf(
         ("content_folder", new Property<string>("Content", "for content creators to live edit weenies. defaults to Content folder found in same directory as ACE.Server.dll")),
+        ("turbine_chat_webhook", new Property<string>("", "a Discord webhook URL that global chat channels are posted to. Empty posts nothing")),
         ("rested_xp_rate_curve", new Property<string>(ACE.Server.Entity.RestedXpCurve.Default, "(non-retail function) how fast rested experience builds up at each level, in percent of the level's XP cost an hour: pieces of level:start:less, each for the levels above its level, start less \"less\" for each level past it. The default is 10% to level 10, then 10% less 0.225% a level (1% at 50), then 1% less 0.02% a level past 50 (nothing from 100). A curve that can't be read uses the default. See rested_xp")),
         ("capstone_instanced_dungeons", new Property<string>("*", "Capstone dungeons that open as a private instance for each fellowship, not as one of their numbered copies. * is every one (the default), or a comma separated list of dungeon names as they are in the AssignCapstoneDungeon emote. Empty means every dungeon uses its copies.")),
         ("dat_older_warning_msg", new Property<string>("Your DAT files are incomplete.\nThis server does not support dynamic DAT updating at this time.\nPlease visit https://emulator.ac/how-to-play to download the complete DAT files.", "Warning message displayed (if show_dat_warning is true) to player if client attempts DAT download from server")),
