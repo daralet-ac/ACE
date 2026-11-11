@@ -79,7 +79,7 @@ public static class RestedXpRules
 
     /// <summary>
     /// An hour's rest at this level, as a fraction of the level's cost: rested_xp_rate_curve's (RestedXpCurve: 10% to
-    /// level 10, 2% at 50, 0.98% at 51, nothing from 100), but never under rested_xp_min_levels_per_hour (0 to start;
+    /// level 10, 1% at 50, nothing from 100), but never under rested_xp_min_levels_per_hour (0 to start;
     /// raise it to keep higher levels resting).
     /// </summary>
     public static double LevelsPerHour(int level, Settings settings)
