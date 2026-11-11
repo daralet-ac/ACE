@@ -31,6 +31,9 @@ public static class AdminUiAccess
         // game systems
         ["instances"] = AccessLevel.Developer,
 
+        // the same numbers as /serverstatus and /serverperformance, which are Developer
+        ["performance"] = AccessLevel.Developer,
+
         // region controls
         ["olthoinorth"] = AccessLevel.Admin,
         ["tidemage"] = AccessLevel.Admin,
@@ -56,6 +59,8 @@ public static class AdminUiAccess
         ["instances"] = Tabs["instances"],
         ["tidemage"] = Tabs["tidemage"],
         ["townevents"] = Tabs["townevents"],
+        ["perf"] = Tabs["performance"],
+        ["perftimers"] = Tabs["performance"],
         ["settings"] = Tabs["settings"],
         ["settingdocs"] = Tabs["settings"],
     };
@@ -88,6 +93,7 @@ public static class AdminUiAccess
         "modifylong",
         "modifydouble",
         "modifystring",
+        "serverperformance",
     };
 
     /// <summary>

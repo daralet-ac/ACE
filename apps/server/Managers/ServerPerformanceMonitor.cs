@@ -88,9 +88,10 @@ public static class ServerPerformanceMonitor
     private static DateTime last1hClear;
     private static DateTime last24hClear;
 
-    private static TimeSpan Monitors5mRunTime => DateTime.UtcNow - last5mClear;
-    private static TimeSpan Monitors1hRunTime => DateTime.UtcNow - last1hClear;
-    private static TimeSpan Monitors24hRunTime => DateTime.UtcNow - last24hClear;
+    // public for the Daralet Admin plugin's Performance tab (AdminUiPerformance), which shows how long each window has run
+    public static TimeSpan Monitors5mRunTime => DateTime.UtcNow - last5mClear;
+    public static TimeSpan Monitors1hRunTime => DateTime.UtcNow - last1hClear;
+    public static TimeSpan Monitors24hRunTime => DateTime.UtcNow - last24hClear;
 
     static ServerPerformanceMonitor()
     {
@@ -313,6 +314,21 @@ public static class ServerPerformanceMonitor
     public static TimedEventHistory GetEventHistory24h(MonitorType monitorType)
     {
         return monitors24h[(int)monitorType].EventHistory;
+    }
+
+    public static TimedEventHistory GetCumulativeHistory5m(CumulativeEventHistoryType eventHistoryType)
+    {
+        return cumulative5m[(int)eventHistoryType];
+    }
+
+    public static TimedEventHistory GetCumulativeHistory1h(CumulativeEventHistoryType eventHistoryType)
+    {
+        return cumulative1h[(int)eventHistoryType];
+    }
+
+    public static TimedEventHistory GetCumulativeHistory24h(CumulativeEventHistoryType eventHistoryType)
+    {
+        return cumulative24h[(int)eventHistoryType];
     }
 
     public static new string ToString()

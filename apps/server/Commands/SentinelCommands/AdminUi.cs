@@ -19,7 +19,7 @@ public class AdminUi
         CommandHandlerFlag.RequiresWorld,
         1,
         "Data feed for the Daralet Admin Decal plugin.",
-        "hello | players | fellowships | pois | instances | capstones | arenas | olthoinorth | tidemage | esper | townevents\n"
+        "hello | players | fellowships | pois | instances | capstones | arenas | olthoinorth | tidemage | esper | townevents | perf | perftimers\n"
             + "The plugin sends these itself and hides the replies from chat. See AdminUiProtocol for the reply format."
     )]
     public static void HandleAdminui(Session session, params string[] parameters)
@@ -82,6 +82,12 @@ public class AdminUi
                 // town event state belongs to the world thread: build the reply there, on the manager's next tick
                 TownEventManager.Enqueue(() => Send(session, kind, TownEventManager.GetAdminUiReport()));
                 return;
+            case "perf":
+                payload = AdminUiPerformance.Get();
+                break;
+            case "perftimers":
+                payload = AdminUiPerformance.GetTimers();
+                break;
             case "settings":
                 payload = AdminUiSettings.GetValues();
                 break;
@@ -91,7 +97,7 @@ public class AdminUi
             default:
                 CommandHandlerHelper.WriteOutputInfo(
                     session,
-                    $"Unknown @adminui request: {parameters[0]}. Use hello, players, fellowships, pois, instances, capstones, arenas, olthoinorth, tidemage, esper, townevents, settings or settingdocs.",
+                    $"Unknown @adminui request: {parameters[0]}. Use hello, players, fellowships, pois, instances, capstones, arenas, olthoinorth, tidemage, esper, townevents, perf, perftimers, settings or settingdocs.",
                     ChatMessageType.Broadcast
                 );
                 return;
