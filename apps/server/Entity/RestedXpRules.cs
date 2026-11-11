@@ -40,12 +40,14 @@ public static class RestedXpRules
     /// <param name="LevelsPerHour">An hour's rest before the level takes any off, as a fraction of the level's cost</param>
     /// <param name="LessPerLevel">What each of the player's levels takes off it, so low levels rest faster</param>
     /// <param name="MinLevelsPerHour">The least it comes to, however high the level</param>
+    /// <param name="SlowdownPerLevel">How much slower it builds for each full level's cost rested: 0.5 halves it</param>
     public readonly record struct Settings(
         bool Enabled,
         double LevelsPerHour,
         double LessPerLevel,
         double MinLevelsPerHour,
         double MaxLevels,
+        double SlowdownPerLevel,
         double Bonus
     )
     {
@@ -57,6 +59,7 @@ public static class RestedXpRules
                 PropertyManager.GetDouble("rested_xp_levels_per_hour_less_per_level").Item,
                 PropertyManager.GetDouble("rested_xp_min_levels_per_hour").Item,
                 PropertyManager.GetDouble("rested_xp_max_levels").Item,
+                PropertyManager.GetDouble("rested_xp_slowdown_per_level").Item,
                 PropertyManager.GetDouble("rested_xp_bonus").Item
             );
         }
@@ -87,24 +90,115 @@ public static class RestedXpRules
         return Math.Max(0, Math.Max(settings.MinLevelsPerHour, rate));
     }
 
-    /// <summary>How much rested XP a player of this level, costing this, builds up in an hour of rest.</summary>
+    /// <summary>
+    /// How much rested XP a player of this level, costing this, builds up in an hour of rest with less than a level's cost
+    /// rested. Past each full level's cost it builds slower (RateAt).
+    /// </summary>
     public static long PerHour(ulong levelCost, int level, Settings settings)
     {
         return (long)Math.Round(levelCost * LevelsPerHour(level, settings));
     }
 
     /// <summary>
-    /// The pool after resting this many seconds: it grows to the most and no further, but a pool already over the most (the
-    /// properties lowered since) isn't cut back.
+    /// An hour's rest with a pool this big: perHour, slowed by slowdown (0.5 halves it) for each full level's cost already
+    /// in the pool. With the defaults, full speed to a level's cost, then half speed to the most, a level and a half.
     /// </summary>
-    public static double Accrue(double pool, double seconds, long perHour, long max)
+    public static double RateAt(double pool, long perHour, long levelCost, double slowdown)
+    {
+        return perHour * Math.Pow(Keep(slowdown), FullLevels(pool, levelCost));
+    }
+
+    /// <summary>
+    /// The pool after resting this many seconds, slowing as it passes each level's cost: it grows to the most and no
+    /// further, but a pool already over the most (the properties lowered since) isn't cut back.
+    /// </summary>
+    public static double Accrue(double pool, double seconds, long perHour, long max, long levelCost, double slowdown)
     {
         if (seconds <= 0 || perHour <= 0 || pool >= max)
         {
             return pool;
         }
 
-        return Math.Min(max, pool + perHour * seconds / 3600);
+        return Walk(pool, seconds, perHour, max, levelCost, slowdown).Pool;
+    }
+
+    /// <summary>
+    /// Seconds of rest until a pool this big is full, slowing as it passes each level's cost, or null when it never will
+    /// be (nothing builds up, or a slowdown of 1 stops it at a level's cost). 0 when it's full already.
+    /// </summary>
+    public static double? SecondsToFull(double pool, long perHour, long max, long levelCost, double slowdown)
+    {
+        if (pool >= max)
+        {
+            return 0;
+        }
+
+        if (perHour <= 0)
+        {
+            return null;
+        }
+
+        var (end, seconds) = Walk(pool, double.PositiveInfinity, perHour, max, levelCost, slowdown);
+        return end >= max ? seconds : null;
+    }
+
+    /// <summary>
+    /// Rests up to this many seconds (infinity for as long as it takes), a stretch at each speed: to the next level's cost
+    /// at one, past it at the next. The pool it comes to, and the seconds that took.
+    /// </summary>
+    private static (double Pool, double Seconds) Walk(
+        double pool,
+        double seconds,
+        long perHour,
+        long max,
+        long levelCost,
+        double slowdown
+    )
+    {
+        var used = 0.0;
+        var keep = Keep(slowdown);
+        var levels = FullLevels(pool, levelCost);
+
+        while (pool < max && used < seconds)
+        {
+            var rate = perHour * Math.Pow(keep, levels);
+
+            if (rate <= 0)
+            {
+                break;
+            }
+
+            // counted on from where it started, not worked out from the pool again, which floating point could leave a
+            // hair under the level it just reached
+            var next = levelCost > 0 ? Math.Min(max, (levels + 1.0) * levelCost) : max;
+            var need = Math.Max(0, next - pool) / rate * 3600;
+            var left = seconds - used;
+
+            if (need >= left)
+            {
+                pool += rate * left / 3600;
+                used = seconds;
+                break;
+            }
+
+            pool = Math.Max(pool, next);
+            used += need;
+            levels++;
+        }
+
+        return (Math.Min(pool, max), used);
+    }
+
+    /// <summary>What's kept of the speed for each full level rested: 0.5 slowdown keeps half.</summary>
+    private static double Keep(double slowdown)
+    {
+        return 1 - Math.Clamp(slowdown, 0, 1);
+    }
+
+    /// <summary>How many full levels' cost the pool holds.</summary>
+    private static int FullLevels(double pool, long levelCost)
+    {
+        return levelCost > 0 ? (int)Math.Max(0, Math.Floor(pool / levelCost)) : 0;
     }
 
     /// <summary>The extra XP a kill worth this much earns from a pool this big: never more than is left in it.</summary>
@@ -118,15 +212,16 @@ public static class RestedXpRules
         return (long)Math.Min(Math.Floor(pool), Math.Round(amount * bonus));
     }
 
-    /// <summary>Seconds of rest until the pool is full, or 0 when it is already or isn't growing.</summary>
-    public static double SecondsToFull(PlayerUiRested rested)
+    /// <summary>Seconds of rest until the reply's pool is full, or null when it never will be.</summary>
+    public static double? SecondsToFull(PlayerUiRested rested)
     {
-        if (rested.PerHour <= 0 || rested.Rested >= rested.Max)
-        {
-            return 0;
-        }
+        return SecondsToFull(rested.Rested, rested.PerHour, rested.Max, rested.LevelCost, rested.SlowdownPerLevel);
+    }
 
-        return (rested.Max - rested.Rested) * 3600.0 / rested.PerHour;
+    /// <summary>An hour's rest with the reply's pool, slowed for each full level's cost in it.</summary>
+    public static long RateNow(PlayerUiRested rested)
+    {
+        return (long)Math.Round(RateAt(rested.Rested, rested.PerHour, rested.LevelCost, rested.SlowdownPerLevel));
     }
 
     /// <summary>What /rested says: the same as the Daralet Toolkit's XP bar shows, from the same reply.</summary>
@@ -140,7 +235,9 @@ public static class RestedXpRules
         var lines = new List<string>();
         var percent = rested.Max > 0 ? Math.Min(100, rested.Rested * 100 / rested.Max) : 0;
         var bonus = $"{Math.Round(rested.Bonus * 100):0}%";
-        var perHour = $"{rested.PerHour:N0}";
+        var perHour = $"{RateNow(rested):N0}";
+        var toFull = SecondsToFull(rested);
+        var fullIn = toFull is > 0 ? $", full in {Duration(toFull.Value)}" : "";
 
         lines.Add($"Rested experience: {rested.Rested:N0} of {rested.Max:N0} ({percent}%).");
 
@@ -156,7 +253,7 @@ public static class RestedXpRules
         lines.Add(
             rested.State switch
             {
-                Resting => $"You're resting: you gain {perHour} an hour here, full in {Duration(SecondsToFull(rested))}.",
+                Resting => $"You're resting: you gain {perHour} an hour here{fullIn}.",
                 InCombat => $"You're in a town, but don't rest in combat mode. Out of it you'd gain {perHour} an hour.",
                 Full => "You're fully rested.",
                 MaxLevel => "You're at the highest level, earning no experience: there's nothing to rest for.",
@@ -164,6 +261,20 @@ public static class RestedXpRules
                 _ => $"You're not resting. In a town out of combat mode, or logged out, you gain {perHour} an hour.",
             }
         );
+
+        // only once it's slowed, so nobody below a level's worth reads about it
+        if (
+            rested.SlowdownPerLevel > 0
+            && rested.LevelCost > 0
+            && rested.Rested >= rested.LevelCost
+            && rested.State is Resting or InCombat or Away
+        )
+        {
+            lines.Add(
+                $"It builds up {Math.Round(Math.Min(1, rested.SlowdownPerLevel) * 100):0}% slower for each full level's "
+                    + "worth you've rested."
+            );
+        }
 
         if (rested.EarnedThisSession > 0)
         {

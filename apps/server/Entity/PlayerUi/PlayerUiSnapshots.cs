@@ -121,9 +121,11 @@ public record PlayerUiCharacter(List<ACE.Server.WorldObjects.StatsSheetSection> 
 
 /// <summary>
 /// The player's rested experience (Player_RestedXp.cs), for the plugin's XP bar (in PlayerUiXp): what's left and the most
-/// there can be, the bonus kills earn from it (1.0 doubles their XP), how much an hour of rest adds, what's left since login, and
-/// State, one of RestedXpRules' words: resting, combat (in a town in combat mode), away (not in a town), full, maxlevel,
-/// norest (too high a level to build any up) or off. /rested says the same in words (RestedXpRules.Lines).
+/// there can be, the bonus kills earn from it (1.0 doubles their XP), how much an hour of rest adds while less than a level's
+/// cost is rested (PerHour), what kills have earned from it since login, and State, one of RestedXpRules' words: resting,
+/// combat (in a town in combat mode), away (not in a town), full, maxlevel, norest (too high a level to build any up) or
+/// off. Past each full LevelCost rested, an hour adds SlowdownPerLevel less (0.5 halves it: RestedXpRules.RateAt), which
+/// the plugin needs to say when it's full. /rested says the same in words (RestedXpRules.Lines).
 /// </summary>
 public record PlayerUiRested(
     bool Enabled,
@@ -132,7 +134,9 @@ public record PlayerUiRested(
     long Max,
     double Bonus,
     long PerHour,
-    long EarnedThisSession
+    long EarnedThisSession,
+    long LevelCost,
+    double SlowdownPerLevel
 );
 
 /// <summary>
