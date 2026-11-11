@@ -33,6 +33,9 @@ public static class RestedXpRules
     /// </summary>
     public const string NoRest = "norest";
 
+    /// <summary>Below rested_xp_min_level (10): nothing builds up yet, in town or logged out.</summary>
+    public const string LowLevel = "lowlevel";
+
     /// <summary>rested_xp is off.</summary>
     public const string Off = "off";
 
@@ -40,13 +43,17 @@ public static class RestedXpRules
     /// <param name="Curve">An hour's rest at each level (rested_xp_rate_curve)</param>
     /// <param name="MinLevelsPerHour">The least it comes to, however high the level</param>
     /// <param name="SlowdownPerLevel">How much slower it builds for each full level's cost rested: 0.5 halves it</param>
+    /// <param name="MinLevel">The level rest starts building at (rested_xp_min_level)</param>
+    /// <param name="OfflineRate">The share of the rate logged-out time gets (rested_xp_offline_rate): 0.5 is half</param>
     public readonly record struct Settings(
         bool Enabled,
         RestedXpCurve Curve,
         double MinLevelsPerHour,
         double MaxLevels,
         double SlowdownPerLevel,
-        double Bonus
+        double Bonus,
+        int MinLevel = 0,
+        double OfflineRate = 1
     )
     {
         public static Settings FromProperties()
@@ -57,7 +64,9 @@ public static class RestedXpRules
                 PropertyManager.GetDouble("rested_xp_min_levels_per_hour").Item,
                 PropertyManager.GetDouble("rested_xp_max_levels").Item,
                 PropertyManager.GetDouble("rested_xp_slowdown_per_level").Item,
-                PropertyManager.GetDouble("rested_xp_bonus").Item
+                PropertyManager.GetDouble("rested_xp_bonus").Item,
+                (int)PropertyManager.GetLong("rested_xp_min_level").Item,
+                PropertyManager.GetDouble("rested_xp_offline_rate").Item
             );
         }
     }
@@ -80,10 +89,16 @@ public static class RestedXpRules
     /// <summary>
     /// An hour's rest at this level, as a fraction of the level's cost: rested_xp_rate_curve's (RestedXpCurve: 10% to
     /// level 10, 1% at 50, nothing from 100), but never under rested_xp_min_levels_per_hour (0 to start;
-    /// raise it to keep higher levels resting).
+    /// raise it to keep higher levels resting). Nothing below rested_xp_min_level.
     /// </summary>
     public static double LevelsPerHour(int level, Settings settings)
     {
+        // too new a character: rest starts at rested_xp_min_level, so fresh alts bank nothing
+        if (level < settings.MinLevel)
+        {
+            return 0;
+        }
+
         var rate = settings.Curve?.LevelsPerHour(level) ?? 0;
         return Math.Max(0, Math.Max(settings.MinLevelsPerHour, rate));
     }
@@ -207,6 +222,12 @@ public static class RestedXpRules
         return levelCost > 0 ? (int)Math.Max(0, Math.Floor(pool / levelCost)) : 0;
     }
 
+    /// <summary>An hour logged out, as rested_xp_offline_rate has it: half an hour in town's to start.</summary>
+    public static long OfflinePerHour(long perHour, Settings settings)
+    {
+        return (long)Math.Round(perHour * Math.Max(0, settings.OfflineRate));
+    }
+
     /// <summary>The extra XP a kill worth this much earns from a pool this big: never more than is left in it.</summary>
     public static long Bonus(double pool, long amount, double bonus)
     {
@@ -256,7 +277,7 @@ public static class RestedXpRules
         {
             lines.Add($"Your kills earn {bonus} more experience, taken from it, until it's used up.");
         }
-        else if (rested.State != NoRest)
+        else if (rested.State is not (NoRest or LowLevel))
         {
             lines.Add($"With some, your kills would earn {bonus} more experience, taken from it.");
         }
@@ -269,7 +290,8 @@ public static class RestedXpRules
                 Full => "You're fully rested.",
                 MaxLevel => "You're at the highest level, earning no experience: there's nothing to rest for.",
                 NoRest => "You no longer build up rested experience at your level.",
-                _ => $"You're not resting. In a town out of combat mode, or logged out, you gain {perHour} an hour.",
+                LowLevel => $"You start building up rested experience at level {rested.MinLevel}.",
+                _ => $"You're not resting. {WhereYouRest(rested, perHour)}",
             }
         );
 
@@ -293,6 +315,25 @@ public static class RestedXpRules
         }
 
         return lines;
+    }
+
+    /// <summary>How fast in town and logged out, with the reply's offline rate.</summary>
+    private static string WhereYouRest(PlayerUiRested rested, string perHour)
+    {
+        var offline = Math.Max(0, rested.OfflineRate);
+
+        if (Math.Abs(offline - 1) < 1e-9)
+        {
+            return $"In a town out of combat mode, or logged out, you gain {perHour} an hour.";
+        }
+
+        if (offline <= 0)
+        {
+            return $"In a town out of combat mode you gain {perHour} an hour.";
+        }
+
+        var loggedOut = Math.Round(RateNow(rested) * offline);
+        return $"In a town out of combat mode you gain {perHour} an hour, and {loggedOut:N0} an hour logged out.";
     }
 
     /// <summary>45s, 12m, 3h 07m, 2d 04h.</summary>

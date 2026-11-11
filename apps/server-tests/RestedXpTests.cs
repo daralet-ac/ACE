@@ -263,5 +263,37 @@ public class RestedXpTests
         Assert.AreEqual("Rested experience: 1,500, 1.5 levels' worth.", lines[0]);
         StringAssert.Contains(lines[2], "you gain 500 an hour here.");
     }
+
+    [TestMethod]
+    public void NothingBuildsUpBelowTheLeastLevel()
+    {
+        var fromTen = Defaults with { MinLevel = 10 };
+
+        Assert.AreEqual(0, RestedXpRules.LevelsPerHour(9, fromTen), 1e-9);
+        Assert.AreEqual(0.10, RestedXpRules.LevelsPerHour(10, fromTen), 1e-9);
+        Assert.AreEqual(0, RestedXpRules.PerHour(10_000, 5, fromTen));
+    }
+
+    [TestMethod]
+    public void LoggedOutBuildsAtTheOfflineRate()
+    {
+        Assert.AreEqual(500, RestedXpRules.OfflinePerHour(1000, Defaults with { OfflineRate = 0.5 }));
+        Assert.AreEqual(1000, RestedXpRules.OfflinePerHour(1000, Defaults));
+    }
+
+    [TestMethod]
+    public void Lines_SayWhenRestStartsAndTheLoggedOutRate()
+    {
+        var low = RestedXpRules.Lines(
+            new PlayerUiRested(true, RestedXpRules.LowLevel, 0, 0, 1.0, 0, 0, 1000, 0.5, 10, 0.5)
+        );
+        var away = RestedXpRules.Lines(
+            new PlayerUiRested(true, RestedXpRules.Away, 0, 0, 1.0, 1000, 0, 2000, 0.5, 10, 0.5)
+        );
+
+        Assert.AreEqual(2, low.Count);
+        StringAssert.Contains(low[1], "at level 10");
+        StringAssert.Contains(away[2], "1,000 an hour, and 500 an hour logged out");
+    }
 }
 

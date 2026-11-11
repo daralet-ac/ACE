@@ -6,9 +6,13 @@ gone.
 
 ## Building it up
 
-- **Logged out**, anywhere: the time since logout counts in full.
 - **In a town** out of combat mode: the town's landblock (`Town.TownLandblockIds`, the same check the road speed buff
   uses), its buildings included, never an instanced copy. Combat mode stops it until it's put away.
+- **Logged out**, anywhere: at `rested_xp_offline_rate` (half) of the rate in a town. WoW gives a quarter outside its
+  inns and cities; here it's half wherever you log out, so playing in town is what's rewarded.
+- **From level 10** (`rested_xp_min_level`): below it nothing builds up, in town or logged out, so a new character banks
+  none (`/rested` says when it starts). Rest is per character, as WoW's is, and kept as XP at the level it was made at,
+  so an alt parked low banks little that's worth anything later.
 - Each hour it grows by a share of the player's current level's XP cost that falls as they level, so low levels rest
   faster: `rested_xp_rate_curve` (`RestedXpCurve`), pieces of `level:start:less` in percent, each for the levels above
   its level, start less "less" for each level past it. The default, `0:10:0, 10:10:0.225, 50:1:0.02`, is 10% an hour
@@ -58,6 +62,8 @@ the XP before the bonus. "You've used up your rested experience." when it runs o
 | --- | --- | --- |
 | `rested_xp` | true | Off stops building and spending; each player keeps what they have. |
 | `rested_xp_bonus` | 1.0 | How much more kills earn while rested (1.0 doubles them). |
+| `rested_xp_min_level` | 10 | The level rest starts building at. |
+| `rested_xp_offline_rate` | 0.5 | Logged out, the share of the rate in a town. |
 | `rested_xp_rate_curve` | `0:10:0, 10:10:0.225, 50:1:0.02` | An hour of rest at each level, in percent of the level's cost. |
 | `rested_xp_min_levels_per_hour` | 0 | The least an hour's rest comes to, however high the level. |
 | `rested_xp_slowdown_per_level` | 0.5 | How much slower it builds for each full level's cost already rested. |

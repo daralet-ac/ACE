@@ -78,6 +78,11 @@ partial class Player
             return RestedXpRules.MaxLevel;
         }
 
+        if ((Level ?? 1) < settings.MinLevel)
+        {
+            return RestedXpRules.LowLevel;
+        }
+
         if (RestedXpRules.LevelsPerHour(Level ?? 1, settings) <= 0)
         {
             return RestedXpRules.NoRest;
@@ -112,7 +117,9 @@ partial class Player
             RestedXpRules.PerHour(levelCost, Level ?? 1, settings),
             RestedXpEarnedThisSession,
             (long)levelCost,
-            settings.SlowdownPerLevel
+            settings.SlowdownPerLevel,
+            settings.MinLevel,
+            settings.OfflineRate
         );
     }
 
@@ -151,8 +158,8 @@ partial class Player
     }
 
     /// <summary>
-    /// At login: the time logged out is rest wherever the player logged out, and a line says how rested they are. A
-    /// character from before rested experience starts counting now.
+    /// At login: the time logged out is rest wherever the player logged out, at rested_xp_offline_rate of the rate in a
+    /// town, and a line says how rested they are. A character from before rested experience starts counting now.
     /// </summary>
     private void HandleRestedXpOnLogin()
     {
@@ -174,10 +181,11 @@ partial class Player
 
         if (last != null)
         {
+            // logged out it builds at rested_xp_offline_rate of the rate in town (half, to start)
             RestedXp = RestedXpRules.Accrue(
                 before,
                 now - last.Value,
-                RestedXpRules.PerHour(levelCost, Level ?? 1, settings),
+                RestedXpRules.OfflinePerHour(RestedXpRules.PerHour(levelCost, Level ?? 1, settings), settings),
                 max,
                 (long)levelCost,
                 settings.SlowdownPerLevel
