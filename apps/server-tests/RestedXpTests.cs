@@ -8,23 +8,55 @@ namespace ACE.Server.Tests;
 [TestClass]
 public class RestedXpTests
 {
-    private static readonly RestedXpRules.Settings Defaults = new(true, 0.10, 0.001, 0, 1.5, 0.5, 1.0);
+    private static readonly RestedXpRules.Settings Defaults =
+        new(true, RestedXpCurve.FromText(RestedXpCurve.Default), 0, 1.5, 0.5, 1.0);
 
     [TestMethod]
     public void MaxAndRateAreFractionsOfTheLevel()
     {
         Assert.AreEqual(15_000, RestedXpRules.Max(10_000, Defaults));
-        Assert.AreEqual(500, RestedXpRules.PerHour(10_000, 50, Defaults));
+        Assert.AreEqual(200, RestedXpRules.PerHour(10_000, 50, Defaults));
     }
 
     [TestMethod]
-    public void LowLevelsRestFasterUntilItEndsAt100()
+    public void TheDefaultCurve()
     {
-        Assert.AreEqual(0.099, RestedXpRules.LevelsPerHour(1, Defaults), 1e-9);
-        Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(50, Defaults), 1e-9);
-        Assert.AreEqual(0.001, RestedXpRules.LevelsPerHour(99, Defaults), 1e-9);
+        // 10% to level 10
+        Assert.AreEqual(0.10, RestedXpRules.LevelsPerHour(1, Defaults), 1e-9);
+        Assert.AreEqual(0.10, RestedXpRules.LevelsPerHour(10, Defaults), 1e-9);
+
+        // then 0.2% less for each level past 10, to 50
+        Assert.AreEqual(0.098, RestedXpRules.LevelsPerHour(11, Defaults), 1e-9);
+        Assert.AreEqual(0.06, RestedXpRules.LevelsPerHour(30, Defaults), 1e-9);
+        Assert.AreEqual(0.02, RestedXpRules.LevelsPerHour(50, Defaults), 1e-9);
+
+        // then 1% less 0.02% for each level past 50, to nothing at 100
+        Assert.AreEqual(0.0098, RestedXpRules.LevelsPerHour(51, Defaults), 1e-9);
+        Assert.AreEqual(0.005, RestedXpRules.LevelsPerHour(75, Defaults), 1e-9);
+        Assert.AreEqual(0.0002, RestedXpRules.LevelsPerHour(99, Defaults), 1e-9);
         Assert.AreEqual(0, RestedXpRules.LevelsPerHour(100, Defaults), 1e-9);
         Assert.AreEqual(0, RestedXpRules.LevelsPerHour(126, Defaults), 1e-9);
+    }
+
+    [TestMethod]
+    public void Curve_ReadsPiecesInAnyOrder()
+    {
+        var curve = RestedXpCurve.FromText("20:4:0.1; 0:5");
+
+        Assert.AreEqual(0.05, curve.LevelsPerHour(20), 1e-9);
+        Assert.AreEqual(0.039, curve.LevelsPerHour(21), 1e-9);
+    }
+
+    [TestMethod]
+    public void Curve_ThatCantBeReadIsTheDefault()
+    {
+        Assert.IsNull(RestedXpCurve.Parse(""));
+        Assert.IsNull(RestedXpCurve.Parse("10"));
+        Assert.IsNull(RestedXpCurve.Parse("0:ten:0"));
+        Assert.IsNull(RestedXpCurve.Parse("0:10:-1"));
+        Assert.IsNull(RestedXpCurve.Parse("0:10, 0:5"));
+
+        Assert.AreEqual(0.02, RestedXpCurve.FromText("nonsense").LevelsPerHour(50), 1e-9);
     }
 
     [TestMethod]

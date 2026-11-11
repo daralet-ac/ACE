@@ -37,14 +37,12 @@ public static class RestedXpRules
     public const string Off = "off";
 
     /// <summary>The rested_xp server properties, read once for each use.</summary>
-    /// <param name="LevelsPerHour">An hour's rest before the level takes any off, as a fraction of the level's cost</param>
-    /// <param name="LessPerLevel">What each of the player's levels takes off it, so low levels rest faster</param>
+    /// <param name="Curve">An hour's rest at each level (rested_xp_rate_curve)</param>
     /// <param name="MinLevelsPerHour">The least it comes to, however high the level</param>
     /// <param name="SlowdownPerLevel">How much slower it builds for each full level's cost rested: 0.5 halves it</param>
     public readonly record struct Settings(
         bool Enabled,
-        double LevelsPerHour,
-        double LessPerLevel,
+        RestedXpCurve Curve,
         double MinLevelsPerHour,
         double MaxLevels,
         double SlowdownPerLevel,
@@ -55,8 +53,7 @@ public static class RestedXpRules
         {
             return new Settings(
                 PropertyManager.GetBool("rested_xp").Item,
-                PropertyManager.GetDouble("rested_xp_levels_per_hour").Item,
-                PropertyManager.GetDouble("rested_xp_levels_per_hour_less_per_level").Item,
+                RestedXpCurve.FromText(PropertyManager.GetString("rested_xp_rate_curve").Item),
                 PropertyManager.GetDouble("rested_xp_min_levels_per_hour").Item,
                 PropertyManager.GetDouble("rested_xp_max_levels").Item,
                 PropertyManager.GetDouble("rested_xp_slowdown_per_level").Item,
@@ -81,21 +78,13 @@ public static class RestedXpRules
     }
 
     /// <summary>
-    /// An hour's rest at this level, as a fraction of the level's cost: rested_xp_levels_per_hour, less
-    /// rested_xp_levels_per_hour_less_per_level for each level (10% less 0.1% a level to start: 9.9% at level 1, 5% at
-    /// 50, nothing from 100), but never under rested_xp_min_levels_per_hour (0 to start; raise it to keep higher levels
-    /// resting).
+    /// An hour's rest at this level, as a fraction of the level's cost: rested_xp_rate_curve's (RestedXpCurve: 10% to
+    /// level 10, 2% at 50, 0.98% at 51, nothing from 100), but never under rested_xp_min_levels_per_hour (0 to start;
+    /// raise it to keep higher levels resting).
     /// </summary>
     public static double LevelsPerHour(int level, Settings settings)
     {
-        var rate = settings.LevelsPerHour - settings.LessPerLevel * Math.Max(0, level);
-
-        // 0.10 less 100 times 0.001 needn't come to exactly 0 in floating point, and level 100 must rest no more
-        if (rate < 1e-9)
-        {
-            rate = 0;
-        }
-
+        var rate = settings.Curve?.LevelsPerHour(level) ?? 0;
         return Math.Max(0, Math.Max(settings.MinLevelsPerHour, rate));
     }
 
