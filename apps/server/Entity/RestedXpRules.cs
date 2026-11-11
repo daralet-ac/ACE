@@ -31,13 +31,25 @@ public static class RestedXpRules
     public const string Off = "off";
 
     /// <summary>The rested_xp server properties, read once for each use.</summary>
-    public readonly record struct Settings(bool Enabled, double LevelsPerHour, double MaxLevels, double Bonus)
+    /// <param name="LevelsPerHour">An hour's rest before the level takes any off, as a fraction of the level's cost</param>
+    /// <param name="LessPerLevel">What each of the player's levels takes off it, so low levels rest faster</param>
+    /// <param name="MinLevelsPerHour">The least it comes to, however high the level</param>
+    public readonly record struct Settings(
+        bool Enabled,
+        double LevelsPerHour,
+        double LessPerLevel,
+        double MinLevelsPerHour,
+        double MaxLevels,
+        double Bonus
+    )
     {
         public static Settings FromProperties()
         {
             return new Settings(
                 PropertyManager.GetBool("rested_xp").Item,
                 PropertyManager.GetDouble("rested_xp_levels_per_hour").Item,
+                PropertyManager.GetDouble("rested_xp_levels_per_hour_less_per_level").Item,
+                PropertyManager.GetDouble("rested_xp_min_levels_per_hour").Item,
                 PropertyManager.GetDouble("rested_xp_max_levels").Item,
                 PropertyManager.GetDouble("rested_xp_bonus").Item
             );
@@ -50,10 +62,21 @@ public static class RestedXpRules
         return (long)Math.Round(levelCost * Math.Max(0, settings.MaxLevels));
     }
 
-    /// <summary>How much rested XP a player of a level costing this builds up in an hour of rest.</summary>
-    public static long PerHour(ulong levelCost, Settings settings)
+    /// <summary>
+    /// An hour's rest at this level, as a fraction of the level's cost: rested_xp_levels_per_hour, less
+    /// rested_xp_levels_per_hour_less_per_level for each level (10% less 0.1% a level to start: 9.9% at level 1, 5% at
+    /// 50), but never under rested_xp_min_levels_per_hour (1%, from level 90 on), so the highest levels still rest.
+    /// </summary>
+    public static double LevelsPerHour(int level, Settings settings)
     {
-        return (long)Math.Round(levelCost * Math.Max(0, settings.LevelsPerHour));
+        var rate = settings.LevelsPerHour - settings.LessPerLevel * Math.Max(0, level);
+        return Math.Max(0, Math.Max(settings.MinLevelsPerHour, rate));
+    }
+
+    /// <summary>How much rested XP a player of this level, costing this, builds up in an hour of rest.</summary>
+    public static long PerHour(ulong levelCost, int level, Settings settings)
+    {
+        return (long)Math.Round(levelCost * LevelsPerHour(level, settings));
     }
 
     /// <summary>

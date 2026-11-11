@@ -9,8 +9,11 @@ gone.
 - **Logged out**, anywhere: the time since logout counts in full.
 - **In a town** out of combat mode: the town's landblock (`Town.TownLandblockIds`, the same check the road speed buff
   uses), its buildings included, never an instanced copy. Combat mode stops it until it's put away.
-- It grows by `rested_xp_levels_per_hour` of the player's current level's XP cost each hour (1% to start: about a quarter
-  of a level a day), up to `rested_xp_max_levels` of it (a level and a half). The most grows as they level; a pool already
+- Each hour it grows by a share of the player's current level's XP cost that falls as they level, so low levels rest
+  faster: `rested_xp_levels_per_hour` (10%) less `rested_xp_levels_per_hour_less_per_level` (0.1%) for each level, but
+  never under `rested_xp_min_levels_per_hour` (1%). That's 9.9% an hour at level 1, 5% at 50, and 1% from level 90 on
+  (without the least it would reach nothing at 100). It stops at `rested_xp_max_levels` of the level's cost (a level and
+  a half). The most grows as they level; a pool already
   over the most (the properties lowered) isn't cut back.
 - Nothing builds up at the highest level when `allow_xp_at_max_level` is off: there's no XP to spend it on.
 
@@ -47,5 +50,7 @@ the XP before the bonus. "You've used up your rested experience." when it runs o
 | --- | --- | --- |
 | `rested_xp` | true | Off stops building and spending; each player keeps what they have. |
 | `rested_xp_bonus` | 1.0 | How much more kills earn while rested (1.0 doubles them). |
-| `rested_xp_levels_per_hour` | 0.01 | An hour of rest, as a fraction of the current level's cost. |
+| `rested_xp_levels_per_hour` | 0.10 | An hour of rest, as a fraction of the current level's cost, before the level takes its share off. |
+| `rested_xp_levels_per_hour_less_per_level` | 0.001 | What each level takes off an hour's rest. |
+| `rested_xp_min_levels_per_hour` | 0.01 | The least an hour's rest comes to, however high the level. |
 | `rested_xp_max_levels` | 1.5 | The most, as a fraction of the current level's cost. |

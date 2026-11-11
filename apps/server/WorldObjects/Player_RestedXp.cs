@@ -104,7 +104,7 @@ partial class Player
             (long)Math.Floor(RestedXp),
             max,
             settings.Bonus,
-            RestedXpRules.PerHour(levelCost, settings),
+            RestedXpRules.PerHour(levelCost, Level ?? 1, settings),
             RestedXpEarnedThisSession
         );
     }
@@ -133,7 +133,7 @@ partial class Player
             return;
         }
 
-        RestedXp = RestedXpRules.Accrue(RestedXp, now - last.Value, RestedXpRules.PerHour(levelCost, settings), max);
+        RestedXp = RestedXpRules.Accrue(RestedXp, now - last.Value, RestedXpRules.PerHour(levelCost, Level ?? 1, settings), max);
     }
 
     /// <summary>
@@ -160,7 +160,7 @@ partial class Player
 
         if (last != null)
         {
-            RestedXp = RestedXpRules.Accrue(before, now - last.Value, RestedXpRules.PerHour(levelCost, settings), max);
+            RestedXp = RestedXpRules.Accrue(before, now - last.Value, RestedXpRules.PerHour(levelCost, Level ?? 1, settings), max);
         }
 
         var pool = (long)Math.Floor(RestedXp);

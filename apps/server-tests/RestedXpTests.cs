@@ -8,13 +8,23 @@ namespace ACE.Server.Tests;
 [TestClass]
 public class RestedXpTests
 {
-    private static readonly RestedXpRules.Settings Defaults = new(true, 0.01, 1.5, 1.0);
+    private static readonly RestedXpRules.Settings Defaults = new(true, 0.10, 0.001, 0.01, 1.5, 1.0);
 
     [TestMethod]
     public void MaxAndRateAreFractionsOfTheLevel()
     {
         Assert.AreEqual(15_000, RestedXpRules.Max(10_000, Defaults));
-        Assert.AreEqual(100, RestedXpRules.PerHour(10_000, Defaults));
+        Assert.AreEqual(500, RestedXpRules.PerHour(10_000, 50, Defaults));
+    }
+
+    [TestMethod]
+    public void LowLevelsRestFasterDownToTheLeast()
+    {
+        Assert.AreEqual(0.099, RestedXpRules.LevelsPerHour(1, Defaults), 1e-9);
+        Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(50, Defaults), 1e-9);
+        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(90, Defaults), 1e-9);
+        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(126, Defaults), 1e-9);
+        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(275, Defaults), 1e-9);
     }
 
     [TestMethod]
