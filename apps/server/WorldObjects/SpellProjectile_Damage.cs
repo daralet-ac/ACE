@@ -91,14 +91,18 @@ partial class SpellProjectile
     )
     {
         partialEvasion = PartialEvasion.None;
+        _damageLog = null;
 
         if (source == null || !target.IsAlive || target.Invincible)
         {
             return null;
         }
 
+        _damageLog = BeginDamageLog(source, target);
+
         if (IsUnderLifestoneProtection(source, target as Player))
         {
+            _damageLog?.Add("outcome", "lifestoneProtection");
             return null;
         }
 
@@ -112,8 +116,11 @@ partial class SpellProjectile
 
         resisted = TryResistSpellHit(hit, overpower, out partialEvasion);
 
+        LogResist(hit, overpower, partialEvasion);
+
         if (TryReflectSpellHit(hit, overpower, partialEvasion))
         {
+            _damageLog?.Add("outcome", "reflected");
             resisted = true;
             return null;
         }
@@ -127,6 +134,7 @@ partial class SpellProjectile
             // fully resisted
             if (resistedMod == 0.0f)
             {
+                _damageLog?.Add("outcome", "resisted");
                 return null;
             }
         }
@@ -143,6 +151,7 @@ partial class SpellProjectile
 
             if (CheckForRatingReprisalCritResist(criticalHit, ref resisted, hit.TargetPlayer, hit.SourceCreature))
             {
+                _damageLog?.Add("outcome", "reprisalCritResist");
                 return null;
             }
 
@@ -182,7 +191,22 @@ partial class SpellProjectile
         var damageBeforeMitigation = damageMods.Apply(baseDamage);
         var finalDamage = mitigation.Apply(damageBeforeMitigation);
 
+        var damageAfterMitigation = finalDamage;
+
         finalDamage = ApplyPostMitigationMods(hit, finalDamage, criticalHit, resistedMod);
+
+        LogDamage(
+            hit,
+            criticalChance,
+            criticalHit,
+            critDefended,
+            baseDamage,
+            damageMods,
+            mitigation,
+            damageBeforeMitigation,
+            damageAfterMitigation,
+            finalDamage
+        );
 
         ShowDamageDebugInfo(
             hit,
@@ -326,7 +350,11 @@ partial class SpellProjectile
     {
         var wardPenetration = GetSpellWardPenetration(hit.SourceCreature, hit.Weapon, Spell);
 
-        return GetWardMod(hit.SourceCreature, hit.Target, wardPenetration);
+        var wardMod = GetWardMod(hit.SourceCreature, hit.Target, wardPenetration);
+
+        LogSpellWard(_damageLog, hit.Target, wardPenetration, wardMod);
+
+        return wardMod;
     }
 
     /// <summary>

@@ -823,6 +823,7 @@ public static class DefaultPropertyManager
         ("debug_loot_quality_system", new Property<bool>(false, "enable this to see loot quality system console logging")),
         ("debug_level_scaling_system", new Property<bool>(false, "enable this to see level scaling system console logging")),
         ("debug_stabilization", new Property<bool>(false, "enable this to see stabilization system console logging")),
+        ("log_spell_damage", new Property<bool>(false, "(non-retail function) enable this to write an info log line for each spell projectile and harm hit that involves a player, with every damage modifier, the target's ward, the resist roll, both sides' level and WCID, and the health it took. Narrow it to some characters with log_spell_damage_players")),
         ("banking_system_logging", new Property<bool>(true, "enable this to see banking system console logging")),
         ("bank_pack_expansion", new Property<bool>(true, "plain packs and Trophy Packs hold bank_pack_expansion_capacity items while they are in the bank, and go back to their own size when taken out (which is refused while they hold more than that). Turning this off shrinks them back, as far as their contents allow, the next time the bank is opened")),
         ("bypass_crafting_checks", new Property<bool>(false, "enable this to allow players to succeed at crafting recipes without needing the skill.")),
@@ -936,6 +937,7 @@ public static class DefaultPropertyManager
         ("server_motd", new Property<string>("", "Server message of the day")),
         ("town_events_unrest", new Property<string>("", "(non-retail function) Every town's unrest for town events, its threshold roll and its cooldown, as JSON, kept by the server (TownEventManager) so a restart doesn't reset them. Set a town's with @townevent unrest rather than editing this")),
         ("town_events_supply", new Property<string>("","(non-retail function) Every town's guard supply for town events, as JSON, kept by the server (TownSupply). Set a town's with @townevent supply rather than editing this")),
+        ("log_spell_damage_players", new Property<string>("", "(non-retail function) with log_spell_damage on, only log spell hits cast by or landing on these characters: a comma separated list of character names. Empty logs every spell hit that involves a player")),
         ("vpn_account_whitelist", new Property<string>("", "comma separated list of account names that are allowed to connect from a VPN / proxy when block_vpn_connections is enabled"))
     );
 }
