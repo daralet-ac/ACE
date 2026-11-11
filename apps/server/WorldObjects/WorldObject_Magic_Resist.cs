@@ -11,6 +11,17 @@ namespace ACE.Server.WorldObjects;
 partial class WorldObject
 {
     /// <summary>
+    /// The numbers behind a resist roll: the caster's effective magic skill, the target's magic defense and the chance
+    /// to resist, before Evasive Stance
+    /// </summary>
+    internal readonly record struct SpellResistCheck(uint MagicSkill, uint MagicDefense, float ResistChance);
+
+    /// <summary>
+    /// This caster's last resist roll (TryResistSpell), for the spell damage log. Null when the spell can't be resisted.
+    /// </summary>
+    internal SpellResistCheck? LastSpellResistCheck { get; private set; }
+
+    /// <summary>
     /// Determines whether a spell will be resisted,
     /// based upon the caster's magic skill vs target's magic defense skill
     /// </summary>
@@ -67,6 +78,7 @@ partial class WorldObject
     )
     {
         partialResist = PartialEvasion.None;
+        LastSpellResistCheck = null;
 
         if (!CanBeResisted(spell, itemCaster, projectileHit))
         {
@@ -92,6 +104,7 @@ partial class WorldObject
         var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance, targetPlayer);
 
         partialResist = pResist;
+        LastSpellResistCheck = new SpellResistCheck(magicSkill, difficulty, resistChance);
 
         if (targetCreature.Invincible)
         {
@@ -116,6 +129,12 @@ partial class WorldObject
         if (resisted)
         {
             OnSpellResisted(targetCreature, casterCreature, magicSkill);
+
+            // spell projectiles log their own resists (SpellProjectile.CalculateDamage)
+            if (!projectileHit)
+            {
+                LogResistedHarm((WorldObject)casterCreature ?? this, this, targetCreature, spell, partialResist);
+            }
         }
 
         if (player != null && player.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
