@@ -123,7 +123,12 @@ partial class WorldObject
 
         var tryBoost = RollBoostAmount(cast);
 
+        var damageLog = BeginHarmDamageLog(cast, tryBoost);
+
         var critical = TryBoostCritical(weapon, ref tryBoost);
+
+        damageLog?.Add("crit", critical);
+        damageLog?.Add("damageAfterCrit", -tryBoost);
 
         // damage rating, for harming others
         if (targetCreature != this && tryBoost < 0)
@@ -132,6 +137,8 @@ partial class WorldObject
             var damageRatingMod = Creature.AdditiveCombine(Creature.GetPositiveRatingMod(damageRating));
 
             tryBoost = (int)(tryBoost * damageRatingMod);
+
+            damageLog?.Add("damageRatingMod", damageRatingMod);
         }
 
         if (targetCreature == null)
@@ -139,17 +146,35 @@ partial class WorldObject
             return;
         }
 
-        tryBoost = (int)Math.Round(tryBoost * targetCreature.GetResistanceMod(GetBoostSpellResistanceType(spell)));
+        var boostResistanceMod = targetCreature.GetResistanceMod(GetBoostSpellResistanceType(spell));
+        tryBoost = (int)Math.Round(tryBoost * boostResistanceMod);
+
+        damageLog?.Add("resistanceMod", boostResistanceMod);
+        damageLog?.Add("damageAfterResistance", -tryBoost);
 
         var equippedCloak = targetCreature.EquippedCloak;
 
         tryBoost = ApplyCloakDamageProc(cast, equippedCloak, tryBoost);
+        damageLog?.Add("damageAfterCloak", -tryBoost);
+
         tryBoost = ApplyBoostSpellMods(cast, tryBoost);
-        tryBoost = tryBoost > 0 ? ApplyHealRatingMods(cast, tryBoost) : ApplyHarmMods(cast, tryBoost);
+        damageLog?.Add("resistedMod", MagicFormulas.GetResistedMod(cast.PartialEvasion));
+        damageLog?.Add("damageMultiplier", cast.DamageMultiplier);
+        damageLog?.Add("damageAfterSpellMods", -tryBoost);
+
+        tryBoost = tryBoost > 0 ? ApplyHealRatingMods(cast, tryBoost) : ApplyHarmMods(cast, tryBoost, damageLog);
+        damageLog?.Add("damageAfterHarmMods", -tryBoost);
 
         ResetRatingElementalistQuestStamps(player);
 
         tryBoost = ApplyArchetypeAndLevelScaling(cast, tryBoost);
+
+        if (damageLog != null)
+        {
+            damageLog.Add("archetypeMod", cast.DamageSource?.ArchetypeSpellDamageMultiplier ?? 1.0);
+            damageLog.Add("levelScalingMod", LevelScaling.GetMonsterHealthDamageScalar(cast.DamageSource, cast.Target));
+            damageLog.Add("damageAfterScaling", -tryBoost);
+        }
 
         // SIGIL TRINKET - Top of Absorption: the target player may convert part of the damage into mana
         var sigilDamageReductionMod =
@@ -163,6 +188,8 @@ partial class WorldObject
         tryBoost = Convert.ToInt32(tryBoost * sigilDamageReductionMod);
 
         var boost = ApplyBoostToVital(cast, tryBoost, out var srcVital);
+
+        LogHarmApplied(damageLog, cast, tryBoost, boost, srcVital, sigilDamageReductionMod);
 
         if (boost < 0)
         {
@@ -359,7 +386,7 @@ partial class WorldObject
     /// <summary>
     /// For a harm: the caster's jewels and attribute mod, then the target's Nullification, ward and COMBAT ABILITY - Phalanx
     /// </summary>
-    private int ApplyHarmMods(in BoostCast cast, int tryBoost)
+    private int ApplyHarmMods(in BoostCast cast, int tryBoost, SpellDamageLogLine damageLog = null)
     {
         // increases
         tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelRedFury(cast.DamageSourcePlayer)));
@@ -370,6 +397,8 @@ partial class WorldObject
 
         var attributeMod = cast.DamageSource?.GetAttributeMod(cast.Weapon, true) ?? 1.0f;
         tryBoost = Convert.ToInt32(tryBoost * attributeMod);
+
+        damageLog?.Add("attributeMod", attributeMod);
 
         // reductions
         tryBoost = Convert.ToInt32(
@@ -382,6 +411,8 @@ partial class WorldObject
         var wardMod = GetWardMod(cast.DamageSource, cast.Target, wardPenetration);
 
         tryBoost = Convert.ToInt32(tryBoost * wardMod);
+
+        LogSpellWard(damageLog, cast.Target, wardPenetration, wardMod);
 
         // Void DoT vulnerability: more damage taken for each Void DoT on the target
         tryBoost = Convert.ToInt32(tryBoost * (cast.Target?.GetVoidDotVulnerabilityMod() ?? 1.0f));

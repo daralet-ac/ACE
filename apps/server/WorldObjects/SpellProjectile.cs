@@ -399,6 +399,8 @@ public partial class SpellProjectile : WorldObject
         if (targetPlayer != null && damage != null)
         {
             damage = ApplySigilAbsorption(targetPlayer, target, damage.Value);
+
+            _damageLog?.Add("damageAfterSigilAbsorption", damage.Value);
         }
 
         creatureTarget.OnAttackReceived(sourceCreature, CombatType.Magic, critical, resisted, (int)Spell.Level);
@@ -407,6 +409,8 @@ public partial class SpellProjectile : WorldObject
         {
             OnSuccessfulHit(target, creatureTarget, damage.Value, critical, critDefended, overpower, partialEvasion);
         }
+
+        WriteDamageLog();
 
         // also called on resist
         if (player != null && targetPlayer == null)

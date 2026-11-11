@@ -107,6 +107,8 @@ partial class SpellProjectile
 
         ShowRatingDebugInfo(target, sourceCreature, ratings, damage);
 
+        LogAppliedDamage(target, ratings, damage, amount, percent);
+
         if (target.IsAlive)
         {
             SendHitMessages(
