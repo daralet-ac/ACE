@@ -65,10 +65,19 @@ public static class RestedXpRules
         }
     }
 
-    /// <summary>The most rested XP a player of a level costing this can have.</summary>
+    /// <summary>
+    /// The most rested XP a player of a level costing this can have: rested_xp_max_levels of the level's cost, or 0 for no
+    /// most at all (rested_xp_max_levels 0, the default), the slowdown alone holding it back.
+    /// </summary>
     public static long Max(ulong levelCost, Settings settings)
     {
-        return (long)Math.Round(levelCost * Math.Max(0, settings.MaxLevels));
+        return settings.MaxLevels > 0 ? (long)Math.Round(levelCost * settings.MaxLevels) : 0;
+    }
+
+    /// <summary>The most as the sums use it: no most (0) is as high as a pool could go.</summary>
+    public static long Cap(long max)
+    {
+        return max > 0 ? max : long.MaxValue;
     }
 
     /// <summary>
@@ -114,6 +123,8 @@ public static class RestedXpRules
     /// </summary>
     public static double Accrue(double pool, double seconds, long perHour, long max, long levelCost, double slowdown)
     {
+        max = Cap(max);
+
         if (seconds <= 0 || perHour <= 0 || pool >= max)
         {
             return pool;
@@ -124,10 +135,16 @@ public static class RestedXpRules
 
     /// <summary>
     /// Seconds of rest until a pool this big is full, slowing as it passes each level's cost, or null when it never will
-    /// be (nothing builds up, or a slowdown of 1 stops it at a level's cost). 0 when it's full already.
+    /// be (nothing builds up, there's no most, or a slowdown of 1 stops it at a level's cost). 0 when it's full already.
     /// </summary>
     public static double? SecondsToFull(double pool, long perHour, long max, long levelCost, double slowdown)
     {
+        // with no most it's never full
+        if (max <= 0)
+        {
+            return null;
+        }
+
         if (pool >= max)
         {
             return 0;
@@ -234,12 +251,17 @@ public static class RestedXpRules
 
         var lines = new List<string>();
         var percent = rested.Max > 0 ? Math.Min(100, rested.Rested * 100 / rested.Max) : 0;
+        var levels = rested.LevelCost > 0 ? $", {(double)rested.Rested / rested.LevelCost:0.0#} levels' worth" : "";
         var bonus = $"{Math.Round(rested.Bonus * 100):0}%";
         var perHour = $"{RateNow(rested):N0}";
         var toFull = SecondsToFull(rested);
         var fullIn = toFull is > 0 ? $", full in {Duration(toFull.Value)}" : "";
 
-        lines.Add($"Rested experience: {rested.Rested:N0} of {rested.Max:N0} ({percent}%).");
+        lines.Add(
+            rested.Max > 0
+                ? $"Rested experience: {rested.Rested:N0} of {rested.Max:N0} ({percent}%)."
+                : $"Rested experience: {rested.Rested:N0}{levels}."
+        );
 
         if (rested.Rested > 0)
         {

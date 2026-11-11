@@ -208,4 +208,28 @@ public class RestedXpTests
         StringAssert.Contains(lines[2], "full in 1h 00m");
         Assert.IsTrue(lines.Any(l => l.Contains("50% slower")));
     }
+
+    [TestMethod]
+    public void NoMost_KeepsGrowingEverSlower()
+    {
+        Assert.AreEqual(0, RestedXpRules.Max(10_000, Defaults with { MaxLevels = 0 }));
+
+        // a level's worth (1,000) in 2 hours, the next in 4, the next in 8
+        Assert.AreEqual(1000, RestedXpRules.Accrue(0, 2 * 3600, 500, 0, 1000, 0.5), 0.0001);
+        Assert.AreEqual(2000, RestedXpRules.Accrue(0, 6 * 3600, 500, 0, 1000, 0.5), 0.0001);
+        Assert.AreEqual(3000, RestedXpRules.Accrue(0, 14 * 3600, 500, 0, 1000, 0.5), 0.0001);
+        Assert.IsNull(RestedXpRules.SecondsToFull(0, 500, 0, 1000, 0.5));
+    }
+
+    [TestMethod]
+    public void Lines_WithNoMostSayLevelsWorth()
+    {
+        var lines = RestedXpRules.Lines(
+            new PlayerUiRested(true, RestedXpRules.Resting, 1500, 0, 1.0, 1000, 0, 1000, 0.5)
+        );
+
+        Assert.AreEqual("Rested experience: 1,500, 1.5 levels' worth.", lines[0]);
+        StringAssert.Contains(lines[2], "you gain 500 an hour here.");
+    }
 }
+

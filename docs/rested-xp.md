@@ -13,10 +13,12 @@ gone.
   faster: `rested_xp_levels_per_hour` (10%) less `rested_xp_levels_per_hour_less_per_level` (0.1%) for each level, but
   never under `rested_xp_min_levels_per_hour` (0). That's 9.9% an hour at level 1, 5% at 50, and nothing from level 100
   on: those players can spend what they have, but no more builds up (`/rested` says so). Raising the least (0.01, say)
-  keeps every level resting. It stops at `rested_xp_max_levels` of the level's cost (a level and a half). The most grows
-  as they level; a pool already over the most (the properties lowered) isn't cut back.
+  keeps every level resting. There's no most to start (`rested_xp_max_levels` 0): the slowdown
+  below alone holds it back. Set `rested_xp_max_levels` to a number of levels (1.5, say) to stop it at that much of the
+  level's cost. The most grows as they level; a pool already over it (the properties lowered) isn't cut back.
 - It slows by `rested_xp_slowdown_per_level` (50%) for each full level's cost already rested: the first level's worth
-  comes at full speed, the last half level's at half (`RestedXpRules.RateAt`). A rest that crosses a level's worth, a
+  comes at full speed, the second at half, the third at a quarter (`RestedXpRules.RateAt`): at level 50, a level's worth
+  in 20 hours, two in 60, three in 140. A rest that crosses a level's worth, a
   long logout, is added up a stretch at each speed (`Accrue`), and so is the time until full (`SecondsToFull`). 0 for no
   slowdown, 1 to stop at a level's worth.
 - Nothing builds up at the highest level when `allow_xp_at_max_level` is off: there's no XP to spend it on.
@@ -58,4 +60,4 @@ the XP before the bonus. "You've used up your rested experience." when it runs o
 | `rested_xp_levels_per_hour_less_per_level` | 0.001 | What each level takes off an hour's rest. |
 | `rested_xp_min_levels_per_hour` | 0 | The least an hour's rest comes to, however high the level. |
 | `rested_xp_slowdown_per_level` | 0.5 | How much slower it builds for each full level's cost already rested. |
-| `rested_xp_max_levels` | 1.5 | The most, as a fraction of the current level's cost. |
+| `rested_xp_max_levels` | 0 | The most, in levels of the current level's cost; 0 for no most. |

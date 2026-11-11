@@ -83,7 +83,7 @@ partial class Player
             return RestedXpRules.NoRest;
         }
 
-        if (RestedXp >= max)
+        if (RestedXp >= RestedXpRules.Cap(max))
         {
             return RestedXpRules.Full;
         }
