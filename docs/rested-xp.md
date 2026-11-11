@@ -37,8 +37,9 @@ the XP before the bonus. "You've used up your rested experience." when it runs o
 - At login, if they have some: how much they rested while away, what they have, and the bonus.
 - `/rested`: what's left of the most, the bonus, whether they're resting now (and why not), how much an hour adds and
   when it's full, and what their kills have earned from it since login.
-- `@playerui rested` (`PlayerUiRested`): the same for the Daralet Toolkit's Rested window. `/rested` and the window are
-  made from one reply (`RestedXpRules.Lines` reads it), so they always agree.
+- `@playerui xp` (`PlayerUiXp`, `PlayerUiXpData`): the Daralet Toolkit's XP bar, the player's level and the total XP it
+  starts and ends at (the client doesn't have the XP table), with their rested experience (`PlayerUiRested`) shaded ahead
+  of it. `/rested` reads the same `PlayerUiRested` (`RestedXpRules.Lines`), so the two always agree.
 
 ## Server properties
 

@@ -92,7 +92,7 @@ public static class RestedXpRules
         return (rested.Max - rested.Rested) * 3600.0 / rested.PerHour;
     }
 
-    /// <summary>What /rested says: the same as the Daralet Toolkit shows, from the same reply.</summary>
+    /// <summary>What /rested says: the same as the Daralet Toolkit's XP bar shows, from the same reply.</summary>
     public static List<string> Lines(PlayerUiRested rested)
     {
         if (!rested.Enabled)

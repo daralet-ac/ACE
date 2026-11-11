@@ -91,7 +91,7 @@ partial class Player
         return CombatMode == CombatMode.NonCombat ? RestedXpRules.Resting : RestedXpRules.InCombat;
     }
 
-    /// <summary>Everything /rested says, and the plugin's Rested window shows (@playerui rested).</summary>
+    /// <summary>Everything /rested says, and the plugin's XP bar shows (in @playerui xp).</summary>
     public PlayerUiRested GetPlayerUiRested()
     {
         var settings = RestedXpRules.Settings.FromProperties();

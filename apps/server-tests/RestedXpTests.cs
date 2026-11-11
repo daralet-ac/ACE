@@ -107,4 +107,21 @@ public class RestedXpTests
         Assert.AreEqual("3h 07m", RestedXpRules.Duration(3 * 3600 + 7 * 60));
         Assert.AreEqual("2d 04h", RestedXpRules.Duration(2 * 86400 + 4 * 3600));
     }
+
+    [TestMethod]
+    public void XpBounds_AreTheLevelAndTheNext()
+    {
+        ulong[] table = [0, 0, 1000, 2500, 5000];
+
+        Assert.AreEqual((1000L, 2500L, false), PlayerUiXpData.Bounds(table, 2, 4));
+    }
+
+    [TestMethod]
+    public void XpBounds_AtTheHighestLevelAreFull()
+    {
+        ulong[] table = [0, 0, 1000, 2500, 5000];
+
+        Assert.AreEqual((2500L, 2500L, true), PlayerUiXpData.Bounds(table, 3, 3));
+        Assert.AreEqual((5000L, 5000L, true), PlayerUiXpData.Bounds(table, 9, 99));
+    }
 }

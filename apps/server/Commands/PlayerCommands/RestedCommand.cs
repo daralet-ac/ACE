@@ -17,7 +17,7 @@ public class RestedCommand
     )]
     public static void HandleRested(Session session, params string[] parameters)
     {
-        // the same reply the Daralet Toolkit's Rested window reads (@playerui rested)
+        // the same reply the Daralet Toolkit's XP bar reads (@playerui xp)
         foreach (var line in RestedXpRules.Lines(session.Player.GetPlayerUiRested()))
         {
             CommandHandlerHelper.WriteOutputInfo(session, line, ChatMessageType.Broadcast);

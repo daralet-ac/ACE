@@ -120,8 +120,8 @@ public record PlayerUiWindowSetting(bool On);
 public record PlayerUiCharacter(List<ACE.Server.WorldObjects.StatsSheetSection> Sections);
 
 /// <summary>
-/// The player's rested experience (Player_RestedXp.cs), for the plugin's Rested window: what's left and the most there can
-/// be, the bonus kills earn from it (1.0 doubles their XP), how much an hour of rest adds, what's left since login, and
+/// The player's rested experience (Player_RestedXp.cs), for the plugin's XP bar (in PlayerUiXp): what's left and the most
+/// there can be, the bonus kills earn from it (1.0 doubles their XP), how much an hour of rest adds, what's left since login, and
 /// State, one of RestedXpRules' words: resting, combat (in a town in combat mode), away (not in a town), full, maxlevel or
 /// off. /rested says the same in words (RestedXpRules.Lines).
 /// </summary>
@@ -134,6 +134,12 @@ public record PlayerUiRested(
     long PerHour,
     long EarnedThisSession
 );
+
+/// <summary>
+/// @playerui xp (PlayerUiXpData), for the plugin's XP bar: the player's level, their total XP, the total their level
+/// starts at and the next one does (the same at the highest level, MaxLevel), and their rested experience.
+/// </summary>
+public record PlayerUiXp(int Level, long TotalXp, long LevelXp, long NextLevelXp, bool MaxLevel, PlayerUiRested Rested);
 
 /// <summary>
 /// The ranges loot rolls the plugin's filter stats in, for its loot rules' tooltips (LootGenerationFactory.GetLootFilterRanges).
