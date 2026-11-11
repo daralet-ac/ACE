@@ -15,8 +15,8 @@ gone.
   so an alt parked low banks little that's worth anything later.
 - Each hour it grows by a share of the player's current level's XP cost that falls as they level, so low levels rest
   faster: `rested_xp_rate_curve` (`RestedXpCurve`), pieces of `level:start:less` in percent, each for the levels above
-  its level, start less "less" for each level past it. The default, `0:10:0, 10:10:0.225, 50:1:0.02`, is 10% an hour
-  to level 10, then 10% less 0.225% for each level past 10 (9.775% at 11, 5.5% at 30, 1% at 50), then 1% less 0.02% for
+  its level, start less "less" for each level past it. The default, `0:5:0, 10:5:0.1, 50:1:0.02`, is 5% an hour at
+  level 10, where rest starts, then 5% less 0.1% for each level past 10 (4.9% at 11, 3% at 30, 1% at 50), then 1% less 0.02% for
   each level past 50 (0.98% at 51, 0.5% at 75, nothing from 100: those players can spend what they have, but no more builds
   up, and `/rested` says so). A curve that can't be read is logged and the default used. It's never under
   `rested_xp_min_levels_per_hour` (0); raising that (0.01, say) keeps every level resting.
@@ -64,7 +64,7 @@ the XP before the bonus. "You've used up your rested experience." when it runs o
 | `rested_xp_bonus` | 1.0 | How much more kills earn while rested (1.0 doubles them). |
 | `rested_xp_min_level` | 10 | The level rest starts building at. |
 | `rested_xp_offline_rate` | 0.5 | Logged out, the share of the rate in a town. |
-| `rested_xp_rate_curve` | `0:10:0, 10:10:0.225, 50:1:0.02` | An hour of rest at each level, in percent of the level's cost. |
+| `rested_xp_rate_curve` | `0:5:0, 10:5:0.1, 50:1:0.02` | An hour of rest at each level, in percent of the level's cost. |
 | `rested_xp_min_levels_per_hour` | 0 | The least an hour's rest comes to, however high the level. |
 | `rested_xp_slowdown_per_level` | 0.5 | How much slower it builds for each full level's cost already rested. |
 | `rested_xp_max_levels` | 0 | The most, in levels of the current level's cost; 0 for no most. |

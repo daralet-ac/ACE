@@ -21,13 +21,13 @@ public class RestedXpTests
     [TestMethod]
     public void TheDefaultCurve()
     {
-        // 10% to level 10
-        Assert.AreEqual(0.10, RestedXpRules.LevelsPerHour(1, Defaults), 1e-9);
-        Assert.AreEqual(0.10, RestedXpRules.LevelsPerHour(10, Defaults), 1e-9);
+        // 5% to level 10
+        Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(1, Defaults), 1e-9);
+        Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(10, Defaults), 1e-9);
 
-        // then 0.225% less for each level past 10, to 1% at 50
-        Assert.AreEqual(0.09775, RestedXpRules.LevelsPerHour(11, Defaults), 1e-9);
-        Assert.AreEqual(0.055, RestedXpRules.LevelsPerHour(30, Defaults), 1e-9);
+        // then 0.1% less for each level past 10, to 1% at 50
+        Assert.AreEqual(0.049, RestedXpRules.LevelsPerHour(11, Defaults), 1e-9);
+        Assert.AreEqual(0.03, RestedXpRules.LevelsPerHour(30, Defaults), 1e-9);
         Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(50, Defaults), 1e-9);
 
         // then 0.02% less for each level past 50, to nothing at 100
@@ -270,7 +270,7 @@ public class RestedXpTests
         var fromTen = Defaults with { MinLevel = 10 };
 
         Assert.AreEqual(0, RestedXpRules.LevelsPerHour(9, fromTen), 1e-9);
-        Assert.AreEqual(0.10, RestedXpRules.LevelsPerHour(10, fromTen), 1e-9);
+        Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(10, fromTen), 1e-9);
         Assert.AreEqual(0, RestedXpRules.PerHour(10_000, 5, fromTen));
     }
 
