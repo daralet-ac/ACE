@@ -8,7 +8,7 @@ namespace ACE.Server.Tests;
 [TestClass]
 public class RestedXpTests
 {
-    private static readonly RestedXpRules.Settings Defaults = new(true, 0.10, 0.001, 0.01, 1.5, 1.0);
+    private static readonly RestedXpRules.Settings Defaults = new(true, 0.10, 0.001, 0, 1.5, 1.0);
 
     [TestMethod]
     public void MaxAndRateAreFractionsOfTheLevel()
@@ -18,13 +18,31 @@ public class RestedXpTests
     }
 
     [TestMethod]
-    public void LowLevelsRestFasterDownToTheLeast()
+    public void LowLevelsRestFasterUntilItEndsAt100()
     {
         Assert.AreEqual(0.099, RestedXpRules.LevelsPerHour(1, Defaults), 1e-9);
         Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(50, Defaults), 1e-9);
-        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(90, Defaults), 1e-9);
-        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(126, Defaults), 1e-9);
-        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(275, Defaults), 1e-9);
+        Assert.AreEqual(0.001, RestedXpRules.LevelsPerHour(99, Defaults), 1e-9);
+        Assert.AreEqual(0, RestedXpRules.LevelsPerHour(100, Defaults), 1e-9);
+        Assert.AreEqual(0, RestedXpRules.LevelsPerHour(126, Defaults), 1e-9);
+    }
+
+    [TestMethod]
+    public void TheLeastKeepsHighLevelsResting()
+    {
+        var withLeast = Defaults with { MinLevelsPerHour = 0.01 };
+
+        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(90, withLeast), 1e-9);
+        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(275, withLeast), 1e-9);
+    }
+
+    [TestMethod]
+    public void Lines_SayRestHasEndedAtHighLevels()
+    {
+        var none = RestedXpRules.Lines(new PlayerUiRested(true, RestedXpRules.NoRest, 0, 3000, 1.0, 0, 0));
+
+        Assert.AreEqual(2, none.Count);
+        StringAssert.Contains(none[1], "no longer build up");
     }
 
     [TestMethod]

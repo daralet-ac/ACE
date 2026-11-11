@@ -122,8 +122,8 @@ public record PlayerUiCharacter(List<ACE.Server.WorldObjects.StatsSheetSection> 
 /// <summary>
 /// The player's rested experience (Player_RestedXp.cs), for the plugin's XP bar (in PlayerUiXp): what's left and the most
 /// there can be, the bonus kills earn from it (1.0 doubles their XP), how much an hour of rest adds, what's left since login, and
-/// State, one of RestedXpRules' words: resting, combat (in a town in combat mode), away (not in a town), full, maxlevel or
-/// off. /rested says the same in words (RestedXpRules.Lines).
+/// State, one of RestedXpRules' words: resting, combat (in a town in combat mode), away (not in a town), full, maxlevel,
+/// norest (too high a level to build any up) or off. /rested says the same in words (RestedXpRules.Lines).
 /// </summary>
 public record PlayerUiRested(
     bool Enabled,

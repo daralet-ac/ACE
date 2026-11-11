@@ -27,6 +27,12 @@ public static class RestedXpRules
     /// <summary>At the highest level, earning no XP: there's nothing to rest for.</summary>
     public const string MaxLevel = "maxlevel";
 
+    /// <summary>
+    /// High enough a level that an hour's rest comes to nothing (level 100 and up, with the defaults): what's left can
+    /// still be spent, but no more builds up.
+    /// </summary>
+    public const string NoRest = "norest";
+
     /// <summary>rested_xp is off.</summary>
     public const string Off = "off";
 
@@ -65,11 +71,19 @@ public static class RestedXpRules
     /// <summary>
     /// An hour's rest at this level, as a fraction of the level's cost: rested_xp_levels_per_hour, less
     /// rested_xp_levels_per_hour_less_per_level for each level (10% less 0.1% a level to start: 9.9% at level 1, 5% at
-    /// 50), but never under rested_xp_min_levels_per_hour (1%, from level 90 on), so the highest levels still rest.
+    /// 50, nothing from 100), but never under rested_xp_min_levels_per_hour (0 to start; raise it to keep higher levels
+    /// resting).
     /// </summary>
     public static double LevelsPerHour(int level, Settings settings)
     {
         var rate = settings.LevelsPerHour - settings.LessPerLevel * Math.Max(0, level);
+
+        // 0.10 less 100 times 0.001 needn't come to exactly 0 in floating point, and level 100 must rest no more
+        if (rate < 1e-9)
+        {
+            rate = 0;
+        }
+
         return Math.Max(0, Math.Max(settings.MinLevelsPerHour, rate));
     }
 
@@ -134,7 +148,7 @@ public static class RestedXpRules
         {
             lines.Add($"Your kills earn {bonus} more experience, taken from it, until it's used up.");
         }
-        else
+        else if (rested.State != NoRest)
         {
             lines.Add($"With some, your kills would earn {bonus} more experience, taken from it.");
         }
@@ -146,6 +160,7 @@ public static class RestedXpRules
                 InCombat => $"You're in a town, but don't rest in combat mode. Out of it you'd gain {perHour} an hour.",
                 Full => "You're fully rested.",
                 MaxLevel => "You're at the highest level, earning no experience: there's nothing to rest for.",
+                NoRest => "You no longer build up rested experience at your level.",
                 _ => $"You're not resting. In a town out of combat mode, or logged out, you gain {perHour} an hour.",
             }
         );

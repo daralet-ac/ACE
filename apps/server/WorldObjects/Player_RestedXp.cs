@@ -78,6 +78,11 @@ partial class Player
             return RestedXpRules.MaxLevel;
         }
 
+        if (RestedXpRules.LevelsPerHour(Level ?? 1, settings) <= 0)
+        {
+            return RestedXpRules.NoRest;
+        }
+
         if (RestedXp >= max)
         {
             return RestedXpRules.Full;
