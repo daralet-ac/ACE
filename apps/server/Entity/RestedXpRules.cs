@@ -28,8 +28,8 @@ public static class RestedXpRules
     public const string MaxLevel = "maxlevel";
 
     /// <summary>
-    /// High enough a level that an hour's rest comes to nothing (level 100 and up, with the defaults): what's left can
-    /// still be spent, but no more builds up.
+    /// An hour's rest comes to nothing at this level (rested_xp_kills_per_hour 0): what's left can still be spent, but no
+    /// more builds up.
     /// </summary>
     public const string NoRest = "norest";
 
@@ -40,15 +40,15 @@ public static class RestedXpRules
     public const string Off = "off";
 
     /// <summary>The rested_xp server properties, read once for each use.</summary>
-    /// <param name="Curve">An hour's rest at each level (rested_xp_rate_curve)</param>
-    /// <param name="MinLevelsPerHour">The least it comes to, however high the level</param>
+    /// <param name="KillsPerHour">
+    /// An hour's rest in town, in same-level kills' worth of XP (rested_xp_kills_per_hour): 5 banks five kills' worth
+    /// </param>
     /// <param name="SlowdownPerLevel">How much slower it builds for each full level's cost rested: 0.5 halves it</param>
     /// <param name="MinLevel">The level rest starts building at (rested_xp_min_level)</param>
     /// <param name="OfflineRate">The share of the rate logged-out time gets (rested_xp_offline_rate): 0.5 is half</param>
     public readonly record struct Settings(
         bool Enabled,
-        RestedXpCurve Curve,
-        double MinLevelsPerHour,
+        double KillsPerHour,
         double MaxLevels,
         double SlowdownPerLevel,
         double Bonus,
@@ -60,8 +60,7 @@ public static class RestedXpRules
         {
             return new Settings(
                 PropertyManager.GetBool("rested_xp").Item,
-                RestedXpCurve.FromText(PropertyManager.GetString("rested_xp_rate_curve").Item),
-                PropertyManager.GetDouble("rested_xp_min_levels_per_hour").Item,
+                PropertyManager.GetDouble("rested_xp_kills_per_hour").Item,
                 PropertyManager.GetDouble("rested_xp_max_levels").Item,
                 PropertyManager.GetDouble("rested_xp_slowdown_per_level").Item,
                 PropertyManager.GetDouble("rested_xp_bonus").Item,
@@ -87,9 +86,10 @@ public static class RestedXpRules
     }
 
     /// <summary>
-    /// An hour's rest at this level, as a fraction of the level's cost: rested_xp_rate_curve's (RestedXpCurve: 5% at
-    /// level 10, 1% at 50, nothing from 100), but never under rested_xp_min_levels_per_hour (0 to start;
-    /// raise it to keep higher levels resting). Nothing below rested_xp_min_level.
+    /// An hour's rest in town at this level, as a fraction of the level's cost: rested_xp_kills_per_hour same-level kills'
+    /// worth (KillXp.Share, what Creature.GetCreatureDeathXP gives), so rest keeps pace with kills at every level. With 5:
+    /// 5% at level 10, 2.5% at 20, 2% at 30, 1.5% at 40, 1% at 50, 0.5% at 75, 0.25% from 100. Nothing below
+    /// rested_xp_min_level.
     /// </summary>
     public static double LevelsPerHour(int level, Settings settings)
     {
@@ -99,8 +99,7 @@ public static class RestedXpRules
             return 0;
         }
 
-        var rate = settings.Curve?.LevelsPerHour(level) ?? 0;
-        return Math.Max(0, Math.Max(settings.MinLevelsPerHour, rate));
+        return Math.Max(0, KillXp.Share(level) * settings.KillsPerHour);
     }
 
     /// <summary>

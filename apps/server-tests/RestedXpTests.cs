@@ -8,8 +8,7 @@ namespace ACE.Server.Tests;
 [TestClass]
 public class RestedXpTests
 {
-    private static readonly RestedXpRules.Settings Defaults =
-        new(true, RestedXpCurve.FromText(RestedXpCurve.Default), 0, 1.5, 0.5, 1.0);
+    private static readonly RestedXpRules.Settings Defaults = new(true, 5, 1.5, 0.5, 1.0);
 
     [TestMethod]
     public void MaxAndRateAreFractionsOfTheLevel()
@@ -19,53 +18,26 @@ public class RestedXpTests
     }
 
     [TestMethod]
-    public void TheDefaultCurve()
+    public void AnHourIsFiveSameLevelKills()
     {
-        // 5% to level 10
-        Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(1, Defaults), 1e-9);
-        Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(10, Defaults), 1e-9);
-
-        // then 0.1% less for each level past 10, to 1% at 50
-        Assert.AreEqual(0.049, RestedXpRules.LevelsPerHour(11, Defaults), 1e-9);
-        Assert.AreEqual(0.03, RestedXpRules.LevelsPerHour(30, Defaults), 1e-9);
-        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(50, Defaults), 1e-9);
-
-        // then 0.02% less for each level past 50, to nothing at 100
-        Assert.AreEqual(0.0098, RestedXpRules.LevelsPerHour(51, Defaults), 1e-9);
-        Assert.AreEqual(0.005, RestedXpRules.LevelsPerHour(75, Defaults), 1e-9);
-        Assert.AreEqual(0.0002, RestedXpRules.LevelsPerHour(99, Defaults), 1e-9);
-        Assert.AreEqual(0, RestedXpRules.LevelsPerHour(100, Defaults), 1e-9);
-        Assert.AreEqual(0, RestedXpRules.LevelsPerHour(126, Defaults), 1e-9);
+        // KillXp's shares, times 5
+        Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(10, Defaults), 1e-7);
+        Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(19, Defaults), 1e-7);
+        Assert.AreEqual(0.025, RestedXpRules.LevelsPerHour(20, Defaults), 1e-7);
+        Assert.AreEqual(0.02, RestedXpRules.LevelsPerHour(30, Defaults), 1e-7);
+        Assert.AreEqual(0.015, RestedXpRules.LevelsPerHour(40, Defaults), 1e-7);
+        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(50, Defaults), 1e-7);
+        Assert.AreEqual(0.005, RestedXpRules.LevelsPerHour(75, Defaults), 1e-7);
+        Assert.AreEqual(0.0025, RestedXpRules.LevelsPerHour(100, Defaults), 1e-7);
     }
 
     [TestMethod]
-    public void Curve_ReadsPiecesInAnyOrder()
+    public void KeepsPaceWithKillXpAtEveryLevel()
     {
-        var curve = RestedXpCurve.FromText("20:4:0.1; 0:5");
-
-        Assert.AreEqual(0.05, curve.LevelsPerHour(20), 1e-9);
-        Assert.AreEqual(0.039, curve.LevelsPerHour(21), 1e-9);
-    }
-
-    [TestMethod]
-    public void Curve_ThatCantBeReadIsTheDefault()
-    {
-        Assert.IsNull(RestedXpCurve.Parse(""));
-        Assert.IsNull(RestedXpCurve.Parse("10"));
-        Assert.IsNull(RestedXpCurve.Parse("0:ten:0"));
-        Assert.IsNull(RestedXpCurve.Parse("0:10:-1"));
-        Assert.IsNull(RestedXpCurve.Parse("0:10, 0:5"));
-
-        Assert.AreEqual(0.01, RestedXpCurve.FromText("nonsense").LevelsPerHour(50), 1e-9);
-    }
-
-    [TestMethod]
-    public void TheLeastKeepsHighLevelsResting()
-    {
-        var withLeast = Defaults with { MinLevelsPerHour = 0.01 };
-
-        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(90, withLeast), 1e-9);
-        Assert.AreEqual(0.01, RestedXpRules.LevelsPerHour(275, withLeast), 1e-9);
+        for (var level = 1; level <= 300; level++)
+        {
+            Assert.AreEqual(KillXp.Share(level) * 5, RestedXpRules.LevelsPerHour(level, Defaults), 1e-7, $"level {level}");
+        }
     }
 
     [TestMethod]
@@ -270,7 +242,7 @@ public class RestedXpTests
         var fromTen = Defaults with { MinLevel = 10 };
 
         Assert.AreEqual(0, RestedXpRules.LevelsPerHour(9, fromTen), 1e-9);
-        Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(10, fromTen), 1e-9);
+        Assert.AreEqual(0.05, RestedXpRules.LevelsPerHour(10, fromTen), 1e-7);
         Assert.AreEqual(0, RestedXpRules.PerHour(10_000, 5, fromTen));
     }
 

@@ -13,20 +13,18 @@ gone.
 - **From level 10** (`rested_xp_min_level`): below it nothing builds up, in town or logged out, so a new character banks
   none (`/rested` says when it starts). Rest is per character, as WoW's is, and kept as XP at the level it was made at,
   so an alt parked low banks little that's worth anything later.
-- Each hour it grows by a share of the player's current level's XP cost that falls as they level, so low levels rest
-  faster: `rested_xp_rate_curve` (`RestedXpCurve`), pieces of `level:start:less` in percent, each for the levels above
-  its level, start less "less" for each level past it. The default, `0:5:0, 10:5:0.1, 50:1:0.02`, is 5% an hour at
-  level 10, where rest starts, then 5% less 0.1% for each level past 10 (4.9% at 11, 3% at 30, 1% at 50), then 1% less 0.02% for
-  each level past 50 (0.98% at 51, 0.5% at 75, nothing from 100: those players can spend what they have, but no more builds
-  up, and `/rested` says so). A curve that can't be read is logged and the default used. It's never under
-  `rested_xp_min_levels_per_hour` (0); raising that (0.01, say) keeps every level resting.
+- Each hour in town it grows by `rested_xp_kills_per_hour` (5) kills of a same-level monster's worth: the share of the
+  level's cost one kill gives (`KillXp.Share`, which `Creature.GetCreatureDeathXP` uses too), so rest keeps pace with
+  kill XP at every level, and follows it if the kill shares or the level cap change. That's 5% of a level an hour at
+  level 10, 2.5% at 20, 2% at 30, 1.5% at 40, 1% at 50, 0.5% at 75 and 0.25% from 100.
 - There's no most to start (`rested_xp_max_levels` 0): the slowdown below alone holds it back. Set
   `rested_xp_max_levels` to a number of levels (1.5, say) to stop it at that much of the level's cost. The most grows as
   they level; a pool already over it (the properties lowered) isn't cut back.
 - It slows by `rested_xp_slowdown_per_level` (50%) for each full level's cost already rested: the first level's worth
   comes at full speed, the second at half, the third at a quarter (`RestedXpRules.RateAt`): at level 50, a level's worth
-  in 100 hours, two in 300, three in 700. A rest that crosses a level's worth, a long logout, is added up a stretch at each speed (`Accrue`), and so is the time until full (`SecondsToFull`). 0 for no
-  slowdown, 1 to stop at a level's worth.
+  in 100 hours, two in 300, three in 700. A rest that crosses a level's worth, a long logout, is added up a stretch at
+  each speed (`Accrue`), and so is the time until full (`SecondsToFull`). 0 for no slowdown, 1 to stop at a level's
+  worth.
 - Nothing builds up at the highest level when `allow_xp_at_max_level` is off: there's no XP to spend it on.
 
 ## Spending it
@@ -64,7 +62,6 @@ the XP before the bonus. "You've used up your rested experience." when it runs o
 | `rested_xp_bonus` | 1.0 | How much more kills earn while rested (1.0 doubles them). |
 | `rested_xp_min_level` | 10 | The level rest starts building at. |
 | `rested_xp_offline_rate` | 0.5 | Logged out, the share of the rate in a town. |
-| `rested_xp_rate_curve` | `0:5:0, 10:5:0.1, 50:1:0.02` | An hour of rest at each level, in percent of the level's cost. |
-| `rested_xp_min_levels_per_hour` | 0 | The least an hour's rest comes to, however high the level. |
+| `rested_xp_kills_per_hour` | 5 | An hour of rest in town, in same-level kills' worth of XP. |
 | `rested_xp_slowdown_per_level` | 0.5 | How much slower it builds for each full level's cost already rested. |
 | `rested_xp_max_levels` | 0 | The most, in levels of the current level's cost; 0 for no most. |
