@@ -818,6 +818,8 @@ public static class DefaultPropertyManager
 
         ("frigid_damage", new Property<bool>(true, "if TRUE, players standing on snow terrain above elevation 200 take Frigid damage each heartbeat")),
 
+        ("rested_xp", new Property<bool>(true, "(non-retail function) if TRUE, players build up rested experience while logged out, or in a town out of combat mode, and their kills earn rested_xp_bonus more experience until it's used up (/rested). Turning it off stops both, and keeps what each player has")),
+
         ("debug_threat_system", new Property<bool>(false, "enable this to see threat system console logging")),
         ("debug_crafting_system", new Property<bool>(false, "enable this to see crafting system console logging")),
         ("debug_loot_quality_system", new Property<bool>(false, "enable this to see loot quality system console logging")),
@@ -918,6 +920,9 @@ public static class DefaultPropertyManager
         ("vitae_penalty_max", new Property<double>(0.40, "the maximum vitae penalty a player can have")),
         ("void_pvp_modifier", new Property<double>(0.5, "Scales the amount of damage players take from Void Magic. Defaults to 0.5, as per retail. For earlier content where DRR isn't as readily available, this can be adjusted for balance.")),
         ("xp_modifier", new Property<double>(1.0, "scales the amount of xp received by players")),
+        ("rested_xp_bonus", new Property<double>(1.0, "(non-retail function) how much more experience kills earn while a player has rested experience, which the extra is taken from: 1.0 doubles it. See rested_xp")),
+        ("rested_xp_levels_per_hour", new Property<double>(0.01, "(non-retail function) how much rested experience a player builds up each hour they rest, as a fraction of what their current level costs: 0.01 is 1% of a level an hour. See rested_xp")),
+        ("rested_xp_max_levels", new Property<double>(1.5, "(non-retail function) the most rested experience a player can have, as a fraction of what their current level costs: 1.5 is a level and a half. See rested_xp")),
         ("mana_cost_multiplier", new Property<double>(1.0, "scales mana costs for spells")),
         ("player_spell_damage_multiplier", new Property<double>(1.0, "scales damage for player spells")),
         ("monster_spell_damage_multiplier", new Property<double>(1.0, "scales damage for monster spells")),

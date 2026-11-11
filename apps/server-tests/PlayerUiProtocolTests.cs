@@ -361,6 +361,21 @@ public class PlayerUiProtocolTests
     }
 
     [TestMethod]
+    public void RestedSendsTheNamesThePluginReads()
+    {
+        var rested = new PlayerUiRested(true, "resting", 1200, 3000, 1.5, 250, 40);
+
+        var json = PlayerUiProtocol.BuildMessages("rested", rested).JoinedJson();
+
+        // the plugin's RestedInfo reads these names
+        Assert.AreEqual(
+            "{\"enabled\":true,\"state\":\"resting\",\"rested\":1200,\"max\":3000,\"bonus\":1.5,\"perHour\":250,"
+                + "\"earnedThisSession\":40}",
+            json
+        );
+    }
+
+    [TestMethod]
     public void QuestsSendEachContractWithoutItsEmptyFields()
     {
         var quests = new PlayerUiQuests(
