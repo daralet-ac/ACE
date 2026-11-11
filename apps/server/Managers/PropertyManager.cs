@@ -872,6 +872,7 @@ public static class DefaultPropertyManager
         ("teleport_visibility_fix", new Property<long>(0, "Fixes some possible issues with invisible players and mobs. 0 = default / disabled, 1 = players only, 2 = creatures, 3 = all world objects")),
         ("two_handed_hit_frame", new Property<long>(0, "(non-retail function) two-handed swings play two strikes but deal one hit. 0 = the hit lands on the first strike, 1 = the hit lands on the last strike")),
         ("instance_empty_timeout_minutes", new Property<long>(15, "How long an instance stays open after the last player has left it, in minutes. When it runs out, the instance and everything in it is deleted.")),
+        ("rested_xp_end_level", new Property<long>(50, "(non-retail function) the level a character stops building up rested experience at: from it on nothing more builds up, though what they have still spends. 0 for no end. See rested_xp")),
         ("rested_xp_min_level", new Property<long>(10, "(non-retail function) the level a character starts building up rested experience at: below it nothing builds up, in town or logged out, so new characters bank none. See rested_xp")),
         ("max_level", new Property<long>(275, "Set the max character level.")),
         ("soft_level_cap", new Property<long>(50, "Set the 'soft' level cap (current highest possible level of monsters)")),

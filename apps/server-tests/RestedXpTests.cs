@@ -32,6 +32,16 @@ public class RestedXpTests
     }
 
     [TestMethod]
+    public void NothingBuildsUpFromTheEndLevel()
+    {
+        var toFifty = Defaults with { EndLevel = 50 };
+
+        Assert.AreEqual(0.015, RestedXpRules.LevelsPerHour(49, toFifty), 1e-7);
+        Assert.AreEqual(0, RestedXpRules.LevelsPerHour(50, toFifty), 1e-9);
+        Assert.AreEqual(0, RestedXpRules.LevelsPerHour(126, toFifty), 1e-9);
+    }
+
+    [TestMethod]
     public void KeepsPaceWithKillXpAtEveryLevel()
     {
         for (var level = 1; level <= 300; level++)

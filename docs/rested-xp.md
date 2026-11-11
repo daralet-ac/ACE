@@ -17,6 +17,8 @@ gone.
   level's cost one kill gives (`KillXp.Share`, which `Creature.GetCreatureDeathXP` uses too), so rest keeps pace with
   kill XP at every level, and follows it if the kill shares or the level cap change. That's 5% of a level an hour at
   level 10, 2.5% at 20, 2% at 30, 1.5% at 40, 1% at 50, 0.5% at 75 and 0.25% from 100.
+- **Up to level 50** (`rested_xp_end_level`, the soft cap for now; 0 for no end): from it on nothing more builds up,
+  though what a player has still spends, and `/rested` says so. Raise it with the level cap.
 - There's no most to start (`rested_xp_max_levels` 0): the slowdown below alone holds it back. Set
   `rested_xp_max_levels` to a number of levels (1.5, say) to stop it at that much of the level's cost. The most grows as
   they level; a pool already over it (the properties lowered) isn't cut back.
@@ -60,6 +62,7 @@ the XP before the bonus. "You've used up your rested experience." when it runs o
 | --- | --- | --- |
 | `rested_xp` | true | Off stops building and spending; each player keeps what they have. |
 | `rested_xp_bonus` | 1.0 | How much more kills earn while rested (1.0 doubles them). |
+| `rested_xp_end_level` | 50 | The level rest stops building at; 0 for no end. |
 | `rested_xp_min_level` | 10 | The level rest starts building at. |
 | `rested_xp_offline_rate` | 0.5 | Logged out, the share of the rate in a town. |
 | `rested_xp_kills_per_hour` | 5 | An hour of rest in town, in same-level kills' worth of XP. |

@@ -28,8 +28,8 @@ public static class RestedXpRules
     public const string MaxLevel = "maxlevel";
 
     /// <summary>
-    /// An hour's rest comes to nothing at this level (rested_xp_kills_per_hour 0): what's left can still be spent, but no
-    /// more builds up.
+    /// Nothing builds up at this level: at or past rested_xp_end_level (50), or with rested_xp_kills_per_hour 0. What's
+    /// left can still be spent.
     /// </summary>
     public const string NoRest = "norest";
 
@@ -46,6 +46,7 @@ public static class RestedXpRules
     /// <param name="SlowdownPerLevel">How much slower it builds for each full level's cost rested: 0.5 halves it</param>
     /// <param name="MinLevel">The level rest starts building at (rested_xp_min_level)</param>
     /// <param name="OfflineRate">The share of the rate logged-out time gets (rested_xp_offline_rate): 0.5 is half</param>
+    /// <param name="EndLevel">The level rest stops building at (rested_xp_end_level); 0 for none</param>
     public readonly record struct Settings(
         bool Enabled,
         double KillsPerHour,
@@ -53,7 +54,8 @@ public static class RestedXpRules
         double SlowdownPerLevel,
         double Bonus,
         int MinLevel = 0,
-        double OfflineRate = 1
+        double OfflineRate = 1,
+        int EndLevel = 0
     )
     {
         public static Settings FromProperties()
@@ -65,7 +67,8 @@ public static class RestedXpRules
                 PropertyManager.GetDouble("rested_xp_slowdown_per_level").Item,
                 PropertyManager.GetDouble("rested_xp_bonus").Item,
                 (int)PropertyManager.GetLong("rested_xp_min_level").Item,
-                PropertyManager.GetDouble("rested_xp_offline_rate").Item
+                PropertyManager.GetDouble("rested_xp_offline_rate").Item,
+                (int)PropertyManager.GetLong("rested_xp_end_level").Item
             );
         }
     }
@@ -89,12 +92,18 @@ public static class RestedXpRules
     /// An hour's rest in town at this level, as a fraction of the level's cost: rested_xp_kills_per_hour same-level kills'
     /// worth (KillXp.Share, what Creature.GetCreatureDeathXP gives), so rest keeps pace with kills at every level. With 5:
     /// 5% at level 10, 2.5% at 20, 2% at 30, 1.5% at 40, 1% at 50, 0.5% at 75, 0.25% from 100. Nothing below
-    /// rested_xp_min_level.
+    /// rested_xp_min_level (10), nor from rested_xp_end_level (50) on.
     /// </summary>
     public static double LevelsPerHour(int level, Settings settings)
     {
         // too new a character: rest starts at rested_xp_min_level, so fresh alts bank nothing
         if (level < settings.MinLevel)
+        {
+            return 0;
+        }
+
+        // and stops at rested_xp_end_level, the soft cap for now, to be raised with it
+        if (settings.EndLevel > 0 && level >= settings.EndLevel)
         {
             return 0;
         }
