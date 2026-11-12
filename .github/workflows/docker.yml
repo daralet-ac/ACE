@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - "main"
+  # lets the image be built by hand from the Actions tab (Run workflow), e.g. after the workflow was disabled
+  workflow_dispatch:
 
 jobs:
   docker:
