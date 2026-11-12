@@ -15,7 +15,7 @@ public class PlayerUi
     /// <summary>
     /// Every request @playerui answers, sent in the hello reply.
     /// </summary>
-    internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "bankwindow", "lootwindow", "market", "broker", "arena", "corpse", "salvage", "describe", "character", "quests", "abandon", "rollranges", "lfg", "social", "friend", "squelch", "allegiance", "fellowcreate", "shareitem", "shareagain", "shared"];
+    internal static readonly string[] Kinds = ["hello", "fellowship", "targets", "position", "bank", "bankwindow", "lootwindow", "market", "broker", "arena", "corpse", "salvage", "describe", "character", "quests", "abandon", "rollranges", "lfg", "social", "friend", "squelch", "allegiance", "fellowcreate", "shareitem", "shareagain", "shared", "xp"];
 
     /// <summary>
     /// What else this server's commands take that older servers' don't, for the hello reply. "packid": /bank inscribe and
@@ -39,7 +39,7 @@ public class PlayerUi
         "hello | fellowship [spells] | targets <guid> [guid] | position | bank | bankwindow <on|off> | lootwindow <on|off>"
             + " | market | broker <list|cancel|claim|expired> ... | arena | corpse <guid> | describe <guid>... | salvage <guid>... | character | quests | abandon <contract id> | rollranges | lfg"
             + " | social | friend add|remove ... | squelch character|account|remove ... | allegiance swear|break|kick ..."
-            + " | fellowcreate <0|1> <name> | shareitem <guid> | shareagain <key> | shared <key>...\n"
+            + " | fellowcreate <0|1> <name> | shareitem <guid> | shareagain <key> | shared <key>... | xp\n"
             + "The plugin sends these itself and hides the replies from chat. See PlayerUiProtocol for the reply format."
     )]
     public static void HandlePlayerui(Session session, params string[] parameters)
@@ -109,6 +109,10 @@ public class PlayerUi
                 break;
             case "quests":
                 payload = PlayerUiQuestData.GetQuests(player);
+                break;
+            case "xp":
+                // the level's XP, for the XP bar, and the rested experience /rested tells of
+                payload = PlayerUiXpData.GetXp(player);
                 break;
             case "lfg":
                 payload = LfgManager.GetPlayerUiReport(player);

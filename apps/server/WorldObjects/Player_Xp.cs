@@ -154,13 +154,15 @@ partial class Player
     /// <param name="shareType"></param>
     /// <param name="xpMessage"></param>
     /// <param name="creatureWcid"></param>
+    /// <param name="killShare">A fellow's share of a kill (XpType.Fellowship): rested experience counts it as kill XP</param>
     public void GrantXP(
         long amount,
         XpType xpType,
         int? xpSourceLevel,
         ShareType shareType = ShareType.All,
         string xpMessage = "",
-        uint? creatureWcid = null
+        uint? creatureWcid = null,
+        bool killShare = false
     )
     {
         //Console.WriteLine($"{Name}.GrantXP({amount}, {xpType}, {shareType})");
@@ -252,8 +254,18 @@ partial class Player
         //                   $"-regionalDebuffBonusMod: {regionalDebuffBonus}\n" +
         //                   $"-overlevelPenalty: {overlevelPenalty}");
 
+        // Kill XP, and a fellow's share of a kill, earns more while the player is rested, taken from their rested experience.
+        // Only what the player gains: allegiance passup, item XP, vitae and loyalty go by the XP before it.
+        var rested = xpType == XpType.Kill || killShare;
+
         // Make sure UpdateXpAndLevel is done on this players thread
-        EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(m_amount, amountWithoutLevelPenalty, xpType, xpMessage)));
+        EnqueueAction(
+            new ActionEventDelegate(() =>
+            {
+                var restedBonus = rested ? ConsumeRestedXp(m_amount) : 0;
+                UpdateXpAndLevel(m_amount + restedBonus, amountWithoutLevelPenalty, xpType, xpMessage);
+            })
+        );
 
         // for passing XP up the allegiance chain,
         // this function is only called at the very beginning, to start the process.

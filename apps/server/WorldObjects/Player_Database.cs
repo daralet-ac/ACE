@@ -54,6 +54,9 @@ partial class Player
 
     private void SetPropertiesAtLogOut()
     {
+        // the rest since the last heartbeat counts, and logging out starts the time away from now
+        RestedXpTick(Time.GetUnixTime());
+
         LogoffTimestamp = Time.GetUnixTime();
         // These properties are used with offline players to determine passup rates
         SetProperty(PropertyInt.CurrentLoyaltyAtLastLogoff, (int)GetCreatureSkill(Skill.Loyalty).Current);

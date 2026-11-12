@@ -189,6 +189,7 @@ partial class Player
         HandleFreeSkillResetRenewal();
         HandleFreeAttributeResetRenewal();
         HandleFreeMasteryResetRenewal();
+        HandleRestedXpOnLogin();
 
         HandleDBUpdates();
 
