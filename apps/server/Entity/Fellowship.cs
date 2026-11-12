@@ -884,7 +884,8 @@ public class Fellowship
                     fellowXpType,
                     xpSourceLevel,
                     shareType,
-                    player == member ? xpMessage : ""
+                    player == member ? xpMessage : "",
+                    killShare: xpType == XpType.Kill
                 );
             }
 
@@ -919,7 +920,8 @@ public class Fellowship
                     fellowXpType,
                     xpSourceLevel,
                     shareType,
-                    player == member ? xpMessage : ""
+                    player == member ? xpMessage : "",
+                    killShare: xpType == XpType.Kill
                 );
             }
         }

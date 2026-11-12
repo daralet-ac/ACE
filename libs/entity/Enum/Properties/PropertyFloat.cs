@@ -556,6 +556,19 @@ public enum PropertyFloat : ushort
     /// give in earns it, and starts it again from 0. Saved.
     /// </summary>
     TownDonorProgress = 20057,
+
+    /// <summary>
+    /// Rested experience left: kill XP earned while it lasts gets a bonus (rested_xp_bonus), taken from it. Built up while
+    /// logged out, or in a town out of combat mode (Player_RestedXp.cs). A float so the few points a heartbeat adds aren't
+    /// rounded away. Saved.
+    /// </summary>
+    RestedXp = 20058,
+
+    /// <summary>
+    /// When rested experience was last added up (unix time), set every heartbeat and at logout, so logging back in adds
+    /// the time since. Saved.
+    /// </summary>
+    RestedXpTimestamp = 20059,
 }
 
 public static class PropertyFloatExtensions

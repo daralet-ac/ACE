@@ -361,6 +361,23 @@ public class PlayerUiProtocolTests
     }
 
     [TestMethod]
+    public void XpSendsTheNamesThePluginReads()
+    {
+        var xp = new PlayerUiXp(12, 6500, 5000, 7000, false, new PlayerUiRested(true, "resting", 1200, 3000, 1.5, 250, 40, 2000, 0.5, 10, 0.5));
+
+        var json = PlayerUiProtocol.BuildMessages("xp", xp).JoinedJson();
+
+        // the plugin's XpInfo and RestedInfo read these names
+        Assert.AreEqual(
+            "{\"level\":12,\"totalXp\":6500,\"levelXp\":5000,\"nextLevelXp\":7000,\"maxLevel\":false,"
+                + "\"rested\":{\"enabled\":true,\"state\":\"resting\",\"rested\":1200,\"max\":3000,\"bonus\":1.5,"
+                + "\"perHour\":250,\"earnedThisSession\":40,\"levelCost\":2000,\"slowdownPerLevel\":0.5,"
+                + "\"minLevel\":10,\"offlineRate\":0.5}}",
+            json
+        );
+    }
+
+    [TestMethod]
     public void QuestsSendEachContractWithoutItsEmptyFields()
     {
         var quests = new PlayerUiQuests(

@@ -375,33 +375,7 @@ partial class Creature
         levelTotalXP = DatManager.PortalDat.XpTable.CharacterLevelXPList[creatureLevel + 1]
                        - DatManager.PortalDat.XpTable.CharacterLevelXPList[creatureLevel];
 
-        switch (killerLevel)
-        {
-            case < 10:
-                baseXp = levelTotalXP * 0.02f;
-                break;
-            case < 20:
-                baseXp = levelTotalXP * 0.01f;
-                break;
-            case < 30:
-                baseXp = levelTotalXP * 0.005f;
-                break;
-            case < 40:
-                baseXp = levelTotalXP * 0.004f;
-                break;
-            case < 50:
-                baseXp = levelTotalXP * 0.003f;
-                break;
-            case < 75:
-                baseXp = levelTotalXP * 0.002f;
-                break;
-            case < 100:
-                baseXp = levelTotalXP * 0.001f;
-                break;
-            default:
-                baseXp = levelTotalXP * 0.0005f;
-                break;
-        }
+        baseXp = levelTotalXP * KillXp.Share(killerLevel);
 
         return (int)Math.Round(baseXp);
     }
