@@ -689,7 +689,12 @@ public partial class Player : Creature, IPlayer
 
         if (Fellowship != null)
         {
+            var fellowship = Fellowship;
+
             FellowshipQuit(false);
+
+            // a locked fellowship can't recruit anyone new, so remember them: logging back in soon puts them back into it
+            fellowship.OnMemberLoggedOut(this);
         }
 
         if (IsTrading && TradePartner != ObjectGuid.Invalid)

@@ -851,6 +851,7 @@ public static class DefaultPropertyManager
         ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),
         ("chat_requires_account_time_seconds", new Property<long>(0,"the amount of time in seconds an account is required to have existed for for global chat privileges")),
         ("chat_requires_player_age", new Property<long>(0, "the amount of time in seconds a player is required to have played for global chat privileges")),
+        ("fellow_locked_rejoin_seconds", new Property<long>(600, "how many seconds someone who left a locked fellowship can still be recruited back into it, and how long someone who logged out of one is put back into it when they log in again")),
         ("chat_requires_player_level", new Property<long>(0, "the level a player is required to have for global chat privileges")),
         ("corpse_spam_limit", new Property<long>(15, "the number of corpses a player is allowed to leave on a landblock at one time")),
         ("ddd_max_unacked_packets", new Property<long>(256, "(non-retail function) how many packets the server lets a client fall behind on acknowledging before it holds back further DAT patch files. Lower if patching stalls, raise if it is slow")),

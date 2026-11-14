@@ -193,6 +193,23 @@ partial class Player
 
         HandleDBUpdates();
 
+        // put them back into a locked fellowship they logged out of not long ago, once the client is in the world.
+        // Anyone left without a fellowship in an area that requires one gets a minute to join one.
+        var rejoinChain = new ActionChain();
+        rejoinChain.AddDelaySeconds(3.0f);
+        rejoinChain.AddAction(
+            this,
+            () =>
+            {
+                if (!IsLoggingOut)
+                {
+                    ACE.Server.Entity.Fellowship.TryRejoinOnLogin(this);
+                    ACE.Server.Entity.Fellowship.CheckFellowshipRequiredOnLogin(this);
+                }
+            }
+        );
+        rejoinChain.EnqueueChain();
+
         if (ServerManager.ShutdownInitiated)
         {
             var actionChain = new ActionChain();

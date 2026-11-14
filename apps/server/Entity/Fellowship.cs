@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -35,6 +36,23 @@ public class Fellowship
 
     public bool Open; // indicates if non-leaders can invite new fellowship members
     public bool IsLocked; // only set through emotes. if a fellowship is locked, new fellowship members cannot be added
+
+    /// <summary>
+    /// Set when the leader disbands the fellowship, so nobody who logged out of it is put back into it
+    /// </summary>
+    public bool IsDisbanded;
+
+    /// <summary>
+    /// How long someone who left a locked fellowship can be recruited back into it, and how long someone who logged out of
+    /// one is put back into it when they log in again (fellow_locked_rejoin_seconds)
+    /// </summary>
+    public static long LockedRejoinSeconds => PropertyManager.GetLong("fellow_locked_rejoin_seconds").Item;
+
+    /// <summary>
+    /// The players who logged out while in a locked fellowship, by guid: the fellowship, and when they logged out.
+    /// A locked fellowship can't recruit anyone new, so without this a disconnect would shut them out of it for good.
+    /// </summary>
+    private static readonly ConcurrentDictionary<uint, (Fellowship Fellowship, double LogoutTime)> LoggedOutLockedMembers = new();
 
     /// <summary>
     /// The town event this is the Town Defense fellowship of, or null for an ordinary fellowship. A Town Defense fellowship
@@ -142,7 +160,7 @@ public class Fellowship
             }
             else
             {
-                var timeLimit = Time.GetDateTimeFromTimestamp(timeDeparted).AddSeconds(600);
+                var timeLimit = Time.GetDateTimeFromTimestamp(timeDeparted).AddSeconds(LockedRejoinSeconds);
                 if (DateTime.UtcNow > timeLimit)
                 {
                     inviter.Session.Network.EnqueueSend(
@@ -238,8 +256,21 @@ public class Fellowship
             return;
         }
 
+        AddMember(player);
+
+        if (inviter.CurrentMotionState.Stance == MotionStance.NonCombat) // only do this motion if inviter is at peace, other times motion is skipped.
+        {
+            inviter.SendMotionAsCommands(MotionCommand.BowDeep, MotionStance.NonCombat);
+        }
+    }
+
+    /// <summary>
+    /// Puts a player into the fellowship and tells everyone in it
+    /// </summary>
+    private void AddMember(Player player)
+    {
         FellowshipMembers.TryAdd(player.Guid.Full, new WeakReference<Player>(player));
-        player.Fellowship = inviter.Fellowship;
+        player.Fellowship = this;
 
         CalculateXPSharing();
 
@@ -278,11 +309,6 @@ public class Fellowship
 
         UpdateAllMembers();
 
-        if (inviter.CurrentMotionState.Stance == MotionStance.NonCombat) // only do this motion if inviter is at peace, other times motion is skipped.
-        {
-            inviter.SendMotionAsCommands(MotionCommand.BowDeep, MotionStance.NonCombat);
-        }
-
         var accountIds = new List<uint> { };
         foreach (var member in fellowshipMembers.Values)
         {
@@ -299,6 +325,118 @@ public class Fellowship
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Called when a player logs out of this fellowship (after they've left it). If it's locked, they're remembered, so
+    /// logging back in within LockedRejoinSeconds puts them back into it (TryRejoinOnLogin).
+    /// </summary>
+    public void OnMemberLoggedOut(Player player)
+    {
+        if (player == null || !IsLocked || IsDisbanded || IsTownDefense)
+        {
+            return;
+        }
+
+        var now = Time.GetUnixTime();
+
+        // forget whoever's time ran out, so the list doesn't keep fellowships that are long gone
+        foreach (var entry in LoggedOutLockedMembers)
+        {
+            if (now - entry.Value.LogoutTime > LockedRejoinSeconds)
+            {
+                LoggedOutLockedMembers.TryRemove(entry.Key, out _);
+            }
+        }
+
+        LoggedOutLockedMembers[player.Guid.Full] = (this, now);
+    }
+
+    /// <summary>
+    /// Called when a player enters the world: if they logged out of a locked fellowship within LockedRejoinSeconds and it's
+    /// still going, puts them back into it. Returns true if they rejoined.
+    /// </summary>
+    public static bool TryRejoinOnLogin(Player player)
+    {
+        if (player == null || !LoggedOutLockedMembers.TryRemove(player.Guid.Full, out var entry))
+        {
+            return false;
+        }
+
+        var fellowship = entry.Fellowship;
+
+        if (Time.GetUnixTime() - entry.LogoutTime > LockedRejoinSeconds)
+        {
+            player.SendMessage(
+                $"You were away too long to rejoin the locked fellowship {fellowship.FellowshipName}.",
+                ChatMessageType.Fellowship
+            );
+            return false;
+        }
+
+        return fellowship.Rejoin(player);
+    }
+
+    /// <summary>
+    /// Puts a player who logged out of this locked fellowship back into it, without an invite
+    /// </summary>
+    private bool Rejoin(Player player)
+    {
+        if (player.Fellowship != null || player.IsOlthoiPlayer || player.Session == null)
+        {
+            return false;
+        }
+
+        if (IsDisbanded || !IsLocked)
+        {
+            player.SendMessage(
+                $"The locked fellowship {FellowshipName} you logged out of is no longer around.",
+                ChatMessageType.Fellowship
+            );
+            return false;
+        }
+
+        var members = GetFellowshipMembers();
+
+        if (members.ContainsKey(player.Guid.Full))
+        {
+            return false;
+        }
+
+        if (members.Count >= MaxMembers)
+        {
+            player.SendMessage(
+                $"The locked fellowship {FellowshipName} is full, so you couldn't rejoin it.",
+                ChatMessageType.Fellowship
+            );
+            return false;
+        }
+
+        // everyone else logged out too: whoever is back first leads it
+        if (!members.ContainsKey(FellowshipLeaderGuid))
+        {
+            FellowshipLeaderGuid = player.Guid.Full;
+        }
+
+        DepartedMembers.Remove(player.Guid.Full);
+
+        AddMember(player);
+
+        player.Session.Network.EnqueueSend(new GameEventFellowshipFellowUpdateDone(player.Session));
+        player.SendMessage($"You have rejoined the locked fellowship {FellowshipName}.", ChatMessageType.Fellowship);
+
+        foreach (var member in members.Values)
+        {
+            member.SendMessage($"{player.Name} has logged back in and rejoined the fellowship.", ChatMessageType.Fellowship);
+        }
+
+        _log.Information(
+            "[FELLOWSHIP] {Player} logged back in and rejoined the locked fellowship {Fellowship}",
+            player.Name,
+            FellowshipName
+        );
+
+        return true;
     }
 
     public void RemoveFellowshipMember(Player player, Player leader)
@@ -367,75 +505,116 @@ public class Fellowship
 
     private void CheckForFellowRequiredLandblock(Player player)
     {
-        if (player.CurrentLandblock is null)
+        // someone logging out is leaving the world anyway. If they come back without a fellowship,
+        // logging in starts the countdown (CheckFellowshipRequiredOnLogin).
+        if (player.IsLoggingOut)
         {
-            _log.Error("CheckForFellowRequiredLandblock({Player}) - CurrentLandblock is null", player.Name);
             return;
         }
 
-        if (player.CurrentLandblock.IsFellowshipRequired())
+        StartFellowshipRequiredCountdown(
+            player,
+            p => p.Fellowship != this,
+            "This area requires being in a fellowship. You have 1 minute to rejoin the original fellowship or else you will be teleported away.",
+            "rejoin the fellowship"
+        );
+    }
+
+    /// <summary>
+    /// Called when a player enters the world (after TryRejoinOnLogin): someone who logs in to an area that requires a
+    /// fellowship without being in one gets the same 1 minute to join one as someone who leaves a fellowship there
+    /// </summary>
+    public static void CheckFellowshipRequiredOnLogin(Player player)
+    {
+        if (player == null || player.Fellowship != null || player.IsLoggingOut)
         {
-            player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    "This area requires being in a fellowship. You have 1 minute to rejoin the original fellowship or else you will be teleported away.",
-                    ChatMessageType.Broadcast
-                )
-            );
-
-            var actionChain = new ActionChain();
-
-            actionChain.AddDelaySeconds(30);
-
-            actionChain.AddAction(
-                player, () =>
-                {
-                    if (player.CurrentLandblock.IsFellowshipRequired() && player.Fellowship != this)
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                "You have 30 seconds to rejoin the fellowship.",
-                                ChatMessageType.Broadcast
-                            )
-                        );
-                    }
-                });
-
-            actionChain.AddDelaySeconds(20);
-
-            actionChain.AddAction(
-                player, () =>
-                {
-                    if (player.CurrentLandblock.IsFellowshipRequired() && player.Fellowship != this)
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                "You have 10 seconds to rejoin the fellowship.",
-                                ChatMessageType.Broadcast
-                            )
-                        );
-                    }
-                });
-
-            actionChain.AddDelaySeconds(10);
-
-            actionChain.AddAction(
-                player, () =>
-                {
-                    if (player.CurrentLandblock.IsFellowshipRequired() && player.Fellowship != this)
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                "Teleporting away.",
-                                ChatMessageType.Broadcast
-                            )
-                        );
-
-                        WorldManager.ThreadSafeTeleport(player, player.Sanctuary);
-                    }
-                });
-
-            actionChain.EnqueueChain();
+            return;
         }
+
+        StartFellowshipRequiredCountdown(
+            player,
+            p => p.Fellowship == null,
+            "This area requires being in a fellowship. You have 1 minute to join one or else you will be teleported away.",
+            "join a fellowship"
+        );
+    }
+
+    /// <summary>
+    /// If the player is in an area that requires a fellowship, warns them and teleports them to their lifestone a minute
+    /// later, unless by then they're out of the area or outOfFellowship is no longer true for them
+    /// </summary>
+    private static void StartFellowshipRequiredCountdown(
+        Player player,
+        Func<Player, bool> outOfFellowship,
+        string firstWarning,
+        string joinWhat
+    )
+    {
+        if (player.CurrentLandblock is null)
+        {
+            Log.ForContext<Fellowship>()
+                .Error("StartFellowshipRequiredCountdown({Player}) - CurrentLandblock is null", player.Name);
+            return;
+        }
+
+        if (!player.CurrentLandblock.IsFellowshipRequired())
+        {
+            return;
+        }
+
+        player.Session.Network.EnqueueSend(new GameMessageSystemChat(firstWarning, ChatMessageType.Broadcast));
+
+        // logging out stops the countdown: logging back in starts it again if they still need a fellowship
+        bool StillOut() =>
+            !player.IsLoggingOut
+            && player.CurrentLandblock is not null
+            && player.CurrentLandblock.IsFellowshipRequired()
+            && outOfFellowship(player);
+
+        var actionChain = new ActionChain();
+
+        actionChain.AddDelaySeconds(30);
+
+        actionChain.AddAction(
+            player, () =>
+            {
+                if (StillOut())
+                {
+                    player.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat($"You have 30 seconds to {joinWhat}.", ChatMessageType.Broadcast)
+                    );
+                }
+            });
+
+        actionChain.AddDelaySeconds(20);
+
+        actionChain.AddAction(
+            player, () =>
+            {
+                if (StillOut())
+                {
+                    player.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat($"You have 10 seconds to {joinWhat}.", ChatMessageType.Broadcast)
+                    );
+                }
+            });
+
+        actionChain.AddDelaySeconds(10);
+
+        actionChain.AddAction(
+            player, () =>
+            {
+                if (StillOut())
+                {
+                    player.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat("Teleporting away.", ChatMessageType.Broadcast)
+                    );
+
+                    WorldManager.ThreadSafeTeleport(player, player.Sanctuary);
+                }
+            });
+
+        actionChain.EnqueueChain();
     }
 
     private void UpdateAllMembers()
@@ -521,6 +700,8 @@ public class Fellowship
         {
             if (disband)
             {
+                IsDisbanded = true;
+
                 var fellowshipMembers = GetFellowshipMembers();
 
                 foreach (var member in fellowshipMembers.Values)
@@ -569,7 +750,12 @@ public class Fellowship
                     )
                 );
 
-                if (player.CurrentLandblock is not null && player.CurrentLandblock.IsFellowshipRequired())
+                // someone logging out is leaving the world anyway: logging back in starts the countdown if they need one
+                if (
+                    !player.IsLoggingOut
+                    && player.CurrentLandblock is not null
+                    && player.CurrentLandblock.IsFellowshipRequired()
+                )
                 {
                     player.Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
@@ -740,8 +926,11 @@ public class Fellowship
                 FellowshipLocks[lockName].UpdateTimestamp(timestamp);
             }
 
+            var minutes = Math.Max(1, (int)Math.Round(LockedRejoinSeconds / 60.0));
+            var minutesText = minutes == 1 ? "1 minute" : $"{minutes} minutes";
+
             SendBroadcastAndUpdate(
-                "Your fellowship is now locked.  You may not recruit new members.  If you leave the fellowship, you have 15 minutes to be recruited back into the fellowship."
+                $"Your fellowship is now locked.  You may not recruit new members.  If you leave the fellowship, you have {minutesText} to be recruited back into the fellowship.  If you log out, logging back in within {minutesText} puts you back into it."
             );
         }
         else
