@@ -361,6 +361,26 @@ public class PlayerUiProtocolTests
     }
 
     [TestMethod]
+    public void StyleSendsTheNamesThePluginReads()
+    {
+        var reply = new PlayerUiItemStyleReply(
+            7,
+            "Robe",
+            null,
+            [new PlayerUiItemStyle("Default", false, false), new PlayerUiItemStyle("Hooded", true, true)]
+        );
+
+        var json = PlayerUiProtocol.BuildMessages("style", reply).JoinedJson();
+
+        // the plugin's ItemStylesInfo reads these names
+        Assert.AreEqual(
+            "{\"guid\":7,\"name\":\"Robe\",\"problem\":null,\"styles\":[{\"name\":\"Default\",\"showing\":false,"
+                + "\"earned\":false},{\"name\":\"Hooded\",\"showing\":true,\"earned\":true}]}",
+            json
+        );
+    }
+
+    [TestMethod]
     public void XpSendsTheNamesThePluginReads()
     {
         var xp = new PlayerUiXp(12, 6500, 5000, 7000, false, new PlayerUiRested(true, "resting", 1200, 3000, 1.5, 250, 40, 2000, 0.5, 10, 0.5));

@@ -416,6 +416,15 @@ public record PlayerUiSharedItem(string Key, string Name, string Owner, int Slot
 public record PlayerUiShareReply(uint Guid, string Problem, PlayerUiSharedItem Shared);
 
 /// <summary>
+/// The answer to @playerui style: the item asked about, the looks the player can choose for it in /style's order (so a
+/// look's number is its place here, from 1), null when it has only the one, or why it can't be asked about (Problem).
+/// </summary>
+public record PlayerUiItemStyleReply(uint Guid, string Name, string Problem, List<PlayerUiItemStyle> Styles);
+
+/// <summary>A look of an item: Showing is the one it has now, Earned one unlocked by a quest.</summary>
+public record PlayerUiItemStyle(string Name, bool Showing, bool Earned);
+
+/// <summary>
 /// The answer to @playerui shared: the links' items, and the keys there's none for (forgotten after a day, or just text in
 /// brackets), so the plugin can tell those from a request that got no answer.
 /// </summary>
