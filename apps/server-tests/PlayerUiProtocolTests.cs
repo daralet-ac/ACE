@@ -64,7 +64,7 @@ public class PlayerUiProtocolTests
         var json = PlayerUiProtocol.BuildMessages("hello", hello).JoinedJson();
 
         StringAssert.StartsWith(json, "{\"protocol\":1,\"name\":\"Bob Smith\",\"guid\":1342177281,\"kinds\":[\"hello\",");
-        StringAssert.EndsWith(json, ",\"features\":[\"packid\"]}");
+        StringAssert.EndsWith(json, ",\"features\":[\"packid\",\"vendordescribe\"]}");
     }
 
     [TestMethod]
