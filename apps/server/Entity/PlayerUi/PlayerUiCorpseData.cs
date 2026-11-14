@@ -159,9 +159,10 @@ public static class PlayerUiCorpseData
     }
 
     /// <summary>
-    /// Items the player carries or wears, or has in the bank they have open, described as a corpse's are: for the plugin's
-    /// item tooltips (the bank window), its "test against my packs", and its appraisal's compare with what's equipped. Guids
-    /// that are none of these are skipped, so this only ever describes the player's own things.
+    /// Items the player carries or wears, or has in the bank they have open, or that the vendor they last opened sells,
+    /// described as a corpse's are: for the plugin's item tooltips (the bank and vendor windows), its "test against my
+    /// packs", and its appraisal's compare with what's equipped. Guids that are none of these are skipped, so this only
+    /// ever describes the player's own things and a vendor's stock, which the game's appraisal shows anyone anyway.
     /// </summary>
     public static List<PlayerUiCorpseItem> DescribeCarried(Player player, IEnumerable<string> words)
     {
@@ -171,11 +172,28 @@ public static class PlayerUiCorpseData
             .Take(MaxDescribeItems)
             .ToList();
 
+        var own = OwnItemFinder(player);
+
         return guids
-            .Select(OwnItemFinder(player))
+            .Select(guid => own(guid) ?? FindVendorItem(player, guid))
             .Where(item => item != null)
             .Select(Describe)
             .ToList();
+    }
+
+    /// <summary>
+    /// An item the vendor the player last opened sells, found as the game's own appraisal finds it
+    /// (Player.FindObject's LastUsedContainer: Vendor.TryGetItemForSale, a market vendor's per-player stock included);
+    /// null for anything else.
+    /// </summary>
+    public static WorldObject FindVendorItem(Player player, uint guid)
+    {
+        if (player.CurrentLandblock?.GetObject(player.LastOpenedContainerId) is not Vendor vendor)
+        {
+            return null;
+        }
+
+        return vendor.TryGetItemForSale(player, new ObjectGuid(guid), out var item) ? item : null;
     }
 
     /// <summary>
