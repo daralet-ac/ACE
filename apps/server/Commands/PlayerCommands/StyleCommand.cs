@@ -95,7 +95,6 @@ public class StyleCommand
 
     private static void SwitchExamined(Session session, string numberOrName)
     {
-        var player = session.Player;
         var item = GetExaminedItem(session, out var equipped);
 
         if (item == null)
@@ -103,6 +102,16 @@ public class StyleCommand
             return;
         }
 
+        Switch(session.Player, item, equipped, numberOrName);
+    }
+
+    /// <summary>
+    /// Switches one of the player's items to its next look (numberOrName null) or the one named, saying in chat what
+    /// happened. The plugin's item menus use it too (@playerui style, PlayerUiItemStyles).
+    /// </summary>
+    internal static void Switch(Player player, WorldObject item, bool equipped, string numberOrName)
+    {
+        var session = player.Session;
         Func<string, bool> hasQuest = player.QuestManager.HasQuest;
 
         if (!ItemStyles.CanSwitch(item, hasQuest))
