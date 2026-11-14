@@ -20,8 +20,9 @@ public class PlayerUi
     /// <summary>
     /// What else this server's commands take that older servers' don't, for the hello reply. "packid": /bank inscribe and
     /// /bank icon name a pack by its id ("#8000ABCD"), not only by its number or as the pack last examined.
+    /// "vendordescribe": describe also takes what the vendor you last opened sells, for the plugin's vendor tooltips.
     /// </summary>
-    internal static readonly string[] Features = ["packid"];
+    internal static readonly string[] Features = ["packid", "vendordescribe"];
 
     /// <summary>
     /// How often each player may ask (the playerui_ server properties). Asking faster (typing or scripting the command, say)
