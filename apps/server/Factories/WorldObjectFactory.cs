@@ -189,6 +189,8 @@ public static class WorldObjectFactory
                 return new SpellDust(weenie, guid);
             case WeenieType.ScribingTable:
                 return new ScribingTable(weenie, guid);
+            case WeenieType.SalvageRefinery:
+                return new SalvageRefinery(weenie, guid);
             case WeenieType.WeaponRelic:
                 return new WeaponRelic(weenie, guid);
             default:
@@ -352,6 +354,8 @@ public static class WorldObjectFactory
                 return new SpellDust(biota);
             case WeenieType.ScribingTable:
                 return new ScribingTable(biota);
+            case WeenieType.SalvageRefinery:
+                return new SalvageRefinery(biota);
             case WeenieType.WeaponRelic:
                 return new WeaponRelic(biota);
             default:

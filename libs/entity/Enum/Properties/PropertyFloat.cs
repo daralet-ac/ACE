@@ -368,6 +368,12 @@ public enum PropertyFloat : ushort
     VendorRestockInterval = 10006,
     VendorStockTimeToRot = 10007,
 
+    /// <summary>
+    /// Players within this many meters of the object can't hand items to each other (Player.GetNoPlayerGiveZone), so a
+    /// crowd around a Salvage Refinery or Market Broker can't drop items on the wrong target. Secure trade still works.
+    /// </summary>
+    NoPlayerGiveRadius = 10008,
+
     // Timeline
 
     [AssessmentProperty]

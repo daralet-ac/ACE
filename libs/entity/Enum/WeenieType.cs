@@ -99,5 +99,6 @@ public enum WeenieType : uint
     ResonanceEnergyStorageDevice,
 
     // Append new types here only - sequential enum, no explicit values, renumbering would break live data.
-    BezelFragment
+    BezelFragment,
+    SalvageRefinery
 }

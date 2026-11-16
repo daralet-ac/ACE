@@ -1359,6 +1359,12 @@ public enum PropertyInt : ushort
     /// This is the sort order for items in a container
     /// </summary>
     InventoryOrder = 9015,
+
+    /// <summary>
+    /// The highest workmanship a pack handed to the Salvage Refinery refines (/salvage refinemax); bags above it are
+    /// left alone. Unset means 9, every bag that can be refined.
+    /// </summary>
+    SalvageRefineMax = 9016,
     CombatAbilityId = 10000,
 
     [AssessmentProperty]

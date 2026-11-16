@@ -17,7 +17,7 @@ using ACE.Server.WorldObjects.Entity;
 
 namespace ACE.Server.WorldObjects;
 
-public class Salvage : WorldObject
+public class Salvage : Stackable
 {
     // Per-tink amounts. Quest item mutation bakes a full set of these into quest gear, which can't be
     // tinkered, so changing one here changes quest gear too.
@@ -119,6 +119,19 @@ public class Salvage : WorldObject
             return;
         }
 
+        // bags from before salvage stacked convert when their owner logs in
+        if (SalvageStacks.IsLegacyBag(source) || SalvageStacks.IsLegacyBag(target))
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    "That's an old bag of salvage. It becomes a stack of salvage the next time you log in.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+            return;
+        }
+
         var combineSalvage = false;
         var upgradeCombine = false;
 
@@ -134,7 +147,7 @@ public class Salvage : WorldObject
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"Salvage bags must be the same material to combine them.",
+                        $"Salvage must be the same material to combine it.",
                         ChatMessageType.Broadcast
                     )
                 );
@@ -142,24 +155,22 @@ public class Salvage : WorldObject
                 return;
             }
 
-            var sourceWork = (int)(source.Workmanship ?? 1);
-            var targetWork = (int)(target.Workmanship ?? 1);
+            var sourceWork = SalvageStacks.GetTier(source);
+            var targetWork = SalvageStacks.GetTier(target);
+            var targetSpace = (target.MaxStackSize ?? 1) - (target.StackSize ?? 1);
 
             if (sourceWork == targetWork - 1)
             {
                 upgradeCombine = true;
 
-                var unitsGained = (source.Structure ?? 0) / 2;
-                var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
-                if (unitsGained > targetSpace)
-                {
-                    unitsGained = targetSpace;
-                }
+                var unitsGained = Math.Min((source.StackSize ?? 1) / 2, targetSpace);
 
                 if (unitsGained < 1)
                 {
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat(
-                        $"You need at least 2 units of source salvage to upgrade.",
+                        targetSpace < 1
+                            ? "That stack of salvage is full."
+                            : "You need at least 2 units of source salvage to upgrade.",
                         ChatMessageType.Broadcast));
                     player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
                     return;
@@ -168,16 +179,16 @@ public class Salvage : WorldObject
             else if (sourceWork != targetWork)
             {
                 player.Session.Network.EnqueueSend(new GameMessageSystemChat(
-                    $"Salvage bags must have matching workmanship to combine, or the source must be exactly one tier lower to upgrade.",
+                    $"Salvage must have matching workmanship to combine, or the source must be exactly one tier lower to upgrade.",
                     ChatMessageType.Broadcast));
                 player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
                 return;
             }
-            else if (target.Structure + source.Structure > 1000)
+            else if (targetSpace < 1)
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"The resulting salvage bag cannot contain more than 1000 units.",
+                        $"That stack of salvage is full.",
                         ChatMessageType.Broadcast
                     )
                 );
@@ -225,7 +236,7 @@ public class Salvage : WorldObject
         }
 
         var units = salvageCost == 1 ? "unit" : "units";
-        if (!combineSalvage && source.Structure < (ushort)salvageCost)
+        if (!combineSalvage && (source.StackSize ?? 1) < salvageCost)
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
@@ -355,36 +366,22 @@ public class Salvage : WorldObject
 
         if (combineSalvage)
         {
+            var targetWork = SalvageStacks.GetTier(target);
+            var targetSpace = (target.MaxStackSize ?? 1) - (target.StackSize ?? 1);
+
             if (upgradeCombine)
             {
-                var targetWork = (int)(target.Workmanship ?? 1);
-                var sourceStruct = source.Structure ?? 0;
-                var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
-
-                var unitsGained = sourceStruct / 2;
-                if (unitsGained > targetSpace)
-                {
-                    unitsGained = targetSpace;
-                }
-
+                var unitsGained = Math.Min((source.StackSize ?? 1) / 2, targetSpace);
                 var unitsConsumed = unitsGained * 2;
 
-                message = $"Combining will add {unitsGained} units to the workmanship {targetWork} bag, " +
-                          $"consuming {unitsConsumed} units from the workmanship {(int)(source.Workmanship ?? 1)} bag. Would you like to proceed?";
+                message = $"Combining will add {unitsGained} units to the workmanship {targetWork} stack, " +
+                          $"consuming {unitsConsumed} units from the workmanship {SalvageStacks.GetTier(source)} stack. Would you like to proceed?";
             }
             else
             {
-                var sourceWork = source.Workmanship ?? 1.0f;
-                var sourceStruct = source.Structure ?? 1;
-                var targetWork = target.Workmanship ?? 1.0f;
-                var targetStruct = target.Structure ?? 1;
+                var moved = Math.Min(source.StackSize ?? 1, targetSpace);
 
-                var combinedWork = ((sourceWork * sourceStruct) + (targetWork * targetStruct)) / (targetStruct + sourceStruct);
-                combinedWork = (float)Math.Round(combinedWork, 2);
-
-                var combinedStruct = sourceStruct + targetStruct;
-
-                message = $"Combining this salvage will produce {combinedStruct} units with a workmanship of {combinedWork}. Would you like to proceed?";
+                message = $"Combining this salvage will produce {(target.StackSize ?? 1) + moved} units of workmanship {targetWork}. Would you like to proceed?";
             }
         }
 
@@ -475,29 +472,22 @@ public class Salvage : WorldObject
             return;
         }
 
-        var sourceWork = source.Workmanship ?? 1.0;
-        var sourceStruct = source.Structure ?? 1;
-        var targetWork = target.Workmanship ?? 1.0;
-        var targetStruct = target.Structure ?? 1;
+        // the same as dragging one stack onto the other
+        var moved = Math.Min(source.StackSize ?? 1, (target.MaxStackSize ?? 1) - (target.StackSize ?? 1));
 
-        var newWork = ((sourceWork * sourceStruct) + (targetWork * targetStruct)) / (targetStruct + sourceStruct);
-        target.Workmanship = (float)Math.Round((newWork), 2);
-        target.Structure += sourceStruct;
-        var combinedWorkmanship = (int)(target.Workmanship ?? 1);
-        target.Name = $"Salvage Wk{combinedWorkmanship} ({target.Structure})";
-        RefreshSalvageBagIcon(player, target, (MaterialType)(target.GetProperty(ACE.Entity.Enum.Properties.PropertyInt.MaterialType) ?? 0), combinedWorkmanship);
+        if (moved < 1 || !player.TryAdjustSalvageStack(target, moved))
+        {
+            return;
+        }
 
-        UpdateObj(player, target);
+        player.TryConsumeFromInventoryWithNetworking(source, moved);
 
         player.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"You combine both bags of salvage.",
+                $"You combine the salvage into a stack of {target.StackSize ?? 1} units.",
                 ChatMessageType.Broadcast
             )
         );
-
-        player.TryConsumeFromInventoryWithNetworking(source);
-        player.Session.Network.EnqueueSend(new GameMessageDeleteObject(source));
     }
 
     private static void UpgradeSalvage(Player player, WorldObject source, WorldObject target)
@@ -507,45 +497,24 @@ public class Salvage : WorldObject
             return;
         }
 
-        var targetWork = (int)(target.Workmanship ?? 1);
-        var sourceStruct = source.Structure ?? 0;
-        var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
-
-        var unitsGained = sourceStruct / 2;
-        if (unitsGained > targetSpace)
-        {
-            unitsGained = targetSpace;
-        }
-
+        var targetWork = SalvageStacks.GetTier(target);
+        var sourceUnits = source.StackSize ?? 1;
+        var unitsGained = Math.Min(sourceUnits / 2, (target.MaxStackSize ?? 1) - (target.StackSize ?? 1));
         var unitsConsumed = unitsGained * 2;
 
-        if (unitsGained < 1)
+        if (unitsGained < 1 || !player.TryAdjustSalvageStack(target, unitsGained))
         {
             return;
         }
 
-        target.Structure = (ushort)((target.Structure ?? 0) + unitsGained);
-        target.Name = $"Salvage Wk{targetWork} ({target.Structure})";
-        UpdateObj(player, target);
+        player.TryConsumeFromInventoryWithNetworking(source, unitsConsumed);
 
-        source.Structure = (ushort)(sourceStruct - unitsConsumed);
-        source.Name = $"Salvage Wk{(int)(source.Workmanship ?? 1)} ({source.Structure})";
+        var remaining = sourceUnits - unitsConsumed;
 
-        if (source.Structure < 1)
-        {
-            player.TryConsumeFromInventoryWithNetworking(source);
-            player.Session.Network.EnqueueSend(new GameMessageDeleteObject(source));
-            player.Session.Network.EnqueueSend(new GameMessageSystemChat(
-                $"You add {unitsGained} units to the workmanship {targetWork} bag, consuming {unitsConsumed} units. The source bag is used up.",
-                ChatMessageType.Broadcast));
-        }
-        else
-        {
-            UpdateObj(player, source);
-            player.Session.Network.EnqueueSend(new GameMessageSystemChat(
-                $"You add {unitsGained} units to the workmanship {targetWork} bag, consuming {unitsConsumed} units. {source.Structure} units remain in the source bag.",
-                ChatMessageType.Broadcast));
-        }
+        player.Session.Network.EnqueueSend(new GameMessageSystemChat(
+            $"You add {unitsGained} units to the workmanship {targetWork} stack, consuming {unitsConsumed} units. "
+                + (remaining > 0 ? $"{remaining} units remain in the source stack." : "The source stack is used up."),
+            ChatMessageType.Broadcast));
     }
 
     public static bool CheckTinkerType(Player player, WorldObject source, WorldObject target, Skill tinkeringSkill)
@@ -647,14 +616,6 @@ public class Salvage : WorldObject
             {
                 return true;
             }
-        }
-
-        if (target is { WeenieType: WeenieType.Salvage}
-            && source.MaterialType == target.MaterialType
-            && source.Structure == 100
-            && target.Structure == 100)
-        {
-            return true;
         }
 
         return false;
@@ -1480,21 +1441,27 @@ public class Salvage : WorldObject
             salvageCost = 0;
         }
 
-        if (source.Structure >= salvageCost)
+        var sourceUnits = source.StackSize ?? 1;
+
+        if (salvageCost > 0 && sourceUnits >= salvageCost)
         {
-            source.Structure -= salvageCost;
+            var materialName = RecipeManager.GetMaterialName(source.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown);
+
+            player.TryConsumeFromInventoryWithNetworking(source, salvageCost);
 
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"Your tinkering consumed {salvageCost} units of {RecipeManager.GetMaterialName(source.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown)}. The {target.Name} has been tinkered {target.NumTimesTinkered} times.",
+                    $"Your tinkering consumed {salvageCost} units of {materialName}. The {target.Name} has been tinkered {target.NumTimesTinkered} times.",
                     ChatMessageType.Broadcast
                 )
             );
+
+            if (sourceUnits == salvageCost)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {source.NameWithMaterial} is consumed.", ChatMessageType.Broadcast));
+            }
         }
 
-        source.Name = $"Salvage Wk{(int)(source.Workmanship ?? 1)} ({source.Structure})";
-
-        UpdateObj(player, source);
         UpdateObj(player, target);
     }
 
@@ -1513,15 +1480,6 @@ public class Salvage : WorldObject
         if (invObj != null)
         {
             player.MoveItemToFirstContainerSlot(obj);
-        }
-
-        if (obj.Structure < 1)
-        {
-            player.TryConsumeFromInventoryWithNetworking(obj);
-            player.Session.Network.EnqueueSend(new GameMessageDeleteObject(obj));
-
-            var salvageName = obj.NameWithMaterial.Replace(" (0)", "");
-            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {salvageName} is consumed.", ChatMessageType.Broadcast));
         }
     }
 
@@ -1973,6 +1931,11 @@ public class Salvage : WorldObject
         var sourceWork = source.Workmanship ?? 1.0;
         var targetWork = target.Workmanship ?? 1.0;
         var newWork = ((sourceWork * moved) + (targetWork * targetStruct)) / (targetStruct + moved);
+
+        // the value goes with the units poured, so combining bags doesn't lose it
+        var valueMoved = (int)((long)(source.Value ?? 0) * moved / sourceStruct);
+        source.Value = (source.Value ?? 0) - valueMoved;
+        target.Value = (target.Value ?? 0) + valueMoved;
 
         target.Workmanship = (float)Math.Round(newWork, 2);
         target.Structure = (ushort)(targetStruct + moved);

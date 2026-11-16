@@ -5264,6 +5264,33 @@ partial class Player
         ); // if player is within UseRadius of moveToTarget, perform rotation?
     }
 
+    /// <summary>
+    /// The nearby object (a Salvage Refinery or Market Broker, say) whose PropertyFloat.NoPlayerGiveRadius covers this
+    /// player, if any: players there can't hand items to each other, so an item meant for the object can't land on a
+    /// player standing next to it. Only objects this player knows about are checked, which covers any radius that fits
+    /// in visible range.
+    /// </summary>
+    public WorldObject GetNoPlayerGiveZone()
+    {
+        if (PhysicsObj?.ObjMaint == null)
+        {
+            return null;
+        }
+
+        foreach (var physicsObj in PhysicsObj.ObjMaint.GetKnownObjectsValues())
+        {
+            var wo = physicsObj.WeenieObj?.WorldObject;
+            var radius = wo?.GetProperty(PropertyFloat.NoPlayerGiveRadius) ?? 0;
+
+            if (radius > 0 && GetDistance(wo) <= radius)
+            {
+                return wo;
+            }
+        }
+
+        return null;
+    }
+
     private void GiveObjectToPlayer(
         Player target,
         WorldObject item,
@@ -5278,6 +5305,19 @@ partial class Player
             Session.Network.EnqueueSend(
                 new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.AttunedItem)
             );
+            return;
+        }
+
+        var noGiveZone = GetNoPlayerGiveZone() ?? target.GetNoPlayerGiveZone();
+        if (noGiveZone != null)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventCommunicationTransientString(
+                    Session,
+                    $"You can't hand items to other players this close to the {noGiveZone.Name}. Use secure trade instead."
+                )
+            );
+            Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
             return;
         }
 
@@ -5460,6 +5500,17 @@ partial class Player
 
             SendUseDoneEvent();
 
+            return;
+        }
+
+        if (target is SalvageRefinery refinery)
+        {
+            // Give-object interaction with "refuse" semantics: the bag always goes back to the player
+            // (InventoryServerSaveFailed), and the refine happens in place on that bag, after the
+            // Yes/No confirmation unless the player turned it off.
+            Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
+
+            SalvageRefineryService.HandleGive(this, refinery, item);
             return;
         }
 
