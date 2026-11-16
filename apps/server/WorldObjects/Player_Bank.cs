@@ -1060,7 +1060,7 @@ public partial class Player
     private List<List<WorldObject>> GetBankSalvageGroups(Storage bank)
     {
         return GetBankItems(bank)
-            .Where(i => i.WeenieType == WeenieType.Salvage)
+            .Where(SalvageStacks.IsLegacyBag) // stacks combine as any stack does (CombineBankStacks)
             .GroupBy(i => ((int)(i.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown), (int)Math.Round(i.Workmanship ?? 1)))
             .Where(g => g.Count() > 1)
             .Select(g => g.ToList())

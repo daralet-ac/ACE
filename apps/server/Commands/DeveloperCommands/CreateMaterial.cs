@@ -16,8 +16,8 @@ public class CreateMaterial
         AccessLevel.Developer,
         CommandHandlerFlag.RequiresWorld,
         1,
-        "Create a salvage bag in your inventory",
-        "<material_type>, optional: <structure> <workmanship> <num_items>"
+        "Create salvage in your inventory",
+        "<material_type>, optional: <units> <workmanship>"
     )]
     public static void HandleCM(Session session, params string[] parameters)
     {
@@ -30,8 +30,8 @@ public class CreateMaterial
         AccessLevel.Developer,
         CommandHandlerFlag.RequiresWorld,
         1,
-        "Create a salvage bag in your inventory",
-        "<material_type>, optional: <structure> <workmanship> <num_items>"
+        "Create salvage in your inventory",
+        "<material_type>, optional: <units> <workmanship>"
     )]
     public static void HandleCISalvage(Session session, params string[] parameters)
     {
@@ -43,13 +43,18 @@ public class CreateMaterial
             return;
         }
 
-        var wcid = (uint)Player.MaterialSalvage[(int)materialType];
-        var salvageBag = WorldObjectFactory.CreateNewWorldObject(wcid);
+        if (!SalvageStacks.HasSalvage(materialType))
+        {
+            session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{materialType} has no salvage", ChatMessageType.Broadcast)
+            );
+            return;
+        }
 
-        ushort structure = 100;
+        var units = 100;
         if (parameters.Length > 1)
         {
-            ushort.TryParse(parameters[1], out structure);
+            int.TryParse(parameters[1], out units);
         }
 
         var workmanship = 10;
@@ -58,25 +63,9 @@ public class CreateMaterial
             int.TryParse(parameters[2], out workmanship);
         }
 
-        workmanship = Math.Clamp(workmanship, 1, 10);
+        workmanship = Math.Clamp(workmanship, SalvageStacks.MinTier, SalvageStacks.MaxTier);
 
-        var numItemsInMaterial = workmanship;
-        if (parameters.Length > 3)
-        {
-            int.TryParse(parameters[3], out numItemsInMaterial);
-        }
-
-        var itemWorkmanship = workmanship * numItemsInMaterial;
-
-        salvageBag.Name = $"Salvage Wk{workmanship} ({structure})";
-        salvageBag.Structure = structure;
-        salvageBag.Workmanship = workmanship;
-        salvageBag.ItemWorkmanship = itemWorkmanship;
-        salvageBag.NumItemsInMaterial = numItemsInMaterial;
-        salvageBag.IconId = Salvage.GetSalvageBagIcon(materialType, workmanship);
-        salvageBag.IgnoreCloIcons = true;
-        salvageBag.UiEffects = UiEffects.Magical;
-
-        session.Player.TryCreateInInventoryWithNetworking(salvageBag);
+        // salvage is stackable now: whole-number workmanship, and the units go into stacks of up to 1,000
+        session.Player.AddSalvageUnits(materialType, workmanship, Math.Max(units, 1));
     }
 }

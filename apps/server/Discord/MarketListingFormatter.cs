@@ -1014,9 +1014,9 @@ internal static class MarketListingFormatter
         {
             var lines = new List<string>(2);
 
-            if (obj.Workmanship.HasValue && obj.MaterialType.HasValue && obj.Structure.HasValue && obj.Structure.Value > 0)
+            if (obj.Workmanship.HasValue && obj.MaterialType.HasValue && ACE.Server.WorldObjects.SalvageStacks.GetUnits(obj) > 0)
             {
-                lines.Add($"- Wk {obj.Workmanship.Value:0.##} | Type {obj.MaterialType.Value} | Qty {obj.Structure.Value}");
+                lines.Add($"- Wk {obj.Workmanship.Value:0.##} | Type {obj.MaterialType.Value} | Qty {ACE.Server.WorldObjects.SalvageStacks.GetUnits(obj)}");
             }
 
             return lines.Count > 0

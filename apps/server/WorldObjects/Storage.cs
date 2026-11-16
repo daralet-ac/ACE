@@ -224,6 +224,9 @@ public class Storage : Container
 
         BankInventoryLoaded = true;
 
+        // banked bags of salvage from before salvage stacked become stacks, before the client is sent them
+        _bankUser?.ConvertLegacySalvageInBank(this);
+
         SendBankVaultInventory(_bankUser);
 
         if (_bankUser != null && IsOpen && Viewer == _bankUser.Guid.Full)

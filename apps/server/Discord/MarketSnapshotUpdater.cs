@@ -163,7 +163,7 @@ internal sealed class MarketSnapshotUpdater
                             {
                                 salvageMaterialKey = wo.MaterialType.HasValue ? (int)wo.MaterialType.Value : int.MaxValue;
                                 salvageWorkKey = wo.Workmanship ?? float.MaxValue;
-                                var qty = wo.Structure ?? 0;
+                                var qty = ACE.Server.WorldObjects.SalvageStacks.GetUnits(wo);
                                 if (qty > 0)
                                 {
                                     salvageUnitPriceKey = (int)Math.Ceiling(l.ListedPrice / (double)qty);

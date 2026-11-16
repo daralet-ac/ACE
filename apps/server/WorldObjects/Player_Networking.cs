@@ -111,6 +111,9 @@ partial class Player
             ChangesDetected = true;
         }
 
+        // bags of salvage from before salvage stacked become stacks, before the client is sent the inventory
+        ConvertLegacySalvage();
+
         // SendSelf will trigger the entrance into portal space
         SendSelf();
 

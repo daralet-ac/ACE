@@ -423,6 +423,12 @@ public enum PropertyBool : ushort
     /// so including them again puts them straight back.
     /// </summary>
     LeaderboardExcluded = 9019,
+
+    /// <summary>
+    /// The player turned off the Salvage Refinery's Yes/No confirmation (/salvage refineconfirm off), so handing it a
+    /// bag refines the bag straight away.
+    /// </summary>
+    SkipSalvageRefineConfirmation = 9020,
 }
 
 public static class PropertyBoolExtensions
