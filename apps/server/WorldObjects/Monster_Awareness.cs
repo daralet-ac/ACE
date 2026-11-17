@@ -11,6 +11,7 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
+using Position = ACE.Entity.Position;
 
 namespace ACE.Server.WorldObjects;
 
@@ -45,9 +46,17 @@ partial class Creature
             if (chance == 10)
             {
                 var wo = WorldObjectFactory.CreateNewWorldObject(1020001);
-                wo.Location = Location;
-                wo.InstanceId = InstanceId;
-                wo.EnterWorld();
+                if (wo != null)
+                {
+                    wo.Location = new Position(Location);
+                    wo.InstanceId = InstanceId;
+
+                    // the spot can be unplaceable (e.g. a landblock seam); don't leak the object
+                    if (!wo.EnterWorld())
+                    {
+                        wo.Destroy();
+                    }
+                }
             }
         }
 
