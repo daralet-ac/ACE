@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Entity;
+using ACE.Entity.Enum;
 using ACE.MarketApi;
 using ACE.Server.Factories;
 using ACE.Server.Market;
@@ -119,6 +120,14 @@ public static class PlayerUiCorpseData
             };
 
             var (described, spellIds) = MarketRepository.Describe(new SnapshotItemFacts(json, row));
+
+            // a weapon's proc spell (cast on strike) isn't in its spell book: it goes first, as appraisal lists it
+            if (item.ProcSpell is > 0 and var procSpell)
+            {
+                spellIds.Remove((int)procSpell);
+                spellIds.Insert(0, (int)procSpell);
+            }
+
             described.Spells = spellIds.Select(id => new Spell(id).Name ?? $"Spell {id}").ToList();
             described.WeaponType = described.ItemCategory == "Weapon" ? PlayerUiWeaponType.Of(item) : null;
             listing = described;
@@ -135,7 +144,10 @@ public static class PlayerUiCorpseData
             item.MaterialType?.ToString(),
             item.Workmanship,
             listing,
-            RollQuality(item)
+            RollQuality(item),
+            // the item's own Use text (the world database's), without what appraisal adds after it (AppraiseInfo's
+            // _extraPropertiesText), which the plugin's item lines show already
+            item.Use ?? ""
         );
     }
 
@@ -159,10 +171,10 @@ public static class PlayerUiCorpseData
     }
 
     /// <summary>
-    /// Items the player carries or wears, or has in the bank they have open, or that the vendor they last opened sells,
-    /// described as a corpse's are: for the plugin's item tooltips (the bank and vendor windows), its "test against my
-    /// packs", and its appraisal's compare with what's equipped. Guids that are none of these are skipped, so this only
-    /// ever describes the player's own things and a vendor's stock, which the game's appraisal shows anyone anyway.
+    /// Items the player carries or wears, or has in the bank they have open, or that the vendor they last opened sells, or
+    /// any other the game's appraisal would show them (FindAppraisableItem: on the ground, wielded by someone in sight),
+    /// described as a corpse's are: for the plugin's item tooltips, its "test against my packs", and its Appraisal window.
+    /// Guids that are none of these are skipped, so nothing is described that the game's own appraisal wouldn't show.
     /// </summary>
     public static List<PlayerUiCorpseItem> DescribeCarried(Player player, IEnumerable<string> words)
     {
@@ -175,7 +187,7 @@ public static class PlayerUiCorpseData
         var own = OwnItemFinder(player);
 
         return guids
-            .Select(guid => own(guid) ?? FindVendorItem(player, guid))
+            .Select(guid => own(guid) ?? FindVendorItem(player, guid) ?? FindAppraisableItem(player, guid))
             .Where(item => item != null)
             .Select(Describe)
             .ToList();
@@ -194,6 +206,38 @@ public static class PlayerUiCorpseData
         }
 
         return vendor.TryGetItemForSale(player, new ObjectGuid(guid), out var item) ? item : null;
+    }
+
+    /// <summary>
+    /// An item that isn't the player's but that the game's own appraisal would show them (Player.HandleActionIdentifyObject,
+    /// which finds it Everywhere): one lying in the world, one another player or creature wields where it shows, one in a
+    /// container they have open, or one their trade partner put in the trade. Only what their client has been told about
+    /// (nothing hidden from them, nothing past the walls), never a creature, and never what appraisal refuses
+    /// (ResistItemAppraisal 999). Null for anything else: what's in someone else's packs stays theirs.
+    /// </summary>
+    public static WorldObject FindAppraisableItem(Player player, uint guid)
+    {
+        var item = player.FindObject(
+            guid,
+            Player.SearchLocations.Landblock
+                | Player.SearchLocations.LastUsedContainer
+                | Player.SearchLocations.WieldedByOther
+                | Player.SearchLocations.TradedByOther
+        );
+
+        if (item == null || item is Creature || (item.ResistItemAppraisal ?? 0) >= 999)
+        {
+            return null;
+        }
+
+        // seen by the client: the item itself, or, for one wielded, whoever wields it (not a cloaked one)
+        var seen = item.Wielder ?? item;
+        var inSight = player.PhysicsObj?.ObjMaint.KnownObjectsContainsKey(seen.Guid.Full) == true
+            && !player.IsHiddenFromClient(seen)
+            && (player.Adminvision || seen is not Creature { CloakStatus: CloakStatus.On });
+
+        // one in an open container or the trade window is in neither (the container or partner was checked by FindObject)
+        return inSight || (item.ContainerId ?? 0) != 0 ? item : null;
     }
 
     /// <summary>

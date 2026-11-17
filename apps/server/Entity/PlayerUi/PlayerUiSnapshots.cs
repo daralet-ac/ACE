@@ -337,7 +337,8 @@ public record PlayerUiCorpse(uint Guid, string Status, string Name, List<PlayerU
 /// An item on a corpse. Salvageable: salvaging could turn it into salvage (Player.IsSalvageable). Sellable: a Market
 /// Broker would list it (MarketBroker.IsSellable: not attuned, bound or unstable, and of a kind it takes). RollQuality:
 /// where each rolled stat landed in its range, 0 to 1, by the stat's name in appraisal's Roll Quality section
-/// (LootGenerationFactory.GetItemRollRanges); null when nothing on it rolled.
+/// (LootGenerationFactory.GetItemRollRanges); null when nothing on it rolled. Use: the item's own Use text, as the world
+/// database has it ("" for none), without what appraisal adds to it.
 /// </summary>
 public record PlayerUiCorpseItem(
     uint Guid,
@@ -350,7 +351,8 @@ public record PlayerUiCorpseItem(
     string Material,
     double? Workmanship,
     ACE.MarketApi.MarketListing Item,
-    Dictionary<string, double> RollQuality
+    Dictionary<string, double> RollQuality,
+    string Use = null
 );
 
 /// <summary>
