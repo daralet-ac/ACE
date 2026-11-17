@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Text;
 using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.Database;
+using ACE.DatLoader;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -180,6 +182,9 @@ public abstract partial class WorldObject : IActor
 
         var defaultState = CalculatedPhysicsState();
 
+        WarnIfMissingFromPortalDat("Setup", SetupTableId);
+        WarnIfMissingFromPortalDat("MotionTable", MotionTableId);
+
         if (!(this is Creature))
         {
             var isDynamic = Static == null || !Static.Value;
@@ -217,6 +222,33 @@ public abstract partial class WorldObject : IActor
         if (BumpVelocity)
         {
             PhysicsObj.Velocity = new Vector3(0, 0, 0.5f);
+        }
+    }
+
+    /// <summary>
+    /// (wcid, did) pairs already reported, so each bad weenie is logged once rather than on every spawn
+    /// </summary>
+    private static readonly ConcurrentDictionary<(uint WeenieClassId, uint DataId), byte> ReportedMissingPortalFiles = new();
+
+    /// <summary>
+    /// The dat loader's "Unable to find object_id" log can't say who asked; this names the weenie behind it
+    /// </summary>
+    private void WarnIfMissingFromPortalDat(string property, uint dataId)
+    {
+        if (dataId == 0 || DatManager.PortalDat == null || DatManager.PortalDat.AllFiles.ContainsKey(dataId))
+        {
+            return;
+        }
+
+        if (ReportedMissingPortalFiles.TryAdd((WeenieClassId, dataId), 0))
+        {
+            _log.Warning(
+                "{Name} [{WeenieClassId}] has {Property} 0x{DataId:X8}, which isn't in the portal dat",
+                Name,
+                WeenieClassId,
+                property,
+                dataId
+            );
         }
     }
 
