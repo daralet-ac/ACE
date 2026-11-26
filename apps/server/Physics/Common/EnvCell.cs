@@ -28,7 +28,7 @@ public class EnvCell : ObjCell, IEquatable<EnvCell>
     public List<ushort> LightArray;
     public int InCellTimestamp;
     public List<ushort> VisibleCellIDs;
-    public new Dictionary<uint, EnvCell> VisibleCells;
+    public new Dictionary<uint, EnvCell> VisibleCells = new Dictionary<uint, EnvCell>();
     public EnvCellFlags Flags;
     public uint EnvironmentID;
     public DatLoader.FileTypes.EnvCell _envCell;
@@ -132,19 +132,25 @@ public class EnvCell : ObjCell, IEquatable<EnvCell>
 
     public void build_visible_cells()
     {
-        VisibleCells = new Dictionary<uint, EnvCell>();
+        // LScape.get_landcell publishes this cell to other threads before PostInit runs
+        // (it has to, so cells that see each other don't recurse forever), so other landblock
+        // threads can already be enumerating VisibleCells. Build the dictionary privately and
+        // swap the finished one in, rather than filling the shared one in place.
+        var visibleCells = new Dictionary<uint, EnvCell>();
 
         foreach (var visibleCellID in VisibleCellIDs)
         {
-            var blockCellID = ID & 0xFFFF0000 | visibleCellID;
-            if (VisibleCells.ContainsKey(blockCellID))
+            if (visibleCells.ContainsKey(visibleCellID))
             {
                 continue;
             }
 
+            var blockCellID = ID & 0xFFFF0000 | visibleCellID;
             var cell = (EnvCell)LScape.get_landcell(blockCellID, Instance);
-            VisibleCells.Add(visibleCellID, cell);
+            visibleCells.Add(visibleCellID, cell);
         }
+
+        VisibleCells = visibleCells;
     }
 
     public void check_building_transit(
