@@ -425,6 +425,23 @@ public class WorldDatabase
         }
     }
 
+    /// <summary>
+    /// Every cook_book row, with its recipe, whose recipe uses the given skill or is one of the given recipe IDs.
+    /// Read only (for Recipe Books), so nothing is tracked and the recipe caches are left alone.
+    /// </summary>
+    public List<CookBook> GetCookbooksForRecipeBook(uint skill, List<uint> extraRecipeIds)
+    {
+        using (var context = new WorldDbContext())
+        {
+            context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+            return context
+                .CookBook.Include(r => r.Recipe)
+                .Where(r => r.Recipe.Skill == skill || extraRecipeIds.Contains(r.RecipeId))
+                .ToList();
+        }
+    }
+
     public CookBook GetCookbook(uint sourceWeenieClassId, uint targetWeenieClassId)
     {
         using (var context = new WorldDbContext())

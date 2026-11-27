@@ -1365,6 +1365,12 @@ public enum PropertyInt : ushort
     /// left alone. Unset means 9, every bag that can be refined.
     /// </summary>
     SalvageRefineMax = 9016,
+
+    /// <summary>
+    /// Marks a Book as a Recipe Book for this Skill: its pages are generated from the recipe tables each time it's
+    /// opened (see RecipeBookService), never stored. RecipeBookIncludeRecipes / RecipeBookExcludeRecipes adjust the list.
+    /// </summary>
+    RecipeBookSkill = 9020,
     CombatAbilityId = 10000,
 
     [AssessmentProperty]
