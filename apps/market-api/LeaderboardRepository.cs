@@ -46,7 +46,8 @@ public class LeaderboardRepository
     private static readonly (string Name, int SkillId)[] TradeSkills =
     {
         ("Blacksmithing", 28),
-        ("Tailoring", 29),
+        ("Leatherworking", 29),
+        ("Weaving", 26),
         ("Spellcrafting", 30),
         ("Jewelcrafting", 18),
         ("Woodworking", 37),

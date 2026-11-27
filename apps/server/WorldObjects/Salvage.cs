@@ -556,12 +556,13 @@ public class Salvage : Stackable
             }
         }
 
-        if (tinkeringSkill == Skill.Tailoring && target.ArmorWeightClass == 2)
+        // Leatherworking tinkers Light armor only; Weaving tinkers Cloth armor (with innate armor) only.
+        if (tinkeringSkill == Skill.Leatherworking && target.ArmorWeightClass == (int)ACE.Entity.Enum.ArmorWeightClass.Light)
         {
             return true;
         }
 
-        if (tinkeringSkill == Skill.Tailoring && target.ArmorWeightClass == 1 && target.ArmorLevel > 0)
+        if (tinkeringSkill == Skill.Weaving && target.ArmorWeightClass == (int)ACE.Entity.Enum.ArmorWeightClass.Cloth && target.ArmorLevel > 0)
         {
             return true;
         }
@@ -873,7 +874,7 @@ public class Salvage : Stackable
                     }
                     break;
 
-                // Tailoring: Cloth = WeightClass 1 | Leather = WeightClass 2
+                // Leatherworking: hides on Light armor (WeightClass 2) | Weaving: fabrics on Cloth armor (WeightClass 1)
 
                 // 7.5% Armor
                 case ACE.Entity.Enum.MaterialType.Leather:
@@ -2001,16 +2002,16 @@ public class Salvage : Stackable
         { ACE.Entity.Enum.MaterialType.YellowGarnet, Skill.Jewelcrafting },
         { ACE.Entity.Enum.MaterialType.YellowTopaz, Skill.Jewelcrafting },
         { ACE.Entity.Enum.MaterialType.Zircon, Skill.Jewelcrafting },
-        // Tailoring
-        { ACE.Entity.Enum.MaterialType.Leather, Skill.Tailoring },
-        { ACE.Entity.Enum.MaterialType.ArmoredilloHide, Skill.Tailoring },
-        { ACE.Entity.Enum.MaterialType.GromnieHide, Skill.Tailoring },
-        { ACE.Entity.Enum.MaterialType.ReedSharkHide, Skill.Tailoring },
-        { ACE.Entity.Enum.MaterialType.Linen, Skill.Tailoring },
-        { ACE.Entity.Enum.MaterialType.Satin, Skill.Tailoring },
-        { ACE.Entity.Enum.MaterialType.Silk, Skill.Tailoring },
-        { ACE.Entity.Enum.MaterialType.Velvet, Skill.Tailoring },
-        { ACE.Entity.Enum.MaterialType.Wool, Skill.Tailoring },
+        // Leatherworking (hides, Light armor) / Weaving (fabrics, Cloth armor)
+        { ACE.Entity.Enum.MaterialType.Leather, Skill.Leatherworking },
+        { ACE.Entity.Enum.MaterialType.ArmoredilloHide, Skill.Leatherworking },
+        { ACE.Entity.Enum.MaterialType.GromnieHide, Skill.Leatherworking },
+        { ACE.Entity.Enum.MaterialType.ReedSharkHide, Skill.Leatherworking },
+        { ACE.Entity.Enum.MaterialType.Linen, Skill.Weaving },
+        { ACE.Entity.Enum.MaterialType.Satin, Skill.Weaving },
+        { ACE.Entity.Enum.MaterialType.Silk, Skill.Weaving },
+        { ACE.Entity.Enum.MaterialType.Velvet, Skill.Weaving },
+        { ACE.Entity.Enum.MaterialType.Wool, Skill.Weaving },
         // Blacksmithing
         { ACE.Entity.Enum.MaterialType.Brass, Skill.Blacksmithing },
         { ACE.Entity.Enum.MaterialType.Bronze, Skill.Blacksmithing },
@@ -2068,9 +2069,12 @@ public class Salvage : Stackable
         }
         if (target.ItemType == ItemType.Armor || target.ItemType == ItemType.Clothing)
         {
-            return target.ArmorWeightClass == (int)ACE.Entity.Enum.ArmorWeightClass.Heavy
-                ? Skill.Blacksmithing
-                : Skill.Tailoring;
+            return target.ArmorWeightClass switch
+            {
+                (int)ACE.Entity.Enum.ArmorWeightClass.Heavy => Skill.Blacksmithing,
+                (int)ACE.Entity.Enum.ArmorWeightClass.Cloth => Skill.Weaving,
+                _ => Skill.Leatherworking,
+            };
         }
         return Skill.Jewelcrafting;
     }

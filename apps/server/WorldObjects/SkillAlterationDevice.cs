@@ -358,7 +358,8 @@ public class SkillAlterationDevice : WorldObject
                     case Skill.None:
 
                     // exclude aug specs
-                    case Skill.Tailoring:
+                    case Skill.Leatherworking:
+                    case Skill.Weaving:
                     case Skill.Jewelcrafting:
                     case Skill.Spellcrafting:
                     case Skill.Blacksmithing:

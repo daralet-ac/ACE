@@ -193,8 +193,8 @@ public partial class MarketRepository
     // metals work on both weapons and Heavy armor per Salvage.cs's Blacksmithing branch):
     //  - Blacksmithing metals (Brass/Bronze/Copper/Gold/Iron/Pyreal/Silver/Steel): MeleeWeapon,
     //    MissileWeapon, or ArmorWeightClass==Heavy -> targets Weapon AND Armor.
-    //  - Tailoring materials (Leather/ArmoredilloHide/GromnieHide/ReedSharkHide/Linen/Satin/Silk/
-    //    Velvet/Wool): ArmorWeightClass Light or Cloth -> targets Armor only.
+    //  - Leatherworking hides (Leather/ArmoredilloHide/GromnieHide/ReedSharkHide) on Light armor, Weaving fabrics (Linen/Satin/Silk/
+    //    Velvet/Wool) on Cloth armor -> targets Armor only.
     //  - Woodworking woods: WeenieType.MissileLauncher -> targets Weapon only.
     //  - Spellcrafting gems (weapon-only-imbue set, general ImbueSalvage set, and the "wands only"
     //    caster-gated set are ALL restricted to MeleeWeapon/MissileWeapon/Caster) -> targets Weapon only.
@@ -213,7 +213,7 @@ public partial class MarketRepository
     {
         // Blacksmithing (Heavy armor only)
         57, 58, 59, 60, 61, 62, 63, 64,
-        // Tailoring (Light/Cloth armor)
+        // Leatherworking hides (Light armor) and Weaving fabrics (Cloth armor)
         52, 53, 54, 55, 4, 5, 6, 7, 8,
     };
 
@@ -465,7 +465,7 @@ public partial class MarketRepository
         [11] = "Sword", [12] = "Thrown Weapon", [13] = "Unarmed Combat", [14] = "Arcane Lore", [15] = "Magic Defense",
         [16] = "Mana Conversion", [17] = "Spellcraft", [18] = "Jewelcrafting", [19] = "Assess Person", [20] = "Deception",
         [21] = "Healing", [22] = "Jump", [23] = "Thievery", [24] = "Run", [25] = "Awareness",
-        [26] = "Arms and Armor Repair", [27] = "Perception", [28] = "Blacksmithing", [29] = "Tailoring", [30] = "Spellcrafting",
+        [26] = "Weaving", [27] = "Perception", [28] = "Blacksmithing", [29] = "Leatherworking", [30] = "Spellcrafting",
         [31] = "Creature Enchantment", [32] = "Portal Magic", [33] = "Life Magic", [34] = "War Magic", [35] = "Leadership",
         [36] = "Loyalty", [37] = "Woodworking", [38] = "Alchemy", [39] = "Cooking", [40] = "Salvaging",
         [41] = "Two Handed Combat", [42] = "Gearcraft", [43] = "Void Magic", [44] = "Martial Weapons", [45] = "Light Weapons",

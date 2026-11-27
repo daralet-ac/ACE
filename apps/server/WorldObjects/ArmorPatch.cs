@@ -1,8 +1,10 @@
 using System;
 using ACE.Entity;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
+using ACE.Server.Factories;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
@@ -85,10 +87,11 @@ public class ArmorPatch : Stackable
             return;
         }
 
-        if (source.ArmorPatchAmount.HasValue)
+        var maxWieldReq = GetMaxWieldReq(source);
+
+        if (maxWieldReq.HasValue)
         {
-            var amountToAdd = source.ArmorPatchAmount.Value;
-            var targetTier = target.Tier ?? 1;
+            var amountToAdd = GetArmorBonus(target);
 
             var targetArmorSlots = target.ArmorSlots ?? 1;
             var armorPatchStackSize = source.StackSize ?? 1;
@@ -116,11 +119,11 @@ public class ArmorPatch : Stackable
                 return;
             }
 
-            if (TooPowerful(targetTier, amountToAdd))
+            if (!CanPatch(GetTargetWieldReq(target), maxWieldReq.Value))
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"The {target.NameWithMaterial} is too low quality to apply this armor patch.",
+                        $"The {target.NameWithMaterial} is too fine for a {source.Name}. It can only patch armor with a wield requirement of {maxWieldReq.Value} or less.",
                         ChatMessageType.Craft
                     )
                 );
@@ -181,8 +184,8 @@ public class ArmorPatch : Stackable
                 player,
                 () =>
                 {
-                    target.ArmorLevel += source.ArmorPatchAmount;
-                    target.ArmorPatchAmount = source.ArmorPatchAmount;
+                    target.ArmorLevel += amountToAdd;
+                    target.ArmorPatchAmount = amountToAdd;
                     target.ArmorPatchApplied = true;
                     target.LongDesc += "\n\nThis item has had an armor patch applied and cannot receive another.";
 
@@ -209,31 +212,59 @@ public class ArmorPatch : Stackable
         }
     }
 
-    private static bool TooPowerful(int targetTier, int amountToAdd)
+    /// <summary>
+    /// Every armor patch adds this share of the armor's base (untinkered) armor level.
+    /// </summary>
+    public const double ArmorBonusPercent = 0.10;
+
+    public static int GetArmorBonus(WorldObject target)
     {
-        var minimumTargetTier = 1;
+        var baseArmor = target.BaseArmor is > 0 ? target.BaseArmor.Value : target.ArmorLevel ?? 0;
+        return GetArmorBonus(baseArmor);
+    }
 
-        switch (amountToAdd)
+    public static int GetArmorBonus(int baseArmor)
+    {
+        return Math.Max(1, (int)Math.Round(baseArmor * ArmorBonusPercent, MidpointRounding.AwayFromZero));
+    }
+
+    /// <summary>
+    /// The highest wield requirement of armor this patch can go on. Patches from before the patch rework only carry their
+    /// old flat armor amount, so that amount stands for its quality.
+    /// </summary>
+    public static int? GetMaxWieldReq(WorldObject patch)
+    {
+        var maxWieldReq = patch.GetProperty(PropertyInt.ArmorPatchMaxWieldReq);
+        if (maxWieldReq.HasValue)
         {
-            case 25:
-                minimumTargetTier = 1;
-                break;
-            case 50:
-                minimumTargetTier = 3;
-                break;
-            case 100:
-                minimumTargetTier = 5;
-                break;
-            case 200:
-                minimumTargetTier = 7;
-                break;
+            return maxWieldReq;
         }
 
-        if (targetTier < minimumTargetTier)
+        return patch.ArmorPatchAmount switch
         {
-            return true;
+            null => null,
+            <= 25 => 125,
+            <= 50 => 200,
+            <= 100 => 230,
+            _ => 270,
+        };
+    }
+
+    /// <summary>
+    /// The armor's wield requirement: its attribute requirement for loot armor, otherwise the requirement of its tier.
+    /// </summary>
+    public static int GetTargetWieldReq(WorldObject target)
+    {
+        if (target.WieldRequirements == WieldRequirement.RawAttrib && target.WieldDifficulty is > 0)
+        {
+            return target.WieldDifficulty.Value;
         }
 
-        return false;
+        return target.Tier is > 0 ? LootGenerationFactory.GetWieldDifficultyPerTier(target.Tier.Value) : 0;
+    }
+
+    public static bool CanPatch(int targetWieldReq, int maxWieldReq)
+    {
+        return targetWieldReq <= maxWieldReq;
     }
 }

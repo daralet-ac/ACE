@@ -122,7 +122,8 @@ partial class Player
 
     public static List<Skill> TinkeringSkills = new List<Skill>()
     {
-        Skill.Tailoring,
+        Skill.Leatherworking,
+        Skill.Weaving,
         Skill.Blacksmithing,
         Skill.Jewelcrafting,
         Skill.Spellcrafting,
