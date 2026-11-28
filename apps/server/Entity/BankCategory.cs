@@ -220,6 +220,8 @@ public static class BankCategories
         { "blacksmith", BankCategory.Blacksmithing },
         { "tailoring", BankCategory.Tailoring },
         { "tailor", BankCategory.Tailoring },
+        { "leatherworking", BankCategory.Tailoring },
+        { "weaving", BankCategory.Tailoring },
         { "spellcrafting", BankCategory.Spellcrafting },
         { "spellcraft", BankCategory.Spellcrafting },
         { "woodworking", BankCategory.Woodworking },
@@ -603,7 +605,7 @@ public static class BankCategories
         return skill switch
         {
             Skill.Blacksmithing => BankCategory.Blacksmithing,
-            Skill.Tailoring => BankCategory.Tailoring,
+            Skill.Leatherworking or Skill.Weaving => BankCategory.Tailoring,
             Skill.Spellcrafting => BankCategory.Spellcrafting,
             Skill.Woodworking => BankCategory.Woodworking,
             Skill.Jewelcrafting => BankCategory.Jewelcrafting,

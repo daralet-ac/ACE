@@ -36,10 +36,10 @@ public enum Skill
     Thievery,
     Run,
     Awareness, /* Unimplemented */
-    ArmsAndArmorRepair, /* Unimplemented */
+    Weaving,
     Perception,
     Blacksmithing,
-    Tailoring,
+    Leatherworking,
     Spellcrafting,
     CreatureEnchantment,
     PortalMagic,
@@ -95,10 +95,10 @@ public enum NewSkillNames
     Thievery,
     Run,
     Awareness, /* Unimplemented */
-    ArmsAndArmorRepair, /* Unimplemented */
+    Weaving,
     Perception,
     Blacksmithing,
-    Tailoring,
+    Leatherworking,
     Spellcrafting,
     CreatureEnchantment,
     PortalMagic,
@@ -210,14 +210,14 @@ public static class SkillExtensions
                 return "Run";
             case Skill.Awareness:
                 return "Awareness";
-            case Skill.ArmsAndArmorRepair:
-                return "Arms And Armor Repair";
+            case Skill.Weaving:
+                return "Weaving";
             case Skill.Perception:
                 return "Perception";
             case Skill.Blacksmithing:
                 return "Blacksmithing";
-            case Skill.Tailoring:
-                return "Tailoring";
+            case Skill.Leatherworking:
+                return "Leatherworking";
             case Skill.Spellcrafting:
                 return "Spellcrafting";
             case Skill.CreatureEnchantment:
@@ -329,7 +329,8 @@ public static class SkillHelper
         Skill.Alchemy,
         Skill.Cooking,
         Skill.Blacksmithing, // Blacksmithing
-        Skill.Tailoring, // Tailoring
+        Skill.Leatherworking, // Leatherworking (ID 29, was Tailoring)
+        Skill.Weaving, // Weaving (ID 26, was the unused ArmsAndArmorRepair)
         Skill.Spellcrafting, // Spellcrafting
         Skill.Jewelcrafting, // Jewelcrafting
 

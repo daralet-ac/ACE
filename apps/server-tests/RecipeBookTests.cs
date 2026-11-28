@@ -89,8 +89,8 @@ public class RecipeBookTests
         var hide = Recipe(10012, 0, 0, 1052553, (1052552, 1052500));
 
         Assert.IsTrue(RecipeBookService.IsListed(dye, Skill.Alchemy, new HashSet<uint> { 1654 }, none));
-        Assert.IsTrue(RecipeBookService.IsListed(hide, Skill.Tailoring, new HashSet<uint> { 10012 }, none));
-        Assert.IsFalse(RecipeBookService.IsListed(hide, Skill.Tailoring, none, none));
+        Assert.IsTrue(RecipeBookService.IsListed(hide, Skill.Leatherworking, new HashSet<uint> { 10012 }, none));
+        Assert.IsFalse(RecipeBookService.IsListed(hide, Skill.Leatherworking, none, none));
 
         var steak = Recipe(1053942, (uint)Skill.Cooking, 30, 1053942, (5795, 1053940));
         Assert.IsFalse(RecipeBookService.IsListed(steak, Skill.Cooking, none, new HashSet<uint> { 1053942 }));
@@ -126,13 +126,13 @@ public class RecipeBookTests
         var hide = Recipe(10012, 0, 0, 1052553, (1052552, 1052500));
         Assert.AreEqual(
             "Rough Leather - no skill check\nTanning Kit on Tattered Beast Hide",
-            RecipeBookService.FormatEntry(hide, "Rough Leather", Skill.Tailoring, Name)
+            RecipeBookService.FormatEntry(hide, "Rough Leather", Skill.Leatherworking, Name)
         );
 
         // a recipe from another skill names that skill
         var weaving = Recipe(10020, 26, 50, 1052553, (1052552, 1052500));
         StringAssert.StartsWith(
-            RecipeBookService.FormatEntry(weaving, "X", Skill.Tailoring, Name),
+            RecipeBookService.FormatEntry(weaving, "X", Skill.Leatherworking, Name),
             "X - Weaving 50\n"
         );
     }
@@ -142,7 +142,7 @@ public class RecipeBookTests
     {
         var lining = new RecipeBookService.RecipeInfo(
             10011,
-            (uint)Skill.Tailoring,
+            (uint)Skill.Leatherworking,
             100,
             0,
             0,
@@ -152,7 +152,7 @@ public class RecipeBookTests
 
         var entries = RecipeBookService.BuildEntries(
             new List<RecipeBookService.RecipeInfo> { lining },
-            Skill.Tailoring,
+            Skill.Leatherworking,
             new HashSet<uint>(),
             new HashSet<uint>(),
             Name
@@ -249,7 +249,7 @@ public class RecipeBookTests
     [TestMethod]
     public void SkillNames_UseDaraletNames()
     {
-        Assert.AreEqual("Weaving", RecipeBookService.GetSkillName((Skill)26));
+        Assert.AreEqual("Weaving", RecipeBookService.GetSkillName(Skill.Weaving));
         Assert.AreEqual("Cooking", RecipeBookService.GetSkillName(Skill.Cooking));
     }
 
@@ -273,10 +273,19 @@ public class RecipeBookTests
         Assert.IsFalse(jewelcrafting.Contains("Agate"));
         Assert.IsFalse(jewelcrafting.Contains("Cold Rending"));
 
-        // armor imbues only, no weapon-only gems
-        var tailoring = string.Join("\n", TinkeringGuide.GetBlocks(Skill.Tailoring));
-        StringAssert.Contains(tailoring, "Sunstone: Armor Tempering");
-        Assert.IsFalse(tailoring.Contains("Aquamarine"));
+        // hides on light armor, fabrics on cloth armor; armor imbues only, no weapon-only gems
+        var leatherworking = string.Join("\n", TinkeringGuide.GetBlocks(Skill.Leatherworking));
+        StringAssert.Contains(leatherworking, "Gromnie Hide\n");
+        StringAssert.Contains(leatherworking, "imbues light armor");
+        StringAssert.Contains(leatherworking, "Sunstone: Armor Tempering");
+        Assert.IsFalse(leatherworking.Contains("Wool"));
+        Assert.IsFalse(leatherworking.Contains("Aquamarine"));
+
+        var weaving = string.Join("\n", TinkeringGuide.GetBlocks(Skill.Weaving));
+        StringAssert.Contains(weaving, "Wool\n");
+        StringAssert.Contains(weaving, "imbues cloth armor");
+        StringAssert.Contains(weaving, "Sunstone: Armor Tempering");
+        Assert.IsFalse(weaving.Contains("Gromnie"));
 
         Assert.AreEqual(0, TinkeringGuide.GetBlocks(Skill.Cooking).Count);
         Assert.AreEqual(0, TinkeringGuide.GetBlocks(Skill.Alchemy).Count);
@@ -289,7 +298,7 @@ public class RecipeBookTests
         // a description in some book, so a new material can't be silently missing from the books
         var allText = string.Join(
             "\n",
-            new[] { Skill.Blacksmithing, Skill.Tailoring, Skill.Woodworking, Skill.Spellcrafting, Skill.Jewelcrafting, (Skill)26 }
+            new[] { Skill.Blacksmithing, Skill.Leatherworking, Skill.Woodworking, Skill.Spellcrafting, Skill.Jewelcrafting, Skill.Weaving }
                 .SelectMany(TinkeringGuide.GetBlocks)
         );
 

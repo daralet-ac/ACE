@@ -281,7 +281,7 @@ public static class AugTypeHelper
             case AugmentationType.ItemTinkering:
                 return Skill.Jewelcrafting;
             case AugmentationType.ArmorTinkering:
-                return Skill.Tailoring;
+                return Skill.Leatherworking;
             case AugmentationType.MagicItemTinkering:
                 return Skill.Spellcrafting;
             case AugmentationType.WeaponTinkering:

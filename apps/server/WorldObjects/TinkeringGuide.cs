@@ -40,30 +40,31 @@ public static class TinkeringGuide
             "Weapon: +0.5% Attack and Physical Defense. Armor: +5% Armor, +0.25% Health Regeneration per slot."
         ),
 
-        // Leatherworking / Weaving (cloth and leather armor)
+        // Leatherworking (hides, light armor only) and Weaving (fabrics, cloth armor only). The cloth effects of hides
+        // and the light-armor effects of fabrics in HandleTinkering can't be reached since the split, so they're left out.
         [MT.Leather] = new("Leather", "+7.5% Armor."),
         [MT.ArmoredilloHide] = new("Armoredillo Hide", "+10% Armor but +0.25% Resource Penalty per slot."),
         [MT.GromnieHide] = new(
             "Gromnie Hide",
-            "+5% Armor. Cloth: +0.25% Mana Regeneration per slot. Leather: +0.25% Stamina Regeneration per slot."
+            "+5% Armor, +0.25% Stamina Regeneration per slot."
         ),
         [MT.ReedSharkHide] = new(
             "Reedshark Hide",
-            "+5% Armor. Cloth: +0.125% War Magic per slot. Leather: +0.125% Attack and Dual Wield per slot."
+            "+5% Armor, +0.125% Attack and Dual Wield per slot."
         ),
         [MT.Linen] = new("Linen", "+5% Armor, -0.25% Resource Penalty per slot. Only on armor with a Resource Penalty."),
         [MT.Satin] = new(
             "Satin",
-            "Cloth: +0.25% Life Magic, Perception and Mana Regeneration per slot. Leather: +5% Armor, +0.25% Thievery and Deception per slot."
+            "+0.25% Life Magic, Perception and Mana Regeneration per slot."
         ),
         [MT.Silk] = new("Silk", "+5% Armor, +0.25% Perception and Deception per slot."),
         [MT.Velvet] = new(
             "Velvet",
-            "Cloth: +0.25% War Magic, Life Magic and Deception per slot. Leather: +0.25% Attack, Dual Wield and Perception per slot."
+            "+0.25% War Magic, Life Magic and Deception per slot."
         ),
         [MT.Wool] = new(
             "Wool",
-            "Cloth: +0.25% Mana and Mana Regeneration per slot. Leather: +0.25% Stamina and Stamina Regeneration per slot."
+            "+0.25% Mana and Mana Regeneration per slot."
         ),
 
         // Woodworking (missile launchers)
@@ -115,7 +116,8 @@ public static class TinkeringGuide
         [Skill.Blacksmithing] = ("melee weapons, thrown weapons and heavy armor", true, true),
         [Skill.Woodworking] = ("bows, crossbows and atlatls", true, false),
         [Skill.Spellcrafting] = ("wands, orbs and staves", true, false),
-        [Skill.Tailoring] = ("cloth and leather armor", false, true),
+        [Skill.Leatherworking] = ("light armor", false, true),
+        [Skill.Weaving] = ("cloth armor", false, true),
         [Skill.Jewelcrafting] = ("jewelry", true, false),
     };
 

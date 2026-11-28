@@ -173,21 +173,8 @@ public static class RecipeBookService
         return sb.ToString();
     }
 
-    /// <summary>
-    /// Daralet's skill names where the Skill enum still carries the retail one.
-    /// </summary>
     public static string GetSkillName(Skill skill)
     {
-        if ((int)skill == 26)
-        {
-            return "Weaving";
-        }
-
-        if ((int)skill == 29)
-        {
-            return "Leatherworking";
-        }
-
         return skill.ToSentence();
     }
 
