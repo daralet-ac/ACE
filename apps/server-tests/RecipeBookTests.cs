@@ -129,6 +129,19 @@ public class RecipeBookTests
             RecipeBookService.FormatEntry(hide, "Rough Leather", Skill.Leatherworking, Name)
         );
 
+        // a recipe that uses up several of the target says how many
+        var patch = Recipe(10016, (uint)Skill.Leatherworking, 1, 1052540, (1052553, 1052552)) with { SourceAmount = 5 };
+        Assert.AreEqual(
+            "Poor Armor Reinforcement - Skill 1\nRough Leather x5 on Tanning Kit",
+            RecipeBookService.FormatEntry(patch, "Poor Armor Reinforcement", Skill.Leatherworking, Name)
+        );
+
+        var tanning = Recipe(10012, (uint)Skill.Leatherworking, 1, 1052553, (1052552, 1052500)) with { TargetAmount = 3 };
+        StringAssert.EndsWith(
+            RecipeBookService.FormatEntry(tanning, "Rough Leather", Skill.Leatherworking, Name),
+            "\nTanning Kit on Tattered Beast Hide x3"
+        );
+
         // a recipe from another skill names that skill
         var weaving = Recipe(10020, 26, 50, 1052553, (1052552, 1052500));
         StringAssert.StartsWith(

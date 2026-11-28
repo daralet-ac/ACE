@@ -4,7 +4,7 @@ Tailoring is now two trade skills.
 
 | Skill | ID | Was | Tinkers | Crafts |
 |---|---|---|---|---|
-| Leatherworking | 29 | Tailoring (retail Armor Tinkering) | Light armor, with hides (Leather, Armoredillo, Gromnie, Reedshark) | Armor Patches from leather |
+| Leatherworking | 29 | Tailoring (retail Armor Tinkering) | Light armor, with hides (Leather, Armoredillo, Gromnie, Reedshark) | Armor Reinforcements from leather |
 | Weaving | 26 | unused (retail Arms and Armor Repair) | Cloth armor that has armor, with fabrics (Linen, Satin, Silk, Velvet, Wool) | Woven Bandages from fur, for healing kits |
 
 Both the material and the armor have to match: hides only go on Light armor (Leatherworking), fabrics only go on Cloth armor (Weaving). Imbues on armor use Leatherworking for Light and Weaving for Cloth (Heavy is still Blacksmithing).
@@ -23,13 +23,13 @@ All WCIDs are in the ID Tracking sheets: Items > Animal Parts, Items > Skill and
 
 A hide goes one way or the other, as it would for a real tanner: scraped bare and tanned into leather, or tanned with the hair left on as a fur. You can't get both from one hide.
 
-- The trainers hand out the tools, the way Chef Martel hands out the campfire: the **Tanning Kit** (1052552) comes from the Master Leatherworker and the **Furrier's Kit** (1052565) from the Master Weaver. You get one when you train the skill. If you're already trained and don't have one, using the master gives you another. Both kits are bonded and worth nothing. Leather Traders (1010070-73) no longer sell Armor Patches.
-- **Tanning Kit on a Beast Hide** (recipes 10012-10015, no skill): Tattered / Beast / Sturdy / Rugged hide → Rough / Cured / Supple / Fine Leather (1052553-56).
-- **Furrier's Kit on a Beast Hide** (recipes 10028-10031, no skill): Tattered / Beast / Sturdy / Rugged hide → Coarse / normal / Thick / Lustrous Fur (1052557-60).
-- **Leather on the Tanning Kit** (10016-10019, Leatherworking, difficulty 1/50/100/150): makes a Poor/normal/Quality/Exquisite Armor Patch (1052540-43).
-- **Fur on the Furrier's Kit** (10020-10023, Weaving, difficulty 1/50/100/150): makes a Poor/normal/Quality/Exquisite Woven Bandage (1052561-64).
-- **Armor Patches** (`ArmorPatch.cs`): every patch adds 10% of the armor's base armor level (at least 1), stored as the armor's `ArmorPatchAmount`. A patch's quality only sets the highest wield requirement it fits, from `PropertyInt.ArmorPatchMaxWieldReq` (541): Poor 125, normal 200, Quality 230, Exquisite 270. The armor's requirement is its attribute requirement, or its tier's requirement if it has none. Patches still need one per armor slot, and an item takes one patch. Patches made before this change carry only the old flat amount (25/50/100/200), which maps to the same four caps.
-- **Bandage on a kit** (no skill, once per kit via `PropertyBool.HealkitBandaged` 189): the kit's HealkitMod goes up by a tenth of its tier's base (10% more effective). There is one recipe per kit tier, covering that tier's Healing, Stamina and Mana Kit. A Poor bandage fits Crude kits only, and every other bandage fits two tiers:
+- The trainers hand out the tools, the way Chef Martel hands out the campfire: the **Tanning Kit** (1052552) comes from the Master Leatherworker and the **Furrier's Kit** (1052565) from the Master Weaver. You get one when you train the skill. If you're already trained and don't have one, using the master gives you another. Both kits are bonded and worth nothing. Leather Traders (1010070-73) no longer sell Armor Reinforcements.
+- **Tanning Kit on a Beast Hide** (recipes 10012-10015, Leatherworking, difficulty 1/50/100/150 by hide; a failure ruins the hide; the kit is kept): one Tattered / Beast / Sturdy / Rugged hide → Rough / Cured / Supple / Fine Leather (1052553-56).
+- **Furrier's Kit on a Beast Hide** (recipes 10028-10031, Weaving, difficulty 1/50/100/150 by hide; a failure ruins the hide; the kit is kept): one Tattered / Beast / Sturdy / Rugged hide → Coarse / normal / Thick / Lustrous Fur (1052557-60).
+- **Leather on the Tanning Kit** (10016-10019, Leatherworking, difficulty 1/50/100/150; 5 Rough / 10 Cured / 15 Supple / 20 Fine Leather from one stack, and a failure ruins that many): makes a Poor/normal/Quality/Exquisite Armor Reinforcement (1052540-43).
+- **Fur on the Furrier's Kit** (10020-10023, Weaving, difficulty 1/50/100/150; 5 Coarse / 10 normal / 15 Thick / 20 Lustrous Fur from one stack, and a failure ruins that many): makes a Poor/normal/Quality/Exquisite Woven Bandage (1052561-64).
+- **Armor Reinforcements** (`ArmorPatch.cs`): every reinforcement adds 10% of the armor's base armor level (at least 1), stored as the armor's `ArmorPatchAmount`. A reinforcement's quality only sets the highest wield requirement it fits, from `PropertyInt.ArmorPatchMaxWieldReq` (541): Poor 125, normal 200, Quality 230, Exquisite 270. The armor's requirement is its attribute requirement, or its tier's requirement if it has none. Reinforcements still need one per armor slot, and an item takes one. Reinforcements made before this change carry only the old flat amount (25/50/100/200), which maps to the same four caps.
+- **Bandage on a kit** (no skill, so bandages and reinforcements can be made by one player and used by another; once per kit via `PropertyBool.HealkitBandaged` 189): the kit's HealkitMod goes up by a tenth of its tier's base (10% more effective). There is one recipe per kit tier, covering that tier's Healing, Stamina and Mana Kit. A Poor bandage fits Crude kits only, and every other bandage fits two tiers:
   - Poor: Crude (10024)
   - normal: Plain (10025), Good (10026)
   - Quality: Excellent (10027), Peerless (10032)
@@ -53,7 +53,7 @@ In the dat-editor (`Source/misc/skillTable.cs` `modifyForDaralet`, or by hand), 
 
 **Skill 29 (rename the current "Tailoring" entry)**
 - Name: `Leatherworking`
-- Description: `Lets you improve the properties of light armor and stitch armor patches from leather. Obtained via trainer NPC.`
+- Description: `Lets you improve the properties of light armor and stitch armor reinforcements from leather. Obtained via trainer NPC.`
 - Icon: keep the current Tailoring icon (0x0600209A), or pick a leather one
 - Category: 2 (NonWeapon / Other)
 - MinLevel: Unusable (2)
@@ -71,7 +71,7 @@ In code, that is:
 
 ```csharp
 Skills[(uint)eSkills.ArmorTinkering].Name = "Leatherworking";
-Skills[(uint)eSkills.ArmorTinkering].Description = "Lets you improve the properties of light armor and stitch armor patches from leather. Obtained via trainer NPC.";
+Skills[(uint)eSkills.ArmorTinkering].Description = "Lets you improve the properties of light armor and stitch armor reinforcements from leather. Obtained via trainer NPC.";
 addSkill((uint)eSkills.ArmsAndArmorRepair, 0x0600209a, "Weaving", "Lets you improve the properties of cloth armor and weave fur into bandages for healing kits. Obtained via trainer NPC.", eSkillCategory.NonWeapon, eSkillMinLevel.Unusable, 1000, 1000, new SkillFormula(eAttributes.None, 1, eAttributes.None, 1, 1, 0));
 ```
 

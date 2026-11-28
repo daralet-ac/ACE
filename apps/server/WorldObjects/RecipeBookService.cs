@@ -50,7 +50,9 @@ public static class RecipeBookService
         uint SuccessWcid,
         uint SuccessAmount,
         string SuccessMessage,
-        List<RecipeRow> Rows
+        List<RecipeRow> Rows,
+        uint SourceAmount = 1,
+        uint TargetAmount = 1
     );
 
     /// <summary>
@@ -160,7 +162,7 @@ public static class RecipeBookService
         else
         {
             sb.Append(
-                $"The {recipeCount} {skillName} recipe{(recipeCount == 1 ? "" : "s")} known in Daralet, from easiest to hardest. "
+                $"The {recipeCount} {skillName} recipe{(recipeCount == 1 ? "" : "s")}, from easiest to hardest. "
                     + $"Each lists what it makes, the {skillName} skill it needs, and what to use it on: use the first item on the second."
             );
         }
@@ -207,7 +209,9 @@ public static class RecipeBookService
                     recipe.SuccessWCID,
                     recipe.SuccessAmount,
                     recipe.SuccessMessage,
-                    g.Select(r => new RecipeRow(r.SourceWCID, r.TargetWCID)).ToList()
+                    g.Select(r => new RecipeRow(r.SourceWCID, r.TargetWCID)).ToList(),
+                    recipe.SuccessDestroySourceChance > 0 ? recipe.SuccessDestroySourceAmount : 1,
+                    recipe.SuccessDestroyTargetChance > 0 ? recipe.SuccessDestroyTargetAmount : 1
                 );
             })
             .ToList();
@@ -312,6 +316,17 @@ public static class RecipeBookService
 
         var sources = FormatNameList(recipe.Rows.Select(r => r.SourceWcid), getName);
         var targets = FormatNameList(recipe.Rows.Select(r => r.TargetWcid), getName);
+
+        // recipes that use up several of an item, like 10 Cured Leather for one Armor Reinforcement
+        if (recipe.SourceAmount > 1)
+        {
+            sources += $" x{recipe.SourceAmount}";
+        }
+
+        if (recipe.TargetAmount > 1)
+        {
+            targets += $" x{recipe.TargetAmount}";
+        }
 
         sb.Append($"\n{sources} on {targets}");
 
