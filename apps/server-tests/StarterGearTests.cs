@@ -43,5 +43,12 @@ public class StarterGearTests
 
         var twoHanded = config.Skills.Single(s => s.SkillId == (ushort)Skill.TwoHandedCombat);
         Assert.AreEqual(1058011u, twoHanded.Gear.Single().WeenieId, "two hand should start with a Starter Greatsword");
+
+        // Jump is trained on every character, so its gear is what everyone starts with
+        var everyone = config.Skills.Single(s => s.SkillId == (ushort)Skill.Jump);
+        Assert.IsTrue(
+            everyone.Gear.Any(g => g.WeenieId == 1053953u),
+            "every character should start with a Build Campfire"
+        );
     }
 }

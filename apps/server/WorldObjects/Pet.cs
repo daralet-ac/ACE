@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using ACE.Common;
+using ACE.Database;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
 using ACE.Entity;
@@ -75,9 +77,23 @@ public class Pet : Creature
             return result;
         }
 
+        // a campfire remembers its placer's allegiance rank, and is a little bigger for it (CampfireRules)
+        var scaleMod = 1.0f;
+        if (IsPassivePet && SpawnsCampfireHotspot())
+        {
+            CampfireOwnerRank = CampfireRules.Rank(player.AllegianceRank);
+            scaleMod = CampfireRules.ScaleMod(CampfireOwnerRank);
+
+            if (scaleMod != 1.0f)
+            {
+                ObjScale = (ObjScale ?? 1.0f) * scaleMod;
+                PhysicsObj.SetScaleStatic(ObjScale.Value);
+            }
+        }
+
         // get physics radius of player and pet
         var playerRadius = player.PhysicsObj.GetPhysicsRadius();
-        var petRadius = GetPetRadius();
+        var petRadius = GetPetRadius() * scaleMod;
 
         // immobile passive pets are placeable stations (campfire, scribing/alchemy tables) - spawn them
         // close enough to use / stand in their hotspot without stepping forward first
@@ -271,6 +287,26 @@ public class Pet : Creature
     private const float MaxDistance = 192.0f;
 
     private const float StationSpawnGap = 0.5f;
+
+    /// <summary>
+    /// The Allegiance Rank of the player who placed this campfire, captured when it was placed. Its resting hotspot reads
+    /// it (Hotspot.EnterWorld) to grow, and to add XP to the Rested buff (CampfireRules).
+    /// </summary>
+    public int CampfireOwnerRank { get; private set; }
+
+    /// <summary>TRUE if this pet generates a campfire resting hotspot, like the Campfire from a Build Campfire device</summary>
+    private bool SpawnsCampfireHotspot()
+    {
+        if (GeneratorProfiles == null)
+        {
+            return false;
+        }
+
+        return GeneratorProfiles.Any(profile =>
+            DatabaseManager.World.GetCachedWeenie(profile.WeenieClassId)?.GetProperty(PropertyBool.CampfireHotspot)
+            == true
+        );
+    }
 
     private void StartFollow()
     {

@@ -54,6 +54,30 @@ public class Hotspot : WorldObject
 
     public Player HotspotSummoner;
 
+    /// <summary>
+    /// For the resting hotspot of a player-built campfire: the Allegiance Rank its placer had when they placed it, 0 for
+    /// any other hotspot. The Rested buff given here is worth more XP for it (CampfireRules.XpBonus).
+    /// </summary>
+    public int CampfireOwnerRank { get; private set; }
+
+    public override bool EnterWorld()
+    {
+        // a player-built campfire's hotspot takes its placer's rank from the fire, and grows with it as the fire did
+        if (CampfireHotspot == true && Generator is Pet campfire && campfire.CampfireOwnerRank > 0)
+        {
+            CampfireOwnerRank = campfire.CampfireOwnerRank;
+
+            var scaleMod = CampfireRules.ScaleMod(CampfireOwnerRank);
+            if (scaleMod != 1.0f)
+            {
+                ObjScale = (ObjScale ?? 1.0f) * scaleMod;
+                PhysicsObj.SetScaleStatic(ObjScale.Value);
+            }
+        }
+
+        return base.EnterWorld();
+    }
+
     public override void OnCollideObject(WorldObject wo)
     {
         if (!(wo is Creature creature))
