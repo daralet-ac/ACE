@@ -132,6 +132,18 @@ public enum PropertyString : ushort
     /// instead. Read from the item's weenie, so edits reach items already in the world.
     /// </summary>
     WorkmanshipClothingBases = 59,
+
+    /// <summary>
+    /// Recipe Book: extra recipe IDs to list even though the book would otherwise leave them out (a retail recipe, or
+    /// one with no skill). Comma-separated IDs and ranges, e.g. "1654-1659, 10012".
+    /// </summary>
+    RecipeBookIncludeRecipes = 60,
+
+    /// <summary>
+    /// Recipe Book: recipe IDs to leave out of the book. Same format as RecipeBookIncludeRecipes.
+    /// </summary>
+    RecipeBookExcludeRecipes = 61,
+
     PCAPRecordedCurrentMotionState = 8006,
     PCAPRecordedServerName = 8031,
     PCAPRecordedCharacterName = 8032,
@@ -173,17 +185,6 @@ public enum PropertyString : ushort
     /// so that /arena restore can give it back.
     /// </summary>
     ArenaResetBackup = 9016,
-
-    /// <summary>
-    /// Recipe Book: extra recipe IDs to list even though the book would otherwise leave them out (a retail recipe, or
-    /// one with no skill). Comma-separated IDs and ranges, e.g. "1654-1659, 10012".
-    /// </summary>
-    RecipeBookIncludeRecipes = 9020,
-
-    /// <summary>
-    /// Recipe Book: recipe IDs to leave out of the book. Same format as RecipeBookIncludeRecipes.
-    /// </summary>
-    RecipeBookExcludeRecipes = 9021,
     
 
 
