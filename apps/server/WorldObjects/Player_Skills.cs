@@ -142,11 +142,21 @@ partial class Player
                     );
                     Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                     return false;
-                case Skill.Tailoring:
+                case Skill.Leatherworking:
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
                             cannotRaiseMsg
-                            + " You gain experience towards it when performing Tailoring recipes. You may also purchase training from a Tailor.",
+                            + " You gain experience towards it when tinkering Light armor and performing Leatherworking recipes. You may also purchase training from a Leatherworker.",
+                            ChatMessageType.Advancement
+                        )
+                    );
+                    Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
+                    return false;
+                case Skill.Weaving:
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            cannotRaiseMsg
+                            + " You gain experience towards it when tinkering Cloth armor and performing Weaving recipes. You may also purchase training from a Weaver.",
                             ChatMessageType.Advancement
                         )
                     );
@@ -852,7 +862,8 @@ partial class Player
 
     public static List<Skill> AugSpecSkills = new List<Skill>()
     {
-        Skill.Tailoring,
+        Skill.Leatherworking,
+        Skill.Weaving,
         Skill.Jewelcrafting,
         Skill.Spellcrafting,
         Skill.Blacksmithing,
@@ -903,7 +914,9 @@ partial class Player
 
         switch (skill)
         {
-            case Skill.Tailoring:
+            // the Armor Tinkering augmentation covers both armor trades
+            case Skill.Leatherworking:
+            case Skill.Weaving:
                 playerHasAugmentation = AugmentationSpecializeArmorTinkering > 0;
                 break;
 
@@ -1493,7 +1506,8 @@ partial class Player
     {
         if (
             skill == Skill.Alchemy
-            || skill == Skill.Tailoring
+            || skill == Skill.Leatherworking
+            || skill == Skill.Weaving
             || skill == Skill.Cooking
             || skill == Skill.Woodworking
             || skill == Skill.Spellcrafting
@@ -1540,7 +1554,8 @@ partial class Player
         PlayerSkills.Add(Skill.Cooking);
         PlayerSkills.Add(Skill.Woodworking); // Woodworking
         PlayerSkills.Add(Skill.Blacksmithing); // Blacksmithing
-        PlayerSkills.Add(Skill.Tailoring); // Tailoring
+        PlayerSkills.Add(Skill.Leatherworking); // Leatherworking (was Tailoring)
+        PlayerSkills.Add(Skill.Weaving); // Weaving
         PlayerSkills.Add(Skill.Spellcrafting); // Spellcrafting
         PlayerSkills.Add(Skill.Jewelcrafting); // Jewelcrafting
         PlayerSkills.Add(Skill.PortalMagic);
@@ -1583,7 +1598,8 @@ partial class Player
         Skill.Run,
         Skill.Perception,
         Skill.Blacksmithing,
-        Skill.Tailoring,
+        Skill.Leatherworking,
+        Skill.Weaving,
         Skill.Spellcrafting,
         Skill.CreatureEnchantment,
         Skill.PortalMagic,

@@ -142,6 +142,19 @@ public class AugmentationDevice : WorldObject
             var specRank = Player.CalcSkillRank(SkillAdvancementClass.Specialized, playerSkill.ExperienceSpent);
             playerSkill.Ranks = (ushort)specRank;
             player.Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(player, playerSkill));
+
+            // the Armor Tinkering augmentation specializes Weaving too, if the player has it
+            if (type == AugmentationType.ArmorTinkering)
+            {
+                var weaving = player.GetCreatureSkill(Skill.Weaving);
+                if (weaving.AdvancementClass == SkillAdvancementClass.Trained)
+                {
+                    weaving.AdvancementClass = SkillAdvancementClass.Specialized;
+                    weaving.InitLevel = 10;
+                    weaving.Ranks = (ushort)Player.CalcSkillRank(SkillAdvancementClass.Specialized, weaving.ExperienceSpent);
+                    player.Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(player, weaving));
+                }
+            }
         }
         else if (type == AugmentationType.PackSlot)
         {

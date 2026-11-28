@@ -429,6 +429,17 @@ public enum PropertyBool : ushort
     /// bag refines the bag straight away.
     /// </summary>
     SkipSalvageRefineConfirmation = 9020,
+
+    /// <summary>
+    /// The character has been through the Tailoring split (Tailoring became Leatherworking, and Weaving was added). Set on
+    /// the first login after the split, so a former Tailor is given Weaving at their Tailoring level exactly once.
+    /// </summary>
+    TailoringSplitMigrated = 9021,
+
+    /// <summary>
+    /// A Woven Bandage has been applied to this healing kit; a kit can only take one.
+    /// </summary>
+    HealkitBandaged = 9022,
 }
 
 public static class PropertyBoolExtensions
