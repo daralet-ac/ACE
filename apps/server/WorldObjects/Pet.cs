@@ -84,10 +84,10 @@ public class Pet : Creature
             CampfireOwnerRank = CampfireRules.Rank(player.AllegianceRank);
             scaleMod = CampfireRules.ScaleMod(CampfireOwnerRank);
 
+            // the physics object doesn't exist yet: it's made when the fire is added to its landblock, from ObjScale
             if (scaleMod != 1.0f)
             {
                 ObjScale = (ObjScale ?? 1.0f) * scaleMod;
-                PhysicsObj.SetScaleStatic(ObjScale.Value);
             }
         }
 
