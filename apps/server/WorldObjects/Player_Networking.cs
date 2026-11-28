@@ -572,24 +572,32 @@ partial class Player
                     spell.SpellPowerMod = 2;
                 }
 
-                // a fire placed by a ranked player gives +1% XP for every 2 of their ranks (CampfireRules)
-                var rankXpBonus = CampfireRules.XpBonus(WellRestedHotspot.CampfireOwnerRank);
-                if (rankXpBonus > 0)
+                // a fire placed by a ranked player casts a stronger copy of Rested: +1% XP for every 2 of their ranks
+                // (CampfireRules). Player fires are level 1 hotspots; a higher level's own spell is left alone.
+                var rankedRest = CampfireRules.RankedRestSpell(WellRestedHotspot.CampfireOwnerRank);
+                if (rankedRest != null && spell.Id == (uint)SpellId.CampfireRest1)
                 {
-                    spell.SpellStatModVal = CampfireRules.StatModMultiplier(spell.BaseStatModVal, rankXpBonus);
-                }
-
-                // a refresh keeps the old buff's value, so a weaker Rested buff would stop a stronger fire from counting:
-                // take it off first, and this one goes on fresh
-                foreach (var weaker in EnchantmentManager.GetEnchantments(SpellCategory.CampfireRested))
-                {
-                    if (weaker.SpellId == (int)spell.Id && weaker.StatModValue < spell.StatModVal)
+                    // missing until the portal DAT and world database have it (portal 30113): plain Rested then
+                    var ranked = new Spell(rankedRest.Value);
+                    if (!ranked.NotFound)
                     {
-                        EnchantmentManager.Remove(weaker, false);
+                        spell = ranked;
                     }
                 }
 
                 CreateEnchantment(this, WellRestedHotspot, null, spell);
+
+                // the buff's description is the client's own and never shows the XP, so say what it's worth
+                var rest = GetCampfireRest();
+                if (rest != null)
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            CampfireRules.AppliedMessage(rest.Value.BuffXp, rest.Value.RankXp),
+                            ChatMessageType.Magic
+                        )
+                    );
+                }
 
                 WellRestedHotspot = null;
             }

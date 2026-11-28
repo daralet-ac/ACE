@@ -1,3 +1,4 @@
+using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -25,27 +26,54 @@ public class CampfireRulesTests
     }
 
     [TestMethod]
-    public void RestedGivesOnePercentForEveryTwoRanks()
+    public void EveryTwoRanksCastsTheNextRestedSpell()
     {
-        Assert.AreEqual(0f, CampfireRules.XpBonus(0), 1e-6f);
-        Assert.AreEqual(0f, CampfireRules.XpBonus(1), 1e-6f);
-        Assert.AreEqual(0.01f, CampfireRules.XpBonus(2), 1e-6f);
-        Assert.AreEqual(0.01f, CampfireRules.XpBonus(3), 1e-6f);
-        Assert.AreEqual(0.05f, CampfireRules.XpBonus(10), 1e-6f);
-        Assert.AreEqual(0.06f, CampfireRules.XpBonus(12), 1e-6f);
+        Assert.IsNull(CampfireRules.RankedRestSpell(0));
+        Assert.IsNull(CampfireRules.RankedRestSpell(1));
+        Assert.AreEqual(SpellId.CampfireRest6Percent, CampfireRules.RankedRestSpell(2));
+        Assert.AreEqual(SpellId.CampfireRest6Percent, CampfireRules.RankedRestSpell(3));
+        Assert.AreEqual(SpellId.CampfireRest8Percent, CampfireRules.RankedRestSpell(6));
+        Assert.AreEqual(SpellId.CampfireRest10Percent, CampfireRules.RankedRestSpell(10));
+        Assert.AreEqual(SpellId.CampfireRest10Percent, CampfireRules.RankedRestSpell(14));
     }
 
     [TestMethod]
-    public void StatModMultiplierAddsTheBonusToTheBuff()
+    public void RankedRestSpellsAreTheOnesTheWorldDbAdds()
     {
-        // a multiplicative buff of 1.10 (+10%) at rank 4 is worth 1.12 (+12%)
-        Assert.AreEqual(1.12f, 1.10f * CampfireRules.StatModMultiplier(1.10f, 0.02f), 1e-6f);
+        Assert.AreEqual(6865u, (uint)SpellId.CampfireRest6Percent);
+        Assert.AreEqual(6869u, (uint)SpellId.CampfireRest10Percent);
+    }
 
-        // an additive buff of 0.10 at rank 4 is worth 0.12
-        Assert.AreEqual(0.12f, 0.10f * CampfireRules.StatModMultiplier(0.10f, 0.02f), 1e-6f);
+    [TestMethod]
+    public void BuffXpCountsTheWayTheXpBonusDoes()
+    {
+        Assert.AreEqual(0.12f, CampfireRules.BuffXp(1.12f, true), 1e-6f);
+        Assert.AreEqual(0.12f, CampfireRules.BuffXp(0.12f, false), 1e-6f);
+    }
 
-        // no rank bonus, or nothing to scale, leaves the buff alone
-        Assert.AreEqual(1.0f, CampfireRules.StatModMultiplier(1.10f, 0f), 1e-6f);
-        Assert.AreEqual(1.0f, CampfireRules.StatModMultiplier(0f, 0.02f), 1e-6f);
+    [TestMethod]
+    public void RankXpIsWhatTheSpellGivesOverRested()
+    {
+        Assert.AreEqual(0.01f, CampfireRules.RankXp((uint)SpellId.CampfireRest6Percent), 1e-6f);
+        Assert.AreEqual(0.05f, CampfireRules.RankXp((uint)SpellId.CampfireRest10Percent), 1e-6f);
+
+        // Rested, Well Rested and Very Well Rested owe nothing to a rank
+        Assert.AreEqual(0f, CampfireRules.RankXp((uint)SpellId.CampfireRest1));
+        Assert.AreEqual(0f, CampfireRules.RankXp((uint)SpellId.CampfireRest3));
+    }
+
+    [TestMethod]
+    public void MessagesSayTheXpAndTheRankShare()
+    {
+        Assert.AreEqual("You feel well rested by the fire: +10% XP.", CampfireRules.AppliedMessage(0.10f, 0f));
+        Assert.AreEqual(
+            "You feel well rested by the fire: +15% XP (+5% of it from the fire's Allegiance Rank).",
+            CampfireRules.AppliedMessage(0.15f, 0.05f)
+        );
+        Assert.AreEqual(
+            "Rested by a campfire: +12.5% XP for 45m (+2.5% of it from the fire's Allegiance Rank).",
+            CampfireRules.RestedLine(0.125f, 0.025f, 45 * 60)
+        );
+        Assert.AreEqual("Rested by a campfire: +10% XP.", CampfireRules.RestedLine(0.10f, 0f, null));
     }
 }
