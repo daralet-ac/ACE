@@ -6876,6 +6876,13 @@ public enum SpellId : uint
     // a donation to a town's Captain of the Guard: +10% XP for an hour (TownCaptain.OnDonation)
     GuardsGratitude = 6864,
 
+    // Rested from a campfire placed by a ranked player: +1% XP over Rested's 5% for every 2 ranks (CampfireRules)
+    CampfireRest6Percent = 6865,
+    CampfireRest7Percent,
+    CampfireRest8Percent,
+    CampfireRest9Percent,
+    CampfireRest10Percent,
+
     NumSpells = 8192,
 
     // shared cooldowns, (0x8000 | shared cooldown id)
