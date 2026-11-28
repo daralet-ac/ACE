@@ -68,10 +68,10 @@ public class Hotspot : WorldObject
             CampfireOwnerRank = campfire.CampfireOwnerRank;
 
             var scaleMod = CampfireRules.ScaleMod(CampfireOwnerRank);
+            // base.EnterWorld adds this to the landblock, which makes the physics object from ObjScale
             if (scaleMod != 1.0f)
             {
                 ObjScale = (ObjScale ?? 1.0f) * scaleMod;
-                PhysicsObj.SetScaleStatic(ObjScale.Value);
             }
         }
 
