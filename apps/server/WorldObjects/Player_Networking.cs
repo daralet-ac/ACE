@@ -570,7 +570,24 @@ partial class Player
                 if (WellRestedHotspot is { WeenieClassId: 1053984 }) // Bliz's Eternal Bonfire in Hebian-to
                 {
                     spell.SpellPowerMod = 2;
-                }    
+                }
+
+                // a fire placed by a ranked player gives +1% XP for every 2 of their ranks (CampfireRules)
+                var rankXpBonus = CampfireRules.XpBonus(WellRestedHotspot.CampfireOwnerRank);
+                if (rankXpBonus > 0)
+                {
+                    spell.SpellStatModVal = CampfireRules.StatModMultiplier(spell.BaseStatModVal, rankXpBonus);
+                }
+
+                // a refresh keeps the old buff's value, so a weaker Rested buff would stop a stronger fire from counting:
+                // take it off first, and this one goes on fresh
+                foreach (var weaker in EnchantmentManager.GetEnchantments(SpellCategory.CampfireRested))
+                {
+                    if (weaker.SpellId == (int)spell.Id && weaker.StatModValue < spell.StatModVal)
+                    {
+                        EnchantmentManager.Remove(weaker, false);
+                    }
+                }
 
                 CreateEnchantment(this, WellRestedHotspot, null, spell);
 

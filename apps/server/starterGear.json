@@ -78,6 +78,11 @@
           "weenieId": "1053974",
           "name": "Retaining Chisel",
           "stacksize": "1"
+        },
+        {
+          "weenieId": "1053953",
+          "name": "Build Campfire",
+          "stacksize": "1"
         }
       ],
       "heritage": [
