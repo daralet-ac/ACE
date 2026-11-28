@@ -41,7 +41,7 @@ public class ArmorPatch : Stackable
         {
             player.EnqueueBroadcast(
                 new GameMessageSystemChat(
-                    $"{player.Name} applies {patchesConsumed} {sourceName}es to the {target.NameWithMaterial}.",
+                    $"{player.Name} applies {patchesConsumed} {sourceName}s to the {target.NameWithMaterial}.",
                     ChatMessageType.Craft
                 ),
                 LocalBroadcastRange,
@@ -100,7 +100,7 @@ public class ArmorPatch : Stackable
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"Armor patches can only reinforce vestments with innate armor level.",
+                        $"Armor reinforcements can only reinforce vestments with innate armor level.",
                         ChatMessageType.Craft
                     )
                 );
@@ -111,7 +111,7 @@ public class ArmorPatch : Stackable
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"The {target.NameWithMaterial} has already had an armor patch applied.",
+                        $"The {target.NameWithMaterial} has already been reinforced.",
                         ChatMessageType.Craft
                     )
                 );
@@ -123,7 +123,7 @@ public class ArmorPatch : Stackable
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"The {target.NameWithMaterial} is too fine for a {source.Name}. It can only patch armor with a wield requirement of {maxWieldReq.Value} or less.",
+                        $"The {target.NameWithMaterial} is too fine for a {source.Name}. It can only reinforce armor with a wield requirement of {maxWieldReq.Value} or less.",
                         ChatMessageType.Craft
                     )
                 );
@@ -145,12 +145,12 @@ public class ArmorPatch : Stackable
 
             if (!confirmed)
             {
-                var plural = targetArmorSlots > 1 ? "es" : "";
+                var plural = targetArmorSlots > 1 ? "s" : "";
 
                 if (
                     !player.ConfirmationManager.EnqueueSend(
                         new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                        $"Adding {targetArmorSlots} armor patch{plural} to {target.NameWithMaterial}, increasing its armor level by {amountToAdd}."
+                        $"Adding {targetArmorSlots} armor reinforcement{plural} to {target.NameWithMaterial}, increasing its armor level by {amountToAdd}."
                     )
                 )
                 {
@@ -187,7 +187,7 @@ public class ArmorPatch : Stackable
                     target.ArmorLevel += amountToAdd;
                     target.ArmorPatchAmount = amountToAdd;
                     target.ArmorPatchApplied = true;
-                    target.LongDesc += "\n\nThis item has had an armor patch applied and cannot receive another.";
+                    target.LongDesc += "\n\nThis item has been reinforced and cannot be reinforced again.";
 
                     player.EnqueueBroadcast(new GameMessageUpdateObject(target));
 
