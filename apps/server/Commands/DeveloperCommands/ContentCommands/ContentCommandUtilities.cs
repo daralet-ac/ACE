@@ -468,6 +468,7 @@ public class ContentCommandUtilities
 
         // clear recipe cache
         DatabaseManager.World.ClearCookbookCache();
+        RecipeBookService.ClearCache();
     }
 
     private static void ImportJsonLandblock(Session session, string json_folder, string json_file)
@@ -911,6 +912,7 @@ public class ContentCommandUtilities
 
         // clear this recipe out of the cache
         DatabaseManager.World.ClearCookbookCache();
+        RecipeBookService.ClearCache();
 
         // load cookbooks + recipe from database
         var cookbooks = DatabaseManager.World.GetCookbooksByRecipeId(recipeId);

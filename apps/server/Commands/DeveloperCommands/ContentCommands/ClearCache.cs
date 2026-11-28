@@ -56,6 +56,7 @@ public class ClearCache
         {
             CommandHandlerHelper.WriteOutputInfo(session, "Clearing recipe cache");
             DatabaseManager.World.ClearCookbookCache();
+            RecipeBookService.ClearCache();
         }
 
         if (mode.HasFlag(ContentCommandUtilities.CacheType.Spell))

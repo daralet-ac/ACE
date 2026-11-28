@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -128,7 +129,9 @@ public sealed class Book : WorldObject
         //uint authorID = ScribeIID ?? 0xFFFFFFFF;
         var authorID = (ScribeIID.HasValue) ? (uint)ScribeIID : 0xFFFFFFFF;
 
-        var pages = Biota.PropertiesBookPageData.Clone(BiotaDatabaseLock);
+        // a recipe book's pages are generated as it's opened (stored pages first)
+        var pages = RecipeBookService.GetPages(this);
+        maxPages = Math.Max(maxPages, pages.Count);
 
         var ignoreAuthor = IgnoreAuthor ?? false;
 

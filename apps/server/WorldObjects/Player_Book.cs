@@ -1,3 +1,4 @@
+using System.Linq;
 using ACE.Entity;
 using ACE.Entity.Models;
 using ACE.Server.Network.GameEvent.Events;
@@ -51,7 +52,9 @@ partial class Player
             //uint authorID = ScribeIID ?? 0xFFFFFFFF;
             var authorID = (book.ScribeIID.HasValue) ? (uint)book.ScribeIID : 0xFFFFFFFF;
 
-            var pages = book.Biota.PropertiesBookPageData.Clone(book.BiotaDatabaseLock);
+            // a recipe book's pages are generated as it's opened (stored pages first)
+            var pages = RecipeBookService.GetPages(book);
+            maxPages = System.Math.Max(maxPages, pages.Count);
 
             var ignoreAuthor = book.IgnoreAuthor ?? false;
 
@@ -102,7 +105,9 @@ partial class Player
         // found book
         if (book != null)
         {
-            var page = book.GetPage(pageNum);
+            var page = RecipeBookService.IsRecipeBook(book)
+                ? RecipeBookService.GetPages(book).ElementAtOrDefault(pageNum)
+                : book.GetPage(pageNum);
 
             if (page != null)
             {
@@ -126,6 +131,13 @@ partial class Player
             ) as Book;
         if (book == null)
         {
+            return;
+        }
+
+        // recipe books are read-only
+        if (RecipeBookService.IsRecipeBook(book))
+        {
+            Session.Network.EnqueueSend(new GameEventBookAddPageResponse(Session, bookGuid, 0, false));
             return;
         }
 
@@ -153,6 +165,13 @@ partial class Player
             return;
         }
 
+        // recipe books are read-only
+        if (RecipeBookService.IsRecipeBook(book))
+        {
+            Session.Network.EnqueueSend(new GameEventBookModifyPageResponse(Session, bookGuid, pageId, false));
+            return;
+        }
+
         var success = book.ModifyPage(pageId, pageText, this);
 
         Session.Network.EnqueueSend(new GameEventBookModifyPageResponse(Session, bookGuid, pageId, true));
@@ -174,7 +193,8 @@ partial class Player
             return;
         }
 
-        var success = book.DeletePage(pageId, this);
+        // recipe books are read-only
+        var success = !RecipeBookService.IsRecipeBook(book) && book.DeletePage(pageId, this);
 
         Session.Network.EnqueueSend(new GameEventBookDeletePageResponse(Session, bookGuid, pageId, success));
     }

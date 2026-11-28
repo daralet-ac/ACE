@@ -11,7 +11,7 @@ Both the material and the armor have to match: hides only go on Light armor (Lea
 
 ## Existing characters
 
-Skill 29 keeps its ID, so everyone with Tailoring now has Leatherworking at the same level, along with their augmentation, cantrips and gems. On their first login after this change (`PropertyBool.TailoringSplitMigrated`, 9021), a character with Tailoring Trained or Specialized also gets Weaving at the same advancement class and experience. Their `TradeSkill` quest count goes up by one, capped at 2.
+Skill 29 keeps its ID, so everyone with Tailoring now has Leatherworking at the same level, along with their augmentation, cantrips and gems. On their first login after this change (`PropertyBool.TailoringSplitMigrated`, 188), a character with Tailoring Trained or Specialized also gets Weaving at the same advancement class and experience. Their `TradeSkill` quest count goes up by one, capped at 2.
 
 The Armor Tinkering augmentation now specializes both skills.
 
@@ -28,8 +28,8 @@ A hide goes one way or the other, as it would for a real tanner: scraped bare an
 - **Furrier's Kit on a Beast Hide** (recipes 10028-10031, no skill): Tattered / Beast / Sturdy / Rugged hide → Coarse / normal / Thick / Lustrous Fur (1052557-60).
 - **Leather on the Tanning Kit** (10016-10019, Leatherworking, difficulty 1/50/100/150): makes a Poor/normal/Quality/Exquisite Armor Patch (1052540-43).
 - **Fur on the Furrier's Kit** (10020-10023, Weaving, difficulty 1/50/100/150): makes a Poor/normal/Quality/Exquisite Woven Bandage (1052561-64).
-- **Armor Patches** (`ArmorPatch.cs`): every patch adds 10% of the armor's base armor level (at least 1), stored as the armor's `ArmorPatchAmount`. A patch's quality only sets the highest wield requirement it fits, from `PropertyInt.ArmorPatchMaxWieldReq` (9017): Poor 125, normal 200, Quality 230, Exquisite 270. The armor's requirement is its attribute requirement, or its tier's requirement if it has none. Patches still need one per armor slot, and an item takes one patch. Patches made before this change carry only the old flat amount (25/50/100/200), which maps to the same four caps.
-- **Bandage on a kit** (no skill, once per kit via `PropertyBool.HealkitBandaged` 9022): the kit's HealkitMod goes up by a tenth of its tier's base (10% more effective). There is one recipe per kit tier, covering that tier's Healing, Stamina and Mana Kit. A Poor bandage fits Crude kits only, and every other bandage fits two tiers:
+- **Armor Patches** (`ArmorPatch.cs`): every patch adds 10% of the armor's base armor level (at least 1), stored as the armor's `ArmorPatchAmount`. A patch's quality only sets the highest wield requirement it fits, from `PropertyInt.ArmorPatchMaxWieldReq` (541): Poor 125, normal 200, Quality 230, Exquisite 270. The armor's requirement is its attribute requirement, or its tier's requirement if it has none. Patches still need one per armor slot, and an item takes one patch. Patches made before this change carry only the old flat amount (25/50/100/200), which maps to the same four caps.
+- **Bandage on a kit** (no skill, once per kit via `PropertyBool.HealkitBandaged` 189): the kit's HealkitMod goes up by a tenth of its tier's base (10% more effective). There is one recipe per kit tier, covering that tier's Healing, Stamina and Mana Kit. A Poor bandage fits Crude kits only, and every other bandage fits two tiers:
   - Poor: Crude (10024)
   - normal: Plain (10025), Good (10026)
   - Quality: Excellent (10027), Peerless (10032)
