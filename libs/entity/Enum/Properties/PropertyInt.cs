@@ -1323,6 +1323,12 @@ public enum PropertyInt : ushort
     /// </summary>
     RecipeBookSkill = 540,
 
+    /// <summary>
+    /// On an armor patch: the highest wield requirement of armor it can be applied to (Poor 125, normal 200, Quality 230,
+    /// Exquisite 270). Every patch adds 10% of the armor's base armor level.
+    /// </summary>
+    ArmorPatchMaxWieldReq = 541,
+
     PCAPRecordedAutonomousMovement = 8007,
     PCAPRecordedMaxVelocityEstimated = 8030,
     PCAPRecordedPlacement = 8041,
@@ -1371,12 +1377,6 @@ public enum PropertyInt : ushort
     /// left alone. Unset means 9, every bag that can be refined.
     /// </summary>
     SalvageRefineMax = 9016,
-
-    /// <summary>
-    /// On an armor patch: the highest wield requirement of armor it can be applied to (Poor 125, normal 200, Quality 230,
-    /// Exquisite 270). Every patch adds 10% of the armor's base armor level.
-    /// </summary>
-    ArmorPatchMaxWieldReq = 9017,
     CombatAbilityId = 10000,
 
     [AssessmentProperty]
